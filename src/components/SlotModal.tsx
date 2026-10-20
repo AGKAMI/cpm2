@@ -1,0 +1,128 @@
+"use client";
+
+import { useState } from "react";
+import { Modal } from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
+import { LIMITS, carCapacity, formatNumber } from "@/lib/constants";
+import type { AccountSummary } from "@/lib/types";
+
+type SlotModalProps = {
+  open: boolean;
+  account: AccountSummary | null;
+  onClose: () => void;
+  onReview: (count: number) => void;
+};
+
+export function SlotModal({ open, account, onClose, onReview }: SlotModalProps) {
+  const [count, setCount] = useState(1);
+  const [busy, setBusy] = useState(false);
+
+  if (!account) return null;
+
+  const slotsLeft = Math.max(0, LIMITS.MAX_PURCHASED_SLOTS - account.slots);
+  const affordable = Math.floor(account.coins / LIMITS.SLOT_COST_COINS);
+  const max = Math.max(0, Math.min(slotsLeft, affordable));
+  const cost = count * LIMITS.SLOT_COST_COINS;
+  const newCapacity = carCapacity(account.slots + count);
+
+  const blocker =
+    slotsLeft === 0
+      ? `This account already owns all ${LIMITS.MAX_PURCHASED_SLOTS} extra slots.`
+      : affordable === 0
+        ? `Needs at least ${LIMITS.SLOT_COST_COINS} coins — this account has ${formatNumber(account.coins)}.`
+        : "";
+
+  async function confirm() {
+    setBusy(true);
+    try {
+      onReview(count);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Buy car slot"
+      subtitle="Extra slots unlock more garage space. The price is deducted from the account balance."
+      width="max-w-lg"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose} type="button">
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={confirm} disabled={busy || max === 0} type="button">
+            {busy ? "Working…" : "Review purchase"}
+          </Button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <div className="grid grid-cols-3 gap-2">
+          <Stat label="Slots owned" value={`${account.slots}/${LIMITS.MAX_PURCHASED_SLOTS}`} tone="text-amber-glow" />
+          <Stat label="Balance" value={formatNumber(account.coins)} tone="text-amber-glow" />
+          <Stat label="Garage" value={`${account.cars}/${account.capacity}`} tone="text-cyan-glow" />
+        </div>
+
+        <div className="panel-tight flex items-center justify-between gap-4 rounded-xl px-4 py-3">
+          <div>
+            <p className="label-caps">How many slots?</p>
+            <p className="mt-1 text-[11px] text-ash-500">
+              {LIMITS.SLOT_COST_COINS} coins each · up to {max} affordable
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCount((value) => Math.max(1, value - 1))}
+              disabled={count <= 1}
+              aria-label="Fewer slots"
+              className="grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-ash-200 transition hover:border-amber-glow/50 hover:text-amber-glow disabled:opacity-30"
+            >
+              −
+            </button>
+            <span className="num w-10 text-center text-xl font-bold text-ash-100">{count}</span>
+            <button
+              type="button"
+              onClick={() => setCount((value) => Math.min(max, value + 1))}
+              disabled={count >= max}
+              aria-label="More slots"
+              className="grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-ash-200 transition hover:border-amber-glow/50 hover:text-amber-glow disabled:opacity-30"
+            >
+              +
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between rounded-lg border border-amber-glow/25 bg-amber-glow/5 px-4 py-3">
+          <span className="label-caps">New garage size</span>
+          <span className="num text-sm text-amber-glow">
+            {account.cars}/{newCapacity} slots
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between rounded-lg border border-white/8 bg-carbon-950/40 px-4 py-3">
+          <span className="label-caps">Total cost</span>
+          <span className="num text-sm text-amber-glow">{formatNumber(cost)} coins</span>
+        </div>
+
+        {blocker ? (
+          <p className="rounded-lg border border-red-glow/30 bg-red-glow/10 px-3 py-2 text-xs text-red-glow">
+            {blocker}
+          </p>
+        ) : null}
+      </div>
+    </Modal>
+  );
+}
+
+function Stat({ label, value, tone }: { label: string; value: string; tone: string }) {
+  return (
+    <div className="panel-tight rounded-xl px-3 py-2.5">
+      <p className="label-caps">{label}</p>
+      <p className={`num mt-1 text-[15px] font-bold ${tone}`}>{value}</p>
+    </div>
+  );
+}

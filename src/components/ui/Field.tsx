@@ -87,13 +87,15 @@ export function NumericInput({
   suffix,
   placeholder,
 }: NumericInputProps) {
-  const [draft, setDraft] = useState(() => formatNumber(value));
+  // Zero is shown as a placeholder, not real content - typing any digit replaces it.
+  const shown = (v: number) => (v === 0 ? "" : formatNumber(v));
+  const [draft, setDraft] = useState(() => shown(value));
   const [focused, setFocused] = useState(false);
   const [lastValue, setLastValue] = useState(value);
 
   if (value !== lastValue) {
     setLastValue(value);
-    if (!focused) setDraft(formatNumber(value));
+    if (!focused) setDraft(shown(value));
   }
 
   return (
@@ -103,14 +105,14 @@ export function NumericInput({
         inputMode="numeric"
         autoComplete="off"
         value={draft}
-        placeholder={placeholder}
+        placeholder={placeholder ?? "0"}
         onFocus={() => setFocused(true)}
         onBlur={() => {
           setFocused(false);
-          setDraft(formatNumber(value));
+          setDraft(shown(value));
         }}
         onChange={(event) => {
-          const raw = event.target.value.replace(/[^\d]/g, "");
+          const raw = event.target.value.replace(/[^\d]/g, "").replace(/^0+(?=\d)/, "");
           setDraft(raw);
           const parsed = raw === "" ? 0 : Number.parseInt(raw, 10);
           onChange(Number.isFinite(parsed) ? parsed : 0);

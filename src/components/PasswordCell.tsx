@@ -69,7 +69,7 @@ export function PasswordCell({ accountId }: { accountId: number }) {
   }
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-2.5">
       <code className="num max-w-[150px] truncate rounded bg-carbon-950/60 px-2 py-1 text-[11px] text-ash-200">
         {revealed ?? "••••••••"}
       </code>

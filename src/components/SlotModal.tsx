@@ -60,7 +60,7 @@ export function SlotModal({ open, account, onClose, onReview }: SlotModalProps) 
       }
     >
       <div className="flex flex-col gap-4">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           <Stat label="Slots owned" value={`${account.slots}/${LIMITS.MAX_PURCHASED_SLOTS}`} tone="text-amber-glow" />
           <Stat label="Balance" value={formatNumber(account.coins)} tone="text-amber-glow" />
           <Stat label="Garage" value={`${account.cars}/${account.capacity}`} tone="text-cyan-glow" />

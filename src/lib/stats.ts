@@ -13,6 +13,7 @@ export function computeFleetStats(accounts: AccountSummary[]): FleetStats {
       acc.totalCars += account.cars;
       acc.totalCapacity += account.capacity;
       acc.totalSlots += account.slots;
+      acc.totalCoinsSpentOnCars += account.coinsSpentOnCars;
       return acc;
     },
     {
@@ -21,6 +22,7 @@ export function computeFleetStats(accounts: AccountSummary[]): FleetStats {
       totalCars: 0,
       totalCapacity: 0,
       totalSlots: 0,
+      totalCoinsSpentOnCars: 0,
     },
   );
 
@@ -32,6 +34,7 @@ export function computeFleetStats(accounts: AccountSummary[]): FleetStats {
     totalCapacity: totals.totalCapacity,
     totalSlots: totals.totalSlots,
     coinsLockedInSlots: slotsLockedValue(totals.totalSlots),
+    totalCoinsSpentOnCars: totals.totalCoinsSpentOnCars,
     averageCash: accounts.length ? Math.round(totals.totalCash / accounts.length) : 0,
     accountsAtCashCap: accounts.filter((a) => a.cash >= LIMITS.MAX_CASH).length,
     accountsAtCoinCap: accounts.filter((a) => a.coins >= LIMITS.MAX_COINS).length,

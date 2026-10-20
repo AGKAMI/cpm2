@@ -12,6 +12,7 @@ export type AccountRow = {
   slots: number;
   notes: string;
   archived: number;
+  coins_spent_on_cars: number;
   created_at: string;
   updated_at: string;
 };
@@ -37,13 +38,15 @@ CREATE TABLE IF NOT EXISTS accounts (
   slots        INTEGER NOT NULL DEFAULT 0,
   notes        TEXT    NOT NULL DEFAULT '',
   archived     INTEGER NOT NULL DEFAULT 0,
+  coins_spent_on_cars INTEGER NOT NULL DEFAULT 0,
   created_at   TEXT    NOT NULL,
   updated_at   TEXT    NOT NULL,
   CHECK (length(email) > 2 AND length(email) <= 254),
   CHECK (cash >= 0 AND cash <= 50000000),
   CHECK (coins >= 0 AND coins <= 30000),
   CHECK (cars >= 0 AND cars <= 20 + slots),
-  CHECK (slots >= 0 AND slots <= 15)
+  CHECK (slots >= 0 AND slots <= 15),
+  CHECK (coins_spent_on_cars >= 0)
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_email
@@ -93,6 +96,9 @@ function migrate(db: Database.Database): void {
   const columns = db.prepare(`PRAGMA table_info(accounts)`).all() as { name: string }[];
   if (!columns.some((column) => column.name === "archived")) {
     db.exec(`ALTER TABLE accounts ADD COLUMN archived INTEGER NOT NULL DEFAULT 0`);
+  }
+  if (!columns.some((column) => column.name === "coins_spent_on_cars")) {
+    db.exec(`ALTER TABLE accounts ADD COLUMN coins_spent_on_cars INTEGER NOT NULL DEFAULT 0`);
   }
 }
 

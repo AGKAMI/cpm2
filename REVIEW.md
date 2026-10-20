@@ -2,6 +2,8 @@
 
 Verified by live probe: 29/29 unit tests passed, app booted on port 3456, real HTTP requests fired against a throwaway account (deleted after testing — `data/` returned to empty). Every flaw below was reproduced against the running app, not guessed from reading.
 
+> **ROUND-2 STATUS (2026-10-20, later the same day):** All MUST-FIX items closed and verified live (PATCH economy dead, `data/` gitignored, export confirm-gated + audited, 127.0.0.1 bind). Bulk import (JSON+CSV, per-row reports, dupes skipped) shipped with 11 tests + paste-CSV ImportModal. Round-3 (Kermes): car-purchase ledger `coins_spent_on_cars` (schema+form+stats+export/import round-trip), event retention cap (10k), SlotModal stat grid stacks on phones, stat-tile hierarchy + amber-accent discipline, action-icon spacing, LIVE·AUTO-SAVED badge. Suite now 65/65. Remaining: verify the 20+15=35 ceiling against the actual game.
+
 ---
 
 ## MUST FIX before any real account goes in

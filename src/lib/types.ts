@@ -7,6 +7,7 @@ export type AccountSummary = {
   slots: number;
   capacity: number;
   slotsValue: number;
+  coinsSpentOnCars: number;
   notes: string;
   archived: boolean;
   createdAt: string;
@@ -41,6 +42,7 @@ export type FleetStats = {
   totalCapacity: number;
   totalSlots: number;
   coinsLockedInSlots: number;
+  totalCoinsSpentOnCars: number;
   averageCash: number;
   accountsAtCashCap: number;
   accountsAtCoinCap: number;

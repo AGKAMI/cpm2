@@ -23,7 +23,7 @@ import {
 export type { AccountSummary, FleetEvent, FleetStats } from "./types.ts";
 export type { ImportReport, ImportRowResult } from "./types.ts";
 
-const TRACKED_FIELDS = ["email", "cash", "coins", "cars", "slots", "notes"] as const;
+const TRACKED_FIELDS = ["email", "cash", "coins", "cars", "slots", "coinsSpentOnCars", "notes"] as const;
 
 function toSummary(row: AccountRow): AccountSummary {
   return {
@@ -35,6 +35,7 @@ function toSummary(row: AccountRow): AccountSummary {
     slots: row.slots,
     capacity: carCapacity(row.slots),
     slotsValue: slotsLockedValue(row.slots),
+    coinsSpentOnCars: row.coins_spent_on_cars,
     notes: row.notes,
     archived: Boolean(row.archived),
     createdAt: row.created_at,
@@ -46,6 +47,9 @@ function now(): string {
   return new Date().toISOString();
 }
 
+/** The activity log is capped so the table can never grow unbounded. */
+const EVENT_RETENTION = 10_000;
+
 function logEvent(
   accountId: number | null,
   email: string,
@@ -53,12 +57,18 @@ function logEvent(
   summary: string,
   changes: Record<string, { from: unknown; to: unknown }> = {},
 ): void {
-  getDb()
-    .prepare(
-      `INSERT INTO account_events (account_id, account_email, type, summary, changes, created_at)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-    )
-    .run(accountId, email, type, summary, JSON.stringify(changes), now());
+  const db = getDb();
+  db.prepare(
+    `INSERT INTO account_events (account_id, account_email, type, summary, changes, created_at)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+  ).run(accountId, email, type, summary, JSON.stringify(changes), now());
+
+  // retention: keep only the newest EVENT_RETENTION rows
+  db.prepare(
+    `DELETE FROM account_events WHERE id <= (
+       SELECT id FROM account_events ORDER BY id DESC LIMIT 1 OFFSET ?
+     )`,
+  ).run(EVENT_RETENTION - 1);
 }
 
 function requireAccount(id: number, options: { includeArchived?: boolean } = {}): AccountRow {
@@ -111,8 +121,8 @@ export function createAccount(payload: unknown): AccountSummary {
   const stamp = now();
 
   const insert = db.prepare(
-    `INSERT INTO accounts (email, password_enc, cash, coins, cars, slots, notes, archived, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+    `INSERT INTO accounts (email, password_enc, cash, coins, cars, slots, notes, coins_spent_on_cars, archived, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
   );
 
   const created = db.transaction(() => {
@@ -124,6 +134,7 @@ export function createAccount(payload: unknown): AccountSummary {
       input.cars,
       input.slots,
       input.notes,
+      input.coinsSpentOnCars,
       stamp,
       stamp,
     );
@@ -160,6 +171,7 @@ export function updateAccount(id: number, payload: unknown): AccountSummary {
     coins: patch.coins ?? existing.coins,
     cars: patch.cars ?? existing.cars,
     slots: patch.slots ?? existing.slots,
+    coinsSpentOnCars: patch.coinsSpentOnCars ?? existing.coins_spent_on_cars,
     notes: patch.notes ?? existing.notes,
   };
 
@@ -177,7 +189,10 @@ export function updateAccount(id: number, payload: unknown): AccountSummary {
 
   const changes: Record<string, { from: unknown; to: unknown }> = {};
   for (const field of TRACKED_FIELDS) {
-    const before = existing[field];
+    // AccountRow stores the ledger snake_case (coins_spent_on_cars); the patch
+    // summary speaks camelCase. Map before diffing so both sides resolve.
+    const before =
+      field === "coinsSpentOnCars" ? existing.coins_spent_on_cars : existing[field];
     const after = next[field];
     if (before !== after) changes[field] = { from: before, to: after };
   }
@@ -193,7 +208,7 @@ export function updateAccount(id: number, payload: unknown): AccountSummary {
   db.transaction(() => {
     db.prepare(
       `UPDATE accounts
-         SET email = ?, password_enc = ?, cash = ?, coins = ?, cars = ?, slots = ?, notes = ?, updated_at = ?
+         SET email = ?, password_enc = ?, cash = ?, coins = ?, cars = ?, slots = ?, notes = ?, coins_spent_on_cars = ?, updated_at = ?
        WHERE id = ?`,
     ).run(
       next.email,
@@ -203,6 +218,7 @@ export function updateAccount(id: number, payload: unknown): AccountSummary {
       next.cars,
       next.slots,
       next.notes,
+      next.coinsSpentOnCars,
       now(),
       id,
     );
@@ -365,6 +381,7 @@ export function exportFleet(
             "cars",
             "slots",
             "capacity",
+            "coins_spent_on_cars",
             "notes",
             "created_at",
             "updated_at",
@@ -379,6 +396,7 @@ export function exportFleet(
               account.cars,
               account.slots,
               account.capacity,
+              account.coinsSpentOnCars,
               account.notes,
               account.createdAt,
               account.updatedAt,

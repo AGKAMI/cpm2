@@ -44,6 +44,13 @@ export const slotsSchema = z
     error: `Extra slots cannot exceed ${LIMITS.MAX_PURCHASED_SLOTS} per account.`,
   });
 
+export const coinsSpentOnCarsSchema = z
+  .int({ error: "Coins spent on cars must be a whole number." })
+  .min(0, { error: "Coins spent on cars cannot be negative." })
+  .max(LIMITS.MAX_COINS, {
+    error: `Coins spent on cars cannot exceed ${LIMITS.MAX_COINS.toLocaleString("en-US")} per account.`,
+  });
+
 export const notesSchema = z
   .string()
   .max(LIMITS.MAX_NOTES_LENGTH, {
@@ -60,6 +67,7 @@ export const accountCreateSchema = z
     coins: coinsSchema.default(0),
     cars: carsSchema.default(0),
     slots: slotsSchema.default(0),
+    coinsSpentOnCars: coinsSpentOnCarsSchema.optional().default(0),
     notes: notesSchema,
   })
   .superRefine((data, ctx) => {
@@ -82,6 +90,7 @@ export const accountPatchSchema = z
     coins: coinsSchema.optional(),
     cars: carsSchema.optional(),
     slots: slotsSchema.optional(),
+    coinsSpentOnCars: coinsSpentOnCarsSchema.optional(),
     notes: z.string().max(LIMITS.MAX_NOTES_LENGTH).optional(),
   })
   .superRefine((data, ctx) => {

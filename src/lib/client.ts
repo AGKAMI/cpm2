@@ -77,6 +77,11 @@ export const api = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+  importCsv: (csv: string) =>
+    request<{ import: ImportReport }>("/api/accounts/import?format=csv", {
+      method: "POST",
+      body: JSON.stringify({ csv }),
+    }),
   buySlots: (id: number, count: number) =>
     request<{ account: AccountSummary }>(`/api/accounts/${id}/slots`, {
       method: "POST",

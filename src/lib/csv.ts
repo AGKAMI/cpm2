@@ -76,7 +76,7 @@ export function escapeCsvValue(value: unknown): string {
   return `"${String(value ?? "").replace(/"/g, '""')}"`;
 }
 
-const NUMERIC_FIELDS = ["cash", "coins", "cars", "slots"] as const;
+const NUMERIC_FIELDS = ["cash", "coins", "cars", "slots", "coinsSpentOnCars", "coins_spent_on_cars"] as const;
 
 /**
  * Normalises an imported row before validation: trims strings, coerces
@@ -87,6 +87,13 @@ export function normalizeImportRow(row: unknown): Record<string, unknown> {
   if (!row || typeof row !== "object") return {};
   const source = row as Record<string, unknown>;
   const normalized: Record<string, unknown> = { ...source };
+
+  // CSV exports use snake_case headers (coins_spent_on_cars); the zod schema
+  // expects camelCase — alias it so both shapes import cleanly.
+  if ("coins_spent_on_cars" in normalized && !("coinsSpentOnCars" in normalized)) {
+    normalized.coinsSpentOnCars = normalized.coins_spent_on_cars;
+    delete normalized.coins_spent_on_cars;
+  }
 
   for (const field of NUMERIC_FIELDS) {
     const value = normalized[field];

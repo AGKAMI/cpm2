@@ -35,6 +35,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
   const [coins, setCoins] = useState(account?.coins ?? 0);
   const [cars, setCars] = useState(account?.cars ?? 0);
   const [slots, setSlots] = useState(account?.slots ?? 0);
+  const [coinsSpentOnCars, setCoinsSpentOnCars] = useState(account?.coinsSpentOnCars ?? 0);
   const [notes, setNotes] = useState(account?.notes ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -48,7 +49,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
     event.preventDefault();
     setErrors({});
 
-    const payload: Record<string, unknown> = { email, cash, coins, cars, slots, notes };
+    const payload: Record<string, unknown> = { email, cash, coins, cars, slots, coinsSpentOnCars, notes };
     if (password) payload.password = password;
 
     if (!editing) {
@@ -209,6 +210,22 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
               onChange={setCars}
               invalid={Boolean(errors.cars)}
               suffix="CARS"
+            />
+          </Field>
+
+          <Field
+            label="Coins spent on cars"
+            htmlFor="account-coins-spent"
+            error={errors.coinsSpentOnCars}
+            hint="ledger only — keeps the fleet stats honest"
+          >
+            <NumericInput
+              id="account-coins-spent"
+              value={coinsSpentOnCars}
+              onChange={setCoinsSpentOnCars}
+              max={LIMITS.MAX_COINS}
+              invalid={Boolean(errors.coinsSpentOnCars)}
+              suffix="COINS"
             />
           </Field>
 

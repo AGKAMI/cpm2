@@ -76,7 +76,9 @@ export function AccountTable({
                   {String(index + 1).padStart(2, "0")}
                 </td>
                 <td className="px-4 py-3">
-                  <p className="num truncate text-[13px] text-ash-100">{account.email}</p>
+                  <span className="plate">
+                    <span className="plate-text num text-[12px]">{account.email}</span>
+                  </span>
                   {account.notes ? (
                     <p className="mt-0.5 max-w-[240px] truncate text-[11px] text-ash-600">{account.notes}</p>
                   ) : null}
@@ -118,7 +120,7 @@ export function AccountTable({
                 </td>
                 <td className="px-4 py-3 text-[11px] text-ash-500">{relativeTime(account.updatedAt)}</td>
                 <td className="px-4 py-3">
-                  <div className="flex items-center justify-end gap-1">
+                  <div className="flex items-center justify-end gap-2.5">
                     {archived ? (
                       <IconAction
                         label="Restore account"
@@ -170,12 +172,14 @@ export function AccountTable({
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="num truncate text-[13px] text-ash-100">{account.email}</p>
+                <span className="plate">
+                  <span className="plate-text num text-[12px]">{account.email}</span>
+                </span>
                 {account.notes ? (
                   <p className="mt-0.5 truncate text-[11px] text-ash-600">{account.notes}</p>
                 ) : null}
               </div>
-              <div className="flex shrink-0 gap-1">
+              <div className="flex shrink-0 gap-2.5">
                 {archived ? (
                   <IconAction
                     label="Restore account"
@@ -224,7 +228,7 @@ export function AccountTable({
               </div>
               <div>
                 <dt className="label-caps">Coins</dt>
-                <dd className="num mt-1 text-[13px] text-amber-glow">{formatNumber(account.coins)}</dd>
+                <dd className="num mt-1 text-[13px] text-ash-100">{formatNumber(account.coins)}</dd>
               </div>
               <div>
                 <dt className="label-caps">Updated</dt>

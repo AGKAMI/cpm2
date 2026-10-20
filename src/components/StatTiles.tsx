@@ -1,8 +1,8 @@
 "use client";
 
-import { LIMITS } from "@/lib/constants";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { LIMITS, formatNumber } from "@/lib/constants";
 import type { FleetStats } from "@/lib/types";
-import { formatNumber } from "@/lib/constants";
 
 type Accent = "amber" | "mint" | "cyan";
 
@@ -12,35 +12,71 @@ const ACCENTS: Record<Accent, { text: string; glow: string }> = {
   cyan: { text: "text-cyan-glow", glow: "rgba(76,201,240,0.45)" },
 };
 
+/** Sweeps a number up like a needle: eased count from the previous target to the new one. */
+function useRevUp(target: number, durationMs = 900): number {
+  const [display, setDisplay] = useState(0);
+  const valueRef = useRef(0);
+
+  useEffect(() => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const start = performance.now();
+    const from = reduce ? target : valueRef.current;
+    const duration = reduce ? 1 : durationMs;
+    let raf = 0;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 4);
+      const value = Math.round(from + (target - from) * eased);
+      valueRef.current = value;
+      setDisplay(value);
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, durationMs]);
+
+  return display;
+}
+
 function StatTile({
   index,
   label,
-  value,
   sub,
   accent,
   delay,
+  target,
+  suffix,
 }: {
   index: string;
   label: string;
-  value: string;
   sub: string;
   accent: Accent;
   delay: number;
+  target: number;
+  suffix?: string;
 }) {
   const tone = ACCENTS[accent];
+  const value = useRevUp(target);
   return (
     <div
-      className="animate-rise panel corner-ticks group relative overflow-hidden rounded-xl px-4 py-4"
-      style={{ animationDelay: `${delay}ms` }}
+      className="animate-rise gauge-dial carbon-weave panel corner-ticks group relative overflow-hidden rounded-xl px-4 py-4"
+      style={{ animationDelay: `${delay}ms`, "--dial": tone.glow } as CSSProperties}
     >
       <div className="flex items-start justify-between gap-3">
-        <span className="label-caps">{label}</span>
+        <span className="label-caps text-ash-300">{label}</span>
         <span className="num text-[10px] tracking-widest text-white/20">{index}</span>
       </div>
       <p
-        className={`num mt-3 font-bold leading-none tabular-nums text-[clamp(1.2rem,2.3vw,1.65rem)] ${tone.text}`}
+        className={`num mt-2 font-bold leading-none tabular-nums text-[clamp(1.3rem,2.5vw,1.8rem)] ${tone.text}`}
       >
-        {value}
+        {suffix ? "" : formatNumber(value)}
+        {suffix ? (
+          <>
+            {formatNumber(value)}
+            <span className="text-ash-500">/</span>
+            {suffix}
+          </>
+        ) : null}
       </p>
       <p className="mt-2 text-[11px] leading-tight text-ash-500">{sub}</p>
       <div
@@ -59,7 +95,7 @@ export function StatTiles({ stats }: { stats: FleetStats | null }) {
         index="01"
         label="Accounts"
         accent="amber"
-        value={s ? formatNumber(s.accounts) : "—"}
+        target={s ? s.accounts : 0}
         sub={s ? `${s.accountsFull} garage${s.accountsFull === 1 ? "" : "s"} full` : "loading fleet"}
         delay={40}
       />
@@ -67,7 +103,7 @@ export function StatTiles({ stats }: { stats: FleetStats | null }) {
         index="02"
         label="Total cash"
         accent="mint"
-        value={s ? formatNumber(s.totalCash) : "—"}
+        target={s ? s.totalCash : 0}
         sub={s ? `avg ${formatNumber(s.averageCash)} per account` : "loading fleet"}
         delay={90}
       />
@@ -75,15 +111,20 @@ export function StatTiles({ stats }: { stats: FleetStats | null }) {
         index="03"
         label="Total coins"
         accent="amber"
-        value={s ? formatNumber(s.totalCoins) : "—"}
-        sub={s ? `${formatNumber(s.coinsLockedInSlots)} locked in slots` : "loading fleet"}
+        target={s ? s.totalCoins : 0}
+        sub={
+          s
+            ? `${formatNumber(s.coinsLockedInSlots)} locked in slots · ${formatNumber(s.totalCoinsSpentOnCars)} spent on cars`
+            : "loading fleet"
+        }
         delay={140}
       />
       <StatTile
         index="04"
         label="Fleet capacity"
         accent="cyan"
-        value={s ? `${formatNumber(s.totalCars)}/${formatNumber(s.totalCapacity)}` : "—"}
+        target={s ? s.totalCars : 0}
+        suffix={s ? formatNumber(s.totalCapacity) : undefined}
         sub={s ? `${s.totalSlots} extra slot${s.totalSlots === 1 ? "" : "s"} owned` : "loading fleet"}
         delay={190}
       />

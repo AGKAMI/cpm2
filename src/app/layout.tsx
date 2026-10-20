@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Chakra_Petch, JetBrains_Mono, Space_Grotesk } from "next/font/google";
+import { Chakra_Petch, JetBrains_Mono, Saira } from "next/font/google";
 import "./globals.css";
 
 const display = Chakra_Petch({
@@ -9,9 +9,10 @@ const display = Chakra_Petch({
   display: "swap",
 });
 
-const body = Space_Grotesk({
+const body = Saira({
   subsets: ["latin"],
-  variable: "--font-grotesk",
+  weight: ["400", "500", "600"],
+  variable: "--font-saira",
   display: "swap",
 });
 

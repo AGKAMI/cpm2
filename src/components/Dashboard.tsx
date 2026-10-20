@@ -15,6 +15,7 @@ import { ConfirmModal } from "@/components/ConfirmModal";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { Toolbar, type ConsoleTab, type FleetFilter } from "@/components/Toolbar";
 import { ExportConfirmModal, SlotPurchaseConfirmModal } from "@/components/ConfirmDialogs";
+import { ImportModal } from "@/components/ImportModal";
 
 export default function Dashboard() {
   return (
@@ -49,6 +50,8 @@ function Console() {
   );
   const [slotBusy, setSlotBusy] = useState(false);
   const [exportFormat, setExportFormat] = useState<"csv" | "json" | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importBusy, setImportBusy] = useState(false);
   const [deleting, setDeleting] = useState<AccountSummary | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [deletingBusy, setDeletingBusy] = useState(false);
@@ -311,6 +314,21 @@ function Console() {
     link.remove();
   }
 
+  async function performImport(csv: string) {
+    setImportBusy(true);
+    try {
+      const { import: report } = await api.importCsv(csv);
+      toast.success(
+        "Import finished",
+        `${report.created} added · ${report.skipped} skipped · ${report.failed} failed`,
+      );
+      await load(true);
+      return report;
+    } finally {
+      setImportBusy(false);
+    }
+  }
+
   return (
     <div className="relative min-h-screen">
       <div className="grid-overlay pointer-events-none absolute inset-0" />
@@ -345,7 +363,7 @@ function Console() {
                 }`}
               />
               <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-ash-500">
-                {offline ? "db offline" : loading ? "syncing" : "sqlite · wal"}
+                {offline ? "connection lost — retrying" : loading ? "syncing fleet" : "live · auto-saved"}
               </span>
             </span>
 
@@ -362,6 +380,13 @@ function Console() {
               className="inline-flex h-9 items-center rounded-lg border border-white/10 px-3 font-display text-[10px] uppercase tracking-[0.16em] text-ash-400 transition hover:border-amber-glow/40 hover:text-amber-glow"
             >
               Backup
+            </button>
+            <button
+              type="button"
+              onClick={() => setImportOpen(true)}
+              className="inline-flex h-9 items-center rounded-lg border border-white/10 px-3 font-display text-[10px] uppercase tracking-[0.16em] text-ash-400 transition hover:border-cyan-glow/40 hover:text-cyan-glow"
+            >
+              Import
             </button>
             <Button variant="primary" size="sm" onClick={() => openForm(null)}>
               + Add account
@@ -403,7 +428,7 @@ function Console() {
               onAdd={() => openForm(null)}
             />
           ) : (
-            <section className="panel animate-rise overflow-hidden rounded-xl">
+            <section className="panel livery-top animate-rise overflow-hidden rounded-xl">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/8 px-4 py-2.5">
                 <span className="label-caps">
                   {visible.length} of {tab === "archived" ? archived.length : accounts.length}{" "}
@@ -433,6 +458,7 @@ function Console() {
       </main>
 
       <footer className="relative mx-auto max-w-[1440px] px-4 pb-10 pt-2 sm:px-6">
+        <div className="checker-strip mb-3 max-w-[280px]" />
         <p className="font-mono text-[10px] text-ash-600">
           {LIMITS.BASE_CAR_SLOTS} base car slots · {LIMITS.MAX_PURCHASED_SLOTS} extra slots max per account ·{" "}
           {LIMITS.SLOT_COST_COINS} coins per slot · passwords encrypted at rest with AES-256-GCM
@@ -473,6 +499,13 @@ function Console() {
         accountCount={accounts.length}
         onCancel={() => setExportFormat(null)}
         onConfirm={performExport}
+      />
+
+      <ImportModal
+        open={importOpen}
+        busy={importBusy}
+        onClose={() => setImportOpen(false)}
+        onImport={performImport}
       />
 
       <ConfirmModal

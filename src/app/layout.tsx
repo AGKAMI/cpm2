@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Archivo, Fraunces, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
+import { FleetProvider } from "@/components/FleetProvider";
+import { AppShell } from "@/components/AppShell";
+import { ToastProvider } from "@/components/ui/Toaster";
 
 const display = Fraunces({
   subsets: ["latin"],
@@ -30,7 +33,13 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${display.variable} ${body.variable} ${mono.variable}`}>
-      <body className="min-h-screen antialiased">{children}</body>
+      <body className="min-h-screen antialiased">
+        <ToastProvider>
+          <FleetProvider>
+            <AppShell>{children}</AppShell>
+          </FleetProvider>
+        </ToastProvider>
+      </body>
     </html>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { AccountSummary } from "@/lib/types";
 import { formatNumber } from "@/lib/constants";
 import { relativeTime } from "@/lib/format";
@@ -20,6 +21,10 @@ type AccountTableProps = {
   onRestore?: (account: AccountSummary) => void;
   onAdjust: (account: AccountSummary, field: "cash" | "coins" | "cars", delta: number) => void;
   mode?: "active" | "archived";
+  selectable?: boolean;
+  selectedIds?: number[];
+  onToggleSelect?: (id: number) => void;
+  onToggleAll?: () => void;
 };
 
 const STEPS = { cash: 1_000_000, coins: 1_000, cars: 1 } as const;
@@ -36,8 +41,13 @@ export function AccountTable({
   onRestore,
   onAdjust,
   mode = "active",
+  selectable = false,
+  selectedIds = [],
+  onToggleSelect,
+  onToggleAll,
 }: AccountTableProps) {
   const archived = mode === "archived";
+  const allSelected = selectable && accounts.length > 0 && accounts.every((a) => selectedIds.includes(a.id));
 
   return (
     <>
@@ -46,6 +56,17 @@ export function AccountTable({
         <table className="w-full min-w-[1120px] border-collapse">
           <thead>
             <tr className="rule-double">
+              {selectable ? (
+                <th className="w-9 px-3 py-3 text-left">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={() => onToggleAll?.()}
+                    aria-label="Select every account"
+                    className="h-3.5 w-3.5 accent-[#16513a]"
+                  />
+                </th>
+              ) : null}
               <th className="label-caps w-12 px-4 py-3 text-left">#</th>
               <th className="label-caps px-4 py-3 text-left">
                 <SortButton label="Account" active={sortKey === "email"} dir={sortDir} onClick={() => onSort("email")} />
@@ -72,13 +93,26 @@ export function AccountTable({
                   busyId === account.id ? "opacity-60" : ""
                 }`}
               >
+                {selectable ? (
+                  <td className="px-3 py-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(account.id)}
+                      onChange={() => onToggleSelect?.(account.id)}
+                      aria-label={`Select ${account.email}`}
+                      className="h-3.5 w-3.5 accent-[#16513a]"
+                    />
+                  </td>
+                ) : null}
                 <td className="num px-4 py-3 text-[11px] text-ink-faint">
                   {String(index + 1).padStart(2, "0")}
                 </td>
                 <td className="px-4 py-3">
-                  <span className="plate">
-                    <span className="plate-text num text-[12px]">{account.email}</span>
-                  </span>
+                  <Link href={`/accounts/${account.id}`} className="inline-block hover:opacity-80">
+                    <span className="plate">
+                      <span className="plate-text num text-[12px]">{account.email}</span>
+                    </span>
+                  </Link>
                   {account.notes ? (
                     <p className="mt-0.5 max-w-[240px] truncate text-[11px] text-ink-faint">{account.notes}</p>
                   ) : null}
@@ -172,9 +206,11 @@ export function AccountTable({
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <span className="plate">
-                  <span className="plate-text num text-[12px]">{account.email}</span>
-                </span>
+                <Link href={`/accounts/${account.id}`} className="inline-block hover:opacity-80">
+                  <span className="plate">
+                    <span className="plate-text num text-[12px]">{account.email}</span>
+                  </span>
+                </Link>
                 {account.notes ? (
                   <p className="mt-0.5 truncate text-[11px] text-ink-faint">{account.notes}</p>
                 ) : null}

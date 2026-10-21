@@ -4,18 +4,24 @@ import { createContext, useCallback, useContext, useMemo, useRef, useState, type
 
 type ToastKind = "success" | "error" | "info";
 
+type ToastAction = {
+  label: string;
+  onClick: () => void;
+};
+
 type Toast = {
   id: number;
   kind: ToastKind;
   title: string;
   detail?: string;
+  action?: ToastAction;
 };
 
 type ToastApi = {
   push: (toast: Omit<Toast, "id">) => void;
-  success: (title: string, detail?: string) => void;
-  error: (title: string, detail?: string) => void;
-  info: (title: string, detail?: string) => void;
+  success: (title: string, detail?: string, action?: ToastAction) => void;
+  error: (title: string, detail?: string, action?: ToastAction) => void;
+  info: (title: string, detail?: string, action?: ToastAction) => void;
 };
 
 const ToastContext = createContext<ToastApi | null>(null);
@@ -73,9 +79,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const api = useMemo<ToastApi>(
     () => ({
       push,
-      success: (title, detail) => push({ kind: "success", title, detail }),
-      error: (title, detail) => push({ kind: "error", title, detail }),
-      info: (title, detail) => push({ kind: "info", title, detail }),
+      success: (title, detail, action) => push({ kind: "success", title, detail, action }),
+      error: (title, detail, action) => push({ kind: "error", title, detail, action }),
+      info: (title, detail, action) => push({ kind: "info", title, detail, action }),
     }),
     [push],
   );
@@ -97,6 +103,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               </p>
               {toast.detail ? (
                 <p className="mt-1 break-words text-xs leading-snug text-ink-soft">{toast.detail}</p>
+              ) : null}
+              {toast.action ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    toast.action?.onClick();
+                    remove(toast.id);
+                  }}
+                  className="mt-2 font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-racing underline underline-offset-2 hover:text-racing-deep"
+                >
+                  {toast.action.label}
+                </button>
               ) : null}
             </div>
             <button

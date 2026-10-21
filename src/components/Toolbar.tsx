@@ -1,9 +1,9 @@
 "use client";
 
 import type { RefObject } from "react";
+import { Button } from "@/components/ui/Button";
 
 export type FleetFilter = "all" | "full" | "slots" | "cash-cap" | "coin-cap";
-export type ConsoleTab = "fleet" | "archived" | "log";
 
 const FILTERS: { key: FleetFilter; label: string }[] = [
   { key: "all", label: "All accounts" },
@@ -13,31 +13,31 @@ const FILTERS: { key: FleetFilter; label: string }[] = [
   { key: "coin-cap", label: "Coins at cap" },
 ];
 
-type ToolbarProps = {
+type FleetToolbarProps = {
   query: string;
   onQuery: (value: string) => void;
   filter: FleetFilter;
   onFilter: (value: FleetFilter) => void;
-  tab: ConsoleTab;
-  onTab: (value: ConsoleTab) => void;
-  onRefresh: () => void;
   archivedCount: number;
+  showArchived: boolean;
+  onShowArchived: (value: boolean) => void;
+  onRefresh: () => void;
   searchRef?: RefObject<HTMLInputElement | null>;
 };
 
-export function Toolbar({
+export function FleetToolbar({
   query,
   onQuery,
   filter,
   onFilter,
-  tab,
-  onTab,
-  onRefresh,
   archivedCount,
+  showArchived,
+  onShowArchived,
+  onRefresh,
   searchRef,
-}: ToolbarProps) {
+}: FleetToolbarProps) {
   return (
-    <div className="mt-5 flex flex-wrap items-end gap-x-5 gap-y-3">
+    <div className="flex flex-wrap items-end gap-x-5 gap-y-3">
       <div className="min-w-[200px] flex-1">
         <span className="label-caps">Search register</span>
         <div className="relative mt-1">
@@ -52,6 +52,7 @@ export function Toolbar({
             <path d="M16 16l4.5 4.5" strokeLinecap="round" />
           </svg>
           <input
+            id="fleet-search"
             ref={searchRef}
             value={query}
             onChange={(event) => onQuery(event.target.value)}
@@ -62,40 +63,39 @@ export function Toolbar({
         </div>
       </div>
 
-      {tab === "fleet" ? (
-        <label className="block">
-          <span className="label-caps">Filter</span>
-          <select
-            value={filter}
-            onChange={(event) => onFilter(event.target.value as FleetFilter)}
-            className="mt-1 block h-9 rounded-[3px] border border-ink/15 bg-paper-raised px-2.5 font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-soft focus:border-racing focus:outline-none"
-          >
-            {FILTERS.map((item) => (
-              <option key={item.key} value={item.key} className="bg-paper-raised text-ink">
-                {item.label}
-              </option>
-            ))}
-          </select>
-        </label>
-      ) : null}
+      <label className="block">
+        <span className="label-caps">Filter</span>
+        <select
+          value={filter}
+          onChange={(event) => onFilter(event.target.value as FleetFilter)}
+          className="mt-1 block h-9 rounded-[3px] border border-ink/15 bg-paper-raised px-2.5 font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-soft focus:border-racing focus:outline-none"
+        >
+          {FILTERS.map((item) => (
+            <option key={item.key} value={item.key} className="bg-paper-raised text-ink">
+              {item.label}
+            </option>
+          ))}
+        </select>
+      </label>
 
-      <div className="flex items-end gap-5">
-        {(
-          [
-            { key: "fleet", label: "Fleet" },
-            { key: "archived", label: `Archived${archivedCount > 0 ? ` (${archivedCount})` : ""}` },
-            { key: "log", label: "Activity log" },
-          ] as const
-        ).map((item) => (
-          <button
-            key={item.key}
-            type="button"
-            onClick={() => onTab(item.key)}
-            className={`tab ${tab === item.key ? "tab-active" : ""}`}
+      <div>
+        <span className="label-caps">View</span>
+        <div className="mt-1 flex items-center gap-1">
+          <Button
+            variant={showArchived ? "subtle" : "primary"}
+            size="sm"
+            onClick={() => onShowArchived(false)}
           >
-            {item.label}
-          </button>
-        ))}
+            Active
+          </Button>
+          <Button
+            variant={showArchived ? "primary" : "subtle"}
+            size="sm"
+            onClick={() => onShowArchived(true)}
+          >
+            Archived{archivedCount > 0 ? ` (${archivedCount})` : ""}
+          </Button>
+        </div>
       </div>
 
       <button

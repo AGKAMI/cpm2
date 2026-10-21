@@ -55,6 +55,7 @@ export const api = {
     request<{ accounts: AccountSummary[]; stats: FleetStats }>(
       options.archived ? "/api/accounts?archived=true" : "/api/accounts",
     ),
+  listAll: () => request<{ accounts: AccountSummary[]; stats: FleetStats }>("/api/accounts?archived=include"),
   events: () => request<{ events: FleetEvent[] }>("/api/events"),
   create: (payload: unknown) =>
     request<{ account: AccountSummary }>("/api/accounts", {

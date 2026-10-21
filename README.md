@@ -48,17 +48,40 @@ and live counters in the UI.
 
 ## What's in the box
 
-- **Fleet table** — search, filter, sortable columns, inline ± steppers for cash/coins/cars, masked
-  passwords with reveal + copy (auto-remasks after 10s), per-account capacity gauge
-  (cyan = base slots, amber = purchased slots, red `FULL` flag at capacity)
-- **Archived tab** — deleting archives instead of destroying: balances, cars and slots are kept and
-  the account can be restored with one click
-- **Activity log** — permanent trail of every create / edit / slot purchase / slot removal /
-  archive / password reveal / export, with value diffs
+- **Overview** (`/`) — the spec strip, cash-by-account and garage-utilisation charts, the coin
+  ledger (free / locked in slots / spent on cars), an "needs attention" list (accounts at a cap,
+  full garages, archived rows) and the latest entries
+- **Fleet** (`/fleet`) — the register: search, filters, sortable columns, multi-select for bulk
+  archiving, and an active/archived switch. The search, filter and sort live in the URL, so
+  `?q=kami&filter=full` is a bookmark you can share or reload
+- **Account page** (`/accounts/{id}`) — one account in full: balances with live steppers, the
+  garage gauge, the credential cell, the coin ledger, and that account's own history
+- **Activity** (`/activity`) — the permanent log, filterable by entry type and searchable
+- **Settings** (`/settings`) — game limits, where the data lives, backup instructions, the
+  paper/night theme switch and the keyboard map
+- **Fleet table** — inline ± steppers for cash/coins/cars, masked passwords with reveal + copy
+  (auto-remasks after 10s), per-account capacity gauge (cyan = base slots, amber = purchased
+  slots, red `FULL` flag at capacity)
 - **Backups** — `CSV` and `JSON` export behind an explicit confirmation modal (the file contains
   every decrypted password) plus `POST /api/accounts/import` for restoring one
 - **Validation** — duplicate emails, blank passwords, oversized numbers, over-capacity garages and
   unaffordable slots are all rejected with a human-readable reason
+
+### Keyboard
+
+| Keys | Action |
+| --- | --- |
+| `N` | new account |
+| `/` | jump to the fleet search |
+| `E` | export the fleet |
+| `G` then `F` / `A` / `S` | go to fleet / activity / settings |
+| `?` | show the shortcut list |
+| `Esc` | close a dialog |
+
+### Themes
+
+`Paper` (default) is the daylight service-manual look; `Night` is the same ledger lit from the
+dash. The choice is stored on the machine — switch it from the header or from Settings.
 
 ## API
 

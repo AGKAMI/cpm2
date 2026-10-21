@@ -23,7 +23,7 @@ export function Field({ label, hint, error, children, htmlFor, meter }: FieldPro
       {meter ? <Meter value={meter.value} max={meter.max} tone={meter.tone ?? "racing"} /> : null}
       {error ? (
         <p className="flex items-start gap-1.5 text-[11px] leading-snug text-oxblood">
-          <svg viewBox="0 0 24 24" className="mt-px h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg viewBox="0 0 24 24" className="mt-px h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
             <circle cx="12" cy="12" r="9" />
             <path d="M12 7.5v5.5M12 16.2v.1" strokeLinecap="round" />
           </svg>
@@ -45,7 +45,7 @@ function Meter({ value, max, tone }: { value: number; max: number; tone: "brass"
   return (
     <div className="h-[3px] w-full overflow-hidden rounded-full bg-ink/10">
       <div
-        className={`h-full transition-all duration-500 ${near ? "bg-oxblood" : colors[tone]}`}
+        className={`h-full transition-[width] duration-500 ${near ? "bg-oxblood" : colors[tone]}`}
         style={{ width: `${ratio * 100}%` }}
       />
     </div>

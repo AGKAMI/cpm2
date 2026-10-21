@@ -105,11 +105,12 @@ export function ImportModal({ open, busy, onClose, onImport }: ImportModalProps)
         ) : (
           <>
             <textarea
+              name="csv"
               value={csv}
-              onChange={(event) => setCsv(event.target.value)}
               spellCheck={false}
+              onChange={(event) => setCsv(event.target.value)}
               placeholder={`email,password,cash,coins,cars,slots,notes\naccount@mail.com,secret123,50000,2000,4,1,main`}
-              className="h-44 w-full resize-none rounded-[8px] border border-ink/15 bg-paper-raised p-3 num text-[12px] text-ink outline-none transition placeholder:text-ink-faint focus:border-racing"
+              className="h-44 w-full resize-none rounded-[8px] border border-ink/15 bg-paper-raised p-3 num text-[12px] text-ink transition placeholder:text-ink-faint focus:border-racing"
             />
             <p className="text-[11px] text-ink-faint">
               Duplicates are skipped, bad rows are reported — nothing is half-imported. Hard caps

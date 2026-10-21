@@ -202,7 +202,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     <ShellContext.Provider value={shell}>
       <div className="relative min-h-screen">
         <CarBackdrop />
-        <header className="sticky top-0 z-30 border-b border-ink/10 bg-paper/95 backdrop-blur-sm">
+        <a
+          href="#main"
+          className="sr-only left-4 top-4 z-50 rounded-full bg-racing px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-paper focus:not-sr-only focus:absolute"
+        >
+          Skip to content
+        </a>
+        <header className="sticky top-0 z-30 border-b border-ink/10 bg-paper/95 pt-[env(safe-area-inset-top)] backdrop-blur-sm">
           <div className="dial-sweep" aria-hidden />
           <div className="relative mx-auto flex max-w-[1440px] flex-wrap items-end gap-x-6 gap-y-3 px-4 pb-2.5 pt-4 sm:px-6">
             <Link href="/" className="flex items-center gap-3">
@@ -212,7 +218,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   className="h-[18px] w-[18px]"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="1.5"
+                  strokeWidth="1.5" aria-hidden="true"
                 >
                   <path d="M4 13l1.5-4.5A2 2 0 017.4 7h9.2a2 2 0 011.9 1.5L20 13" strokeLinecap="round" />
                   <path d="M3.5 13h17v4.5h-17z" strokeLinejoin="round" />
@@ -221,7 +227,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </svg>
               </span>
               <span>
-                <span className="wordmark block text-[23px] leading-none text-ink">
+                <span className="wordmark block text-[23px] leading-none text-ink" translate="no">
                   Fleet <span className="text-racing">Ledger</span>
                 </span>
                 <span className="label-caps mt-1.5 block">
@@ -267,7 +273,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 className="square-btn h-9 w-9"
               >
                 {theme === "night" ? (
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7">
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
                     <circle cx="12" cy="12" r="4" />
                     <path
                       d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"
@@ -275,7 +281,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     />
                   </svg>
                 ) : (
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7">
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
                     <path d="M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 1010.5 10.5z" strokeLinejoin="round" />
                   </svg>
                 )}
@@ -295,7 +301,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="rule-double mx-auto max-w-[1440px]" />
         </header>
 
-        <main className="relative mx-auto max-w-[1440px] px-4 py-6 sm:px-6 sm:py-8">{children}</main>
+        <main
+          id="main"
+          className="relative mx-auto max-w-[1440px] scroll-mt-24 px-4 py-6 sm:px-6 sm:py-8"
+        >
+          {children}
+        </main>
 
         <footer className="relative mx-auto max-w-[1440px] px-4 pb-10 pt-4 sm:px-6">
           <div className="rule-double mb-3" />

@@ -29,6 +29,7 @@
 
 /* Night shift: same ledger, lit from the dashboard glow. */
 [data-theme="night"] {
+  color-scheme: dark;
   --color-paper: #101215;
   --color-paper-raised: #171a1e;
   --color-paper-sunken: #1f2329;
@@ -97,7 +98,25 @@
   :focus-visible {
     outline: 2px solid var(--color-racing);
     outline-offset: 2px;
-    border-radius: 2px;
+    border-radius: 4px;
+  }
+
+  /* Kill the 300ms tap delay and the grey flash on touch devices. */
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  [role="button"] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: color-mix(in srgb, var(--color-racing) 18%, transparent);
+  }
+
+  /* No rubber-banding inside the app chrome, but keep pull-to-refresh on touch. */
+  @media (pointer: fine) {
+    html {
+      overscroll-behavior: none;
+    }
   }
 
   input,
@@ -105,6 +124,12 @@
   textarea,
   button {
     font-family: inherit;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
   }
 
   input[type="number"]::-webkit-outer-spin-button,
@@ -255,6 +280,7 @@
     font-weight: 600;
     letter-spacing: -0.015em;
     font-variation-settings: "SOFT" 0, "WONK" 1, "opsz" 40;
+    text-wrap: balance;
   }
 
   .num {
@@ -433,8 +459,9 @@
     border-bottom-color: color-mix(in srgb, var(--color-ink) 45%, transparent);
   }
 
-  .field-rule:focus {
-    outline: none;
+  .field-rule:focus-visible {
+    outline: 2px solid var(--color-racing);
+    outline-offset: 3px;
     border-bottom-color: var(--color-racing);
     box-shadow: 0 1px 0 var(--color-racing);
   }

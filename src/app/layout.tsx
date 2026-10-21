@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Archivo, Fraunces, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { FleetProvider } from "@/components/FleetProvider";
@@ -28,6 +28,14 @@ export const metadata: Metadata = {
   title: "CPM2 // FLEET LEDGER",
   description:
     "Track Car Parking Multiplayer 2 accounts — balances, coins, cars and purchased car slots.",
+  themeColor: "#f1ede1",
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f1ede1" },
+    { media: "(prefers-color-scheme: dark)", color: "#101215" },
+  ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

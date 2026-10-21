@@ -71,6 +71,16 @@ and live counters in the UI.
 - **Validation** — duplicate emails, blank passwords, oversized numbers, over-capacity garages and
   unaffordable slots are all rejected with a human-readable reason
 
+### Accessibility
+
+- Skip-to-content link, landmark regions, one `h1` per page, hierarchical headings
+- Visible `:focus-visible` rings everywhere (no `outline: none` without a replacement)
+- Dialogs trap the keyboard, open with the caret in the first field, and close on `Esc`
+- Form errors are inline, and a failed submit moves the caret to the first bad field
+- Every icon-only control carries an `aria-label`; decorative SVGs are `aria-hidden`
+- Toasts announce politely (`aria-live`); the meter animation respects `prefers-reduced-motion`
+- Touch targets sized for one thumb, `touch-action: manipulation`, safe-area padding on the header
+
 ### Keyboard
 
 | Keys | Action |

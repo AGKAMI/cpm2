@@ -87,13 +87,13 @@ export function PasswordCell({ accountId }: { accountId: number }) {
         className="square-btn h-7 w-7 disabled:opacity-40"
       >
         {revealed ? (
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7">
+          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
             <path d="M3 3l18 18" strokeLinecap="round" />
             <path d="M10.6 10.7a2 2 0 002.8 2.8" strokeLinecap="round" />
             <path d="M9.4 5.4A9.6 9.6 0 0112 5c5 0 9 4.5 9 7 0 .9-.5 1.9-1.4 3M6.3 6.4C4.2 7.8 3 9.9 3 12c0 2.5 4 7 9 7 1.2 0 2.3-.2 3.3-.6" strokeLinecap="round" />
           </svg>
         ) : (
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7">
+          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
             <path d="M3 12s3.6-7 9-7 9 7 9 7-3.6 7-9 7-9-7-9-7z" strokeLinecap="round" />
             <circle cx="12" cy="12" r="2.6" />
           </svg>
@@ -106,7 +106,7 @@ export function PasswordCell({ accountId }: { accountId: number }) {
         aria-label="Copy password"
         className="square-btn h-7 w-7"
       >
-        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7">
+        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
           <rect x="9" y="9" width="11" height="11" rx="2.5" />
           <path d="M15 5.5A2.5 2.5 0 0012.5 3h-7A2.5 2.5 0 005.5 15" strokeLinecap="round" />
         </svg>

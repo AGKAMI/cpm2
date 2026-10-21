@@ -45,6 +45,18 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
   const capacity = carCapacity(slots);
   const carsOverflow = cars > capacity;
 
+  /** Move the caret to whatever went wrong first — never leave the user guessing. */
+  function focusFirstError(issues: Record<string, string>) {
+    const order = ["email", "password", "cash", "coins", "cars", "slots", "notes"];
+    const first = order.find((field) => issues[field]);
+    if (!first) return;
+    const field = document.getElementById(`account-${first}`);
+    if (field instanceof HTMLElement) {
+      field.focus();
+      field.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setErrors({});
@@ -55,7 +67,9 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
     if (!editing) {
       const result = accountCreateSchema.safeParse(payload);
       if (!result.success) {
-        setErrors(mapIssues(result.error.issues as Issue[]));
+        const issues = mapIssues(result.error.issues as Issue[]);
+        setErrors(issues);
+        focusFirstError(issues);
         return;
       }
     } else {
@@ -86,6 +100,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
       }
       if (Object.keys(next).length > 0) {
         setErrors(next);
+        focusFirstError(next);
         return;
       }
     }
@@ -126,9 +141,10 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
         <Field label="Email" htmlFor="account-email" error={errors.email}>
           <TextInput
             id="account-email"
+            name="email"
             type="email"
             value={email}
-            autoComplete="off"
+            autoComplete="email"
             spellCheck={false}
             placeholder="driver@cpm2.gg"
             invalid={Boolean(errors.email)}
@@ -145,6 +161,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
           <div className="relative">
             <TextInput
               id="account-password"
+              name="password"
               type={showPassword ? "text" : "password"}
               value={password}
               autoComplete="new-password"
@@ -156,6 +173,8 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
             <button
               type="button"
               onClick={() => setShowPassword((value) => !value)}
+              aria-pressed={showPassword}
+              aria-label={showPassword ? "Hide password" : "Show password"}
               className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-1 font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint transition hover:text-racing"
             >
               {showPassword ? "Hide" : "Show"}

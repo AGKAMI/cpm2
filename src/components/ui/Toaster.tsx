@@ -31,7 +31,7 @@ const TONES: Record<ToastKind, { accent: string; bar: string; icon: ReactNode }>
     accent: "text-racing",
     bar: "border-l-racing",
     icon: (
-      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
         <path d="M4 12.5l5 5L20 6.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
@@ -40,7 +40,7 @@ const TONES: Record<ToastKind, { accent: string; bar: string; icon: ReactNode }>
     accent: "text-oxblood",
     bar: "border-l-oxblood",
     icon: (
-      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
         <circle cx="12" cy="12" r="9" />
         <path d="M12 7.5v5.5M12 16.2v.1" strokeLinecap="round" />
       </svg>
@@ -50,7 +50,7 @@ const TONES: Record<ToastKind, { accent: string; bar: string; icon: ReactNode }>
     accent: "text-blueprint",
     bar: "border-l-blueprint",
     icon: (
-      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
         <circle cx="12" cy="12" r="9" />
         <path d="M12 11v5.5M12 7.8v.1" strokeLinecap="round" />
       </svg>
@@ -89,7 +89,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={api}>
       {children}
-      <div className="pointer-events-none fixed bottom-4 right-4 z-[60] flex w-[min(92vw,380px)] flex-col gap-2">
+      <div
+        aria-live="polite"
+        aria-atomic="false"
+        className="pointer-events-none fixed bottom-4 right-4 z-[60] flex w-[min(92vw,380px)] flex-col gap-2"
+      >
         {toasts.map((toast) => (
           <div
             key={toast.id}
@@ -123,7 +127,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               aria-label="Dismiss notification"
               className="text-ink-faint transition hover:text-ink"
             >
-              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
               </svg>
             </button>

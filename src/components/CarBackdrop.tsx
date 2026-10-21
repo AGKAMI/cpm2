@@ -70,7 +70,7 @@ export function CarBackdrop() {
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
-          strokeLinecap="round"
+          strokeLinecap="round" aria-hidden="true"
         >
           <path d="M6 6l12 12M18 6L6 18" />
         </svg>
@@ -88,7 +88,7 @@ export function CarBackdrop() {
           stroke="currentColor"
           strokeWidth="1.8"
           strokeLinecap="round"
-          strokeLinejoin="round"
+          strokeLinejoin="round" aria-hidden="true"
         >
           <path d="M3 8.5h3l1.6-2.2h8.8L18 8.5h3v9.5H3z" />
           <circle cx="12" cy="13" r="3.2" />

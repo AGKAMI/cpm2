@@ -55,11 +55,11 @@ export function AccountTable({
     <>
       {/* Desktop: dense fleet table */}
       <div className="hidden overflow-x-auto lg:block">
-        <table className="w-full min-w-[1000px] border-collapse">
+        <table className="w-full min-w-[980px] border-collapse">
           <thead>
             <tr className="rule-double">
               {selectable ? (
-                <th className="w-9 px-3 py-3 text-left">
+                <th className="w-9 px-2.5 py-3 text-left">
                   <input
                     type="checkbox"
                     checked={allSelected}
@@ -69,23 +69,23 @@ export function AccountTable({
                   />
                 </th>
               ) : null}
-              <th className="label-caps w-12 px-3 py-3 text-left">#</th>
-              <th className="label-caps px-3 py-3 text-left">
+              <th className="label-caps w-12 px-2.5 py-3 text-left">#</th>
+              <th className="label-caps px-2.5 py-3 text-left">
                 <SortButton label="Account" active={sortKey === "email"} dir={sortDir} onClick={() => onSort("email")} />
               </th>
-              <th className="label-caps px-3 py-3 text-left">Password</th>
-              <th className="label-caps px-3 py-3 text-right">
+              <th className="label-caps px-2.5 py-3 text-left">Password</th>
+              <th className="label-caps px-2.5 py-3 text-right">
                 <SortButton label="Cash" active={sortKey === "cash"} dir={sortDir} onClick={() => onSort("cash")} align="right" />
               </th>
-              <th className="label-caps px-3 py-3 text-right">
+              <th className="label-caps px-2.5 py-3 text-right">
                 <SortButton label="Coins" active={sortKey === "coins"} dir={sortDir} onClick={() => onSort("coins")} align="right" />
               </th>
-              <th className="label-caps w-[190px] px-3 py-3 text-left">
+              <th className="label-caps w-[190px] px-2.5 py-3 text-left">
                 <SortButton label="Cars / Capacity" active={sortKey === "cars"} dir={sortDir} onClick={() => onSort("cars")} />
               </th>
-              <th className="label-caps w-[96px] px-3 py-3 text-left">Trophies</th>
-              <th className="label-caps px-3 py-3 text-left">Updated</th>
-              <th className="label-caps px-3 py-3 text-right">Actions</th>
+              <th className="label-caps w-[96px] px-2.5 py-3 text-left">Trophies</th>
+              <th className="label-caps px-2.5 py-3 text-left">Updated</th>
+              <th className="label-caps px-2.5 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -97,7 +97,7 @@ export function AccountTable({
                 }`}
               >
                 {selectable ? (
-                  <td className="px-3 py-3">
+                  <td className="px-2.5 py-3">
                     <input
                       type="checkbox"
                       checked={selectedIds.includes(account.id)}
@@ -107,10 +107,10 @@ export function AccountTable({
                     />
                   </td>
                 ) : null}
-                <td className="num px-3 py-3 text-[11px] text-ink-faint">
+                <td className="num px-2.5 py-3 text-[11px] text-ink-faint">
                   {String(index + 1).padStart(2, "0")}
                 </td>
-                <td className="px-3 py-3">
+                <td className="px-2.5 py-3">
                   <Link href={`/accounts/${account.id}`} className="inline-block max-w-[210px] hover:opacity-80">
                     <span className="plate max-w-[210px]">
                       <span className="plate-text num text-[12px]">{account.email}</span>
@@ -120,10 +120,10 @@ export function AccountTable({
                     <p className="mt-0.5 max-w-[240px] truncate text-[11px] text-ink-faint">{account.notes}</p>
                   ) : null}
                 </td>
-                <td className="px-3 py-3">
+                <td className="px-2.5 py-3">
                   <PasswordCell accountId={account.id} />
                 </td>
-                <td className="px-3 py-3">
+                <td className="px-2.5 py-3">
                   <Stepper
                     value={account.cash}
                     tone="text-ink"
@@ -133,7 +133,7 @@ export function AccountTable({
                     onPlus={() => onAdjust(account, "cash", STEPS.cash)}
                   />
                 </td>
-                <td className="px-3 py-3">
+                <td className="px-2.5 py-3">
                   <Stepper
                     value={account.coins}
                     tone="text-racing"
@@ -143,7 +143,7 @@ export function AccountTable({
                     onPlus={() => onAdjust(account, "coins", STEPS.coins)}
                   />
                 </td>
-                <td className="px-3 py-3">
+                <td className="px-2.5 py-3">
                   <CapacityGauge cars={account.cars} capacity={account.capacity} />
                   {archived ? null : (
                     <button
@@ -155,18 +155,18 @@ export function AccountTable({
                     </button>
                   )}
                 </td>
-                <td className="px-3 py-3">
+                <td className="px-2.5 py-3">
                   <TrophyTally summary={trophies[account.id]} />
                 </td>
-                <td className="px-3 py-3 text-[11px] text-ink-faint">{relativeTime(account.updatedAt)}</td>
-                <td className="px-3 py-3">
+                <td className="px-2.5 py-3 text-[11px] text-ink-faint">{relativeTime(account.updatedAt)}</td>
+                <td className="px-2.5 py-3">
                   <div className="flex items-center justify-end gap-2.5">
                     {archived ? (
                       <IconAction
                         label="Restore account"
                         onClick={() => onRestore?.(account)}
                         icon={
-                          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7">
+                          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
                             <path d="M4 12a8 8 0 101.6-5.6" strokeLinecap="round" />
                             <path d="M4 4.5V11h6.2" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
@@ -178,7 +178,7 @@ export function AccountTable({
                           label="Edit account"
                           onClick={() => onEdit(account)}
                           icon={
-                            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7">
+                            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
                               <path d="M4 20h4L19 9a2.1 2.1 0 00-3-3L5 17v3z" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
                           }
@@ -188,7 +188,7 @@ export function AccountTable({
                           danger
                           onClick={() => onDelete(account)}
                           icon={
-                            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7">
+                            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
                               <path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
                           }
@@ -227,7 +227,7 @@ export function AccountTable({
                     label="Restore account"
                     onClick={() => onRestore?.(account)}
                     icon={
-                      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7">
+                      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
                         <path d="M4 12a8 8 0 101.6-5.6" strokeLinecap="round" />
                         <path d="M4 4.5V11h6.2" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
@@ -239,7 +239,7 @@ export function AccountTable({
                       label="Edit account"
                       onClick={() => onEdit(account)}
                       icon={
-                        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7">
+                        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
                           <path d="M4 20h4L19 9a2.1 2.1 0 00-3-3L5 17v3z" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       }
@@ -249,7 +249,7 @@ export function AccountTable({
                       danger
                       onClick={() => onDelete(account)}
                       icon={
-                        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7">
+                        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
                           <path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       }
@@ -330,7 +330,7 @@ function SortButton({
         className={`text-[9px] transition-opacity ${active ? "opacity-100" : "opacity-0"}`}
         aria-hidden
       >
-        <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.2">
+        <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
           {dir === "asc" ? (
             <path d="M8 14l4-4 4 4" strokeLinecap="round" strokeLinejoin="round" />
           ) : (

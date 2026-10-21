@@ -4,23 +4,23 @@ import type { FleetEvent, FleetEventType } from "@/lib/types";
 import { absoluteTime, relativeTime } from "@/lib/format";
 import { formatNumber } from "@/lib/constants";
 
-const TYPES: Record<FleetEventType, { label: string; dot: string; text: string }> = {
-  created: { label: "NEW", dot: "bg-mint-glow", text: "text-mint-glow" },
-  updated: { label: "EDIT", dot: "bg-cyan-glow", text: "text-cyan-glow" },
-  slots_removed: { label: "SLOTS-", dot: "bg-amber-glow/60", text: "text-amber-glow/70" },
-  slots_purchased: { label: "SLOTS", dot: "bg-amber-glow", text: "text-amber-glow" },
-  archived: { label: "ARCHIVED", dot: "bg-red-glow", text: "text-red-glow" },
-  deleted: { label: "GONE", dot: "bg-red-glow", text: "text-red-glow" },
-  export_performed: { label: "EXPORT", dot: "bg-cyan-glow", text: "text-cyan-glow" },
-  password_revealed: { label: "REVEAL", dot: "bg-amber-glow", text: "text-amber-glow" },
+const TYPES: Record<FleetEventType, { label: string; mark: string; text: string }> = {
+  created: { label: "New", mark: "bg-racing", text: "text-racing" },
+  updated: { label: "Edit", mark: "bg-blueprint", text: "text-blueprint" },
+  slots_removed: { label: "Slots-", mark: "bg-brass/70", text: "text-brass" },
+  slots_purchased: { label: "Slots", mark: "bg-brass", text: "text-brass" },
+  archived: { label: "Archived", mark: "bg-oxblood", text: "text-oxblood" },
+  deleted: { label: "Gone", mark: "bg-oxblood", text: "text-oxblood" },
+  export_performed: { label: "Export", mark: "bg-blueprint", text: "text-blueprint" },
+  password_revealed: { label: "Reveal", mark: "bg-brass", text: "text-brass" },
 };
 
 export function ActivityFeed({ events }: { events: FleetEvent[] }) {
   if (events.length === 0) {
     return (
-      <div className="panel rounded-xl px-6 py-16 text-center">
-        <p className="font-display text-xs uppercase tracking-[0.25em] text-ash-500">No activity yet</p>
-        <p className="mt-2 text-sm text-ash-600">
+      <div className="panel rounded-[4px] px-6 py-16 text-center">
+        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">No activity yet</p>
+        <p className="mt-2 text-sm text-ink-faint">
           Every account you add, edit or delete shows up here as a permanent log.
         </p>
       </div>
@@ -28,36 +28,38 @@ export function ActivityFeed({ events }: { events: FleetEvent[] }) {
   }
 
   return (
-    <ol className="panel overflow-hidden rounded-xl">
+    <ol className="panel overflow-hidden rounded-[4px]">
       {events.map((event, index) => {
         const meta = TYPES[event.type] ?? TYPES.updated;
         return (
           <li
             key={event.id}
-            className={`animate-rise flex gap-4 px-4 py-3.5 ${index > 0 ? "border-t border-white/5" : ""}`}
+            className={`animate-rise flex gap-4 px-4 py-3.5 ${index > 0 ? "border-t border-ink/10" : ""}`}
             style={{ animationDelay: `${Math.min(index, 12) * 35}ms` }}
           >
-            <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${meta.dot}`} />
+            <span className={`log-mark mt-1.5 ${meta.mark}`} />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <span className={`font-display text-[10px] tracking-[0.2em] ${meta.text}`}>{meta.label}</span>
-                <span className="num truncate text-[13px] text-ash-100">{event.email}</span>
-                <span className="text-[11px] text-ash-600" title={absoluteTime(event.createdAt)}>
+                <span className={`font-sans text-[9px] font-semibold uppercase tracking-[0.18em] ${meta.text}`}>
+                  {meta.label}
+                </span>
+                <span className="num truncate text-[12px] text-ink">{event.email}</span>
+                <span className="num text-[10px] text-ink-faint" title={absoluteTime(event.createdAt)}>
                   {relativeTime(event.createdAt)}
                 </span>
               </div>
-              <p className="mt-1 text-[12px] text-ash-500">{event.summary}</p>
+              <p className="mt-1 text-[12px] text-ink-soft">{event.summary}</p>
               {Object.keys(event.changes).length > 0 ? (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {Object.entries(event.changes).map(([field, change]) => (
                     <span
                       key={field}
-                      className="rounded border border-white/8 bg-carbon-950/50 px-2 py-0.5 font-mono text-[10px] text-ash-500"
+                      className="num rounded-[2px] border border-ink/12 bg-paper-sunken px-1.5 py-0.5 text-[10px] text-ink-soft"
                     >
-                      <span className="text-ash-600">{field}</span>{" "}
-                      <span className="text-ash-400">{renderValue(change.from)}</span>{" "}
-                      <span className="text-amber-glow">→</span>{" "}
-                      <span className="text-ash-200">{renderValue(change.to)}</span>
+                      <span className="text-ink-faint">{field}</span>{" "}
+                      <span className="text-ink">{renderValue(change.from)}</span>{" "}
+                      <span className="text-brass">→</span>{" "}
+                      <span className="text-ink">{renderValue(change.to)}</span>
                     </span>
                   ))}
                 </div>

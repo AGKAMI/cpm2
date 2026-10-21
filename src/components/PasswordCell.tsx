@@ -69,12 +69,12 @@ export function PasswordCell({ accountId }: { accountId: number }) {
   }
 
   return (
-    <div className="flex items-center gap-2.5">
-      <code className="num max-w-[150px] truncate rounded bg-carbon-950/60 px-2 py-1 text-[11px] text-ash-200">
+    <div className="flex items-center gap-2">
+      <code className="num max-w-[150px] truncate border-b border-dashed border-ink/25 px-1 pb-0.5 text-[12px] tracking-[0.16em] text-ink">
         {revealed ?? "••••••••"}
       </code>
       {revealed ? (
-        <span className="num rounded border border-amber-glow/30 px-1.5 py-0.5 text-[9px] uppercase tracking-widest text-amber-glow">
+        <span className="num rounded-[2px] border border-racing/40 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.14em] text-racing">
           {secondsLeft}s
         </span>
       ) : null}
@@ -84,7 +84,7 @@ export function PasswordCell({ accountId }: { accountId: number }) {
         disabled={busy}
         title={revealed ? "Hide password" : "Reveal password (auto-hides after 10s)"}
         aria-label={revealed ? "Hide password" : "Reveal password"}
-        className="grid h-7 w-7 place-items-center rounded-md text-ash-500 transition hover:bg-white/5 hover:text-amber-glow disabled:opacity-40"
+        className="square-btn h-7 w-7 disabled:opacity-40"
       >
         {revealed ? (
           <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7">
@@ -104,7 +104,7 @@ export function PasswordCell({ accountId }: { accountId: number }) {
         onClick={copy}
         title="Copy password"
         aria-label="Copy password"
-        className="grid h-7 w-7 place-items-center rounded-md text-ash-500 transition hover:bg-white/5 hover:text-cyan-glow"
+        className="square-btn h-7 w-7"
       >
         <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7">
           <rect x="9" y="9" width="11" height="11" rx="2.5" />

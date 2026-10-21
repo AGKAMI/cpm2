@@ -45,7 +45,7 @@ export function AccountTable({
       <div className="hidden overflow-x-auto lg:block">
         <table className="w-full min-w-[1120px] border-collapse">
           <thead>
-            <tr className="border-b border-white/10">
+            <tr className="rule-double">
               <th className="label-caps w-12 px-4 py-3 text-left">#</th>
               <th className="label-caps px-4 py-3 text-left">
                 <SortButton label="Account" active={sortKey === "email"} dir={sortDir} onClick={() => onSort("email")} />
@@ -68,11 +68,11 @@ export function AccountTable({
             {accounts.map((account, index) => (
               <tr
                 key={account.id}
-                className={`group border-b border-white/5 transition-colors hover:bg-white/[0.03] ${
+                className={`group border-b border-ink/10 transition-colors hover:bg-ink/[0.025] ${
                   busyId === account.id ? "opacity-60" : ""
                 }`}
               >
-                <td className="num px-4 py-3 text-[11px] text-ash-600">
+                <td className="num px-4 py-3 text-[11px] text-ink-faint">
                   {String(index + 1).padStart(2, "0")}
                 </td>
                 <td className="px-4 py-3">
@@ -80,7 +80,7 @@ export function AccountTable({
                     <span className="plate-text num text-[12px]">{account.email}</span>
                   </span>
                   {account.notes ? (
-                    <p className="mt-0.5 max-w-[240px] truncate text-[11px] text-ash-600">{account.notes}</p>
+                    <p className="mt-0.5 max-w-[240px] truncate text-[11px] text-ink-faint">{account.notes}</p>
                   ) : null}
                 </td>
                 <td className="px-4 py-3">
@@ -89,7 +89,7 @@ export function AccountTable({
                 <td className="px-4 py-3">
                   <Stepper
                     value={account.cash}
-                    tone="text-mint-glow"
+                    tone="text-ink"
                     step={STEPS.cash}
                     disabled={busyId === account.id || archived}
                     onMinus={() => onAdjust(account, "cash", -STEPS.cash)}
@@ -99,7 +99,7 @@ export function AccountTable({
                 <td className="px-4 py-3">
                   <Stepper
                     value={account.coins}
-                    tone="text-amber-glow"
+                    tone="text-racing"
                     step={STEPS.coins}
                     disabled={busyId === account.id || archived}
                     onMinus={() => onAdjust(account, "coins", -STEPS.coins)}
@@ -112,13 +112,13 @@ export function AccountTable({
                     <button
                       type="button"
                       onClick={() => onBuySlot(account)}
-                      className="mt-1.5 font-display text-[10px] uppercase tracking-[0.18em] text-ash-600 transition hover:text-amber-glow"
+                      className="mt-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint transition hover:text-racing"
                     >
                       + buy slot (100c)
                     </button>
                   )}
                 </td>
-                <td className="px-4 py-3 text-[11px] text-ash-500">{relativeTime(account.updatedAt)}</td>
+                <td className="px-4 py-3 text-[11px] text-ink-faint">{relativeTime(account.updatedAt)}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-2.5">
                     {archived ? (
@@ -168,7 +168,7 @@ export function AccountTable({
         {accounts.map((account) => (
           <article
             key={account.id}
-            className={`panel-tight rounded-xl p-4 ${busyId === account.id ? "opacity-60" : ""}`}
+            className={`panel-tight rounded-[4px] p-4 ${busyId === account.id ? "opacity-60" : ""}`}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -176,7 +176,7 @@ export function AccountTable({
                   <span className="plate-text num text-[12px]">{account.email}</span>
                 </span>
                 {account.notes ? (
-                  <p className="mt-0.5 truncate text-[11px] text-ash-600">{account.notes}</p>
+                  <p className="mt-0.5 truncate text-[11px] text-ink-faint">{account.notes}</p>
                 ) : null}
               </div>
               <div className="flex shrink-0 gap-2.5">
@@ -224,15 +224,15 @@ export function AccountTable({
             <dl className="mt-3 grid grid-cols-3 gap-2">
               <div>
                 <dt className="label-caps">Cash</dt>
-                <dd className="num mt-1 text-[13px] text-mint-glow">{formatNumber(account.cash)}</dd>
+                <dd className="num mt-1 text-[13px] text-ink">{formatNumber(account.cash)}</dd>
               </div>
               <div>
                 <dt className="label-caps">Coins</dt>
-                <dd className="num mt-1 text-[13px] text-ash-100">{formatNumber(account.coins)}</dd>
+                <dd className="num mt-1 text-[13px] text-ink">{formatNumber(account.coins)}</dd>
               </div>
               <div>
                 <dt className="label-caps">Updated</dt>
-                <dd className="mt-1 text-[11px] text-ash-500">{relativeTime(account.updatedAt)}</dd>
+                <dd className="mt-1 text-[11px] text-ink-faint">{relativeTime(account.updatedAt)}</dd>
               </div>
             </dl>
 
@@ -244,7 +244,7 @@ export function AccountTable({
               <button
                 type="button"
                 onClick={() => onBuySlot(account)}
-                className="mt-3 w-full rounded-lg border border-amber-glow/30 py-2 font-display text-[10px] uppercase tracking-[0.2em] text-amber-glow transition hover:bg-amber-glow/10"
+                className="mt-3 w-full rounded-[3px] border border-racing/35 py-2 font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-racing transition-colors hover:bg-racing hover:text-paper"
               >
                 + Buy car slot · 100 coins
               </button>
@@ -273,9 +273,9 @@ function SortButton({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-1 transition hover:text-amber-glow ${
+      className={`inline-flex items-center gap-1 transition hover:text-racing ${
         align === "right" ? "flex-row-reverse" : ""
-      } ${active ? "text-amber-glow" : ""}`}
+      } ${active ? "text-racing" : ""}`}
     >
       {label}
       <span
@@ -342,7 +342,7 @@ function StepButton({
       disabled={disabled}
       title={label}
       aria-label={label}
-      className="grid h-6 w-6 place-items-center rounded border border-white/10 text-[13px] leading-none text-ash-500 opacity-60 transition hover:border-amber-glow/40 hover:text-amber-glow hover:opacity-100 disabled:opacity-30"
+      className="grid h-6 w-6 place-items-center rounded-[3px] border border-ink/15 text-[13px] leading-none text-ink-faint transition-colors hover:border-racing/50 hover:text-racing active:translate-y-px disabled:opacity-30"
     >
       {children}
     </button>
@@ -366,10 +366,10 @@ function IconAction({
       onClick={onClick}
       title={label}
       aria-label={label}
-      className={`grid h-8 w-8 place-items-center rounded-lg border border-transparent transition ${
+      className={`grid h-8 w-8 place-items-center rounded-[3px] border border-transparent transition-colors ${
         danger
-          ? "text-ash-600 hover:border-red-glow/40 hover:bg-red-glow/10 hover:text-red-glow"
-          : "text-ash-500 hover:border-white/12 hover:bg-white/5 hover:text-amber-glow"
+          ? "text-ink-faint hover:border-oxblood/40 hover:bg-oxblood/10 hover:text-oxblood"
+          : "text-ink-faint hover:border-ink/20 hover:bg-ink/5 hover:text-racing"
       }`}
     >
       {icon}

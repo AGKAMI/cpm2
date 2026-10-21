@@ -61,15 +61,15 @@ export function SlotModal({ open, account, onClose, onReview }: SlotModalProps) 
     >
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-          <Stat label="Slots owned" value={`${account.slots}/${LIMITS.MAX_PURCHASED_SLOTS}`} tone="text-amber-glow" />
-          <Stat label="Balance" value={formatNumber(account.coins)} tone="text-amber-glow" />
-          <Stat label="Garage" value={`${account.cars}/${account.capacity}`} tone="text-cyan-glow" />
+          <Stat label="Slots owned" value={`${account.slots}/${LIMITS.MAX_PURCHASED_SLOTS}`} tone="text-racing" />
+          <Stat label="Balance" value={formatNumber(account.coins)} tone="text-racing" />
+          <Stat label="Garage" value={`${account.cars}/${account.capacity}`} tone="text-blueprint" />
         </div>
 
-        <div className="panel-tight flex items-center justify-between gap-4 rounded-xl px-4 py-3">
+        <div className="panel-tight flex items-center justify-between gap-4 rounded-[3px] px-4 py-3">
           <div>
             <p className="label-caps">How many slots?</p>
-            <p className="mt-1 text-[11px] text-ash-500">
+            <p className="mt-1 text-[11px] text-ink-faint">
               {LIMITS.SLOT_COST_COINS} coins each · up to {max} affordable
             </p>
           </div>
@@ -79,37 +79,37 @@ export function SlotModal({ open, account, onClose, onReview }: SlotModalProps) 
               onClick={() => setCount((value) => Math.max(1, value - 1))}
               disabled={count <= 1}
               aria-label="Fewer slots"
-              className="grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-ash-200 transition hover:border-amber-glow/50 hover:text-amber-glow disabled:opacity-30"
+              className="square-btn h-9 w-9 text-[15px] text-ink"
             >
               −
             </button>
-            <span className="num w-10 text-center text-xl font-bold text-ash-100">{count}</span>
+            <span className="num w-10 text-center text-xl font-bold text-ink">{count}</span>
             <button
               type="button"
               onClick={() => setCount((value) => Math.min(max, value + 1))}
               disabled={count >= max}
               aria-label="More slots"
-              className="grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-ash-200 transition hover:border-amber-glow/50 hover:text-amber-glow disabled:opacity-30"
+              className="square-btn h-9 w-9 text-[15px] text-ink"
             >
               +
             </button>
           </div>
         </div>
 
-        <div className="flex items-center justify-between rounded-lg border border-amber-glow/25 bg-amber-glow/5 px-4 py-3">
+        <div className="flex items-center justify-between rounded-[3px] border border-ink/12 bg-paper-sunken px-4 py-3">
           <span className="label-caps">New garage size</span>
-          <span className="num text-sm text-amber-glow">
+          <span className="num text-sm text-racing">
             {account.cars}/{newCapacity} slots
           </span>
         </div>
 
-        <div className="flex items-center justify-between rounded-lg border border-white/8 bg-carbon-950/40 px-4 py-3">
+        <div className="flex items-center justify-between rounded-[3px] border border-ink/12 bg-paper-sunken px-4 py-3">
           <span className="label-caps">Total cost</span>
-          <span className="num text-sm text-amber-glow">{formatNumber(cost)} coins</span>
+          <span className="num text-sm text-racing">{formatNumber(cost)} coins</span>
         </div>
 
         {blocker ? (
-          <p className="rounded-lg border border-red-glow/30 bg-red-glow/10 px-3 py-2 text-xs text-red-glow">
+          <p className="rounded-[3px] border border-oxblood/35 bg-oxblood/8 px-3 py-2 text-xs text-oxblood">
             {blocker}
           </p>
         ) : null}
@@ -120,7 +120,7 @@ export function SlotModal({ open, account, onClose, onReview }: SlotModalProps) 
 
 function Stat({ label, value, tone }: { label: string; value: string; tone: string }) {
   return (
-    <div className="panel-tight rounded-xl px-3 py-2.5">
+    <div className="panel-tight rounded-[4px] px-3 py-2.5">
       <p className="label-caps">{label}</p>
       <p className={`num mt-1 text-[15px] font-bold ${tone}`}>{value}</p>
     </div>

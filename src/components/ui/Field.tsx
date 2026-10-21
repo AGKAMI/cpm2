@@ -9,20 +9,20 @@ type FieldProps = {
   error?: string;
   children: ReactNode;
   htmlFor?: string;
-  meter?: { value: number; max: number; tone?: "amber" | "mint" | "cyan" };
+  meter?: { value: number; max: number; tone?: "brass" | "racing" | "blueprint" };
 };
 
 export function Field({ label, hint, error, children, htmlFor, meter }: FieldProps) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={htmlFor} className="label-caps flex items-center justify-between gap-3">
+      <label htmlFor={htmlFor} className="label-caps flex items-baseline justify-between gap-3">
         <span>{label}</span>
-        {hint ? <span className="font-mono tracking-normal text-ash-600 normal-case">{hint}</span> : null}
+        {hint ? <span className="num tracking-normal normal-case text-ink-faint">{hint}</span> : null}
       </label>
       {children}
-      {meter ? <Meter value={meter.value} max={meter.max} tone={meter.tone ?? "amber"} /> : null}
+      {meter ? <Meter value={meter.value} max={meter.max} tone={meter.tone ?? "racing"} /> : null}
       {error ? (
-        <p className="flex items-start gap-1.5 text-[11px] leading-snug text-red-glow">
+        <p className="flex items-start gap-1.5 text-[11px] leading-snug text-oxblood">
           <svg viewBox="0 0 24 24" className="mt-px h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="9" />
             <path d="M12 7.5v5.5M12 16.2v.1" strokeLinecap="round" />
@@ -34,18 +34,18 @@ export function Field({ label, hint, error, children, htmlFor, meter }: FieldPro
   );
 }
 
-function Meter({ value, max, tone }: { value: number; max: number; tone: "amber" | "mint" | "cyan" }) {
+function Meter({ value, max, tone }: { value: number; max: number; tone: "brass" | "racing" | "blueprint" }) {
   const ratio = max > 0 ? Math.min(1, Math.max(0, value / max)) : 0;
   const colors: Record<string, string> = {
-    amber: "bg-amber-glow",
-    mint: "bg-mint-glow",
-    cyan: "bg-cyan-glow",
+    brass: "bg-brass",
+    racing: "bg-racing",
+    blueprint: "bg-blueprint",
   };
   const near = ratio >= 0.8;
   return (
-    <div className="h-1 w-full overflow-hidden rounded-full bg-white/8">
+    <div className="h-[3px] w-full overflow-hidden rounded-full bg-ink/10">
       <div
-        className={`h-full rounded-full transition-all duration-500 ${near ? "bg-red-glow" : colors[tone]}`}
+        className={`h-full transition-all duration-500 ${near ? "bg-oxblood" : colors[tone]}`}
         style={{ width: `${ratio * 100}%` }}
       />
     </div>
@@ -61,9 +61,7 @@ export function TextInput({ invalid, mono, className = "", ...props }: TextInput
   return (
     <input
       {...props}
-      className={`h-10 w-full rounded-lg border bg-carbon-950/60 px-3 text-sm text-ash-100 placeholder:text-ash-600 transition-colors focus:border-amber-glow/60 focus:bg-carbon-950/80 focus:outline-none ${
-        invalid ? "border-red-glow/60" : "border-white/10"
-      } ${mono ? "font-mono tracking-wide" : ""} ${className}`}
+      className={`field-rule ${mono ? "num" : ""} ${invalid ? "border-oxblood" : ""} ${className}`}
     />
   );
 }
@@ -117,17 +115,15 @@ export function NumericInput({
           const parsed = raw === "" ? 0 : Number.parseInt(raw, 10);
           onChange(Number.isFinite(parsed) ? parsed : 0);
         }}
-        className={`num h-10 w-full rounded-lg border bg-carbon-950/60 px-3 pr-12 text-sm text-ash-100 placeholder:text-ash-600 transition-colors focus:border-amber-glow/60 focus:bg-carbon-950/80 focus:outline-none ${
-          invalid ? "border-red-glow/60" : "border-white/10"
-        }`}
+        className={`field-rule num pr-16 text-[15px] ${invalid ? "border-oxblood" : ""}`}
       />
       {suffix ? (
-        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[10px] uppercase tracking-widest text-ash-600">
+        <span className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 font-sans text-[9px] uppercase tracking-[0.18em] text-ink-faint">
           {suffix}
         </span>
       ) : null}
       {max !== undefined && value >= max ? (
-        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[10px] uppercase tracking-widest text-red-glow">
+        <span className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 font-sans text-[9px] uppercase tracking-[0.18em] text-oxblood">
           MAX
         </span>
       ) : null}
@@ -157,7 +153,7 @@ export function TextArea({
       value={value}
       placeholder={placeholder}
       onChange={(event) => onChange(event.target.value)}
-      className="w-full resize-none rounded-lg border border-white/10 bg-carbon-950/60 px-3 py-2.5 text-sm text-ash-100 placeholder:text-ash-600 transition-colors focus:border-amber-glow/60 focus:bg-carbon-950/80 focus:outline-none"
+      className="field-rule resize-none leading-relaxed"
     />
   );
 }

@@ -1,29 +1,28 @@
 import type { Metadata } from "next";
-import { Chakra_Petch, JetBrains_Mono, Saira } from "next/font/google";
+import { Archivo, Fraunces, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
-const display = Chakra_Petch({
+const display = Fraunces({
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  variable: "--font-chakra",
+  variable: "--font-fraunces",
   display: "swap",
 });
 
-const body = Saira({
+const body = Archivo({
+  subsets: ["latin"],
+  variable: "--font-archivo",
+  display: "swap",
+});
+
+const mono = IBM_Plex_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
-  variable: "--font-saira",
-  display: "swap",
-});
-
-const mono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains",
+  variable: "--font-plex-mono",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "CPM2 // FLEET CONSOLE",
+  title: "CPM2 // FLEET LEDGER",
   description:
     "Track Car Parking Multiplayer 2 accounts — balances, coins, cars and purchased car slots.",
 };

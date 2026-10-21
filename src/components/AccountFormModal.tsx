@@ -156,7 +156,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
             <button
               type="button"
               onClick={() => setShowPassword((value) => !value)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-1 font-display text-[10px] uppercase tracking-[0.18em] text-ash-500 transition hover:text-amber-glow"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-1 font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint transition hover:text-racing"
             >
               {showPassword ? "Hide" : "Show"}
             </button>
@@ -169,7 +169,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
             htmlFor="account-cash"
             error={errors.cash}
             hint={`max ${formatNumber(LIMITS.MAX_CASH)}`}
-            meter={{ value: cash, max: LIMITS.MAX_CASH, tone: "mint" }}
+            meter={{ value: cash, max: LIMITS.MAX_CASH, tone: "racing" }}
           >
             <NumericInput
               id="account-cash"
@@ -186,7 +186,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
             htmlFor="account-coins"
             error={errors.coins}
             hint={`max ${formatNumber(LIMITS.MAX_COINS)}`}
-            meter={{ value: coins, max: LIMITS.MAX_COINS, tone: "amber" }}
+            meter={{ value: coins, max: LIMITS.MAX_COINS, tone: "brass" }}
           >
             <NumericInput
               id="account-coins"
@@ -260,7 +260,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
         </Field>
 
         {errors.form ? (
-          <p className="rounded-lg border border-red-glow/30 bg-red-glow/10 px-3 py-2 text-xs text-red-glow">
+          <p className="rounded-[3px] border border-oxblood/35 bg-oxblood/8 px-3 py-2 text-xs text-oxblood">
             {errors.form}
           </p>
         ) : null}

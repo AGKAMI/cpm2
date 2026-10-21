@@ -37,38 +37,41 @@ export function Toolbar({
   searchRef,
 }: ToolbarProps) {
   return (
-    <div className="mt-6 flex flex-wrap items-center gap-3">
-      <div className="relative min-w-[220px] flex-1">
-        <svg
-          viewBox="0 0 24 24"
-          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ash-600"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.7"
-        >
-          <circle cx="11" cy="11" r="6.5" />
-          <path d="M16 16l4.5 4.5" strokeLinecap="round" />
-        </svg>
-        <input
-          ref={searchRef}
-          value={query}
-          onChange={(event) => onQuery(event.target.value)}
-          placeholder="Search email or notes…   (press / )"
-          aria-label="Search accounts"
-          className="h-10 w-full rounded-lg border border-white/10 bg-carbon-950/60 pl-9 pr-3 text-sm text-ash-100 placeholder:text-ash-600 focus:border-amber-glow/50 focus:outline-none"
-        />
+    <div className="mt-5 flex flex-wrap items-end gap-x-5 gap-y-3">
+      <div className="min-w-[200px] flex-1">
+        <span className="label-caps">Search register</span>
+        <div className="relative mt-1">
+          <svg
+            viewBox="0 0 24 24"
+            className="pointer-events-none absolute left-0 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-faint"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
+            <circle cx="11" cy="11" r="6.5" />
+            <path d="M16 16l4.5 4.5" strokeLinecap="round" />
+          </svg>
+          <input
+            ref={searchRef}
+            value={query}
+            onChange={(event) => onQuery(event.target.value)}
+            placeholder="email or notes — press / "
+            aria-label="Search accounts"
+            className="field-rule num pl-6 text-[13px]"
+          />
+        </div>
       </div>
 
       {tab === "fleet" ? (
-        <label className="flex items-center gap-2">
-          <span className="sr-only">Filter accounts</span>
+        <label className="block">
+          <span className="label-caps">Filter</span>
           <select
             value={filter}
             onChange={(event) => onFilter(event.target.value as FleetFilter)}
-            className="h-10 rounded-lg border border-white/10 bg-carbon-950/60 px-3 font-display text-[10px] uppercase tracking-[0.16em] text-ash-400 focus:border-amber-glow/50 focus:outline-none"
+            className="mt-1 block h-9 rounded-[3px] border border-ink/15 bg-paper-raised px-2.5 font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-soft focus:border-racing focus:outline-none"
           >
             {FILTERS.map((item) => (
-              <option key={item.key} value={item.key} className="bg-carbon-900 text-ash-200">
+              <option key={item.key} value={item.key} className="bg-paper-raised text-ink">
                 {item.label}
               </option>
             ))}
@@ -76,7 +79,7 @@ export function Toolbar({
         </label>
       ) : null}
 
-      <div className="flex items-center gap-1 rounded-lg border border-white/10 p-1">
+      <div className="flex items-end gap-5">
         {(
           [
             { key: "fleet", label: "Fleet" },
@@ -88,11 +91,7 @@ export function Toolbar({
             key={item.key}
             type="button"
             onClick={() => onTab(item.key)}
-            className={`rounded-md px-3 py-1.5 font-display text-[10px] uppercase tracking-[0.18em] transition ${
-              tab === item.key
-                ? "bg-amber-glow text-carbon-950"
-                : "text-ash-500 hover:text-ash-200"
-            }`}
+            className={`tab ${tab === item.key ? "tab-active" : ""}`}
           >
             {item.label}
           </button>
@@ -104,9 +103,9 @@ export function Toolbar({
         onClick={onRefresh}
         title="Refresh"
         aria-label="Refresh fleet"
-        className="grid h-10 w-10 place-items-center rounded-lg border border-white/10 text-ash-500 transition hover:border-amber-glow/40 hover:text-amber-glow"
+        className="square-btn mb-0.5 h-9 w-9"
       >
-        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7">
+        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8">
           <path d="M20 11a8 8 0 10-1.6 5.6" strokeLinecap="round" />
           <path d="M20 4.5V11h-6.2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>

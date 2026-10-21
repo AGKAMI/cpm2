@@ -1,62 +1,61 @@
 @import "tailwindcss";
 
 @theme {
-  --font-display: var(--font-chakra), "Segoe UI", sans-serif;
-  --font-sans: var(--font-saira), "Segoe UI", sans-serif;
-  --font-mono: var(--font-jetbrains), ui-monospace, "Cascadia Mono", monospace;
+  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-archivo), "Segoe UI", sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "Cascadia Mono", monospace;
 
-  --color-carbon-950: #050608;
-  --color-carbon-900: #090b0e;
-  --color-carbon-850: #0d1013;
-  --color-carbon-800: #12161a;
-  --color-carbon-750: #171c21;
-  --color-carbon-700: #1d232a;
-  --color-carbon-600: #283038;
+  /* Paper stock */
+  --color-paper: #f1ede1;
+  --color-paper-raised: #fbf9f3;
+  --color-paper-sunken: #e6e0cf;
 
-  --color-ash-100: #eef2f7;
-  --color-ash-200: #d7dde6;
-  --color-ash-400: #9ba6b4;
-  --color-ash-500: #78838f;
-  --color-ash-600: #59616d;
+  /* Ink */
+  --color-ink: #17201b;
+  --color-ink-soft: #4b564f;
+  --color-ink-faint: #7d857d;
 
-  --color-amber-glow: #ffb703;
-  --color-mint-glow: #46e0a0;
-  --color-cyan-glow: #4cc9f0;
-  --color-red-glow: #ff5f56;
-  --color-signal-orange: #ff6b1a;
-  --color-plate-ivory: #e9e4d5;
+  /* Livery */
+  --color-racing: #16513a;
+  --color-racing-deep: #0d3a29;
+  --color-brass: #a3761f;
+  --color-oxblood: #8d3039;
+  --color-blueprint: #2b5885;
 }
 
 @layer base {
   * {
-    border-color: rgba(255, 255, 255, 0.07);
+    border-color: rgba(23, 32, 27, 0.14);
   }
 
   html {
-    color-scheme: dark;
+    color-scheme: light;
   }
 
   body {
-    background-color: var(--color-carbon-950);
-    color: var(--color-ash-100);
+    background-color: var(--color-paper);
+    color: var(--color-ink);
     font-family: var(--font-sans);
     background-image:
-      radial-gradient(1100px 620px at 8% -12%, rgba(255, 183, 3, 0.075), transparent 62%),
-      radial-gradient(900px 520px at 98% -6%, rgba(255, 107, 26, 0.055), transparent 58%),
-      radial-gradient(700px 700px at 50% 120%, rgba(255, 183, 3, 0.04), transparent 60%),
-      repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.012) 0 2px, transparent 2px 6px);
+      linear-gradient(rgba(23, 32, 27, 0.028) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(23, 32, 27, 0.028) 1px, transparent 1px),
+      radial-gradient(1200px 700px at 50% -10%, rgba(165, 118, 31, 0.05), transparent 62%);
+    background-size:
+      32px 32px,
+      32px 32px,
+      100% 100%;
     background-attachment: fixed;
   }
 
   ::selection {
-    background: rgba(255, 183, 3, 0.32);
-    color: #fff;
+    background: rgba(22, 81, 58, 0.16);
+    color: var(--color-ink);
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-amber-glow);
+    outline: 2px solid var(--color-racing);
     outline-offset: 2px;
-    border-radius: 4px;
+    border-radius: 2px;
   }
 
   input,
@@ -78,70 +77,233 @@
 }
 
 @layer components {
-  .grid-overlay {
-    background-image:
-      linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
-    background-size: 56px 56px;
-    -webkit-mask-image: radial-gradient(1200px 700px at 50% 0%, #000 0%, transparent 78%);
-    mask-image: radial-gradient(1200px 700px at 50% 0%, #000 0%, transparent 78%);
-  }
+  /* --- car backdrop (photo behind the paper ledger) ------------------- */
 
-  .hazard-strip {
-    background-image: repeating-linear-gradient(
-      135deg,
-      var(--color-amber-glow) 0 10px,
-      #0a0c11 10px 20px
-    );
-  }
-
-  /* Carbon-fibre weave for container surfaces */
-  .carbon-weave {
-    background-image:
-      repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.02) 0 1px, transparent 1px 7px),
-      repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.014) 0 1px, transparent 1px 9px);
-  }
-
-  /* Dual racing livery stripes hugging the top edge of a panel */
-  .livery-top::before {
-    content: "";
-    position: absolute;
-    inset: 0 0 auto 0;
-    height: 3px;
-    border-radius: inherit;
-    background: linear-gradient(
-      100deg,
-      transparent 0 6%,
-      var(--color-amber-glow) 6% 26%,
-      var(--color-amber-glow) 26% 34%,
-      rgba(255, 183, 3, 0.34) 34% 46%,
-      transparent 46% 82%,
-      var(--color-signal-orange) 82% 100%
-    );
-    opacity: 0.6;
-    transition: opacity 0.35s ease;
+  .car-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
     pointer-events: none;
   }
 
-  .livery-top:hover::before {
-    opacity: 0.95;
+  .car-backdrop-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* photo plate: desaturated but clearly VISIBLE (s 0.45, not 0.22), full-bleed */
+    filter: saturate(0.45) contrast(0.98) brightness(1.03);
+    opacity: 0;
+    animation: backdrop-in 1.2s ease 0.15s both;
   }
 
-  /** Number-plate chip — ivory ground, stamped look, mounting holes. */
+  .car-backdrop-scrim {
+    position: absolute;
+    inset: 0;
+    /* readable but the photo SHOWS: top band lighter (content sits there),
+       middle drops to 0.6 so the car reads clearly, footer re-solidifies */
+    background:
+      linear-gradient(
+        180deg,
+        rgba(241, 237, 225, 0.9) 0%,
+        rgba(241, 237, 225, 0.82) 16%,
+        rgba(241, 237, 225, 0.6) 38%,
+        rgba(241, 237, 225, 0.58) 55%,
+        rgba(241, 237, 225, 0.78) 78%,
+        rgba(241, 237, 225, 0.92) 100%
+      );
+  }
+
+  .car-backdrop-hide {
+    pointer-events: auto;
+    position: absolute;
+    bottom: 26px;
+    right: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 3px;
+    border: 1px solid rgba(23, 32, 27, 0.25);
+    background: rgba(251, 249, 243, 0.85);
+    color: var(--color-ink-soft);
+    cursor: pointer;
+    transition: background-color 0.14s ease, color 0.14s ease;
+  }
+
+  .car-backdrop-hide:hover {
+    background: var(--color-paper-raised);
+    color: var(--color-ink);
+  }
+
+  .car-backdrop-credit {
+    pointer-events: auto;
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    font-size: 10px;
+    letter-spacing: 0.02em;
+    color: rgba(23, 32, 27, 0.45);
+    text-decoration: none;
+  }
+
+  .car-backdrop-credit:hover {
+    color: rgba(23, 32, 27, 0.7);
+    text-decoration: underline;
+  }
+
+  @keyframes backdrop-in {
+    from {
+      opacity: 0;
+      transform: scale(1.015);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .car-backdrop-img {
+      animation: none;
+      opacity: 1;
+    }
+  }
+
+  /* --- surfaces ------------------------------------------------------ */
+
+  .panel {
+    background: var(--color-paper-raised);
+    border: 1px solid rgba(23, 32, 27, 0.14);
+    border-radius: 4px;
+    box-shadow: 0 1px 0 rgba(23, 32, 27, 0.04);
+  }
+
+  .panel-tight {
+    background: var(--color-paper-raised);
+    border: 1px solid rgba(23, 32, 27, 0.1);
+    border-radius: 3px;
+  }
+
+  /* --- type ---------------------------------------------------------- */
+
+  .label-caps {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-size: 10px;
+    color: var(--color-ink-faint);
+  }
+
+  .wordmark {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    font-variation-settings: "SOFT" 0, "WONK" 1, "opsz" 40;
+  }
+
+  .num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  /* --- rules --------------------------------------------------------- */
+
+  .rule-top {
+    border-top: 1px solid rgba(23, 32, 27, 0.14);
+  }
+
+  .rule-double {
+    border-bottom: 3px double rgba(23, 32, 27, 0.22);
+  }
+
+  /* --- spec strip: one band, hairline dividers, no cards ------------ */
+
+  .spec-strip {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    background: var(--color-paper-raised);
+    border: 1px solid rgba(23, 32, 27, 0.14);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .spec-cell {
+    position: relative;
+    padding: 13px 16px 15px;
+  }
+
+  .spec-cell + .spec-cell {
+    border-left: 1px solid rgba(23, 32, 27, 0.12);
+  }
+
+  @media (max-width: 767px) {
+    .spec-cell:nth-child(3),
+    .spec-cell:nth-child(4) {
+      border-top: 1px solid rgba(23, 32, 27, 0.12);
+    }
+
+    .spec-cell:nth-child(3) {
+      border-left: 0;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .spec-strip {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .spec-value {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    font-size: clamp(1.15rem, 2.2vw, 1.6rem);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--color-ink);
+  }
+
+  .spec-value-accent {
+    color: var(--color-racing);
+  }
+
+  /* --- roundel badge -------------------------------------------------- */
+
+  .roundel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid rgba(23, 32, 27, 0.3);
+    background: var(--color-paper-raised);
+    color: var(--color-racing);
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+  }
+
+  /* --- alloy number plate --------------------------------------------- */
+
   .plate {
     position: relative;
     display: inline-flex;
     align-items: center;
     max-width: 100%;
-    padding: 2px 16px;
-    border-radius: 5px;
-    background: linear-gradient(180deg, #f2eee1 0%, var(--color-plate-ivory) 55%, #d9d4c2 100%);
-    border: 1px solid #a49e8c;
+    padding: 3px 15px;
+    border-radius: 3px;
+    background: linear-gradient(180deg, #ffffff 0%, #f2efe6 100%);
+    border: 1px solid #b9b2a1;
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.75),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.22),
-      0 1px 2px rgba(0, 0, 0, 0.55),
-      0 0 0 1px rgba(0, 0, 0, 0.55);
+      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      inset 0 -1px 0 rgba(23, 32, 27, 0.12);
   }
 
   .plate::before,
@@ -149,118 +311,163 @@
     content: "";
     position: absolute;
     top: 50%;
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
     border-radius: 50%;
     transform: translateY(-50%);
-    background: radial-gradient(circle at 34% 30%, #2a2e36 18%, #0b0d10 60%);
-    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    background: radial-gradient(circle at 34% 30%, #6f6a5e 20%, #3a382f 65%);
   }
 
   .plate::before {
-    left: 5px;
+    left: 4px;
   }
 
   .plate::after {
-    right: 5px;
+    right: 4px;
   }
 
   .plate-text {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: #171a20;
-    font-weight: 700;
-    letter-spacing: 0.05em;
+    color: #1a1d18;
+    font-weight: 600;
+    letter-spacing: 0.04em;
   }
 
-  /** Rev-counter tick arc pinned to a stat tile's top-right corner. */
-  .gauge-dial::before {
-    content: "";
-    position: absolute;
-    top: -46px;
-    right: -46px;
-    width: 110px;
-    height: 110px;
-    border-radius: 50%;
-    background: repeating-conic-gradient(
-      from 148deg,
-      var(--dial, rgba(255, 183, 3, 0.5)) 0deg 4.5deg,
-      transparent 4.5deg 15deg
-    );
-    -webkit-mask-image: radial-gradient(closest-side, transparent 70%, #000 71.5% 97%, transparent 99%);
-    mask-image: radial-gradient(closest-side, transparent 70%, #000 71.5% 97%, transparent 99%);
-    opacity: 0.6;
-    pointer-events: none;
+  /* --- controls ------------------------------------------------------- */
+
+  .square-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 3px;
+    border: 1px solid rgba(23, 32, 27, 0.18);
+    background: transparent;
+    color: var(--color-ink-soft);
+    font-size: 12px;
+    line-height: 1;
+    transition:
+      background-color 0.14s ease,
+      color 0.14s ease,
+      border-color 0.14s ease;
   }
 
-  .checker-strip {
-    height: 7px;
-    border-radius: 99px;
-    background: repeating-conic-gradient(rgba(255, 255, 255, 0.55) 0% 25%, rgba(9, 11, 14, 0.9) 0% 50%);
-    background-size: 14px 14px;
-    opacity: 0.28;
+  .square-btn:hover:not(:disabled) {
+    background: rgba(22, 81, 58, 0.08);
+    border-color: rgba(22, 81, 58, 0.45);
+    color: var(--color-racing);
   }
 
-  .panel {
-    background: linear-gradient(180deg, rgba(18, 22, 26, 0.94), rgba(9, 11, 14, 0.94));
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.045),
-      0 24px 60px -40px rgba(0, 0, 0, 0.9);
+  .square-btn:active:not(:disabled) {
+    transform: translateY(1px);
   }
 
-  .panel-tight {
-    background: rgba(14, 17, 23, 0.78);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+  .square-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
   }
 
-  .label-caps {
-    font-family: var(--font-display);
-    text-transform: uppercase;
-    letter-spacing: 0.22em;
-    font-size: 10px;
-    color: var(--color-ash-500);
+  /* --- field rules: inputs sit on a drawn line ------------------------ */
+
+  .field-rule {
+    width: 100%;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid rgba(23, 32, 27, 0.28);
+    padding: 6px 2px;
+    color: var(--color-ink);
+    transition: border-color 0.15s ease;
   }
 
-  .num {
-    font-family: var(--font-mono);
-    font-variant-numeric: tabular-nums;
+  .field-rule::placeholder {
+    color: rgba(125, 133, 125, 0.75);
   }
 
-  .corner-ticks {
+  .field-rule:hover {
+    border-bottom-color: rgba(23, 32, 27, 0.45);
+  }
+
+  .field-rule:focus {
+    outline: none;
+    border-bottom-color: var(--color-racing);
+    box-shadow: 0 1px 0 var(--color-racing);
+  }
+
+  /* --- tabs: printed document tabs ------------------------------------ */
+
+  .tab {
     position: relative;
+    padding: 9px 2px 8px;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-ink-faint);
+    border-bottom: 2px solid transparent;
+    transition:
+      color 0.15s ease,
+      border-color 0.15s ease;
   }
 
-  .corner-ticks::before,
-  .corner-ticks::after {
-    content: "";
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    border-color: rgba(255, 183, 3, 0.45);
-    pointer-events: none;
+  .tab:hover {
+    color: var(--color-ink);
   }
 
-  .corner-ticks::before {
-    top: -1px;
-    left: -1px;
-    border-top: 1px solid;
-    border-left: 1px solid;
+  .tab-active {
+    color: var(--color-racing);
+    border-bottom-color: var(--color-racing);
   }
 
-  .corner-ticks::after {
-    bottom: -1px;
-    right: -1px;
-    border-bottom: 1px solid;
-    border-right: 1px solid;
+  /* --- capacity gauge: fuel-gauge ticks -------------------------------- */
+
+  .gauge-track {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .gauge-tick {
+    height: 100%;
+    flex: 1;
+    border-radius: 1px;
+    background: rgba(23, 32, 27, 0.12);
+  }
+
+  .gauge-tick-filled {
+    background: var(--color-racing);
+  }
+
+  .gauge-tick-bought {
+    background: var(--color-brass);
+  }
+
+  .gauge-tick-free {
+    background: rgba(23, 32, 27, 0.12);
+  }
+
+  .gauge-tick-full {
+    background: var(--color-oxblood);
+  }
+
+  /* --- log ------------------------------------------------------------ */
+
+  .log-mark {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 1px;
   }
 }
 
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -271,7 +478,7 @@
 @keyframes pop {
   from {
     opacity: 0;
-    transform: translateY(10px) scale(0.98);
+    transform: translateY(6px) scale(0.99);
   }
   to {
     opacity: 1;
@@ -308,19 +515,27 @@
 }
 
 .animate-rise {
-  animation: rise 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: rise 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .animate-pop {
-  animation: pop 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: pop 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .animate-fade {
-  animation: fade 0.35s ease both;
+  animation: fade 0.22s ease both;
 }
 
 .animate-blink {
   animation: blink 2.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise,
+  .animate-pop,
+  .animate-fade {
+    animation: none;
+  }
 }
 
 ::-webkit-scrollbar {
@@ -329,15 +544,15 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #06070a;
+  background: var(--color-paper);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1f2530;
+  background: rgba(23, 32, 27, 0.22);
   border-radius: 99px;
-  border: 2px solid #06070a;
+  border: 3px solid var(--color-paper);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 183, 3, 0.45);
+  background: rgba(22, 81, 58, 0.5);
 }

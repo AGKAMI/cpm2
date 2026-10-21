@@ -81,20 +81,20 @@ export function ImportModal({ open, busy, onClose, onImport }: ImportModalProps)
         {report ? (
           <div className="flex flex-col gap-2">
             <p className="label-caps">Import complete</p>
-            <ul className="flex flex-col gap-1.5 text-sm text-ash-200">
+            <ul className="flex flex-col gap-1.5 text-sm text-ink">
               {reportLines(report).map((line) => (
                 <li key={line} className="flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-mint-glow" />
+                  <span className="h-1.5 w-1.5 rounded-[1px] bg-brass" />
                   {line}
                 </li>
               ))}
             </ul>
             {report.results.some((row) => row.status !== "created") ? (
-              <div className="max-h-44 overflow-y-auto rounded-lg border border-white/8 bg-carbon-950/40 p-2">
+              <div className="max-h-44 overflow-y-auto rounded-[3px] border border-ink/12 bg-paper-sunken p-2">
                 {report.results
                   .filter((row) => row.status !== "created")
                   .map((row) => (
-                    <p key={`${row.row}-${row.email}`} className="truncate text-[11px] text-ash-500">
+                    <p key={`${row.row}-${row.email}`} className="truncate text-[11px] text-ink-faint">
                       row {row.row} · {row.email ?? "?"} · {row.status}
                       {row.message && row.status === "failed" ? ` — ${row.message}` : ""}
                     </p>
@@ -109,15 +109,15 @@ export function ImportModal({ open, busy, onClose, onImport }: ImportModalProps)
               onChange={(event) => setCsv(event.target.value)}
               spellCheck={false}
               placeholder={`email,password,cash,coins,cars,slots,notes\naccount@mail.com,secret123,50000,2000,4,1,main`}
-              className="h-44 w-full resize-none rounded-xl border border-white/10 bg-carbon-950/60 p-3 font-mono text-[12px] text-ash-200 outline-none transition placeholder:text-ash-600 focus:border-amber-glow/50"
+              className="h-44 w-full resize-none rounded-[3px] border border-ink/15 bg-paper-raised p-3 num text-[12px] text-ink outline-none transition placeholder:text-ink-faint focus:border-racing"
             />
-            <p className="text-[11px] text-ash-500">
+            <p className="text-[11px] text-ink-faint">
               Duplicates are skipped, bad rows are reported — nothing is half-imported. Hard caps
               ({LIMITS.MAX_CASH.toLocaleString("en-US")} cash · {LIMITS.MAX_COINS.toLocaleString("en-US")} coins ·
               {" "}{LIMITS.BASE_CAR_SLOTS}+{LIMITS.MAX_PURCHASED_SLOTS} slots) are enforced per row.
             </p>
             {error ? (
-              <p className="rounded-lg border border-red-glow/30 bg-red-glow/10 px-3 py-2 text-xs text-red-glow">
+              <p className="rounded-[3px] border border-oxblood/35 bg-oxblood/8 px-3 py-2 text-xs text-oxblood">
                 {error}
               </p>
             ) : null}

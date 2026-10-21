@@ -16,6 +16,7 @@ import { ActivityFeed } from "@/components/ActivityFeed";
 import { Toolbar, type ConsoleTab, type FleetFilter } from "@/components/Toolbar";
 import { ExportConfirmModal, SlotPurchaseConfirmModal } from "@/components/ConfirmDialogs";
 import { ImportModal } from "@/components/ImportModal";
+import { CarBackdrop } from "@/components/CarBackdrop";
 
 export default function Dashboard() {
   return (
@@ -331,68 +332,53 @@ function Console() {
 
   return (
     <div className="relative min-h-screen">
-      <div className="grid-overlay pointer-events-none absolute inset-0" />
-
-      <header className="sticky top-0 z-30 border-b border-white/8 bg-carbon-950/80 backdrop-blur-xl">
-        <div className="hazard-strip h-[3px] w-full opacity-90" />
-        <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-4 px-4 py-4 sm:px-6">
+      <CarBackdrop />
+      <header className="sticky top-0 z-30 border-b border-ink/15 bg-paper/95 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-[1440px] flex-wrap items-end gap-x-6 gap-y-3 px-4 pb-2.5 pt-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-lg border border-amber-glow/30 bg-amber-glow/10">
-              <svg viewBox="0 0 24 24" className="h-5 w-5 text-amber-glow" fill="none" stroke="currentColor" strokeWidth="1.6">
+            <span className="roundel">
+              <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path d="M4 13l1.5-4.5A2 2 0 017.4 7h9.2a2 2 0 011.9 1.5L20 13" strokeLinecap="round" />
                 <path d="M3.5 13h17v4.5h-17z" strokeLinejoin="round" />
                 <circle cx="7" cy="17.5" r="1.6" />
                 <circle cx="17" cy="17.5" r="1.6" />
               </svg>
-            </div>
+            </span>
             <div>
-              <h1 className="font-display text-[15px] font-bold uppercase tracking-[0.24em] text-ash-100">
-                CPM2 <span className="text-amber-glow">Fleet</span>
+              <h1 className="wordmark text-[23px] leading-none text-ink">
+                Fleet <span className="text-racing">Ledger</span>
               </h1>
-              <p className="font-display text-[9px] uppercase tracking-[0.34em] text-ash-600">
-                Account console
-              </p>
+              <p className="label-caps mt-1.5">Car Parking Multiplayer 2 · account register</p>
             </div>
           </div>
 
           <div className="ml-auto flex flex-wrap items-center gap-2">
-            <span className="panel-tight hidden items-center gap-2 rounded-lg px-3 py-2 sm:flex">
+            <span className="hidden items-center gap-2 border border-ink/12 bg-paper-raised px-2.5 py-1.5 sm:flex">
               <span
-                className={`h-1.5 w-1.5 rounded-full ${
-                  offline ? "bg-red-glow" : loading ? "bg-amber-glow animate-blink" : "bg-mint-glow"
+                className={`h-1.5 w-1.5 rounded-[1px] ${
+                  offline ? "bg-oxblood" : loading ? "bg-brass animate-blink" : "bg-racing"
                 }`}
               />
-              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-ash-500">
-                {offline ? "connection lost — retrying" : loading ? "syncing fleet" : "live · auto-saved"}
+              <span className="num text-[10px] uppercase tracking-[0.16em] text-ink-faint">
+                {offline ? "connection lost" : loading ? "syncing" : "live"}
               </span>
             </span>
 
-            <button
-              type="button"
-              onClick={() => setExportFormat("csv")}
-              className="inline-flex h-9 items-center rounded-lg border border-white/10 px-3 font-display text-[10px] uppercase tracking-[0.16em] text-ash-400 transition hover:border-amber-glow/40 hover:text-amber-glow"
-            >
+            <Button variant="outline" size="sm" onClick={() => setExportFormat("csv")}>
               CSV
-            </button>
-            <button
-              type="button"
-              onClick={() => setExportFormat("json")}
-              className="inline-flex h-9 items-center rounded-lg border border-white/10 px-3 font-display text-[10px] uppercase tracking-[0.16em] text-ash-400 transition hover:border-amber-glow/40 hover:text-amber-glow"
-            >
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setExportFormat("json")}>
               Backup
-            </button>
-            <button
-              type="button"
-              onClick={() => setImportOpen(true)}
-              className="inline-flex h-9 items-center rounded-lg border border-white/10 px-3 font-display text-[10px] uppercase tracking-[0.16em] text-ash-400 transition hover:border-cyan-glow/40 hover:text-cyan-glow"
-            >
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
               Import
-            </button>
+            </Button>
             <Button variant="primary" size="sm" onClick={() => openForm(null)}>
               + Add account
             </Button>
           </div>
         </div>
+        <div className="rule-double mx-auto max-w-[1440px]" />
       </header>
 
       <main className="relative mx-auto max-w-[1440px] px-4 py-6 sm:px-6 sm:py-8">
@@ -411,7 +397,7 @@ function Console() {
         />
 
         {offline ? (
-          <div className="mt-6 rounded-xl border border-red-glow/30 bg-red-glow/10 px-4 py-3 text-sm text-red-glow">
+          <div className="mt-6 rounded-[4px] border border-oxblood/30 bg-oxblood/10 px-4 py-3 text-sm text-oxblood">
             {offline}
           </div>
         ) : null}
@@ -428,13 +414,13 @@ function Console() {
               onAdd={() => openForm(null)}
             />
           ) : (
-            <section className="panel livery-top animate-rise overflow-hidden rounded-xl">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/8 px-4 py-2.5">
+            <section className="panel animate-rise overflow-hidden rounded-[4px]">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/12 bg-paper-sunken px-4 py-2.5">
                 <span className="label-caps">
                   {visible.length} of {tab === "archived" ? archived.length : accounts.length}{" "}
                   account{tab === "archived" ? archived.length === 1 ? "" : "s" : ""}
                 </span>
-                <span className="font-mono text-[10px] text-ash-600">
+                <span className="num text-[10px] text-ink-faint">
                   caps · {formatNumber(LIMITS.MAX_CASH)} cash · {formatNumber(LIMITS.MAX_COINS)} coins ·{" "}
                   {LIMITS.BASE_CAR_SLOTS}+{LIMITS.MAX_PURCHASED_SLOTS} cars
                 </span>
@@ -457,12 +443,15 @@ function Console() {
         </div>
       </main>
 
-      <footer className="relative mx-auto max-w-[1440px] px-4 pb-10 pt-2 sm:px-6">
-        <div className="checker-strip mb-3 max-w-[280px]" />
-        <p className="font-mono text-[10px] text-ash-600">
-          {LIMITS.BASE_CAR_SLOTS} base car slots · {LIMITS.MAX_PURCHASED_SLOTS} extra slots max per account ·{" "}
-          {LIMITS.SLOT_COST_COINS} coins per slot · passwords encrypted at rest with AES-256-GCM
-        </p>
+      <footer className="relative mx-auto max-w-[1440px] px-4 pb-10 pt-4 sm:px-6">
+        <div className="rule-double mb-3" />
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <p className="num text-[10px] text-ink-faint">
+            Fleet Ledger · Car Parking Multiplayer 2 · {LIMITS.BASE_CAR_SLOTS} base car slots ·{" "}
+            {LIMITS.MAX_PURCHASED_SLOTS} extra slots max per account · {LIMITS.SLOT_COST_COINS} coins per slot
+          </p>
+          <p className="num text-[10px] text-ink-faint">passwords encrypted at rest · AES-256-GCM</p>
+        </div>
       </footer>
 
       <AccountFormModal
@@ -535,17 +524,17 @@ function reportError(err: unknown, toast: ReturnType<typeof useToast>) {
 
 function LoadingPanel() {
   return (
-    <div className="panel animate-fade overflow-hidden rounded-xl">
+    <div className="panel animate-fade overflow-hidden rounded-[4px]">
       {Array.from({ length: 5 }).map((_, index) => (
         <div
           key={index}
-          className="flex items-center gap-4 border-b border-white/5 px-4 py-4 last:border-0"
+          className="flex items-center gap-4 border-b border-ink/10 px-4 py-4 last:border-0"
           style={{ animationDelay: `${index * 90}ms` }}
         >
-          <div className="h-3 w-16 rounded bg-white/5" />
-          <div className="h-3 w-56 rounded bg-white/5" />
-          <div className="ml-auto h-3 w-24 rounded bg-white/5" />
-          <div className="h-3 w-24 rounded bg-white/5" />
+          <div className="h-3 w-16 rounded bg-ink/5" />
+          <div className="h-3 w-56 rounded bg-ink/5" />
+          <div className="ml-auto h-3 w-24 rounded bg-ink/5" />
+          <div className="h-3 w-24 rounded bg-ink/5" />
         </div>
       ))}
     </div>
@@ -563,11 +552,11 @@ function EmptyState({
 }) {
   if (tab === "archived") {
     return (
-      <div className="panel animate-rise rounded-xl px-6 py-16 text-center">
-        <p className="font-display text-xs uppercase tracking-[0.25em] text-ash-500">
+      <div className="panel animate-rise rounded-[4px] px-6 py-16 text-center">
+        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
           Archive is empty
         </p>
-        <p className="mt-2 text-sm text-ash-600">
+        <p className="mt-2 text-sm text-ink-faint">
           Archived accounts keep every balance and can be restored at any time.
         </p>
       </div>
@@ -576,9 +565,9 @@ function EmptyState({
 
   if (hasAccounts) {
     return (
-      <div className="panel rounded-xl px-6 py-16 text-center">
-        <p className="font-display text-xs uppercase tracking-[0.25em] text-ash-500">No match</p>
-        <p className="mt-2 text-sm text-ash-600">
+      <div className="panel rounded-[4px] px-6 py-16 text-center">
+        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">No match</p>
+        <p className="mt-2 text-sm text-ink-faint">
           Nothing in the fleet matches the current search or filter.
         </p>
       </div>
@@ -586,22 +575,17 @@ function EmptyState({
   }
 
   return (
-    <div className="panel animate-rise corner-ticks relative overflow-hidden rounded-xl px-6 py-16 text-center">
-      <div className="pointer-events-none absolute inset-0 grid-overlay" />
+    <div className="panel animate-rise relative overflow-hidden rounded-[4px] px-6 py-16 text-center">
       <div className="relative">
-        <p className="font-display text-3xl font-bold uppercase tracking-[0.3em] text-white/10">
-          EMPTY GARAGE
-        </p>
-        <p className="mt-4 text-sm text-ash-400">
-          No accounts tracked yet. Add the first one and the console starts logging every balance,
+        <p className="wordmark text-3xl text-ink/10">Empty garage</p>
+        <p className="mt-4 text-sm text-ink-soft">
+          No accounts tracked yet. Add the first one and the ledger starts recording every balance,
           coin, car and purchased slot.
         </p>
         <Button variant="primary" onClick={onAdd} className="mt-6">
           + Track your first account
         </Button>
-        <p className="mt-4 font-mono text-[10px] text-ash-600">
-          tip: press “N” anywhere to open the form
-        </p>
+        <p className="num mt-4 text-[10px] text-ink-faint">tip: press “N” anywhere to open the form</p>
       </div>
     </div>
   );

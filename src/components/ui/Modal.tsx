@@ -45,30 +45,25 @@ export function Modal({
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div
-        className="pointer-events-none fixed inset-0 bg-carbon-950/85 backdrop-blur-sm animate-fade"
-        aria-hidden
-      />
+      <div className="pointer-events-none fixed inset-0 bg-ink/30 animate-fade" aria-hidden />
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`panel corner-ticks animate-pop relative z-10 my-auto flex max-h-[92vh] w-full flex-col ${width} rounded-2xl`}
+        className={`panel animate-pop relative z-10 my-auto flex max-h-[92vh] w-full flex-col overflow-hidden rounded-[5px] border-t-[3px] border-t-racing shadow-[0_24px_50px_-32px_rgba(23,32,27,0.6)] ${width}`}
       >
-        <header className="flex items-start gap-4 border-b border-white/8 px-5 py-4 sm:px-6">
+        <header className="flex items-start gap-4 border-b border-ink/12 px-5 py-4 sm:px-6">
           <div className="min-w-0 flex-1">
-            <h2 className="font-display text-base font-bold uppercase tracking-[0.2em] text-ash-100">
-              {title}
-            </h2>
-            {subtitle ? <p className="mt-1 text-xs text-ash-500">{subtitle}</p> : null}
+            <h2 className="wordmark text-[19px] leading-tight text-ink">{title}</h2>
+            {subtitle ? <p className="mt-1 text-xs text-ink-faint">{subtitle}</p> : null}
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-ash-500 transition hover:bg-white/5 hover:text-ash-100"
+            className="square-btn h-8 w-8"
           >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8">
               <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
             </svg>
           </button>
@@ -77,7 +72,7 @@ export function Modal({
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">{children}</div>
 
         {footer ? (
-          <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-white/8 bg-black/20 px-5 py-4 sm:px-6">
+          <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-ink/12 bg-paper-sunken px-5 py-4 sm:px-6">
             {footer}
           </footer>
         ) : null}

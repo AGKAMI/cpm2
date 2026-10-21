@@ -7,17 +7,18 @@ type Size = "sm" | "md" | "icon";
 
 const VARIANTS: Record<Variant, string> = {
   primary:
-    "bg-amber-glow text-carbon-950 hover:bg-[#ffc733] active:bg-[#e8a500] font-semibold shadow-[0_10px_30px_-14px_rgba(255,183,3,0.9)]",
+    "bg-racing text-paper border border-racing hover:bg-racing-deep hover:border-racing-deep active:translate-y-px",
   outline:
-    "border border-white/12 bg-white/[0.03] text-ash-200 hover:border-amber-glow/50 hover:text-amber-glow",
-  ghost: "text-ash-400 hover:bg-white/5 hover:text-ash-100",
-  danger: "border border-red-glow/35 text-red-glow hover:bg-red-glow/10",
-  subtle: "bg-carbon-800 text-ash-200 hover:bg-carbon-700",
+    "border border-ink/25 bg-transparent text-ink hover:border-racing hover:text-racing active:translate-y-px",
+  ghost: "border border-transparent text-ink-soft hover:bg-ink/6 hover:text-ink",
+  danger:
+    "border border-oxblood/40 bg-transparent text-oxblood hover:bg-oxblood hover:text-paper active:translate-y-px",
+  subtle: "border border-ink/15 bg-paper-sunken text-ink hover:bg-ink/8 active:translate-y-px",
 };
 
 const SIZES: Record<Size, string> = {
-  sm: "h-8 px-3 text-[11px] tracking-[0.12em]",
-  md: "h-10 px-4 text-xs tracking-[0.14em]",
+  sm: "h-8 px-3 text-[10px] tracking-[0.14em]",
+  md: "h-10 px-4 text-[11px] tracking-[0.15em]",
   icon: "h-9 w-9 justify-center",
 };
 
@@ -37,7 +38,7 @@ export function Button({
   return (
     <button
       {...props}
-      className={`inline-flex items-center gap-2 rounded-lg font-display uppercase transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${VARIANTS[variant]} ${SIZES[size]} ${className}`}
+      className={`inline-flex items-center gap-2 rounded-[3px] font-sans font-semibold uppercase transition-[background-color,border-color,color,transform] duration-150 disabled:cursor-not-allowed disabled:opacity-40 ${VARIANTS[variant]} ${SIZES[size]} ${className}`}
     >
       {children}
     </button>

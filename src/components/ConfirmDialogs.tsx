@@ -41,17 +41,17 @@ export function ExportConfirmModal({
         </>
       }
     >
-      <ul className="flex flex-col gap-2 text-sm text-ash-300">
+      <ul className="flex flex-col gap-2 text-sm text-ink-soft">
         <li className="flex items-start gap-2">
-          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-glow" />
+          <span className="log-mark mt-1.5 bg-racing" />
           {accountCount} account{accountCount === 1 ? "" : "s"} will be written to a download.
         </li>
         <li className="flex items-start gap-2">
-          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-red-glow" />
+          <span className="log-mark mt-1.5 bg-oxblood" />
           Passwords are decrypted and stored in plain text inside the file.
         </li>
         <li className="flex items-start gap-2">
-          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-glow" />
+          <span className="log-mark mt-1.5 bg-blueprint" />
           The export is recorded in the activity log.
         </li>
       </ul>
@@ -105,17 +105,17 @@ export function SlotPurchaseConfirmModal({
       }
     >
       <div className="flex flex-col gap-3">
-        <p className="num text-sm text-ash-200">{account.email}</p>
+        <p className="num text-sm text-ink">{account.email}</p>
 
-        <dl className="panel-tight grid grid-cols-2 gap-3 rounded-xl px-4 py-3">
-          <Row label="Slots" value={`${account.slots} → ${newSlots}`} tone="text-amber-glow" />
-          <Row label="Cost" value={`${formatNumber(cost)} coins`} tone="text-amber-glow" />
-          <Row label="Balance after" value={formatNumber(balanceAfter)} tone="text-amber-glow" />
-          <Row label="Garage size" value={`${account.cars}/${newCapacity}`} tone="text-cyan-glow" />
+        <dl className="panel-tight grid grid-cols-2 gap-3 rounded-[4px] px-4 py-3">
+          <Row label="Slots" value={`${account.slots} → ${newSlots}`} tone="text-racing" />
+          <Row label="Cost" value={`${formatNumber(cost)} coins`} tone="text-racing" />
+          <Row label="Balance after" value={formatNumber(balanceAfter)} tone="text-racing" />
+          <Row label="Garage size" value={`${account.cars}/${newCapacity}`} tone="text-blueprint" />
         </dl>
 
         {balanceAfter < 0 ? (
-          <p className="rounded-lg border border-red-glow/30 bg-red-glow/10 px-3 py-2 text-xs text-red-glow">
+          <p className="rounded-[3px] border border-oxblood/35 bg-oxblood/8 px-3 py-2 text-xs text-oxblood">
             This account only has {formatNumber(account.coins)} coins — not enough for {count} slot(s).
           </p>
         ) : null}

@@ -16,7 +16,7 @@ export function CapacityGauge({
 
   return (
     <div className="flex items-center gap-2">
-      <div className={`flex ${compact ? "h-1" : "h-1.5"} flex-1 items-center gap-[2px]`}>
+      <div className={`gauge-track ${compact ? "h-1" : "h-1.5"}`}>
         {Array.from({ length: capacity }).map((_, index) => {
           const filled = index < cars;
           const purchased = index >= LIMITS.BASE_CAR_SLOTS;
@@ -24,28 +24,19 @@ export function CapacityGauge({
             <span
               key={index}
               title={`Slot ${index + 1}`}
-              className={`h-full flex-1 rounded-[1px] transition-colors ${
-                filled
-                  ? purchased
-                    ? "bg-amber-glow"
-                    : "bg-cyan-glow"
-                  : purchased
-                    ? "bg-amber-glow/25"
-                    : "bg-white/10"
+              className={`gauge-tick ${
+                filled ? (atCapacity ? "gauge-tick-full" : purchased ? "gauge-tick-bought" : "gauge-tick-filled") : "gauge-tick-free"
               }`}
             />
           );
         })}
       </div>
-      <span
-        className={`num shrink-0 text-[11px] ${atCapacity ? "text-red-glow" : "text-ash-500"}`}
-        title={`${cars} of ${capacity} slots used`}
-      >
+      <span className={`num shrink-0 text-[11px] ${atCapacity ? "text-oxblood" : "text-ink-soft"}`}>
         {cars}/{capacity}
-        {slots > 0 ? <span className="text-amber-glow/70"> +{slots}</span> : null}
+        {slots > 0 ? <span className="text-brass"> +{slots}</span> : null}
       </span>
       {atCapacity ? (
-        <span className="shrink-0 rounded border border-red-glow/40 px-1.5 py-0.5 font-display text-[9px] uppercase tracking-[0.16em] text-red-glow">
+        <span className="shrink-0 rounded-[2px] border border-oxblood/45 px-1.5 py-0.5 font-sans text-[9px] font-semibold uppercase tracking-[0.14em] text-oxblood">
           Full
         </span>
       ) : null}

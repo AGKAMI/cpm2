@@ -184,29 +184,6 @@
       radial-gradient(1200px 700px at 50% 0%, color-mix(in srgb, var(--color-paper) 72%, transparent), transparent 70%);
   }
 
-  .car-backdrop-hide {
-    pointer-events: auto;
-    position: absolute;
-    bottom: 26px;
-    right: 12px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 3px;
-    border: 1px solid color-mix(in srgb, var(--color-ink) 25%, transparent);
-    background: rgba(251, 249, 243, 0.85);
-    color: var(--color-ink-soft);
-    cursor: pointer;
-    transition: background-color 0.14s ease, color 0.14s ease;
-  }
-
-  .car-backdrop-hide:hover {
-    background: var(--color-paper-raised);
-    color: var(--color-ink);
-  }
-
   .car-backdrop-credit {
     pointer-events: auto;
     position: absolute;

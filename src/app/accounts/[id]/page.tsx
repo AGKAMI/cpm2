@@ -9,6 +9,7 @@ import { CapacityGauge } from "@/components/CapacityGauge";
 import { PasswordCell } from "@/components/PasswordCell";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { TrophyCabinet } from "@/components/TrophyCabinet";
+import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 import { LIMITS, formatNumber } from "@/lib/constants";
 
@@ -53,6 +54,15 @@ export default function AccountPage() {
 
   return (
     <div className="flex flex-col gap-5">
+      <PageHeading
+        folio="F-05"
+        title={account.email.split("@")[0] || "Account"}
+        meta={
+          archived
+            ? "archived · balances intact"
+            : `capacity ${account.cars}/${account.capacity} · ${formatNumber(account.coins)} coins`
+        }
+      />
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <Link href="/fleet" className="num text-[10px] text-ink-faint hover:text-racing">

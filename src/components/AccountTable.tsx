@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { AccountSummary } from "@/lib/types";
+import type { AccountSummary, TrophySummary } from "@/lib/types";
 import { formatNumber } from "@/lib/constants";
 import { relativeTime } from "@/lib/format";
 import { CapacityGauge } from "@/components/CapacityGauge";
@@ -25,6 +25,7 @@ type AccountTableProps = {
   selectedIds?: number[];
   onToggleSelect?: (id: number) => void;
   onToggleAll?: () => void;
+  trophies?: Record<number, TrophySummary>;
 };
 
 const STEPS = { cash: 1_000_000, coins: 1_000, cars: 1 } as const;
@@ -45,6 +46,7 @@ export function AccountTable({
   selectedIds = [],
   onToggleSelect,
   onToggleAll,
+  trophies = {},
 }: AccountTableProps) {
   const archived = mode === "archived";
   const allSelected = selectable && accounts.length > 0 && accounts.every((a) => selectedIds.includes(a.id));
@@ -78,9 +80,10 @@ export function AccountTable({
               <th className="label-caps px-3 py-3 text-right">
                 <SortButton label="Coins" active={sortKey === "coins"} dir={sortDir} onClick={() => onSort("coins")} align="right" />
               </th>
-              <th className="label-caps w-[210px] px-3 py-3 text-left">
+              <th className="label-caps w-[190px] px-3 py-3 text-left">
                 <SortButton label="Cars / Capacity" active={sortKey === "cars"} dir={sortDir} onClick={() => onSort("cars")} />
               </th>
+              <th className="label-caps w-[96px] px-3 py-3 text-left">Trophies</th>
               <th className="label-caps px-3 py-3 text-left">Updated</th>
               <th className="label-caps px-3 py-3 text-right">Actions</th>
             </tr>
@@ -108,8 +111,8 @@ export function AccountTable({
                   {String(index + 1).padStart(2, "0")}
                 </td>
                 <td className="px-3 py-3">
-                  <Link href={`/accounts/${account.id}`} className="inline-block hover:opacity-80">
-                    <span className="plate">
+                  <Link href={`/accounts/${account.id}`} className="inline-block max-w-[210px] hover:opacity-80">
+                    <span className="plate max-w-[210px]">
                       <span className="plate-text num text-[12px]">{account.email}</span>
                     </span>
                   </Link>
@@ -151,6 +154,9 @@ export function AccountTable({
                       + buy slot (100c)
                     </button>
                   )}
+                </td>
+                <td className="px-3 py-3">
+                  <TrophyTally summary={trophies[account.id]} />
                 </td>
                 <td className="px-3 py-3 text-[11px] text-ink-faint">{relativeTime(account.updatedAt)}</td>
                 <td className="px-3 py-3">
@@ -257,7 +263,7 @@ export function AccountTable({
               <PasswordCell accountId={account.id} />
             </div>
 
-            <dl className="mt-3 grid grid-cols-3 gap-2">
+            <dl className="mt-3 grid grid-cols-4 gap-2">
               <div>
                 <dt className="label-caps">Cash</dt>
                 <dd className="num mt-1 text-[13px] text-ink">{formatNumber(account.cash)}</dd>
@@ -265,6 +271,12 @@ export function AccountTable({
               <div>
                 <dt className="label-caps">Coins</dt>
                 <dd className="num mt-1 text-[13px] text-ink">{formatNumber(account.coins)}</dd>
+              </div>
+              <div>
+                <dt className="label-caps">Trophies</dt>
+                <dd className="mt-1 text-[12px]">
+                  <TrophyTally summary={trophies[account.id]} />
+                </dd>
               </div>
               <div>
                 <dt className="label-caps">Updated</dt>
@@ -410,5 +422,19 @@ function IconAction({
     >
       {icon}
     </button>
+  );
+}
+
+/** Compact G/S/B tally for the fleet table. */
+function TrophyTally({ summary }: { summary?: TrophySummary }) {
+  if (!summary || summary.total === 0) {
+    return <span className="num text-[11px] text-ink-faint">—</span>;
+  }
+  return (
+    <span className="num flex items-center gap-2 text-[11px]">
+      {summary.gold > 0 ? <span className="text-brass">{summary.gold}G</span> : null}
+      {summary.silver > 0 ? <span className="text-silver">{summary.silver}S</span> : null}
+      {summary.bronze > 0 ? <span className="text-bronze">{summary.bronze}B</span> : null}
+    </span>
   );
 }

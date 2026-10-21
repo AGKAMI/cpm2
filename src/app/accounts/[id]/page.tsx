@@ -8,6 +8,7 @@ import { useShell } from "@/components/AppShell";
 import { CapacityGauge } from "@/components/CapacityGauge";
 import { PasswordCell } from "@/components/PasswordCell";
 import { ActivityFeed } from "@/components/ActivityFeed";
+import { TrophyCabinet } from "@/components/TrophyCabinet";
 import { Button } from "@/components/ui/Button";
 import { LIMITS, formatNumber } from "@/lib/constants";
 
@@ -201,6 +202,10 @@ export default function AccountPage() {
           </section>
         </div>
       </div>
+
+      <section className="panel rounded-[14px] p-5">
+        <TrophyCabinet accountId={account.id} readOnly={archived} onChanged={() => void fleet.refresh(true)} />
+      </section>
 
       <section>
         <div className="mb-3 flex items-baseline justify-between gap-3">

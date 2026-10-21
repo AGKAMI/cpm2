@@ -10,16 +10,20 @@ import {
   type ReactNode,
 } from "react";
 import { api, ApiRequestError } from "@/lib/client";
-import type { AccountSummary, FleetEvent, FleetStats, ImportReport } from "@/lib/types";
+import type { AccountSummary, FleetEvent, FleetStats, ImportReport, TrophySummary } from "@/lib/types";
 import { useToast } from "@/components/ui/Toaster";
 
 type AdjustField = "cash" | "coins" | "cars";
+
+type TrophyTotals = { gold: number; silver: number; bronze: number; total: number };
 
 type FleetContextValue = {
   accounts: AccountSummary[];
   archived: AccountSummary[];
   stats: FleetStats | null;
   events: FleetEvent[];
+  trophies: Record<number, TrophySummary>;
+  trophyTotals: TrophyTotals;
   loading: boolean;
   error: string | null;
   refresh: (silent?: boolean) => Promise<void>;
@@ -45,6 +49,13 @@ export function FleetProvider({ children }: { children: ReactNode }) {
   const [archived, setArchived] = useState<AccountSummary[]>([]);
   const [stats, setStats] = useState<FleetStats | null>(null);
   const [events, setEvents] = useState<FleetEvent[]>([]);
+  const [trophies, setTrophies] = useState<Record<number, TrophySummary>>({});
+  const [trophyTotals, setTrophyTotals] = useState<TrophyTotals>({
+    gold: 0,
+    silver: 0,
+    bronze: 0,
+    total: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const toast = useToast();
@@ -52,15 +63,20 @@ export function FleetProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const [active, archivedList, eventList] = await Promise.all([
+      const [active, archivedList, eventList, trophyList] = await Promise.all([
         api.list(),
         api.list({ archived: true }),
         api.events(),
+        api.fleetTrophies(),
       ]);
       setAccounts(active.accounts);
       setStats(active.stats);
       setArchived(archivedList.accounts);
       setEvents(eventList.events);
+      setTrophies(
+        Object.fromEntries(trophyList.accounts.map((summary) => [summary.accountId, summary])),
+      );
+      setTrophyTotals(trophyList.totals);
       setError(null);
     } catch (err) {
       setError(describe(err));
@@ -200,6 +216,8 @@ export function FleetProvider({ children }: { children: ReactNode }) {
       archived,
       stats,
       events,
+      trophies,
+      trophyTotals,
       loading,
       error,
       refresh,
@@ -216,6 +234,8 @@ export function FleetProvider({ children }: { children: ReactNode }) {
       archived,
       stats,
       events,
+      trophies,
+      trophyTotals,
       loading,
       error,
       refresh,

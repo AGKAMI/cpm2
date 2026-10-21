@@ -4,6 +4,8 @@ import type {
   FleetEvent,
   FleetStats,
   ImportReport,
+  TrophyRecord,
+  TrophySummary,
 } from "./types.ts";
 
 export class ApiRequestError extends Error {
@@ -90,4 +92,16 @@ export const api = {
     }),
   reveal: (id: number) =>
     request<{ id: number; email: string; password: string }>(`/api/accounts/${id}/password`),
+  trophies: (id: number) =>
+    request<{ trophies: TrophyRecord[]; summary: TrophySummary }>(`/api/accounts/${id}/trophies`),
+  setTrophies: (id: number, payload: { class: string; gold: number; silver: number; bronze: number }) =>
+    request<{ trophy: TrophyRecord; summary: TrophySummary }>(`/api/accounts/${id}/trophies`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+  fleetTrophies: () =>
+    request<{
+      accounts: TrophySummary[];
+      totals: { gold: number; silver: number; bronze: number; total: number };
+    }>("/api/trophies"),
 };

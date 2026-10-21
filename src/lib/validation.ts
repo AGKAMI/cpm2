@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { LIMITS, carCapacity } from "./constants.ts";
+import {
+  LIMITS,
+  MAX_TROPHIES_PER_CLASS,
+  TROPHY_CLASSES,
+  carCapacity,
+} from "./constants.ts";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -114,3 +119,27 @@ export const slotPurchaseSchema = z
 export type AccountCreateInput = z.infer<typeof accountCreateSchema>;
 export type AccountPatchInput = z.infer<typeof accountPatchSchema>;
 export type SlotPurchaseInput = z.infer<typeof slotPurchaseSchema>;
+
+/** Trophy counts for one drag racing class of one account. */
+export const trophyUpdateSchema = z.object({
+  class: z.enum([...TROPHY_CLASSES], {
+    error: `Class must be one of ${TROPHY_CLASSES.join(", ")}.`,
+  }),
+  gold: z
+    .int({ error: "Gold count must be a whole number." })
+    .min(0, { error: "Gold count cannot be negative." })
+    .max(MAX_TROPHIES_PER_CLASS, { error: `At most ${MAX_TROPHIES_PER_CLASS} trophies per class.` })
+    .default(0),
+  silver: z
+    .int({ error: "Silver count must be a whole number." })
+    .min(0, { error: "Silver count cannot be negative." })
+    .max(MAX_TROPHIES_PER_CLASS, { error: `At most ${MAX_TROPHIES_PER_CLASS} trophies per class.` })
+    .default(0),
+  bronze: z
+    .int({ error: "Bronze count must be a whole number." })
+    .min(0, { error: "Bronze count cannot be negative." })
+    .max(MAX_TROPHIES_PER_CLASS, { error: `At most ${MAX_TROPHIES_PER_CLASS} trophies per class.` })
+    .default(0),
+});
+
+export type TrophyUpdateInput = z.infer<typeof trophyUpdateSchema>;

@@ -22,7 +22,8 @@ export type FleetEventType =
   | "archived"
   | "deleted"
   | "export_performed"
-  | "password_revealed";
+  | "password_revealed"
+  | "trophies_updated";
 
 export type FleetEvent = {
   id: number;
@@ -64,6 +65,27 @@ export type ImportRowResult = {
   code?: string;
   message?: string;
   fields?: Record<string, string>;
+};
+
+/** Trophies for one account in one drag racing class. */
+export type TrophyRecord = {
+  class: string;
+  gold: number;
+  silver: number;
+  bronze: number;
+  total: number;
+  updatedAt: string;
+};
+
+/** Trophy totals for one account, with the per-class breakdown. */
+export type TrophySummary = {
+  accountId: number;
+  email: string;
+  gold: number;
+  silver: number;
+  bronze: number;
+  total: number;
+  byClass: TrophyRecord[];
 };
 
 export type ImportReport = {

@@ -13,6 +13,7 @@ const TYPES: Record<FleetEventType, { label: string; mark: string; text: string 
   deleted: { label: "Gone", mark: "bg-oxblood", text: "text-oxblood" },
   export_performed: { label: "Export", mark: "bg-blueprint", text: "text-blueprint" },
   password_revealed: { label: "Reveal", mark: "bg-brass", text: "text-brass" },
+  trophies_updated: { label: "Trophy", mark: "bg-brass", text: "text-brass" },
 };
 
 export function ActivityFeed({ events }: { events: FleetEvent[] }) {

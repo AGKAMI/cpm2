@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useFleet } from "@/components/FleetProvider";
 import { ActivityFeed } from "@/components/ActivityFeed";
+import { PageHeading } from "@/components/PageHeading";
 import type { FleetEventType } from "@/lib/types";
 
 const FILTERS: { key: FleetEventType | "all"; label: string }[] = [
@@ -42,6 +43,7 @@ export default function ActivityPage() {
 
   return (
     <div className="flex flex-col gap-4">
+      <PageHeading folio="F-03" title="Activity log" meta="permanent · the paper trail" />
       <div className="flex flex-wrap items-end gap-x-5 gap-y-3">
         <div className="min-w-[200px] flex-1">
           <span className="label-caps">Search the log</span>

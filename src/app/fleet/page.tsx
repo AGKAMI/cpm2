@@ -6,6 +6,7 @@ import { useFleet } from "@/components/FleetProvider";
 import { useShell } from "@/components/AppShell";
 import { AccountTable, type SortKey } from "@/components/AccountTable";
 import { FleetToolbar, type FleetFilter } from "@/components/Toolbar";
+import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 
 function matchesFilter(account: {
@@ -106,6 +107,11 @@ function FleetPageInner() {
 
   return (
     <div className="flex flex-col gap-4">
+      <PageHeading
+        folio="F-02"
+        title={showArchived ? "Archive" : "Fleet register"}
+        meta={`${source.length} on file${showArchived ? " · restore any time" : ""}`}
+      />
       <FleetToolbar
         query={query}
         onQuery={(value) => patchParams({ q: value })}
@@ -171,6 +177,7 @@ function FleetPageInner() {
           <AccountTable
             accounts={visible}
             busyId={null}
+            trophies={fleet.trophies}
             sortKey={sortKey}
             sortDir={sortDir}
             onSort={handleSort}

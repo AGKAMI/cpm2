@@ -2,6 +2,7 @@
 
 import { useFleet } from "@/components/FleetProvider";
 import { useTheme } from "@/hooks/useTheme";
+import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 import { LIMITS, formatNumber } from "@/lib/constants";
 
@@ -21,7 +22,9 @@ export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="flex flex-col gap-4">
+      <PageHeading folio="F-04" title="Settings" meta="limits · backup · appearance" />
+      <div className="grid gap-4 lg:grid-cols-2">
       <section className="panel rounded-[14px] p-5">
         <h2 className="label-caps mb-4">Game limits</h2>
         <dl className="flex flex-col">
@@ -98,6 +101,7 @@ export default function SettingsPage() {
           ))}
         </dl>
       </section>
+      </div>
     </div>
   );
 }

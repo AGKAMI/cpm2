@@ -21,6 +21,10 @@
   --color-brass: #a3761f;
   --color-oxblood: #8d3039;
   --color-blueprint: #2b5885;
+
+  /* Trophy metals */
+  --color-silver: #8f979e;
+  --color-bronze: #b1673a;
 }
 
 /* Night shift: same ledger, lit from the dashboard glow. */
@@ -36,6 +40,8 @@
   --color-brass: #d6a445;
   --color-oxblood: #e0737c;
   --color-blueprint: #7fb2e0;
+  --color-silver: #b6bdc4;
+  --color-bronze: #d08a58;
 }
 
 [data-theme="night"] body {

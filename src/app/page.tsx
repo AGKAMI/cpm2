@@ -5,6 +5,7 @@ import { useFleet } from "@/components/FleetProvider";
 import { StatTiles } from "@/components/StatTiles";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { CashBars, CapacityBars, CoinLedger } from "@/components/charts";
+import { PageHeading } from "@/components/PageHeading";
 import { formatNumber } from "@/lib/constants";
 
 function Panel({
@@ -39,6 +40,15 @@ export default function OverviewPage() {
 
   return (
     <div className="flex flex-col gap-5">
+      <PageHeading
+        folio="F-01"
+        title="Overview"
+        meta={
+          fleet.stats
+            ? `${fleet.stats.accounts} accounts · ${formatNumber(fleet.stats.totalCars)}/${formatNumber(fleet.stats.totalCapacity)} garage slots`
+            : undefined
+        }
+      />
       <StatTiles stats={fleet.stats} />
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -96,6 +106,44 @@ export default function OverviewPage() {
                 </ul>
               </div>
             ) : null}
+          </Panel>
+
+          <Panel title="Trophy cabinet" hint={fleet.trophyTotals.total > 0 ? `${fleet.trophyTotals.total} won` : "none yet"}>
+            {fleet.trophyTotals.total === 0 ? (
+              <p className="text-[12px] leading-relaxed text-ink-faint">
+                No drag racing trophies logged yet. Open an account to log its gold, silver and bronze
+                trophies per class.
+              </p>
+            ) : (
+              <>
+                <div className="flex items-baseline gap-4">
+                  <span className="num text-[22px] font-semibold text-brass">{fleet.trophyTotals.gold}</span>
+                  <span className="num text-[22px] font-semibold text-silver">{fleet.trophyTotals.silver}</span>
+                  <span className="num text-[22px] font-semibold text-bronze">{fleet.trophyTotals.bronze}</span>
+                </div>
+                <ul className="mt-3 flex flex-col gap-1.5">
+                  {Object.values(fleet.trophies)
+                    .filter((summary) => summary.total > 0)
+                    .sort((a, b) => b.total - a.total)
+                    .slice(0, 6)
+                    .map((summary) => (
+                      <li key={summary.accountId} className="flex items-baseline justify-between gap-2">
+                        <Link
+                          href={`/accounts/${summary.accountId}`}
+                          className="num truncate text-[11px] text-ink-soft hover:text-racing"
+                        >
+                          {summary.email}
+                        </Link>
+                        <span className="num shrink-0 text-[11px]">
+                          <span className="text-brass">{summary.gold}G</span>{" "}
+                          <span className="text-silver">{summary.silver}S</span>{" "}
+                          <span className="text-bronze">{summary.bronze}B</span>
+                        </span>
+                      </li>
+                    ))}
+                </ul>
+              </>
+            )}
           </Panel>
 
           <Panel title="Go to">

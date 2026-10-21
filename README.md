@@ -55,7 +55,11 @@ and live counters in the UI.
   archiving, and an active/archived switch. The search, filter and sort live in the URL, so
   `?q=kami&filter=full` is a bookmark you can share or reload
 - **Account page** (`/accounts/{id}`) — one account in full: balances with live steppers, the
-  garage gauge, the credential cell, the coin ledger, and that account's own history
+  garage gauge, the credential cell, the coin ledger, the **drag racing trophy cabinet**, and that
+  account's own history
+- **Trophy cabinet** — per account, per drag racing class (`U` unlimited, `S9`–`S13`), the count
+  of gold / silver / bronze trophies. Steppers write straight to the ledger, every change is
+  audited, and the fleet table shows a `4G 2S 1B` tally per account
 - **Activity** (`/activity`) — the permanent log, filterable by entry type and searchable
 - **Settings** (`/settings`) — game limits, where the data lives, backup instructions, the
   paper/night theme switch and the keyboard map
@@ -94,6 +98,9 @@ dash. The choice is stored on the machine — switch it from the header or from 
 | `POST` | `/api/accounts/{id}/restore` | Undo an archive |
 | `POST` | `/api/accounts/{id}/slots` | Buy slots (100 coins each, atomic) |
 | `GET` | `/api/accounts/{id}/password` | Decrypt one password (audited) |
+| `GET` | `/api/accounts/{id}/trophies` | Trophies for every drag racing class |
+| `PUT` | `/api/accounts/{id}/trophies` | Set the gold/silver/bronze counts for one class |
+| `GET` | `/api/trophies` | Trophy totals for the whole fleet |
 | `POST` | `/api/accounts/import` | Bulk import — `?format=json` or `?format=csv` |
 | `GET` | `/api/events` | Activity log |
 | `GET` | `/api/export` | Needs `?confirm=true` — audited |

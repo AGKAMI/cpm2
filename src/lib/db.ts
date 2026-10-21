@@ -64,6 +64,22 @@ CREATE TABLE IF NOT EXISTS account_events (
 
 CREATE INDEX IF NOT EXISTS idx_account_events_created
   ON account_events (created_at DESC);
+
+CREATE TABLE IF NOT EXISTS account_trophies (
+  account_id INTEGER NOT NULL,
+  class      TEXT    NOT NULL,
+  gold       INTEGER NOT NULL DEFAULT 0,
+  silver     INTEGER NOT NULL DEFAULT 0,
+  bronze     INTEGER NOT NULL DEFAULT 0,
+  updated_at TEXT    NOT NULL,
+  PRIMARY KEY (account_id, class),
+  CHECK (gold >= 0 AND gold <= 999),
+  CHECK (silver >= 0 AND silver <= 999),
+  CHECK (bronze >= 0 AND bronze <= 999)
+);
+
+CREATE INDEX IF NOT EXISTS idx_account_trophies_class
+  ON account_trophies (class);
 `;
 
 export function resolveDbPath(): string {

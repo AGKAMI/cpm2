@@ -35,6 +35,29 @@ export function slotsLockedValue(purchasedSlots: number): number {
   return Math.max(0, Math.trunc(purchasedSlots || 0)) * LIMITS.SLOT_COST_COINS;
 }
 
+/** Drag racing classes, in the order they are shown. U is unlimited. */
+export const TROPHY_CLASSES = ["U", "S9", "S10", "S11", "S12", "S13"] as const;
+
+export type TrophyClass = (typeof TROPHY_CLASSES)[number];
+
+/** Trophies exist in three metals, per class. */
+export const TROPHY_METALS = ["gold", "silver", "bronze"] as const;
+
+export type TrophyMetal = (typeof TROPHY_METALS)[number];
+
+/** Human labels for the race classes. */
+export const TROPHY_CLASS_LABELS: Record<TrophyClass, string> = {
+  U: "U · Unlimited",
+  S9: "S9",
+  S10: "S10",
+  S11: "S11",
+  S12: "S12",
+  S13: "S13",
+};
+
+/** Ceiling on trophies per class per metal (a sanity cap, not a game limit). */
+export const MAX_TROPHIES_PER_CLASS = 999;
+
 export function formatNumber(value: number): string {
   return new Intl.NumberFormat("en-US").format(value);
 }

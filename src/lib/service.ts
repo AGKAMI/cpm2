@@ -1,6 +1,13 @@
 import { ZodError } from "zod";
 import { ApiError } from "./api.ts";
-import { LIMITS, carCapacity, slotsLockedValue } from "./constants.ts";
+import {
+  LIMITS,
+  TROPHY_CLASSES,
+  TROPHY_CLASS_LABELS,
+  carCapacity,
+  slotsLockedValue,
+  type TrophyClass,
+} from "./constants.ts";
 import { csvToRecords, escapeCsvValue, normalizeImportRow } from "./csv.ts";
 import { decryptSecret, encryptSecret } from "./crypto.ts";
 import { getDb, type AccountRow, type EventRow } from "./db.ts";
@@ -11,17 +18,21 @@ import type {
   FleetStats,
   ImportReport,
   ImportRowResult,
+  TrophyRecord,
+  TrophySummary,
 } from "./types.ts";
 import {
   accountCreateSchema,
   accountPatchSchema,
   slotPurchaseSchema,
+  trophyUpdateSchema,
   type AccountCreateInput,
   type AccountPatchInput,
 } from "./validation.ts";
 
 export type { AccountSummary, FleetEvent, FleetStats } from "./types.ts";
 export type { ImportReport, ImportRowResult } from "./types.ts";
+export type { TrophyRecord, TrophySummary } from "./types.ts";
 
 const TRACKED_FIELDS = ["email", "cash", "coins", "cars", "slots", "coinsSpentOnCars", "notes"] as const;
 
@@ -315,6 +326,135 @@ export function revealPassword(id: number): { id: number; email: string; passwor
       err instanceof Error ? err.message : "Password could not be decrypted.",
     );
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Drag racing trophies                                                */
+/* ------------------------------------------------------------------ */
+
+type TrophyRow = {
+  account_id: number;
+  class: string;
+  gold: number;
+  silver: number;
+  bronze: number;
+  updated_at: string;
+};
+
+function toTrophyRecord(row: TrophyRow): TrophyRecord {
+  return {
+    class: row.class,
+    gold: row.gold,
+    silver: row.silver,
+    bronze: row.bronze,
+    total: row.gold + row.silver + row.bronze,
+    updatedAt: row.updated_at,
+  };
+}
+
+/** Every class for one account, including the ones with no trophies yet. */
+export function listTrophies(accountId: number): TrophyRecord[] {
+  requireAccount(accountId, { includeArchived: true });
+  const rows = getDb()
+    .prepare(`SELECT * FROM account_trophies WHERE account_id = ?`)
+    .all(accountId) as TrophyRow[];
+
+  const byClass = new Map(rows.map((row) => [row.class, toTrophyRecord(row)]));
+  return TROPHY_CLASSES.map(
+    (klass) =>
+      byClass.get(klass) ?? {
+        class: klass,
+        gold: 0,
+        silver: 0,
+        bronze: 0,
+        total: 0,
+        updatedAt: "",
+      },
+  );
+}
+
+/** Trophy totals for one account. */
+export function trophySummary(accountId: number): TrophySummary {
+  const account = requireAccount(accountId, { includeArchived: true });
+  const byClass = listTrophies(accountId);
+  const gold = byClass.reduce((sum, item) => sum + item.gold, 0);
+  const silver = byClass.reduce((sum, item) => sum + item.silver, 0);
+  const bronze = byClass.reduce((sum, item) => sum + item.bronze, 0);
+  return {
+    accountId: account.id,
+    email: account.email,
+    gold,
+    silver,
+    bronze,
+    total: gold + silver + bronze,
+    byClass,
+  };
+}
+
+/** Trophy totals for the whole fleet, one entry per account. */
+export function fleetTrophySummary(): TrophySummary[] {
+  const accounts = listAccounts({ archived: "include" });
+  return accounts.map((account) => {
+    const byClass = listTrophies(account.id);
+    const gold = byClass.reduce((sum, item) => sum + item.gold, 0);
+    const silver = byClass.reduce((sum, item) => sum + item.silver, 0);
+    const bronze = byClass.reduce((sum, item) => sum + item.bronze, 0);
+    return {
+      accountId: account.id,
+      email: account.email,
+      gold,
+      silver,
+      bronze,
+      total: gold + silver + bronze,
+      byClass,
+    };
+  });
+}
+
+/** Sets the trophy counts for one class of one account. */
+export function setTrophies(accountId: number, payload: unknown): TrophyRecord {
+  const account = requireAccount(accountId);
+  const parsed = trophyUpdateSchema.parse(payload);
+  const klass = parsed.class as TrophyClass;
+
+  const db = getDb();
+  const existing = db
+    .prepare(`SELECT * FROM account_trophies WHERE account_id = ? AND class = ?`)
+    .get(accountId, klass) as TrophyRow | undefined;
+
+  const stamp = now();
+  db.prepare(
+    `INSERT INTO account_trophies (account_id, class, gold, silver, bronze, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT (account_id, class)
+     DO UPDATE SET gold = excluded.gold, silver = excluded.silver, bronze = excluded.bronze, updated_at = excluded.updated_at`,
+  ).run(accountId, klass, parsed.gold, parsed.silver, parsed.bronze, stamp);
+
+  const changes: FleetEvent["changes"] = {};
+  const before = existing ?? { gold: 0, silver: 0, bronze: 0 };
+  if (before.gold !== parsed.gold) changes.gold = { from: before.gold, to: parsed.gold };
+  if (before.silver !== parsed.silver) changes.silver = { from: before.silver, to: parsed.silver };
+  if (before.bronze !== parsed.bronze) changes.bronze = { from: before.bronze, to: parsed.bronze };
+
+  if (Object.keys(changes).length > 0) {
+    const label = TROPHY_CLASS_LABELS[klass];
+    logEvent(
+      accountId,
+      account.email,
+      "trophies_updated",
+      `Trophies updated for class ${label}`,
+      changes,
+    );
+  }
+
+  return {
+    class: klass,
+    gold: parsed.gold,
+    silver: parsed.silver,
+    bronze: parsed.bronze,
+    total: parsed.gold + parsed.silver + parsed.bronze,
+    updatedAt: stamp,
+  };
 }
 
 export function listEvents(limit = 100): FleetEvent[] {

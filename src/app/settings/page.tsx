@@ -1,7 +1,6 @@
 "use client";
 
 import { useFleet } from "@/components/FleetProvider";
-import { useShell } from "@/components/AppShell";
 import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/Button";
 import { LIMITS, formatNumber } from "@/lib/constants";
@@ -19,7 +18,6 @@ const SHORTCUTS = [
 
 export default function SettingsPage() {
   const fleet = useFleet();
-  const shell = useShell();
   const { theme, setTheme } = useTheme();
 
   return (
@@ -54,14 +52,9 @@ export default function SettingsPage() {
             decrypts the passwords. Copy the folder to back it up. Losing the key means losing every stored
             password.
           </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={() => shell.openExport("json")}>
-              Export a backup
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => shell.openImport()}>
-              Import a backup
-            </Button>
-          </div>
+          <p className="num mt-3 text-[10px] text-ink-faint">
+            Use the Export and Import buttons in the header to move a fleet in or out.
+          </p>
         </div>
       </section>
 

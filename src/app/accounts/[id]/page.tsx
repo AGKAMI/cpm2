@@ -192,17 +192,11 @@ export default function AccountPage() {
               </div>
             </dl>
             {!archived ? (
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-4 w-full justify-center"
-                onClick={() => shell.openSlotPurchase(account)}
-                disabled={spendable < LIMITS.SLOT_COST_COINS}
-              >
-                {spendable < LIMITS.SLOT_COST_COINS
-                  ? `Need ${LIMITS.SLOT_COST_COINS} coins to buy a slot`
-                  : `+ Buy slot · ${LIMITS.SLOT_COST_COINS} coins`}
-              </Button>
+              <p className="mt-4 border-t border-ink/10 pt-3 text-[11px] leading-snug text-ink-faint">
+                {spendable >= LIMITS.SLOT_COST_COINS
+                  ? `${formatNumber(spendable)} coins are spendable — “+ Buy slot” above turns them into garage space.`
+                  : `You need ${LIMITS.SLOT_COST_COINS} coins to buy a slot for this account.`}
+              </p>
             ) : null}
           </section>
         </div>

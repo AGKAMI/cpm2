@@ -24,7 +24,7 @@ type ShellContextValue = {
   openNewAccount: () => void;
   openEditAccount: (account: AccountSummary) => void;
   openSlotPurchase: (account: AccountSummary) => void;
-  openExport: (format: "csv" | "json") => void;
+  openExport: () => void;
   openImport: () => void;
   confirm: (options: ConfirmOptions) => Promise<boolean>;
 };
@@ -69,7 +69,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [slotAccount, setSlotAccount] = useState<AccountSummary | null>(null);
   const [slotSession, setSlotSession] = useState(0);
   const [pendingSlot, setPendingSlot] = useState<{ account: AccountSummary; count: number } | null>(null);
-  const [exportFormat, setExportFormat] = useState<"csv" | "json" | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [confirmState, setConfirmState] = useState<ConfirmOptions | null>(null);
@@ -166,7 +166,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       }
       if (key === "e") {
         event.preventDefault();
-        setExportFormat("csv");
+        setExportOpen(true);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -176,10 +176,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     };
   }, [router]);
 
-  function performExport() {
-    const format = exportFormat;
-    setExportFormat(null);
-    if (!format) return;
+  function performExport(format: "csv" | "json") {
+    setExportOpen(false);
     const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
     const link = document.createElement("a");
     link.href = `/api/export?format=${format}&confirm=true`;
@@ -194,7 +192,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     openNewAccount,
     openEditAccount,
     openSlotPurchase,
-    openExport: (format) => setExportFormat(format),
+    openExport: () => setExportOpen(true),
     openImport: () => setImportOpen(true),
     confirm,
   };
@@ -280,11 +278,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                 )}
               </button>
 
-              <Button variant="outline" size="sm" onClick={() => setExportFormat("csv")}>
-                CSV
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setExportFormat("json")}>
-                Backup
+              <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
+                Export
               </Button>
               <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
                 Import
@@ -350,10 +345,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         />
 
         <ExportConfirmModal
-          open={exportFormat !== null}
-          format={exportFormat}
+          open={exportOpen}
           accountCount={fleet.accounts.length}
-          onCancel={() => setExportFormat(null)}
+          onCancel={() => setExportOpen(false)}
           onConfirm={performExport}
         />
 

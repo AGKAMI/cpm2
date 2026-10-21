@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { LIMITS, carCapacity, formatNumber } from "@/lib/constants";
@@ -7,22 +8,22 @@ import type { AccountSummary } from "@/lib/types";
 
 type ExportConfirmProps = {
   open: boolean;
-  format: "csv" | "json" | null;
   accountCount: number;
   busy?: boolean;
   onCancel: () => void;
-  onConfirm: () => void;
+  onConfirm: (format: "csv" | "json") => void;
 };
 
 /** Explicit gate before the plaintext credential export is allowed to run. */
 export function ExportConfirmModal({
   open,
-  format,
   accountCount,
   busy = false,
   onCancel,
   onConfirm,
 }: ExportConfirmProps) {
+  const [picked, setPicked] = useState<"csv" | "json">("csv");
+
   return (
     <Modal
       open={open}
@@ -35,8 +36,8 @@ export function ExportConfirmModal({
           <Button variant="ghost" onClick={onCancel} type="button">
             Cancel
           </Button>
-          <Button variant="primary" onClick={onConfirm} disabled={busy} type="button">
-            {busy ? "Exporting…" : `Export ${(format ?? "csv").toUpperCase()}`}
+          <Button variant="primary" onClick={() => onConfirm(picked)} disabled={busy} type="button">
+            {busy ? "Exporting…" : `Export ${picked.toUpperCase()}`}
           </Button>
         </>
       }
@@ -55,6 +56,42 @@ export function ExportConfirmModal({
           The export is recorded in the activity log.
         </li>
       </ul>
+
+      <div className="mt-5 border-t border-ink/10 pt-4">
+        <span className="label-caps">File format</span>
+        <div className="mt-2 flex gap-2">
+          <button
+            type="button"
+            onClick={() => setPicked("csv")}
+            aria-pressed={picked === "csv"}
+            className={`flex-1 rounded-[3px] border px-3 py-2 text-left transition-colors ${
+              picked === "csv"
+                ? "border-racing bg-racing/8"
+                : "border-ink/15 bg-paper-raised hover:border-ink/30"
+            }`}
+          >
+            <span className="block font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-ink">
+              CSV
+            </span>
+            <span className="num mt-0.5 block text-[10px] text-ink-faint">opens in any spreadsheet</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPicked("json")}
+            aria-pressed={picked === "json"}
+            className={`flex-1 rounded-[3px] border px-3 py-2 text-left transition-colors ${
+              picked === "json"
+                ? "border-racing bg-racing/8"
+                : "border-ink/15 bg-paper-raised hover:border-ink/30"
+            }`}
+          >
+            <span className="block font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-ink">
+              JSON
+            </span>
+            <span className="num mt-0.5 block text-[10px] text-ink-faint">full backup, re-importable</span>
+          </button>
+        </div>
+      </div>
     </Modal>
   );
 }

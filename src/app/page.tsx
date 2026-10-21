@@ -2,11 +2,9 @@
 
 import Link from "next/link";
 import { useFleet } from "@/components/FleetProvider";
-import { useShell } from "@/components/AppShell";
 import { StatTiles } from "@/components/StatTiles";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { CashBars, CapacityBars, CoinLedger } from "@/components/charts";
-import { Button } from "@/components/ui/Button";
 import { formatNumber } from "@/lib/constants";
 
 function Panel({
@@ -31,7 +29,6 @@ function Panel({
 
 export default function OverviewPage() {
   const fleet = useFleet();
-  const shell = useShell();
 
   const atCashCap = fleet.accounts.filter((account) => account.cash >= 50_000_000);
   const atCoinCap = fleet.accounts.filter((account) => account.coins >= 30_000);
@@ -101,18 +98,17 @@ export default function OverviewPage() {
             ) : null}
           </Panel>
 
-          <Panel title="Quick actions">
-            <div className="flex flex-col gap-2">
-              <Button variant="primary" size="sm" onClick={shell.openNewAccount}>
-                + Add account
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => shell.openExport("csv")}>
-                Export CSV
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => shell.openImport()}>
-                Import a backup
-              </Button>
-            </div>
+          <Panel title="Go to">
+            <ul className="flex flex-col">
+              <Jump href="/fleet" label="The fleet register" hint={`${fleet.accounts.length} accounts`} />
+              <Jump
+                href="/fleet?view=archived"
+                label="Archived accounts"
+                hint={`${fleet.archived.length} filed`}
+              />
+              <Jump href="/activity" label="The activity log" hint={`${fleet.events.length} entries`} />
+              <Jump href="/settings" label="Settings & backup" hint="limits, paths, theme" />
+            </ul>
           </Panel>
         </div>
       </div>
@@ -133,6 +129,17 @@ export default function OverviewPage() {
         )}
       </section>
     </div>
+  );
+}
+
+function Jump({ href, label, hint }: { href: string; label: string; hint: string }) {
+  return (
+    <li className="border-b border-ink/8 last:border-0">
+      <Link href={href} className="flex items-baseline justify-between gap-3 py-2 hover:text-racing">
+        <span className="text-[12px] text-ink">{label}</span>
+        <span className="num text-[10px] text-ink-faint">{hint} →</span>
+      </Link>
+    </li>
   );
 }
 

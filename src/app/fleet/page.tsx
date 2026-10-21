@@ -162,9 +162,9 @@ function FleetPageInner() {
                 : "Nothing matches this search or filter."}
             </p>
             {source.length === 0 && !showArchived ? (
-              <Button variant="primary" className="mt-5" onClick={shell.openNewAccount}>
-                + Track your first account
-              </Button>
+              <p className="num mt-3 text-[10px] text-ink-faint">
+                use “+ Add account” in the header to log the first one
+              </p>
             ) : null}
           </div>
         ) : (

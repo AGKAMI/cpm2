@@ -195,7 +195,7 @@ export default function AccountPage() {
               </div>
               <div className="flex items-baseline justify-between gap-2">
                 <dt className="text-[12px] text-ink-soft">Spent on cars</dt>
-                <dd className="num text-[12px] text-blueprint">{formatNumber(account.coinsSpentOnCars)}</dd>
+                <dd className="num text-[12px] text-brass">{formatNumber(account.coinsSpentOnCars)}</dd>
               </div>
               <div className="flex items-baseline justify-between gap-2 border-t border-ink/10 pt-2">
                 <dt className="text-[12px] font-semibold text-ink">Spendable</dt>

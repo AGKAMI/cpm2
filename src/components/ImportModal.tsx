@@ -26,6 +26,7 @@ export function ImportModal({ open, busy, onClose, onImport }: ImportModalProps)
   const [csv, setCsv] = useState("");
   const [report, setReport] = useState<ImportReport | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
 
   function reset() {
     setCsv("");
@@ -39,13 +40,17 @@ export function ImportModal({ open, busy, onClose, onImport }: ImportModalProps)
   }
 
   async function run() {
+    if (importing) return;
     setError(null);
+    setImporting(true);
     try {
       const result = await onImport(csv);
       setReport(result);
       setCsv("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Import failed.");
+    } finally {
+      setImporting(false);
     }
   }
 
@@ -68,11 +73,13 @@ export function ImportModal({ open, busy, onClose, onImport }: ImportModalProps)
           </Button>
           <Button
             variant="primary"
-            onClick={run}
-            disabled={busy || rowCount === 0}
+            onClick={() => void run()}
+            disabled={busy || importing || rowCount === 0}
             type="button"
           >
-            {busy ? "Importing…" : `Import ${rowCount || ""} row${rowCount === 1 ? "" : "s"}`}
+            {importing
+              ? "Importing…"
+              : `Import ${rowCount || ""} row${rowCount === 1 ? "" : "s"}`}
           </Button>
         </>
       }

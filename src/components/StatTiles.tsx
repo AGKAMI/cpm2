@@ -20,7 +20,7 @@ function SpecCell({
     <div className="spec-cell">
       <div className="flex items-baseline justify-between gap-3">
         <span className="label-caps">{label}</span>
-        <span className="num text-[10px] text-ink-faint/70">{index}</span>
+        <span className="num text-[10px] text-ink-faint">{index}</span>
       </div>
       <p className={`spec-value mt-1.5 ${accent ? "spec-value-accent" : ""}`}>{value}</p>
       <p className="mt-1.5 text-[11px] leading-tight text-ink-faint">{sub}</p>

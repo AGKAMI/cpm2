@@ -6,6 +6,7 @@ import { StatTiles } from "@/components/StatTiles";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { CashBars, CapacityBars, CoinLedger } from "@/components/charts";
 import { PageHeading } from "@/components/PageHeading";
+import { ClassCompletion } from "@/components/ClassCompletion";
 import { formatNumber } from "@/lib/constants";
 
 function Panel({
@@ -53,6 +54,10 @@ export default function OverviewPage() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="flex flex-col gap-4 lg:col-span-2">
+          <Panel title="Drag class completion" hint="accounts holding each metal, per class">
+            <ClassCompletion trophies={fleet.trophies} />
+          </Panel>
+
           <Panel title="Cash by account" hint="top holdings">
             <CashBars accounts={fleet.accounts} />
           </Panel>

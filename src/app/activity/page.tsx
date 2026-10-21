@@ -73,7 +73,7 @@ export default function ActivityPage() {
               >
                 {item.label}
                 {item.key !== "all" && counts.get(item.key) ? (
-                  <span className="num ml-1.5 opacity-60">{counts.get(item.key)}</span>
+                  <span className="num ml-1.5 opacity-75">{counts.get(item.key)}</span>
                 ) : null}
               </button>
             ))}

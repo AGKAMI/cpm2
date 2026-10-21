@@ -24,6 +24,7 @@ export function Modal({
 }: ModalProps) {
   const sheetRef = useRef<HTMLDivElement | null>(null);
   const onCloseRef = useRef(onClose);
+  const triggerRef = useRef<HTMLElement | null>(null);
 
   // Keep the latest callback without re-running the focus/keyboard effect.
   useEffect(() => {
@@ -32,6 +33,10 @@ export function Modal({
 
   useEffect(() => {
     if (!open) return;
+
+    // Remember what was focused before the sheet took the keyboard, so it can go back on close.
+    triggerRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -75,6 +80,9 @@ export function Modal({
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = previousOverflow;
       window.clearTimeout(timer);
+      // Hand the keyboard back to whatever opened the sheet.
+      if (triggerRef.current?.isConnected) triggerRef.current.focus();
+      triggerRef.current = null;
     };
   }, [open]);
 

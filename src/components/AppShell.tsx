@@ -341,7 +341,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           key={`slot-${slotSession}`}
           open={slotAccount !== null}
           account={slotAccount}
-          onClose={() => setSlotAccount(null)}
+          onClose={() => {
+            // While the purchase confirmation sits on top, Escape belongs to it first —
+            // one press unwinds one layer, not the whole flow.
+            if (pendingSlot === null) setSlotAccount(null);
+          }}
           onReview={(count) => {
             if (slotAccount) setPendingSlot({ account: slotAccount, count });
           }}
@@ -355,6 +359,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           onConfirm={() => {
             if (pendingSlot) void fleet.buySlots(pendingSlot.account, pendingSlot.count);
             setPendingSlot(null);
+            // The buy dialog shows the pre-purchase balances — close it too,
+            // so the refreshed account page is the next thing on screen.
+            setSlotAccount(null);
           }}
         />
 

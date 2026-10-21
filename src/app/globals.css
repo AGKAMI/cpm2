@@ -10,21 +10,21 @@
   --color-paper-raised: #fbf9f3;
   --color-paper-sunken: #e6e0cf;
 
-  /* Ink */
+  /* Ink — ink-faint passes AA 4.5:1 on both paper tokens */
   --color-ink: #17201b;
   --color-ink-soft: #4b564f;
-  --color-ink-faint: #7d857d;
+  --color-ink-faint: #626a62;
 
   /* Livery */
   --color-racing: #16513a;
   --color-racing-deep: #0d3a29;
-  --color-brass: #a3761f;
+  --color-brass: #8a6319;
   --color-oxblood: #8d3039;
   --color-blueprint: #2b5885;
 
-  /* Trophy metals */
-  --color-silver: #8f979e;
-  --color-bronze: #b1673a;
+  /* Trophy metals — AA on paper */
+  --color-silver: #626d77;
+  --color-bronze: #9d5a30;
 }
 
 /* Night shift: same ledger, lit from the dashboard glow. */
@@ -73,6 +73,8 @@
 
   html {
     color-scheme: light;
+    /* Decorative bleeds (the dial sweep) must never create sideways panning. */
+    overflow-x: clip;
   }
 
   body {
@@ -190,8 +192,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     border-radius: 3px;
     border: 1px solid color-mix(in srgb, var(--color-ink) 25%, transparent);
     background: rgba(251, 249, 243, 0.85);
@@ -212,7 +214,7 @@
     right: 12px;
     font-size: 10px;
     letter-spacing: 0.02em;
-    color: color-mix(in srgb, var(--color-ink) 45%, transparent);
+    color: var(--color-ink-faint);
     text-decoration: none;
   }
 
@@ -452,7 +454,7 @@
   }
 
   .field-rule::placeholder {
-    color: rgba(125, 133, 125, 0.75);
+    color: var(--color-ink-faint);
   }
 
   .field-rule:hover {
@@ -537,6 +539,13 @@
     border-radius: 50%;
     border: 1px solid color-mix(in srgb, var(--color-racing) 11%, transparent);
     pointer-events: none;
+  }
+
+  /* On narrow screens the arc is off-canvas noise — drop it at the source. */
+  @media (max-width: 640px) {
+    .dial-sweep {
+      display: none;
+    }
   }
 
   .dial-sweep::before {

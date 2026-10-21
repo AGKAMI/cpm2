@@ -122,7 +122,7 @@ export function TrophyCabinet({
                       onClick={() => void bump(klass, metal.key, -1)}
                       disabled={readOnly || busy !== null || value === 0}
                       aria-label={`Remove one ${metal.label.toLowerCase()} trophy from class ${klass}`}
-                      className="square-btn h-5 w-5 text-[11px]"
+                      className="square-btn h-6 w-6 text-[12px]"
                     >
                       −
                     </button>
@@ -134,7 +134,7 @@ export function TrophyCabinet({
                       onClick={() => void bump(klass, metal.key, 1)}
                       disabled={readOnly || busy !== null}
                       aria-label={`Add one ${metal.label.toLowerCase()} trophy to class ${klass}`}
-                      className="square-btn h-5 w-5 text-[11px]"
+                      className="square-btn h-6 w-6 text-[12px]"
                     >
                       +
                     </button>

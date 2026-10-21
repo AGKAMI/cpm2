@@ -60,13 +60,15 @@ export function AccountTable({
             <tr className="rule-double">
               {selectable ? (
                 <th className="w-9 px-2.5 py-3 text-left">
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    onChange={() => onToggleAll?.()}
-                    aria-label="Select every account"
-                    className="h-3.5 w-3.5 accent-[#16513a]"
-                  />
+                  <label className="inline-flex h-6 w-6 cursor-pointer items-center justify-center">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      onChange={() => onToggleAll?.()}
+                      aria-label="Select every account"
+                      className="h-3.5 w-3.5 accent-[#16513a]"
+                    />
+                  </label>
                 </th>
               ) : null}
               <th className="label-caps w-12 px-2.5 py-3 text-left">#</th>
@@ -98,13 +100,15 @@ export function AccountTable({
               >
                 {selectable ? (
                   <td className="px-2.5 py-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.includes(account.id)}
-                      onChange={() => onToggleSelect?.(account.id)}
-                      aria-label={`Select ${account.email}`}
-                      className="h-3.5 w-3.5 accent-[#16513a]"
-                    />
+                    <label className="inline-flex h-6 w-6 cursor-pointer items-center justify-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(account.id)}
+                        onChange={() => onToggleSelect?.(account.id)}
+                        aria-label={`Select ${account.email}`}
+                        className="h-3.5 w-3.5 accent-[#16513a]"
+                      />
+                    </label>
                   </td>
                 ) : null}
                 <td className="num px-2.5 py-3 text-[11px] text-ink-faint">
@@ -149,7 +153,7 @@ export function AccountTable({
                     <button
                       type="button"
                       onClick={() => onBuySlot(account)}
-                      className="mt-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint transition hover:text-racing"
+                      className="mt-1.5 inline-flex min-h-[24px] items-center font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint transition hover:text-racing"
                     >
                       + buy slot (100c)
                     </button>
@@ -218,7 +222,7 @@ export function AccountTable({
                   </span>
                 </Link>
                 {account.notes ? (
-                  <p className="mt-0.5 truncate text-[11px] text-ink-faint">{account.notes}</p>
+                  <p className="mt-0.5 truncate text-[12px] text-ink-faint">{account.notes}</p>
                 ) : null}
               </div>
               <div className="flex shrink-0 gap-2.5">
@@ -280,7 +284,7 @@ export function AccountTable({
               </div>
               <div>
                 <dt className="label-caps">Updated</dt>
-                <dd className="mt-1 text-[11px] text-ink-faint">{relativeTime(account.updatedAt)}</dd>
+                <dd className="mt-1 text-[12px] text-ink-faint">{relativeTime(account.updatedAt)}</dd>
               </div>
             </dl>
 
@@ -321,7 +325,7 @@ function SortButton({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-1 transition hover:text-racing ${
+      className={`inline-flex min-h-[24px] items-center gap-1 transition hover:text-racing ${
         align === "right" ? "flex-row-reverse" : ""
       } ${active ? "text-racing" : ""}`}
     >

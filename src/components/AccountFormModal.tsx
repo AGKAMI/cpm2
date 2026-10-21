@@ -175,7 +175,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
               onClick={() => setShowPassword((value) => !value)}
               aria-pressed={showPassword}
               aria-label={showPassword ? "Hide password" : "Show password"}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-1 font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint transition hover:text-racing"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-1.5 inline-flex min-h-[24px] items-center font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint transition hover:text-racing"
             >
               {showPassword ? "Hide" : "Show"}
             </button>

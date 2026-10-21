@@ -94,7 +94,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={toast.id}
             role="status"
-            className={`panel animate-pop pointer-events-auto flex items-start gap-3 rounded-[4px] border-l-[3px] px-4 py-3 ${TONES[toast.kind].bar}`}
+            className={`panel animate-pop pointer-events-auto flex items-start gap-3 rounded-[14px] border-l-[3px] px-4 py-3 ${TONES[toast.kind].bar}`}
           >
             <span className={`mt-0.5 ${TONES[toast.kind].accent}`}>{TONES[toast.kind].icon}</span>
             <div className="min-w-0 flex-1">

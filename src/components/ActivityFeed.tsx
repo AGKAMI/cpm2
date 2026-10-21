@@ -18,7 +18,7 @@ const TYPES: Record<FleetEventType, { label: string; mark: string; text: string 
 export function ActivityFeed({ events }: { events: FleetEvent[] }) {
   if (events.length === 0) {
     return (
-      <div className="panel rounded-[4px] px-6 py-16 text-center">
+      <div className="panel rounded-[14px] px-6 py-16 text-center">
         <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">No activity yet</p>
         <p className="mt-2 text-sm text-ink-faint">
           Every account you add, edit or delete shows up here as a permanent log.
@@ -28,7 +28,7 @@ export function ActivityFeed({ events }: { events: FleetEvent[] }) {
   }
 
   return (
-    <ol className="panel overflow-hidden rounded-[4px]">
+    <ol className="panel overflow-hidden rounded-[14px]">
       {events.map((event, index) => {
         const meta = TYPES[event.type] ?? TYPES.updated;
         return (
@@ -54,7 +54,7 @@ export function ActivityFeed({ events }: { events: FleetEvent[] }) {
                   {Object.entries(event.changes).map(([field, change]) => (
                     <span
                       key={field}
-                      className="num rounded-[2px] border border-ink/12 bg-paper-sunken px-1.5 py-0.5 text-[10px] text-ink-soft"
+                      className="num rounded-full border border-ink/12 bg-paper-sunken px-1.5 py-0.5 text-[10px] text-ink-soft"
                     >
                       <span className="text-ink-faint">{field}</span>{" "}
                       <span className="text-ink">{renderValue(change.from)}</span>{" "}

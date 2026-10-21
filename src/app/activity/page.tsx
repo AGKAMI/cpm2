@@ -63,7 +63,7 @@ export default function ActivityPage() {
                 key={item.key}
                 type="button"
                 onClick={() => setFilter(item.key)}
-                className={`rounded-[3px] border px-2.5 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors ${
+                className={`rounded-full border px-3 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors ${
                   filter === item.key
                     ? "border-racing bg-racing text-paper"
                     : "border-ink/15 bg-paper-raised text-ink-soft hover:border-racing/50 hover:text-racing"
@@ -87,7 +87,7 @@ export default function ActivityPage() {
       </div>
 
       {events.length === 0 ? (
-        <div className="panel rounded-[4px] px-6 py-16 text-center">
+        <div className="panel rounded-[14px] px-6 py-16 text-center">
           <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
             Nothing logged
           </p>

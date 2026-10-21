@@ -66,7 +66,7 @@ export function SlotModal({ open, account, onClose, onReview }: SlotModalProps) 
           <Stat label="Garage" value={`${account.cars}/${account.capacity}`} tone="text-blueprint" />
         </div>
 
-        <div className="panel-tight flex items-center justify-between gap-4 rounded-[3px] px-4 py-3">
+        <div className="panel-tight flex items-center justify-between gap-4 rounded-[8px] px-4 py-3">
           <div>
             <p className="label-caps">How many slots?</p>
             <p className="mt-1 text-[11px] text-ink-faint">
@@ -96,20 +96,20 @@ export function SlotModal({ open, account, onClose, onReview }: SlotModalProps) 
           </div>
         </div>
 
-        <div className="flex items-center justify-between rounded-[3px] border border-ink/12 bg-paper-sunken px-4 py-3">
+        <div className="flex items-center justify-between rounded-[8px] border border-ink/12 bg-paper-sunken px-4 py-3">
           <span className="label-caps">New garage size</span>
           <span className="num text-sm text-racing">
             {account.cars}/{newCapacity} slots
           </span>
         </div>
 
-        <div className="flex items-center justify-between rounded-[3px] border border-ink/12 bg-paper-sunken px-4 py-3">
+        <div className="flex items-center justify-between rounded-[8px] border border-ink/12 bg-paper-sunken px-4 py-3">
           <span className="label-caps">Total cost</span>
           <span className="num text-sm text-racing">{formatNumber(cost)} coins</span>
         </div>
 
         {blocker ? (
-          <p className="rounded-[3px] border border-oxblood/35 bg-oxblood/8 px-3 py-2 text-xs text-oxblood">
+          <p className="rounded-[8px] border border-oxblood/35 bg-oxblood/8 px-3 py-2 text-xs text-oxblood">
             {blocker}
           </p>
         ) : null}
@@ -120,7 +120,7 @@ export function SlotModal({ open, account, onClose, onReview }: SlotModalProps) 
 
 function Stat({ label, value, tone }: { label: string; value: string; tone: string }) {
   return (
-    <div className="panel-tight rounded-[4px] px-3 py-2.5">
+    <div className="panel-tight rounded-[14px] px-3 py-2.5">
       <p className="label-caps">{label}</p>
       <p className={`num mt-1 text-[15px] font-bold ${tone}`}>{value}</p>
     </div>

@@ -133,12 +133,12 @@ function FleetPageInner() {
       ) : null}
 
       {fleet.error ? (
-        <div className="rounded-[3px] border border-oxblood/35 bg-oxblood/8 px-4 py-3 text-sm text-oxblood">
+        <div className="rounded-[8px] border border-oxblood/35 bg-oxblood/8 px-4 py-3 text-sm text-oxblood">
           {fleet.error}
         </div>
       ) : null}
 
-      <section className="panel animate-rise overflow-hidden rounded-[4px]">
+      <section className="panel animate-rise overflow-hidden rounded-[14px]">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/12 bg-paper-sunken px-4 py-2.5">
           <span className="label-caps">
             {visible.length} of {source.length} account{source.length === 1 ? "" : "s"}

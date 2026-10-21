@@ -50,7 +50,7 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`panel animate-pop relative z-10 my-auto flex max-h-[92vh] w-full flex-col overflow-hidden rounded-[5px] border-t-[3px] border-t-racing shadow-[0_24px_50px_-32px_rgba(23,32,27,0.6)] ${width}`}
+        className={`panel animate-pop relative z-10 my-auto flex max-h-[92vh] w-full flex-col overflow-hidden rounded-[18px] border-t-[3px] border-t-racing shadow-[0_24px_50px_-32px_rgba(23,32,27,0.6)] ${width}`}
       >
         <header className="flex items-start gap-4 border-b border-ink/12 px-5 py-4 sm:px-6">
           <div className="min-w-0 flex-1">

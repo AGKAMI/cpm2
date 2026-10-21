@@ -31,7 +31,7 @@ export default function AccountPage() {
 
   if (!account) {
     return (
-      <div className="panel rounded-[4px] px-6 py-16 text-center">
+      <div className="panel rounded-[14px] px-6 py-16 text-center">
         <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
           Account not found
         </p>
@@ -62,7 +62,7 @@ export default function AccountPage() {
               <span className="plate-text num text-[13px]">{account.email}</span>
             </span>
             {archived ? (
-              <span className="rounded-[2px] border border-oxblood/40 px-1.5 py-0.5 font-sans text-[9px] font-semibold uppercase tracking-[0.14em] text-oxblood">
+              <span className="rounded-full border border-oxblood/40 px-1.5 py-0.5 font-sans text-[9px] font-semibold uppercase tracking-[0.14em] text-oxblood">
                 Archived
               </span>
             ) : null}
@@ -112,7 +112,7 @@ export default function AccountPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <section className="panel rounded-[4px] p-5 lg:col-span-2">
+        <section className="panel rounded-[14px] p-5 lg:col-span-2">
           <div className="mb-4 flex items-baseline justify-between gap-3">
             <h2 className="label-caps">Balances</h2>
             <span className="num text-[10px] text-ink-faint">steppers write straight to the ledger</span>
@@ -163,7 +163,7 @@ export default function AccountPage() {
         </section>
 
         <div className="flex flex-col gap-4">
-          <section className="panel rounded-[4px] p-5">
+          <section className="panel rounded-[14px] p-5">
             <h2 className="label-caps mb-4">Credentials</h2>
             <PasswordCell accountId={account.id} />
             <p className="mt-3 text-[11px] leading-snug text-ink-faint">
@@ -171,7 +171,7 @@ export default function AccountPage() {
             </p>
           </section>
 
-          <section className="panel rounded-[4px] p-5">
+          <section className="panel rounded-[14px] p-5">
             <h2 className="label-caps mb-4">Coin ledger</h2>
             <dl className="flex flex-col gap-2">
               <div className="flex items-baseline justify-between gap-2">
@@ -210,7 +210,7 @@ export default function AccountPage() {
           </span>
         </div>
         {history.length === 0 ? (
-          <div className="panel rounded-[4px] px-6 py-10 text-center text-sm text-ink-faint">
+          <div className="panel rounded-[14px] px-6 py-10 text-center text-sm text-ink-faint">
             No entries for this account yet.
           </div>
         ) : (

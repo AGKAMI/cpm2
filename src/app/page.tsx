@@ -17,7 +17,7 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="panel rounded-[4px] p-5">
+    <section className="panel rounded-[14px] p-5">
       <div className="mb-4 flex items-baseline justify-between gap-3">
         <h2 className="label-caps">{title}</h2>
         {hint ? <span className="num text-[10px] text-ink-faint">{hint}</span> : null}
@@ -121,7 +121,7 @@ export default function OverviewPage() {
           </Link>
         </div>
         {fleet.events.length === 0 ? (
-          <div className="panel rounded-[4px] px-6 py-10 text-center text-sm text-ink-faint">
+          <div className="panel rounded-[14px] px-6 py-10 text-center text-sm text-ink-faint">
             Nothing has happened yet.
           </div>
         ) : (

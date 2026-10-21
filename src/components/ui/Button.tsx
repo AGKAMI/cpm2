@@ -17,8 +17,8 @@ const VARIANTS: Record<Variant, string> = {
 };
 
 const SIZES: Record<Size, string> = {
-  sm: "h-8 px-3 text-[10px] tracking-[0.14em]",
-  md: "h-10 px-4 text-[11px] tracking-[0.15em]",
+  sm: "h-8 px-3.5 text-[10px] tracking-[0.14em]",
+  md: "h-10 px-5 text-[11px] tracking-[0.15em]",
   icon: "h-9 w-9 justify-center",
 };
 
@@ -38,7 +38,7 @@ export function Button({
   return (
     <button
       {...props}
-      className={`inline-flex items-center gap-2 rounded-[3px] font-sans font-semibold uppercase transition-[background-color,border-color,color,transform] duration-150 disabled:cursor-not-allowed disabled:opacity-40 ${VARIANTS[variant]} ${SIZES[size]} ${className}`}
+      className={`inline-flex items-center gap-2 rounded-full font-sans font-semibold uppercase transition-[background-color,border-color,color,transform] duration-150 disabled:cursor-not-allowed disabled:opacity-40 ${VARIANTS[variant]} ${SIZES[size]} ${className}`}
     >
       {children}
     </button>

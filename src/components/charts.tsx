@@ -66,7 +66,7 @@ export function CoinLedger({ stats }: { stats: FleetStats }) {
       <dl className="mt-3 flex flex-col gap-1.5">
         {slices.map((slice) => (
           <div key={slice.label} className="flex items-center gap-2">
-            <span className={`h-2 w-2 rounded-[1px] ${slice.className}`} />
+            <span className={`h-2 w-2 rounded-full ${slice.className}`} />
             <dt className="text-[11px] text-ink-soft">{slice.label}</dt>
             <dd className="num ml-auto text-[11px] text-ink">{formatNumber(slice.value)}</dd>
           </div>

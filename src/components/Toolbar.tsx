@@ -68,7 +68,7 @@ export function FleetToolbar({
         <select
           value={filter}
           onChange={(event) => onFilter(event.target.value as FleetFilter)}
-          className="mt-1 block h-9 rounded-[3px] border border-ink/15 bg-paper-raised px-2.5 font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-soft focus:border-racing focus:outline-none"
+          className="mt-1 block h-9 rounded-[8px] border border-ink/15 bg-paper-raised px-2.5 font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-soft focus:border-racing focus:outline-none"
         >
           {FILTERS.map((item) => (
             <option key={item.key} value={item.key} className="bg-paper-raised text-ink">

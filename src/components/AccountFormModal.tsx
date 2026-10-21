@@ -260,7 +260,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
         </Field>
 
         {errors.form ? (
-          <p className="rounded-[3px] border border-oxblood/35 bg-oxblood/8 px-3 py-2 text-xs text-oxblood">
+          <p className="rounded-[8px] border border-oxblood/35 bg-oxblood/8 px-3 py-2 text-xs text-oxblood">
             {errors.form}
           </p>
         ) : null}

@@ -6,7 +6,7 @@
   --font-mono: var(--font-plex-mono), ui-monospace, "Cascadia Mono", monospace;
 
   /* Paper stock */
-  --color-paper: var(--color-paper);
+  --color-paper: #f1ede1;
   --color-paper-raised: #fbf9f3;
   --color-paper-sunken: #e6e0cf;
 
@@ -128,8 +128,8 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    /* photo plate: desaturated but clearly VISIBLE (s 0.45, not 0.22), full-bleed */
-    filter: saturate(0.45) contrast(0.98) brightness(1.03);
+    /* a whisper of a car, never a competitor for the ledger */
+    filter: saturate(0.18) contrast(0.9) brightness(1.02);
     opacity: 0;
     animation: backdrop-in 1.2s ease 0.15s both;
   }
@@ -137,18 +137,17 @@
   .car-backdrop-scrim {
     position: absolute;
     inset: 0;
-    /* readable but the photo SHOWS: top band lighter (content sits there),
-       middle drops to 0.6 so the car reads clearly, footer re-solidifies */
+    /* heavy paper wash: bright photos still stay background texture */
     background:
       linear-gradient(
         180deg,
-        color-mix(in srgb, var(--color-paper) 90%, transparent) 0%,
-        color-mix(in srgb, var(--color-paper) 82%, transparent) 16%,
-        color-mix(in srgb, var(--color-paper) 60%, transparent) 38%,
-        color-mix(in srgb, var(--color-paper) 58%, transparent) 55%,
-        color-mix(in srgb, var(--color-paper) 78%, transparent) 78%,
-        color-mix(in srgb, var(--color-paper) 92%, transparent) 100%
-      );
+        color-mix(in srgb, var(--color-paper) 95%, transparent) 0%,
+        color-mix(in srgb, var(--color-paper) 93%, transparent) 30%,
+        color-mix(in srgb, var(--color-paper) 87%, transparent) 55%,
+        color-mix(in srgb, var(--color-paper) 93%, transparent) 80%,
+        color-mix(in srgb, var(--color-paper) 96%, transparent) 100%
+      ),
+      radial-gradient(1200px 700px at 50% 0%, color-mix(in srgb, var(--color-paper) 72%, transparent), transparent 70%);
   }
 
   .car-backdrop-hide {
@@ -212,15 +211,17 @@
 
   .panel {
     background: var(--color-paper-raised);
-    border: 1px solid color-mix(in srgb, var(--color-ink) 14%, transparent);
-    border-radius: 4px;
-    box-shadow: 0 1px 0 color-mix(in srgb, var(--color-ink) 4%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-ink) 7%, transparent);
+    border-radius: 16px;
+    box-shadow:
+      0 1px 1px color-mix(in srgb, var(--color-ink) 3%, transparent),
+      0 10px 30px -22px color-mix(in srgb, var(--color-ink) 45%, transparent);
   }
 
   .panel-tight {
-    background: var(--color-paper-raised);
-    border: 1px solid color-mix(in srgb, var(--color-ink) 10%, transparent);
-    border-radius: 3px;
+    background: color-mix(in srgb, var(--color-paper-sunken) 55%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-ink) 6%, transparent);
+    border-radius: 11px;
   }
 
   /* --- type ---------------------------------------------------------- */
@@ -257,35 +258,24 @@
     border-bottom: 3px double color-mix(in srgb, var(--color-ink) 22%, transparent);
   }
 
-  /* --- spec strip: one band, hairline dividers, no cards ------------ */
+  /* --- spec strip: one soft band, no hard cells ---------------------- */
 
   .spec-strip {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 26px;
     background: var(--color-paper-raised);
-    border: 1px solid color-mix(in srgb, var(--color-ink) 14%, transparent);
-    border-radius: 4px;
-    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--color-ink) 7%, transparent);
+    border-radius: 16px;
+    box-shadow:
+      0 1px 1px color-mix(in srgb, var(--color-ink) 3%, transparent),
+      0 10px 30px -22px color-mix(in srgb, var(--color-ink) 45%, transparent);
+    padding: 4px 6px;
   }
 
   .spec-cell {
     position: relative;
-    padding: 13px 16px 15px;
-  }
-
-  .spec-cell + .spec-cell {
-    border-left: 1px solid color-mix(in srgb, var(--color-ink) 12%, transparent);
-  }
-
-  @media (max-width: 767px) {
-    .spec-cell:nth-child(3),
-    .spec-cell:nth-child(4) {
-      border-top: 1px solid color-mix(in srgb, var(--color-ink) 12%, transparent);
-    }
-
-    .spec-cell:nth-child(3) {
-      border-left: 0;
-    }
+    padding: 14px 14px 16px;
   }
 
   @media (min-width: 768px) {
@@ -333,13 +323,14 @@
     display: inline-flex;
     align-items: center;
     max-width: 100%;
-    padding: 3px 15px;
-    border-radius: 3px;
+    padding: 3px 16px;
+    border-radius: 9px;
     background: linear-gradient(180deg, #ffffff 0%, #f2efe6 100%);
     border: 1px solid #b9b2a1;
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.9),
-      inset 0 -1px 0 color-mix(in srgb, var(--color-ink) 12%, transparent);
+      inset 0 -1px 0 rgba(23, 32, 27, 0.1),
+      0 1px 2px color-mix(in srgb, var(--color-ink) 18%, transparent);
   }
 
   .plate::before,
@@ -379,8 +370,8 @@
     justify-content: center;
     width: 22px;
     height: 22px;
-    border-radius: 3px;
-    border: 1px solid color-mix(in srgb, var(--color-ink) 18%, transparent);
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--color-ink) 16%, transparent);
     background: transparent;
     color: var(--color-ink-soft);
     font-size: 12px;
@@ -388,7 +379,8 @@
     transition:
       background-color 0.14s ease,
       color 0.14s ease,
-      border-color 0.14s ease;
+      border-color 0.14s ease,
+      transform 0.14s ease;
   }
 
   .square-btn:hover:not(:disabled) {
@@ -492,11 +484,40 @@
 
   /* --- log ------------------------------------------------------------ */
 
+  /* --- instrument sweep: a soft arc behind the masthead --------------- */
+
+  .dial-sweep {
+    position: absolute;
+    top: -190px;
+    right: -140px;
+    width: 520px;
+    height: 520px;
+    border-radius: 50%;
+    border: 1px solid color-mix(in srgb, var(--color-racing) 11%, transparent);
+    pointer-events: none;
+  }
+
+  .dial-sweep::before {
+    content: "";
+    position: absolute;
+    inset: 40px;
+    border-radius: 50%;
+    border: 1px solid color-mix(in srgb, var(--color-racing) 8%, transparent);
+  }
+
+  .dial-sweep::after {
+    content: "";
+    position: absolute;
+    inset: 92px;
+    border-radius: 50%;
+    border: 1px solid color-mix(in srgb, var(--color-brass) 9%, transparent);
+  }
+
   .log-mark {
     display: inline-block;
     width: 6px;
     height: 6px;
-    border-radius: 1px;
+    border-radius: 999px;
   }
 }
 

@@ -22,7 +22,7 @@ export default function SettingsPage() {
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <section className="panel rounded-[4px] p-5">
+      <section className="panel rounded-[14px] p-5">
         <h2 className="label-caps mb-4">Game limits</h2>
         <dl className="flex flex-col">
           <Row label="Cash per account" value={formatNumber(LIMITS.MAX_CASH)} />
@@ -37,7 +37,7 @@ export default function SettingsPage() {
         </p>
       </section>
 
-      <section className="panel rounded-[4px] p-5">
+      <section className="panel rounded-[14px] p-5">
         <h2 className="label-caps mb-4">Where the data lives</h2>
         <dl className="flex flex-col">
           <Row label="Database" value="data/cpm2.db" mono />
@@ -58,7 +58,7 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      <section className="panel rounded-[4px] p-5">
+      <section className="panel rounded-[14px] p-5">
         <h2 className="label-caps mb-4">Appearance</h2>
         <div className="flex flex-wrap gap-2">
           <Button
@@ -82,7 +82,7 @@ export default function SettingsPage() {
         </p>
       </section>
 
-      <section className="panel rounded-[4px] p-5">
+      <section className="panel rounded-[14px] p-5">
         <h2 className="label-caps mb-4">Keyboard</h2>
         <dl className="flex flex-col">
           {SHORTCUTS.map((item) => (
@@ -91,7 +91,7 @@ export default function SettingsPage() {
               className="flex items-baseline justify-between gap-4 border-b border-ink/8 py-2 last:border-0"
             >
               <dt className="text-[12px] text-ink-soft">{item.action}</dt>
-              <dd className="num rounded-[2px] border border-ink/15 bg-paper-sunken px-1.5 py-0.5 text-[11px] text-ink">
+              <dd className="num rounded-full border border-ink/15 bg-paper-sunken px-1.5 py-0.5 text-[11px] text-ink">
                 {item.keys}
               </dd>
             </div>

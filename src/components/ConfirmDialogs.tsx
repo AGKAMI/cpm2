@@ -64,7 +64,7 @@ export function ExportConfirmModal({
             type="button"
             onClick={() => setPicked("csv")}
             aria-pressed={picked === "csv"}
-            className={`flex-1 rounded-[3px] border px-3 py-2 text-left transition-colors ${
+            className={`flex-1 rounded-[12px] border px-3 py-2 text-left transition-colors ${
               picked === "csv"
                 ? "border-racing bg-racing/8"
                 : "border-ink/15 bg-paper-raised hover:border-ink/30"
@@ -79,7 +79,7 @@ export function ExportConfirmModal({
             type="button"
             onClick={() => setPicked("json")}
             aria-pressed={picked === "json"}
-            className={`flex-1 rounded-[3px] border px-3 py-2 text-left transition-colors ${
+            className={`flex-1 rounded-[12px] border px-3 py-2 text-left transition-colors ${
               picked === "json"
                 ? "border-racing bg-racing/8"
                 : "border-ink/15 bg-paper-raised hover:border-ink/30"
@@ -144,7 +144,7 @@ export function SlotPurchaseConfirmModal({
       <div className="flex flex-col gap-3">
         <p className="num text-sm text-ink">{account.email}</p>
 
-        <dl className="panel-tight grid grid-cols-2 gap-3 rounded-[4px] px-4 py-3">
+        <dl className="panel-tight grid grid-cols-2 gap-3 rounded-[14px] px-4 py-3">
           <Row label="Slots" value={`${account.slots} → ${newSlots}`} tone="text-racing" />
           <Row label="Cost" value={`${formatNumber(cost)} coins`} tone="text-racing" />
           <Row label="Balance after" value={formatNumber(balanceAfter)} tone="text-racing" />
@@ -152,7 +152,7 @@ export function SlotPurchaseConfirmModal({
         </dl>
 
         {balanceAfter < 0 ? (
-          <p className="rounded-[3px] border border-oxblood/35 bg-oxblood/8 px-3 py-2 text-xs text-oxblood">
+          <p className="rounded-[8px] border border-oxblood/35 bg-oxblood/8 px-3 py-2 text-xs text-oxblood">
             This account only has {formatNumber(account.coins)} coins — not enough for {count} slot(s).
           </p>
         ) : null}

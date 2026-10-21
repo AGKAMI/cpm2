@@ -74,7 +74,7 @@ export function PasswordCell({ accountId }: { accountId: number }) {
         {revealed ?? "••••••••"}
       </code>
       {revealed ? (
-        <span className="num rounded-[2px] border border-racing/40 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.14em] text-racing">
+        <span className="num rounded-full border border-racing/40 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.14em] text-racing">
           {secondsLeft}s
         </span>
       ) : null}

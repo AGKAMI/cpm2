@@ -10,6 +10,7 @@ import { Modal } from "@/components/ui/Modal";
 import { AccountFormModal } from "@/components/AccountFormModal";
 import { SlotModal } from "@/components/SlotModal";
 import { ExportConfirmModal, SlotPurchaseConfirmModal } from "@/components/ConfirmDialogs";
+import { CarBackdrop } from "@/components/CarBackdrop";
 import { ImportModal } from "@/components/ImportModal";
 import { useFleet } from "@/components/FleetProvider";
 import { useTheme } from "@/hooks/useTheme";
@@ -200,8 +201,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <ShellContext.Provider value={shell}>
       <div className="relative min-h-screen">
-        <header className="sticky top-0 z-30 border-b border-ink/15 bg-paper/95 backdrop-blur-sm">
-          <div className="mx-auto flex max-w-[1440px] flex-wrap items-end gap-x-6 gap-y-3 px-4 pb-2.5 pt-4 sm:px-6">
+        <CarBackdrop />
+        <header className="sticky top-0 z-30 border-b border-ink/10 bg-paper/95 backdrop-blur-sm">
+          <div className="dial-sweep" aria-hidden />
+          <div className="relative mx-auto flex max-w-[1440px] flex-wrap items-end gap-x-6 gap-y-3 px-4 pb-2.5 pt-4 sm:px-6">
             <Link href="/" className="flex items-center gap-3">
               <span className="roundel">
                 <svg
@@ -247,7 +250,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="flex flex-wrap items-center gap-2">
               <span className="hidden items-center gap-2 border border-ink/12 bg-paper-raised px-2.5 py-1.5 sm:flex">
                 <span
-                  className={`h-1.5 w-1.5 rounded-[1px] ${
+                  className={`h-1.5 w-1.5 rounded-full ${
                     fleet.error ? "bg-oxblood" : fleet.loading ? "bg-brass animate-blink" : "bg-racing"
                   }`}
                 />
@@ -386,7 +389,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 className="flex items-baseline justify-between gap-4 border-b border-ink/8 py-2 last:border-0"
               >
                 <dt className="num text-[12px] text-ink">{item.action}</dt>
-                <dd className="num rounded-[2px] border border-ink/15 bg-paper-sunken px-1.5 py-0.5 text-[11px] text-ink-soft">
+                <dd className="num rounded-full border border-ink/15 bg-paper-sunken px-1.5 py-0.5 text-[11px] text-ink-soft">
                   {item.keys}
                 </dd>
               </div>

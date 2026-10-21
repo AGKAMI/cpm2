@@ -84,13 +84,13 @@ export function ImportModal({ open, busy, onClose, onImport }: ImportModalProps)
             <ul className="flex flex-col gap-1.5 text-sm text-ink">
               {reportLines(report).map((line) => (
                 <li key={line} className="flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-[1px] bg-brass" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-brass" />
                   {line}
                 </li>
               ))}
             </ul>
             {report.results.some((row) => row.status !== "created") ? (
-              <div className="max-h-44 overflow-y-auto rounded-[3px] border border-ink/12 bg-paper-sunken p-2">
+              <div className="max-h-44 overflow-y-auto rounded-[8px] border border-ink/12 bg-paper-sunken p-2">
                 {report.results
                   .filter((row) => row.status !== "created")
                   .map((row) => (
@@ -109,7 +109,7 @@ export function ImportModal({ open, busy, onClose, onImport }: ImportModalProps)
               onChange={(event) => setCsv(event.target.value)}
               spellCheck={false}
               placeholder={`email,password,cash,coins,cars,slots,notes\naccount@mail.com,secret123,50000,2000,4,1,main`}
-              className="h-44 w-full resize-none rounded-[3px] border border-ink/15 bg-paper-raised p-3 num text-[12px] text-ink outline-none transition placeholder:text-ink-faint focus:border-racing"
+              className="h-44 w-full resize-none rounded-[8px] border border-ink/15 bg-paper-raised p-3 num text-[12px] text-ink outline-none transition placeholder:text-ink-faint focus:border-racing"
             />
             <p className="text-[11px] text-ink-faint">
               Duplicates are skipped, bad rows are reported — nothing is half-imported. Hard caps
@@ -117,7 +117,7 @@ export function ImportModal({ open, busy, onClose, onImport }: ImportModalProps)
               {" "}{LIMITS.BASE_CAR_SLOTS}+{LIMITS.MAX_PURCHASED_SLOTS} slots) are enforced per row.
             </p>
             {error ? (
-              <p className="rounded-[3px] border border-oxblood/35 bg-oxblood/8 px-3 py-2 text-xs text-oxblood">
+              <p className="rounded-[8px] border border-oxblood/35 bg-oxblood/8 px-3 py-2 text-xs text-oxblood">
                 {error}
               </p>
             ) : null}

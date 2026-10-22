@@ -95,15 +95,15 @@ export function Modal({
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className="pointer-events-none fixed inset-0 bg-ink/30 animate-fade" aria-hidden />
+      <div className="pointer-events-none fixed inset-0 bg-black/65 backdrop-blur-[2px] animate-fade" aria-hidden />
       <div
         ref={sheetRef}
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`panel animate-pop relative z-10 my-auto flex max-h-[92vh] w-full flex-col overflow-hidden rounded-[18px] border-t-[3px] border-t-racing shadow-[0_24px_50px_-32px_rgba(23,32,27,0.6)] ${width}`}
+        className={`panel animate-pop relative z-10 my-auto flex max-h-[92vh] w-full flex-col overflow-hidden rounded-[22px] shadow-[0_40px_120px_-50px_rgba(0,0,0,0.95)] ${width}`}
       >
-        <header className="flex items-start gap-4 border-b border-ink/12 px-5 py-4 sm:px-6">
+        <header className="flex items-start gap-4 border-b border-ink/10 px-5 py-4 sm:px-6">
           <div className="min-w-0 flex-1">
             <h2 className="wordmark text-[19px] leading-tight text-ink">{title}</h2>
             {subtitle ? <p className="mt-1 text-xs text-ink-faint">{subtitle}</p> : null}
@@ -123,7 +123,7 @@ export function Modal({
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">{children}</div>
 
         {footer ? (
-          <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-ink/12 bg-paper-sunken px-5 py-4 sm:px-6">
+          <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-ink/10 bg-paper-sunken px-5 py-4 sm:px-6">
             {footer}
           </footer>
         ) : null}

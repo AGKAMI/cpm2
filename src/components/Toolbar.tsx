@@ -43,7 +43,7 @@ export function FleetToolbar({
         <div className="relative mt-1">
           <svg
             viewBox="0 0 24 24"
-            className="pointer-events-none absolute left-0 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-faint"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint"
             fill="none"
             stroke="currentColor"
             strokeWidth="1.8" aria-hidden="true"
@@ -61,7 +61,7 @@ export function FleetToolbar({
             aria-label="Search accounts"
             autoComplete="off"
             spellCheck={false}
-            className="field-rule num pl-6 text-[13px]"
+            className="field-rule num pl-10 text-[13px]"
           />
         </div>
       </div>
@@ -72,7 +72,7 @@ export function FleetToolbar({
             name="filter"
             value={filter}
             onChange={(event) => onFilter(event.target.value as FleetFilter)}
-            className="mt-1 block h-9 rounded-[8px] border border-ink/15 bg-paper-raised px-2.5 font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-soft focus:border-racing"
+            className="mt-1 block h-10 cursor-pointer rounded-[12px] border border-ink/10 bg-ink/5 px-3 font-sans text-[12px] font-medium text-ink-soft transition-colors hover:border-ink/20 focus:border-racing"
           >
           {FILTERS.map((item) => (
             <option key={item.key} value={item.key} className="bg-paper-raised text-ink">

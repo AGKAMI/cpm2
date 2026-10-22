@@ -64,13 +64,13 @@ export function ExportConfirmModal({
             type="button"
             onClick={() => setPicked("csv")}
             aria-pressed={picked === "csv"}
-            className={`flex-1 rounded-[12px] border px-3 py-2 text-left transition-colors ${
+            className={`flex-1 cursor-pointer rounded-[14px] border px-3 py-2.5 text-left transition-colors ${
               picked === "csv"
-                ? "border-racing bg-racing/8"
-                : "border-ink/15 bg-paper-raised hover:border-ink/30"
+                ? "border-racing/50 bg-racing/10"
+                : "border-ink/10 bg-ink/[0.03] hover:border-ink/25"
             }`}
           >
-            <span className="block font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-ink">
+            <span className="block font-sans text-[12px] font-semibold text-ink">
               CSV
             </span>
             <span className="num mt-0.5 block text-[10px] text-ink-faint">opens in any spreadsheet</span>
@@ -79,13 +79,13 @@ export function ExportConfirmModal({
             type="button"
             onClick={() => setPicked("json")}
             aria-pressed={picked === "json"}
-            className={`flex-1 rounded-[12px] border px-3 py-2 text-left transition-colors ${
+            className={`flex-1 cursor-pointer rounded-[14px] border px-3 py-2.5 text-left transition-colors ${
               picked === "json"
-                ? "border-racing bg-racing/8"
-                : "border-ink/15 bg-paper-raised hover:border-ink/30"
+                ? "border-racing/50 bg-racing/10"
+                : "border-ink/10 bg-ink/[0.03] hover:border-ink/25"
             }`}
           >
-            <span className="block font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-ink">
+            <span className="block font-sans text-[12px] font-semibold text-ink">
               JSON
             </span>
             <span className="num mt-0.5 block text-[10px] text-ink-faint">full backup, re-importable</span>
@@ -152,7 +152,7 @@ export function SlotPurchaseConfirmModal({
         </dl>
 
         {balanceAfter < 0 ? (
-          <p className="rounded-[8px] border border-oxblood/35 bg-oxblood/8 px-3 py-2 text-xs text-oxblood">
+          <p className="rounded-[14px] border border-oxblood/35 bg-oxblood/8 px-3 py-2 text-xs text-oxblood">
             This account only has {formatNumber(account.coins)} coins — not enough for {count} slot(s).
           </p>
         ) : null}

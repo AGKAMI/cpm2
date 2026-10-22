@@ -4,12 +4,12 @@ import { useCallback, useEffect, useSyncExternalStore } from "react";
 
 export type ThemeName = "paper" | "night";
 
-const KEY = "cpm2:theme";
+const KEY = "cpm2:theme:v2";
 const listeners = new Set<() => void>();
 
 function readTheme(): ThemeName {
-  if (typeof window === "undefined") return "paper";
-  return window.localStorage.getItem(KEY) === "night" ? "night" : "paper";
+  if (typeof window === "undefined") return "night";
+  return window.localStorage.getItem(KEY) === "paper" ? "paper" : "night";
 }
 
 function subscribe(listener: () => void): () => void {
@@ -26,7 +26,7 @@ function writeTheme(next: ThemeName) {
 }
 
 export function useTheme() {
-  const theme = useSyncExternalStore(subscribe, readTheme, () => "paper" as ThemeName);
+  const theme = useSyncExternalStore(subscribe, readTheme, () => "night" as ThemeName);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);

@@ -47,6 +47,37 @@ const NAV = [
   { href: "/settings", label: "Settings", hint: "S" },
 ];
 
+const NAV_ICONS: Record<string, ReactNode> = {
+  "/": (
+    <svg viewBox="0 0 24 24" className="h-[19px] w-[19px]" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+      <rect x="3.5" y="3.5" width="7" height="7" rx="2.2" />
+      <rect x="13.5" y="3.5" width="7" height="7" rx="2.2" />
+      <rect x="3.5" y="13.5" width="7" height="7" rx="2.2" />
+      <rect x="13.5" y="13.5" width="7" height="7" rx="2.2" />
+    </svg>
+  ),
+  "/fleet": (
+    <svg viewBox="0 0 24 24" className="h-[19px] w-[19px]" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+      <path d="M4 13l1.5-4.5A2 2 0 017.4 7h9.2a2 2 0 011.9 1.5L20 13" strokeLinecap="round" />
+      <path d="M3.5 13h17v4.5h-17z" strokeLinejoin="round" />
+      <circle cx="7" cy="17.5" r="1.6" />
+      <circle cx="17" cy="17.5" r="1.6" />
+    </svg>
+  ),
+  "/activity": (
+    <svg viewBox="0 0 24 24" className="h-[19px] w-[19px]" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+      <path d="M3 12h4l2.4-6 4.2 12 2.4-6h5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  "/settings": (
+    <svg viewBox="0 0 24 24" className="h-[19px] w-[19px]" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+      <path d="M4 7h9M17.5 7H20M4 17h2.5M9.5 17H20" strokeLinecap="round" />
+      <circle cx="15" cy="7" r="2.2" />
+      <circle cx="7" cy="17" r="2.2" />
+    </svg>
+  ),
+};
+
 const SHORTCUTS = [
   { keys: "N", action: "New account" },
   { keys: "/", action: "Search the fleet" },
@@ -208,9 +239,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           Skip to content
         </a>
-        <header className="sticky top-0 z-30 border-b border-ink/10 bg-paper/95 pt-[env(safe-area-inset-top)] backdrop-blur-sm">
+        <header className="sticky top-0 z-30 overflow-hidden border-b border-ink/8 bg-paper/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
           <div className="dial-sweep" aria-hidden />
-          <div className="relative mx-auto flex max-w-[1440px] flex-wrap items-end gap-x-6 gap-y-3 px-4 pb-2.5 pt-4 sm:px-6">
+          <div className="relative mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-6 gap-y-3 px-4 pb-3 pt-4 sm:px-6">
             <Link href="/" className="flex items-center gap-3">
               <span className="roundel">
                 <svg
@@ -227,16 +258,16 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </svg>
               </span>
               <span>
-                <span className="wordmark block text-[23px] leading-none text-ink" translate="no">
+                <span className="wordmark block text-[22px] leading-none text-ink" translate="no">
                   Fleet <span className="text-racing">Ledger</span>
                 </span>
                 <span className="label-caps mt-1.5 block">
-                  Car Parking Multiplayer 2 · account register
+                  CPM2 · account register
                 </span>
               </span>
             </Link>
 
-            <nav className="ml-auto flex items-center gap-4 sm:gap-6">
+            <nav className="ml-auto hidden items-center gap-1 sm:flex">
               {NAV.map((item) => {
                 const active =
                   item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
@@ -253,14 +284,14 @@ export function AppShell({ children }: { children: ReactNode }) {
               })}
             </nav>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="hidden items-center gap-2 border border-ink/12 bg-paper-raised px-2.5 py-1.5 sm:flex">
+            <div className="ml-auto flex flex-wrap items-center gap-2 sm:ml-0">
+              <span className="hidden items-center gap-2 rounded-full border border-ink/10 bg-paper-raised px-3 py-1.5 sm:flex">
                 <span
                   className={`h-1.5 w-1.5 rounded-full ${
                     fleet.error ? "bg-oxblood" : fleet.loading ? "bg-brass animate-blink" : "bg-racing"
                   }`}
                 />
-                <span className="num text-[10px] uppercase tracking-[0.16em] text-ink-faint">
+                <span className="num text-[9px] uppercase tracking-[0.16em] text-ink-faint">
                   {fleet.error ? "offline" : fleet.loading ? "syncing" : "live"}
                 </span>
               </span>
@@ -268,8 +299,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               <button
                 type="button"
                 onClick={toggleTheme}
-                title={theme === "night" ? "Switch to paper" : "Switch to night"}
-                aria-label={theme === "night" ? "Switch to paper theme" : "Switch to night theme"}
+                title={theme === "night" ? "Switch to light" : "Switch to midnight"}
+                aria-label={theme === "night" ? "Switch to light theme" : "Switch to midnight theme"}
                 className="square-btn h-9 w-9"
               >
                 {theme === "night" ? (
@@ -308,7 +339,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           {children}
         </main>
 
-        <footer className="relative mx-auto max-w-[1440px] px-4 pb-10 pt-4 sm:px-6">
+        <footer className="relative mx-auto max-w-[1440px] px-4 pb-28 pt-4 sm:px-6 sm:pb-10">
           <div className="rule-double mb-3" />
           <div className="flex flex-wrap items-baseline justify-between gap-3">
             <p className="num text-[10px] text-ink-faint">
@@ -318,6 +349,31 @@ export function AppShell({ children }: { children: ReactNode }) {
             <p className="num text-[10px] text-ink-faint">passwords encrypted at rest · AES-256-GCM</p>
           </div>
         </footer>
+
+        <nav
+          aria-label="Primary"
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-ink/10 bg-paper/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl sm:hidden"
+        >
+          <div className="mx-auto flex max-w-md items-stretch justify-around px-2">
+            {NAV.map((item) => {
+              const active =
+                item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={active ? "page" : undefined}
+                  className={`flex flex-1 flex-col items-center gap-1 rounded-2xl py-2.5 text-[10px] font-semibold transition-colors ${
+                    active ? "text-racing" : "text-ink-faint hover:text-ink-soft"
+                  }`}
+                >
+                  {NAV_ICONS[item.href]}
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
 
         <AccountFormModal
           key={`form-${formSession}`}

@@ -19,10 +19,10 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="panel rounded-[14px] p-5">
+    <section className="panel rounded-[20px] p-5">
       <div className="mb-4 flex items-baseline justify-between gap-3">
-        <h2 className="label-caps">{title}</h2>
-        {hint ? <span className="num text-[10px] text-ink-faint">{hint}</span> : null}
+        <h2 className="panel-title">{title}</h2>
+        {hint ? <span className="num hidden text-[10px] text-ink-faint sm:inline">{hint}</span> : null}
       </div>
       {children}
     </section>
@@ -53,7 +53,7 @@ export default function OverviewPage() {
       <StatTiles stats={fleet.stats} />
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <div className="flex flex-col gap-4 lg:col-span-2">
+        <div className="flex min-w-0 flex-col gap-4 lg:col-span-2">
           <Panel title="Drag class completion" hint="accounts holding each metal, per class">
             <ClassCompletion trophies={fleet.trophies} />
           </Panel>
@@ -67,7 +67,7 @@ export default function OverviewPage() {
           </Panel>
         </div>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex min-w-0 flex-col gap-4">
           <Panel title="Coin ledger" hint={fleet.stats ? `${formatNumber(fleet.stats.totalCoins)} coins` : undefined}>
             {fleet.stats ? <CoinLedger stats={fleet.stats} /> : <p className="text-sm text-ink-faint">Loading…</p>}
           </Panel>
@@ -168,13 +168,13 @@ export default function OverviewPage() {
 
       <section>
         <div className="mb-3 flex items-baseline justify-between gap-3">
-          <h2 className="label-caps">Latest activity</h2>
+          <h2 className="panel-title">Latest activity</h2>
           <Link href="/activity" className="num text-[10px] text-racing hover:underline">
             open the full log →
           </Link>
         </div>
         {fleet.events.length === 0 ? (
-          <div className="panel rounded-[14px] px-6 py-10 text-center text-sm text-ink-faint">
+          <div className="panel rounded-[20px] px-6 py-10 text-center text-sm text-ink-faint">
             Nothing has happened yet.
           </div>
         ) : (

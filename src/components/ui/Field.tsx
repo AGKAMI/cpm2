@@ -118,11 +118,11 @@ export function NumericInput({
         className={`field-rule num pr-16 text-[15px] ${invalid ? "border-oxblood" : ""}`}
       />
       {max !== undefined && value >= max ? (
-        <span className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 font-sans text-[9px] uppercase tracking-[0.18em] text-oxblood">
+        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 font-sans text-[9px] uppercase tracking-[0.18em] text-oxblood">
           MAX
         </span>
       ) : suffix ? (
-        <span className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 font-sans text-[9px] uppercase tracking-[0.18em] text-ink-faint">
+        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 font-sans text-[9px] uppercase tracking-[0.18em] text-ink-faint">
           {suffix}
         </span>
       ) : null}

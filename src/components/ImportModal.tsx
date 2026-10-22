@@ -97,7 +97,7 @@ export function ImportModal({ open, busy, onClose, onImport }: ImportModalProps)
               ))}
             </ul>
             {report.results.some((row) => row.status !== "created") ? (
-              <div className="max-h-44 overflow-y-auto rounded-[8px] border border-ink/12 bg-paper-sunken p-2">
+              <div className="max-h-44 overflow-y-auto rounded-[14px] border border-ink/10 bg-paper-sunken p-2">
                 {report.results
                   .filter((row) => row.status !== "created")
                   .map((row) => (
@@ -117,7 +117,7 @@ export function ImportModal({ open, busy, onClose, onImport }: ImportModalProps)
               spellCheck={false}
               onChange={(event) => setCsv(event.target.value)}
               placeholder={`email,password,cash,coins,cars,slots,notes\naccount@mail.com,secret123,50000,2000,4,1,main`}
-              className="h-44 w-full resize-none rounded-[8px] border border-ink/15 bg-paper-raised p-3 num text-[12px] text-ink transition placeholder:text-ink-faint focus:border-racing"
+              className="field-rule h-44 resize-none num text-[12px]"
             />
             <p className="text-[11px] text-ink-faint">
               Duplicates are skipped, bad rows are reported — nothing is half-imported. Hard caps
@@ -125,7 +125,7 @@ export function ImportModal({ open, busy, onClose, onImport }: ImportModalProps)
               {" "}{LIMITS.BASE_CAR_SLOTS}+{LIMITS.MAX_PURCHASED_SLOTS} slots) are enforced per row.
             </p>
             {error ? (
-              <p className="rounded-[8px] border border-oxblood/35 bg-oxblood/8 px-3 py-2 text-xs text-oxblood">
+              <p className="rounded-[14px] border border-oxblood/35 bg-oxblood/8 px-3 py-2 text-xs text-oxblood">
                 {error}
               </p>
             ) : null}

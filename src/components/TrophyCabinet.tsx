@@ -86,7 +86,7 @@ export function TrophyCabinet({
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-        <span className="label-caps">Drag racing trophies</span>
+        <span className="panel-title">Drag racing trophies</span>
         <span className="num text-[10px] text-ink-faint">
           {totals.gold + totals.silver + totals.bronze} won ·{" "}
           <span className="text-brass">{totals.gold}G</span>{" "}
@@ -95,10 +95,10 @@ export function TrophyCabinet({
         </span>
       </div>
 
-      <div className="grid grid-cols-[1fr_repeat(3,auto)] items-center gap-x-3 gap-y-1.5">
+      <div className="grid grid-cols-[1fr_repeat(3,auto)] items-center gap-x-1.5 gap-y-1.5 sm:gap-x-3">
         <span className="label-caps">Class</span>
         {METALS.map((metal) => (
-          <span key={metal.key} className="num w-[68px] text-center text-[10px] uppercase tracking-[0.12em] text-ink-faint">
+          <span key={metal.key} className="num w-[68px] text-center text-[10px] uppercase tracking-[0.12em] text-ink-faint sm:w-[68px]">
             {metal.label}
           </span>
         ))}
@@ -116,7 +116,7 @@ export function TrophyCabinet({
               {METALS.map((metal) => {
                 const value = row ? row[metal.key] : 0;
                 return (
-                  <span key={metal.key} className="flex w-[68px] items-center justify-center gap-1">
+                  <span key={metal.key} className="flex w-[68px] items-center justify-center gap-0.5 sm:gap-1">
                     <button
                       type="button"
                       onClick={() => void bump(klass, metal.key, -1)}
@@ -126,7 +126,7 @@ export function TrophyCabinet({
                     >
                       −
                     </button>
-                    <span className={`num w-5 text-center text-[12px] ${value > 0 ? metal.text : "text-ink-faint"}`}>
+                    <span className={`num w-4 text-center text-[12px] sm:w-5 ${value > 0 ? metal.text : "text-ink-faint"}`}>
                       {value}
                     </span>
                     <button

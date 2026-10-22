@@ -127,7 +127,7 @@ function FleetPageInner() {
       />
 
       {selected.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-3 border border-racing/30 bg-racing/5 px-4 py-2.5">
+        <div className="flex flex-wrap items-center gap-3 rounded-[16px] border border-racing/25 bg-racing/8 px-4 py-2.5">
           <span className="num text-[11px] text-racing">{selected.length} selected</span>
           <Button variant="danger" size="sm" onClick={() => void archiveSelected()}>
             Archive selected
@@ -139,13 +139,13 @@ function FleetPageInner() {
       ) : null}
 
       {fleet.error ? (
-        <div className="rounded-[8px] border border-oxblood/35 bg-oxblood/8 px-4 py-3 text-sm text-oxblood">
+        <div className="rounded-[14px] border border-oxblood/35 bg-oxblood/8 px-4 py-3 text-sm text-oxblood">
           {fleet.error}
         </div>
       ) : null}
 
-      <section className="panel animate-rise overflow-hidden rounded-[14px]">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/12 bg-paper-sunken px-4 py-2.5">
+      <section className="panel animate-rise overflow-hidden rounded-[20px]">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/10 bg-paper-sunken px-4 py-2.5">
           <span className="label-caps">
             {visible.length} of {source.length} account{source.length === 1 ? "" : "s"}
             {showArchived ? " (archived)" : ""}
@@ -157,7 +157,7 @@ function FleetPageInner() {
           <div className="px-4 py-10 text-center text-sm text-ink-faint">Loading the register…</div>
         ) : visible.length === 0 ? (
           <div className="px-4 py-10 text-center">
-            <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
+            <p className="font-sans text-[13px] font-semibold tracking-[-0.01em] text-ink">
               {source.length === 0 ? (showArchived ? "Archive is empty" : "No accounts yet") : "No match"}
             </p>
             <p className="mt-2 text-sm text-ink-faint">

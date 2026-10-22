@@ -98,11 +98,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={toast.id}
             role="status"
-            className={`panel animate-pop pointer-events-auto flex items-start gap-3 rounded-[14px] border-l-[3px] px-4 py-3 ${TONES[toast.kind].bar}`}
+            className={`panel animate-pop pointer-events-auto flex items-start gap-3 rounded-[16px] border-l-[3px] px-4 py-3 ${TONES[toast.kind].bar}`}
           >
             <span className={`mt-0.5 ${TONES[toast.kind].accent}`}>{TONES[toast.kind].icon}</span>
             <div className="min-w-0 flex-1">
-              <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-ink">
+              <p className="font-sans text-[12px] font-semibold tracking-[-0.01em] text-ink">
                 {toast.title}
               </p>
               {toast.detail ? (
@@ -115,7 +115,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                     toast.action?.onClick();
                     remove(toast.id);
                   }}
-                  className="mt-2 font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-racing underline underline-offset-2 hover:text-racing-deep"
+                  className="mt-2 cursor-pointer font-sans text-[11px] font-semibold text-racing underline underline-offset-2 hover:text-racing-deep"
                 >
                   {toast.action.label}
                 </button>

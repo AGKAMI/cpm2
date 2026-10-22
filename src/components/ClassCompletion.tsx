@@ -30,7 +30,7 @@ export function ClassCompletion({ trophies }: { trophies: Record<number, TrophyS
 
   return (
     <div>
-      <div className="grid grid-cols-[1fr_repeat(3,auto)] items-center gap-x-3 gap-y-1.5">
+      <div className="grid grid-cols-[1fr_repeat(3,auto)] items-center gap-x-2 sm:gap-x-3 gap-y-1.5">
         <span className="label-caps">Class</span>
         {[
           { label: "Gold", dot: "bg-brass", text: "text-brass" },
@@ -39,7 +39,7 @@ export function ClassCompletion({ trophies }: { trophies: Record<number, TrophyS
         ].map((metal) => (
           <span
             key={metal.label}
-            className="num flex w-[72px] items-center justify-center gap-1.5 text-[10px] uppercase tracking-[0.12em] text-ink-faint"
+            className="num flex w-[58px] items-center justify-center gap-1.5 whitespace-nowrap text-[10px] uppercase tracking-[0.12em] text-ink-faint sm:w-[72px]"
           >
             <span className={`h-1.5 w-1.5 rounded-full ${metal.dot}`} />
             {metal.label}
@@ -69,7 +69,7 @@ export function ClassCompletion({ trophies }: { trophies: Record<number, TrophyS
                 { metal: "silver", count: silver },
                 { metal: "bronze", count: bronze },
               ].map(({ metal, count }) => (
-                <span key={metal} className="num w-[72px] text-center text-[12px]">
+                <span key={metal} className="num w-[58px] sm:w-[72px] text-center text-[12px]">
                   {count > 0 ? (
                     <span className={metal === "gold" ? "text-brass" : metal === "silver" ? "text-silver" : "text-bronze"}>
                       {count}/{accounts}

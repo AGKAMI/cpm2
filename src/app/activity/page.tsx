@@ -43,7 +43,7 @@ export default function ActivityPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <PageHeading folio="F-03" title="Activity log" meta="permanent · the paper trail" />
+      <PageHeading folio="F-03" title="Activity log" meta="permanent · every change, kept" />
       <div className="flex flex-wrap items-end gap-x-5 gap-y-3">
         <div className="min-w-[200px] flex-1">
           <span className="label-caps">Search the log</span>
@@ -65,10 +65,10 @@ export default function ActivityPage() {
                 key={item.key}
                 type="button"
                 onClick={() => setFilter(item.key)}
-                className={`rounded-full border px-3 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors ${
+                className={`cursor-pointer rounded-full border px-3 py-1.5 font-sans text-[11px] font-semibold transition-colors ${
                   filter === item.key
                     ? "border-racing bg-racing text-paper"
-                    : "border-ink/15 bg-paper-raised text-ink-soft hover:border-racing/50 hover:text-racing"
+                    : "border-ink/10 bg-paper-raised text-ink-soft hover:border-racing/40 hover:text-racing"
                 }`}
               >
                 {item.label}
@@ -81,16 +81,16 @@ export default function ActivityPage() {
         </div>
       </div>
 
-      <div className="flex items-baseline justify-between gap-3">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
         <span className="label-caps">
           {events.length} of {fleet.events.length} entries
         </span>
-        <span className="num text-[10px] text-ink-faint">the log is permanent — it is the paper trail</span>
+        <span className="num text-[10px] text-ink-faint">the log is permanent — it is the audit trail</span>
       </div>
 
       {events.length === 0 ? (
-        <div className="panel rounded-[14px] px-6 py-16 text-center">
-          <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
+        <div className="panel rounded-[20px] px-6 py-16 text-center">
+          <p className="font-sans text-[13px] font-semibold tracking-[-0.01em] text-ink">
             Nothing logged
           </p>
           <p className="mt-2 text-sm text-ink-faint">No entry matches this filter.</p>

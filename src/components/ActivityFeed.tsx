@@ -19,8 +19,8 @@ const TYPES: Record<FleetEventType, { label: string; mark: string; text: string 
 export function ActivityFeed({ events }: { events: FleetEvent[] }) {
   if (events.length === 0) {
     return (
-      <div className="panel rounded-[14px] px-6 py-16 text-center">
-        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">No activity yet</p>
+      <div className="panel rounded-[20px] px-6 py-16 text-center">
+        <p className="font-sans text-[13px] font-semibold tracking-[-0.01em] text-ink">No activity yet</p>
         <p className="mt-2 text-sm text-ink-faint">
           Every account you add, edit or delete shows up here as a permanent log.
         </p>
@@ -29,7 +29,7 @@ export function ActivityFeed({ events }: { events: FleetEvent[] }) {
   }
 
   return (
-    <ol className="panel overflow-hidden rounded-[14px]">
+    <ol className="panel overflow-hidden rounded-[20px]">
       {events.map((event, index) => {
         const meta = TYPES[event.type] ?? TYPES.updated;
         return (

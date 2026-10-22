@@ -10,10 +10,10 @@ type BgPhoto = {
 };
 
 /**
- * Full-bleed car photo behind the paper ledger — fetched from our own
- * /api/bg (Unsplash, key stays server-side). The photo sits UNDER a heavy
- * paper scrim so the ledger stays readable and is NOT dismissible —
- * KAMI wants it always on. Degrades to plain paper when the API has no key.
+ * Full-bleed car photo behind the dash — fetched from our own /api/bg
+ * (Unsplash, key stays server-side). The photo sits UNDER a heavy
+ * midnight scrim so the ledger stays readable and is NOT dismissible —
+ * KAMI wants it always on. Degrades to the plain canvas when the API has no key.
  */
 export function CarBackdrop() {
   const [photo, setPhoto] = useState<BgPhoto | null>(null);

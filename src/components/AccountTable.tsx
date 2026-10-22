@@ -66,7 +66,7 @@ export function AccountTable({
                       checked={allSelected}
                       onChange={() => onToggleAll?.()}
                       aria-label="Select every account"
-                      className="h-3.5 w-3.5 accent-[#16513a]"
+                        className="h-3.5 w-3.5 accent-racing"
                     />
                   </label>
                 </th>
@@ -106,7 +106,7 @@ export function AccountTable({
                         checked={selectedIds.includes(account.id)}
                         onChange={() => onToggleSelect?.(account.id)}
                         aria-label={`Select ${account.email}`}
-                        className="h-3.5 w-3.5 accent-[#16513a]"
+                      className="h-3.5 w-3.5 accent-racing"
                       />
                     </label>
                   </td>
@@ -153,7 +153,7 @@ export function AccountTable({
                     <button
                       type="button"
                       onClick={() => onBuySlot(account)}
-                      className="mt-1.5 inline-flex min-h-[24px] items-center font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint transition hover:text-racing"
+                      className="mt-1.5 inline-flex min-h-[24px] cursor-pointer items-center font-sans text-[11px] font-medium text-ink-faint transition hover:text-racing"
                     >
                       + buy slot (100c)
                     </button>
@@ -212,7 +212,7 @@ export function AccountTable({
         {accounts.map((account) => (
           <article
             key={account.id}
-            className={`panel-tight rounded-[14px] p-4 ${busyId === account.id ? "opacity-60" : ""}`}
+            className={`panel-tight rounded-[18px] p-4 ${busyId === account.id ? "opacity-60" : ""}`}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -267,7 +267,7 @@ export function AccountTable({
               <PasswordCell accountId={account.id} />
             </div>
 
-            <dl className="mt-3 grid grid-cols-4 gap-2">
+            <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-2">
               <div>
                 <dt className="label-caps">Cash</dt>
                 <dd className="num mt-1 text-[13px] text-ink">{formatNumber(account.cash)}</dd>
@@ -296,7 +296,7 @@ export function AccountTable({
               <button
                 type="button"
                 onClick={() => onBuySlot(account)}
-                className="mt-3 w-full rounded-full border border-racing/35 py-2 font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-racing transition-colors hover:bg-racing hover:text-paper"
+                className="mt-3 w-full cursor-pointer rounded-full border border-racing/35 py-2 font-sans text-[11px] font-semibold text-racing transition-colors hover:bg-racing hover:text-paper"
               >
                 + Buy car slot · 100 coins
               </button>
@@ -325,7 +325,7 @@ function SortButton({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex min-h-[24px] items-center gap-1 transition hover:text-racing ${
+      className={`inline-flex min-h-[24px] cursor-pointer items-center gap-1 transition hover:text-racing ${
         align === "right" ? "flex-row-reverse" : ""
       } ${active ? "text-racing" : ""}`}
     >
@@ -394,7 +394,7 @@ function StepButton({
       disabled={disabled}
       title={label}
       aria-label={label}
-      className="grid h-6 w-6 place-items-center rounded-full border border-ink/15 text-[13px] leading-none text-ink-faint transition-colors hover:border-racing/50 hover:text-racing active:translate-y-px disabled:opacity-30"
+      className="grid h-6 w-6 cursor-pointer place-items-center rounded-full border border-ink/12 text-[13px] leading-none text-ink-faint transition-colors hover:border-racing/50 hover:bg-racing/10 hover:text-racing active:scale-95 disabled:opacity-30"
     >
       {children}
     </button>
@@ -418,7 +418,7 @@ function IconAction({
       onClick={onClick}
       title={label}
       aria-label={label}
-      className={`grid h-8 w-8 place-items-center rounded-full border border-transparent transition-colors ${
+      className={`grid h-8 w-8 cursor-pointer place-items-center rounded-full border border-transparent transition-colors ${
         danger
           ? "text-ink-faint hover:border-oxblood/40 hover:bg-oxblood/10 hover:text-oxblood"
           : "text-ink-faint hover:border-ink/20 hover:bg-ink/5 hover:text-racing"

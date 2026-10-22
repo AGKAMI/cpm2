@@ -33,8 +33,8 @@ export default function AccountPage() {
 
   if (!account) {
     return (
-      <div className="panel rounded-[14px] px-6 py-16 text-center">
-        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
+      <div className="panel rounded-[20px] px-6 py-16 text-center">
+        <p className="font-sans text-[13px] font-semibold tracking-[-0.01em] text-ink">
           Account not found
         </p>
         <p className="mt-2 text-sm text-ink-faint">
@@ -123,9 +123,9 @@ export default function AccountPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <section className="panel rounded-[14px] p-5 lg:col-span-2">
+        <section className="panel rounded-[20px] p-5 lg:col-span-2 min-w-0">
           <div className="mb-4 flex items-baseline justify-between gap-3">
-            <h2 className="label-caps">Balances</h2>
+            <h2 className="panel-title">Balances</h2>
             <span className="num text-[10px] text-ink-faint">steppers write straight to the ledger</span>
           </div>
 
@@ -160,7 +160,7 @@ export default function AccountPage() {
           </div>
 
           <div className="mt-6 border-t border-ink/10 pt-4">
-            <h3 className="label-caps">Garage</h3>
+            <h3 className="panel-title">Garage</h3>
             <div className="mt-3">
               <CapacityGauge cars={account.cars} capacity={account.capacity} />
             </div>
@@ -173,8 +173,8 @@ export default function AccountPage() {
           </div>
         </section>
 
-        <div className="flex flex-col gap-4">
-          <section className="panel rounded-[14px] p-5">
+        <div className="flex min-w-0 flex-col gap-4">
+          <section className="panel rounded-[20px] p-5">
             <h2 className="label-caps mb-4">Credentials</h2>
             <PasswordCell accountId={account.id} />
             <p className="mt-3 text-[11px] leading-snug text-ink-faint">
@@ -182,7 +182,7 @@ export default function AccountPage() {
             </p>
           </section>
 
-          <section className="panel rounded-[14px] p-5">
+          <section className="panel rounded-[20px] p-5">
             <h2 className="label-caps mb-4">Coin ledger</h2>
             <dl className="flex flex-col gap-2">
               <div className="flex items-baseline justify-between gap-2">
@@ -213,19 +213,19 @@ export default function AccountPage() {
         </div>
       </div>
 
-      <section className="panel rounded-[14px] p-5">
+      <section className="panel rounded-[20px] p-5">
         <TrophyCabinet accountId={account.id} readOnly={archived} onChanged={() => void fleet.refresh(true)} />
       </section>
 
       <section>
         <div className="mb-3 flex items-baseline justify-between gap-3">
-          <h2 className="label-caps">History</h2>
+          <h2 className="panel-title">History</h2>
           <span className="num text-[10px] text-ink-faint">
             {history.length} {history.length === 1 ? "entry" : "entries"}
           </span>
         </div>
         {history.length === 0 ? (
-          <div className="panel rounded-[14px] px-6 py-10 text-center text-sm text-ink-faint">
+          <div className="panel rounded-[20px] px-6 py-10 text-center text-sm text-ink-faint">
             No entries for this account yet.
           </div>
         ) : (
@@ -266,7 +266,7 @@ function Balance({
         >
           −
         </button>
-        <span className={`num min-w-[92px] text-right text-[15px] font-semibold ${tone}`}>
+        <span className={`num min-w-[92px] text-right text-[19px] font-semibold tracking-[-0.03em] ${tone}`}>
           {formatNumber(value)}
         </span>
         <button

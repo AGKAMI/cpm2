@@ -1,78 +1,57 @@
 @import "tailwindcss";
 
 @theme {
-  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --font-display: var(--font-archivo), "Segoe UI", sans-serif;
   --font-sans: var(--font-archivo), "Segoe UI", sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, "Cascadia Mono", monospace;
 
-  /* Paper stock */
-  --color-paper: #f1ede1;
-  --color-paper-raised: #fbf9f3;
-  --color-paper-sunken: #e6e0cf;
+  /* Midnight dash — the default cabin. */
+  --color-paper: #0a0b0a;
+  --color-paper-raised: #121513;
+  --color-paper-sunken: #1a1e1b;
 
-  /* Ink — ink-faint passes AA 4.5:1 on both paper tokens */
-  --color-ink: #17201b;
-  --color-ink-soft: #4b564f;
-  --color-ink-faint: #626a62;
+  /* Instrument white */
+  --color-ink: #f1f5f1;
+  --color-ink-soft: #9aa39d;
+  --color-ink-faint: #79827b;
 
-  /* Livery */
-  --color-racing: #16513a;
-  --color-racing-deep: #0d3a29;
-  --color-brass: #8a6319;
-  --color-oxblood: #8d3039;
-  --color-blueprint: #2b5885;
+  /* Charge accent */
+  --color-racing: #3ddc97;
+  --color-racing-deep: #2bb87a;
+  --color-brass: #e8c266;
+  --color-oxblood: #ff6b6b;
+  --color-blueprint: #6ea8e8;
 
-  /* Trophy metals — AA on paper */
-  --color-silver: #626d77;
-  --color-bronze: #9d5a30;
+  /* Trophy metals — readable on midnight */
+  --color-silver: #c3ccd3;
+  --color-bronze: #d99a6c;
 }
 
-/* Night shift: same ledger, lit from the dashboard glow. */
-[data-theme="night"] {
-  color-scheme: dark;
-  --color-paper: #101215;
-  --color-paper-raised: #171a1e;
-  --color-paper-sunken: #1f2329;
-  --color-ink: #e8e4da;
-  --color-ink-soft: #a7aeb6;
-  --color-ink-faint: #767e87;
-  --color-racing: #64c295;
-  --color-racing-deep: #4ea87d;
-  --color-brass: #d6a445;
-  --color-oxblood: #e0737c;
-  --color-blueprint: #7fb2e0;
-  --color-silver: #b6bdc4;
-  --color-bronze: #d08a58;
-}
-
-[data-theme="night"] body {
-  background-image:
-    linear-gradient(color-mix(in srgb, var(--color-ink) 3%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--color-ink) 3%, transparent) 1px, transparent 1px),
-    radial-gradient(1200px 700px at 50% -10%, color-mix(in srgb, var(--color-brass) 6%, transparent), transparent 62%);
-}
-
-[data-theme="night"] .panel {
-  box-shadow: 0 1px 0 color-mix(in srgb, var(--color-ink) 6%, transparent);
-}
-
-[data-theme="night"] .plate {
-  background: linear-gradient(180deg, #f7f4ec 0%, #e4e0d4 100%);
-  border-color: #8f8a7b;
-}
-
-[data-theme="night"] .roundel {
-  background: var(--color-paper-raised);
-  border-color: color-mix(in srgb, var(--color-ink) 30%, transparent);
+/* Daylight variant: the same dash, lit from above. */
+[data-theme="paper"] {
+  color-scheme: light;
+  --color-paper: #f2f4f1;
+  --color-paper-raised: #ffffff;
+  --color-paper-sunken: #e6eae4;
+  --color-ink: #0e1410;
+  --color-ink-soft: #46514a;
+  --color-ink-faint: #5f6a62;
+  --color-racing: #0b7a4e;
+  --color-racing-deep: #08603d;
+  --color-brass: #86621a;
+  --color-oxblood: #a62a38;
+  --color-blueprint: #2a5f8f;
+  --color-silver: #56636c;
+  --color-bronze: #8f4e27;
 }
 
 @layer base {
   * {
-    border-color: color-mix(in srgb, var(--color-ink) 14%, transparent);
+    border-color: color-mix(in srgb, var(--color-ink) 9%, transparent);
   }
 
   html {
-    color-scheme: light;
+    color-scheme: dark;
     /* Decorative bleeds (the dial sweep) must never create sideways panning. */
     overflow-x: clip;
   }
@@ -82,25 +61,20 @@
     color: var(--color-ink);
     font-family: var(--font-sans);
     background-image:
-      linear-gradient(color-mix(in srgb, var(--color-ink) 2.8%, transparent) 1px, transparent 1px),
-      linear-gradient(90deg, color-mix(in srgb, var(--color-ink) 2.8%, transparent) 1px, transparent 1px),
-      radial-gradient(1200px 700px at 50% -10%, rgba(165, 118, 31, 0.05), transparent 62%);
-    background-size:
-      32px 32px,
-      32px 32px,
-      100% 100%;
+      radial-gradient(1100px 540px at 50% -12%, color-mix(in srgb, var(--color-racing) 9%, transparent), transparent 64%),
+      radial-gradient(900px 520px at 88% 108%, color-mix(in srgb, var(--color-blueprint) 5%, transparent), transparent 60%);
     background-attachment: fixed;
   }
 
   ::selection {
-    background: rgba(22, 81, 58, 0.16);
+    background: color-mix(in srgb, var(--color-racing) 30%, transparent);
     color: var(--color-ink);
   }
 
   :focus-visible {
     outline: 2px solid var(--color-racing);
     outline-offset: 2px;
-    border-radius: 4px;
+    border-radius: 6px;
   }
 
   /* Kill the 300ms tap delay and the grey flash on touch devices. */
@@ -146,7 +120,7 @@
 }
 
 @layer components {
-  /* --- car backdrop (photo behind the paper ledger) ------------------- */
+  /* --- car backdrop (photo behind the dash) -------------------------- */
 
   .car-backdrop {
     position: fixed;
@@ -161,8 +135,8 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    /* visible plate: desaturated but the car clearly READS (KAMI: "why dont i see the images") */
-    filter: saturate(0.5) contrast(0.99) brightness(1.02);
+    /* visible plate: the car clearly READS through the midnight scrim */
+    filter: saturate(0.65) contrast(1.02) brightness(0.52);
     opacity: 0;
     animation: backdrop-in 1.2s ease 0.15s both;
   }
@@ -170,18 +144,18 @@
   .car-backdrop-scrim {
     position: absolute;
     inset: 0;
-    /* heavy paper wash: bright photos still stay background texture */
+    /* heavy midnight wash: bright photos still stay background texture */
     background:
       linear-gradient(
         180deg,
-        color-mix(in srgb, var(--color-paper) 92%, transparent) 0%,
-        color-mix(in srgb, var(--color-paper) 84%, transparent) 22%,
-        color-mix(in srgb, var(--color-paper) 62%, transparent) 42%,
-        color-mix(in srgb, var(--color-paper) 58%, transparent) 58%,
-        color-mix(in srgb, var(--color-paper) 80%, transparent) 80%,
-        color-mix(in srgb, var(--color-paper) 94%, transparent) 100%
+        color-mix(in srgb, var(--color-paper) 90%, transparent) 0%,
+        color-mix(in srgb, var(--color-paper) 76%, transparent) 24%,
+        color-mix(in srgb, var(--color-paper) 60%, transparent) 46%,
+        color-mix(in srgb, var(--color-paper) 68%, transparent) 62%,
+        color-mix(in srgb, var(--color-paper) 88%, transparent) 82%,
+        color-mix(in srgb, var(--color-paper) 96%, transparent) 100%
       ),
-      radial-gradient(1200px 700px at 50% 0%, color-mix(in srgb, var(--color-paper) 72%, transparent), transparent 70%);
+      radial-gradient(1200px 700px at 50% 0%, color-mix(in srgb, var(--color-paper) 58%, transparent), transparent 70%);
   }
 
   .car-backdrop-credit {
@@ -222,25 +196,25 @@
 
   .panel {
     background: var(--color-paper-raised);
-    border: 1px solid color-mix(in srgb, var(--color-ink) 7%, transparent);
-    border-radius: 16px;
+    border: 1px solid color-mix(in srgb, var(--color-ink) 8%, transparent);
+    border-radius: 20px;
     box-shadow:
-      0 1px 1px color-mix(in srgb, var(--color-ink) 3%, transparent),
-      0 10px 30px -22px color-mix(in srgb, var(--color-ink) 45%, transparent);
-    transition: box-shadow 0.18s ease, border-color 0.18s ease;
+      inset 0 1px 0 color-mix(in srgb, var(--color-ink) 4%, transparent),
+      0 24px 60px -46px rgba(0, 0, 0, 0.9);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
   }
 
   .panel:hover {
-    border-color: color-mix(in srgb, var(--color-ink) 12%, transparent);
+    border-color: color-mix(in srgb, var(--color-ink) 13%, transparent);
     box-shadow:
-      0 1px 1px color-mix(in srgb, var(--color-ink) 4%, transparent),
-      0 14px 38px -20px color-mix(in srgb, var(--color-ink) 52%, transparent);
+      inset 0 1px 0 color-mix(in srgb, var(--color-ink) 5%, transparent),
+      0 28px 70px -46px rgba(0, 0, 0, 0.95);
   }
 
   .panel-tight {
-    background: color-mix(in srgb, var(--color-paper-sunken) 55%, transparent);
-    border: 1px solid color-mix(in srgb, var(--color-ink) 6%, transparent);
-    border-radius: 11px;
+    background: var(--color-paper-sunken);
+    border: 1px solid color-mix(in srgb, var(--color-ink) 7%, transparent);
+    border-radius: 14px;
   }
 
   /* --- type ---------------------------------------------------------- */
@@ -249,16 +223,23 @@
     font-family: var(--font-sans);
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.15em;
+    letter-spacing: 0.16em;
     font-size: 10px;
     color: var(--color-ink-faint);
   }
 
+  .panel-title {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    color: var(--color-ink);
+  }
+
   .wordmark {
-    font-family: var(--font-display);
-    font-weight: 600;
-    letter-spacing: -0.015em;
-    font-variation-settings: "SOFT" 0, "WONK" 1, "opsz" 40;
+    font-family: var(--font-sans);
+    font-weight: 800;
+    letter-spacing: -0.03em;
     text-wrap: balance;
   }
 
@@ -271,31 +252,39 @@
   /* --- rules --------------------------------------------------------- */
 
   .rule-top {
-    border-top: 1px solid color-mix(in srgb, var(--color-ink) 14%, transparent);
+    border-top: 1px solid color-mix(in srgb, var(--color-ink) 12%, transparent);
   }
 
   .rule-double {
-    border-bottom: 3px double color-mix(in srgb, var(--color-ink) 22%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--color-ink) 12%, transparent);
   }
 
-  /* --- spec strip: one soft band, no hard cells ---------------------- */
+  /* --- spec strip: separate instrument cards ------------------------- */
 
   .spec-strip {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px 26px;
-    background: var(--color-paper-raised);
-    border: 1px solid color-mix(in srgb, var(--color-ink) 7%, transparent);
-    border-radius: 16px;
-    box-shadow:
-      0 1px 1px color-mix(in srgb, var(--color-ink) 3%, transparent),
-      0 10px 30px -22px color-mix(in srgb, var(--color-ink) 45%, transparent);
-    padding: 4px 6px;
+    gap: 12px;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
   }
 
   .spec-cell {
     position: relative;
-    padding: 14px 14px 16px;
+    min-width: 0;
+    background: var(--color-paper-raised);
+    border: 1px solid color-mix(in srgb, var(--color-ink) 8%, transparent);
+    border-radius: 18px;
+    padding: 16px;
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--color-ink) 4%, transparent),
+      0 18px 44px -38px rgba(0, 0, 0, 0.9);
+    transition: border-color 0.18s ease;
+  }
+
+  .spec-cell:hover {
+    border-color: color-mix(in srgb, var(--color-racing) 30%, transparent);
   }
 
   @media (min-width: 768px) {
@@ -308,10 +297,11 @@
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
     font-weight: 600;
-    font-size: clamp(1.15rem, 2.2vw, 1.6rem);
+    font-size: clamp(1.1rem, 2.4vw, 1.85rem);
     line-height: 1.05;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
     color: var(--color-ink);
+    overflow-wrap: anywhere;
   }
 
   .spec-value-accent {
@@ -324,11 +314,11 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-    border: 1px solid color-mix(in srgb, var(--color-ink) 30%, transparent);
-    background: var(--color-paper-raised);
+    border: 1px solid color-mix(in srgb, var(--color-racing) 32%, transparent);
+    background: color-mix(in srgb, var(--color-racing) 12%, transparent);
     color: var(--color-racing);
     font-family: var(--font-mono);
     font-weight: 600;
@@ -336,21 +326,24 @@
     letter-spacing: 0.02em;
   }
 
-  /* --- alloy number plate --------------------------------------------- */
+  /* --- dark alloy number plate ---------------------------------------- */
 
   .plate {
     position: relative;
     display: inline-flex;
     align-items: center;
     max-width: 100%;
-    padding: 3px 16px;
-    border-radius: 9px;
-    background: linear-gradient(180deg, #ffffff 0%, #f2efe6 100%);
-    border: 1px solid #b9b2a1;
+    padding: 4px 15px;
+    border-radius: 8px;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-ink) 9%, var(--color-paper-raised)) 0%,
+      color-mix(in srgb, var(--color-ink) 3%, var(--color-paper-raised)) 100%
+    );
+    border: 1px solid color-mix(in srgb, var(--color-ink) 16%, transparent);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.9),
-      inset 0 -1px 0 rgba(23, 32, 27, 0.1),
-      0 1px 2px color-mix(in srgb, var(--color-ink) 18%, transparent);
+      inset 0 1px 0 color-mix(in srgb, var(--color-ink) 7%, transparent),
+      0 1px 2px rgba(0, 0, 0, 0.35);
   }
 
   .plate::before,
@@ -362,7 +355,11 @@
     height: 5px;
     border-radius: 50%;
     transform: translateY(-50%);
-    background: radial-gradient(circle at 34% 30%, #6f6a5e 20%, #3a382f 65%);
+    background: radial-gradient(
+      circle at 34% 30%,
+      color-mix(in srgb, var(--color-ink) 55%, transparent) 20%,
+      color-mix(in srgb, var(--color-ink) 18%, transparent) 65%
+    );
   }
 
   .plate::before {
@@ -377,9 +374,9 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: #1a1d18;
+    color: var(--color-ink);
     font-weight: 600;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.02em;
   }
 
   /* --- controls ------------------------------------------------------- */
@@ -391,11 +388,12 @@
     width: 22px;
     height: 22px;
     border-radius: 999px;
-    border: 1px solid color-mix(in srgb, var(--color-ink) 16%, transparent);
-    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--color-ink) 12%, transparent);
+    background: color-mix(in srgb, var(--color-ink) 4%, transparent);
     color: var(--color-ink-soft);
     font-size: 12px;
     line-height: 1;
+    cursor: pointer;
     transition:
       background-color 0.14s ease,
       color 0.14s ease,
@@ -404,30 +402,35 @@
   }
 
   .square-btn:hover:not(:disabled) {
-    background: rgba(22, 81, 58, 0.08);
-    border-color: rgba(22, 81, 58, 0.45);
+    background: color-mix(in srgb, var(--color-racing) 12%, transparent);
+    border-color: color-mix(in srgb, var(--color-racing) 42%, transparent);
     color: var(--color-racing);
   }
 
   .square-btn:active:not(:disabled) {
-    transform: translateY(1px);
+    transform: scale(0.94);
   }
 
   .square-btn:disabled {
-    opacity: 0.35;
+    opacity: 0.3;
     cursor: not-allowed;
   }
 
-  /* --- field rules: inputs sit on a drawn line ------------------------ */
+  /* --- fields: filled instrument wells -------------------------------- */
 
   .field-rule {
     width: 100%;
-    background: transparent;
-    border: 0;
-    border-bottom: 1px solid color-mix(in srgb, var(--color-ink) 28%, transparent);
-    padding: 6px 2px;
+    min-height: 42px;
+    background: color-mix(in srgb, var(--color-ink) 5%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-ink) 10%, transparent);
+    border-radius: 12px;
+    padding: 9px 12px;
     color: var(--color-ink);
-    transition: border-color 0.15s ease;
+    caret-color: var(--color-racing);
+    transition:
+      border-color 0.15s ease,
+      background-color 0.15s ease,
+      box-shadow 0.15s ease;
   }
 
   .field-rule::placeholder {
@@ -435,40 +438,53 @@
   }
 
   .field-rule:hover {
-    border-bottom-color: color-mix(in srgb, var(--color-ink) 45%, transparent);
+    border-color: color-mix(in srgb, var(--color-ink) 20%, transparent);
   }
 
   .field-rule:focus-visible {
-    outline: 2px solid var(--color-racing);
-    outline-offset: 3px;
-    border-bottom-color: var(--color-racing);
-    box-shadow: 0 1px 0 var(--color-racing);
+    outline: none;
+    border-color: var(--color-racing);
+    background: color-mix(in srgb, var(--color-racing) 5%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-racing) 18%, transparent);
   }
 
-  /* --- tabs: printed document tabs ------------------------------------ */
+  textarea.field-rule {
+    padding: 10px 12px;
+  }
+
+  /* --- nav tabs: pill switches ---------------------------------------- */
 
   .tab {
-    position: relative;
-    padding: 9px 2px 8px;
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 13px;
+    border-radius: 999px;
+    border: 1px solid transparent;
     font-family: var(--font-sans);
     font-weight: 600;
-    font-size: 11px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--color-ink-faint);
-    border-bottom: 2px solid transparent;
+    font-size: 12px;
+    letter-spacing: -0.005em;
+    color: var(--color-ink-soft);
     transition:
       color 0.15s ease,
+      background-color 0.15s ease,
       border-color 0.15s ease;
   }
 
   .tab:hover {
     color: var(--color-ink);
+    background: color-mix(in srgb, var(--color-ink) 6%, transparent);
   }
 
   .tab-active {
     color: var(--color-racing);
-    border-bottom-color: var(--color-racing);
+    background: color-mix(in srgb, var(--color-racing) 12%, transparent);
+    border-color: color-mix(in srgb, var(--color-racing) 26%, transparent);
+  }
+
+  .tab-active:hover {
+    color: var(--color-racing);
+    background: color-mix(in srgb, var(--color-racing) 16%, transparent);
   }
 
   /* --- capacity gauge: fuel-gauge ticks -------------------------------- */
@@ -514,7 +530,7 @@
     width: 520px;
     height: 520px;
     border-radius: 50%;
-    border: 1px solid color-mix(in srgb, var(--color-racing) 11%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-racing) 13%, transparent);
     pointer-events: none;
   }
 
@@ -530,7 +546,7 @@
     position: absolute;
     inset: 40px;
     border-radius: 50%;
-    border: 1px solid color-mix(in srgb, var(--color-racing) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-racing) 9%, transparent);
   }
 
   .dial-sweep::after {
@@ -538,7 +554,7 @@
     position: absolute;
     inset: 92px;
     border-radius: 50%;
-    border: 1px solid color-mix(in srgb, var(--color-brass) 9%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-racing) 6%, transparent);
   }
 
   .log-mark {
@@ -633,11 +649,11 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--color-ink) 22%, transparent);
+  background: color-mix(in srgb, var(--color-ink) 18%, transparent);
   border-radius: 99px;
   border: 3px solid var(--color-paper);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(22, 81, 58, 0.5);
+  background: color-mix(in srgb, var(--color-racing) 55%, transparent);
 }

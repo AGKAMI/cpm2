@@ -25,8 +25,8 @@ export default function SettingsPage() {
     <div className="flex flex-col gap-4">
       <PageHeading folio="F-04" title="Settings" meta="limits · backup · appearance" />
       <div className="grid gap-4 lg:grid-cols-2">
-      <section className="panel rounded-[14px] p-5">
-        <h2 className="label-caps mb-4">Game limits</h2>
+      <section className="panel rounded-[20px] p-5">
+        <h2 className="panel-title mb-4">Game limits</h2>
         <dl className="flex flex-col">
           <Row label="Cash per account" value={formatNumber(LIMITS.MAX_CASH)} />
           <Row label="Coins per account" value={formatNumber(LIMITS.MAX_COINS)} />
@@ -40,8 +40,8 @@ export default function SettingsPage() {
         </p>
       </section>
 
-      <section className="panel rounded-[14px] p-5">
-        <h2 className="label-caps mb-4">Where the data lives</h2>
+      <section className="panel rounded-[20px] p-5">
+        <h2 className="panel-title mb-4">Where the data lives</h2>
         <dl className="flex flex-col">
           <Row label="Database" value="data/cpm2.db" mono />
           <Row label="Encryption key" value="data/.secret-key" mono />
@@ -61,32 +61,32 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      <section className="panel rounded-[14px] p-5">
-        <h2 className="label-caps mb-4">Appearance</h2>
+      <section className="panel rounded-[20px] p-5">
+        <h2 className="panel-title mb-4">Appearance</h2>
         <div className="flex flex-wrap gap-2">
           <Button
             variant={theme === "paper" ? "primary" : "outline"}
             size="sm"
             onClick={() => setTheme("paper")}
           >
-            Paper
+            Daylight
           </Button>
           <Button
             variant={theme === "night" ? "primary" : "outline"}
             size="sm"
             onClick={() => setTheme("night")}
           >
-            Night
+            Midnight
           </Button>
         </div>
         <p className="mt-3 text-[11px] leading-snug text-ink-faint">
-          Paper is for daylight; night is the same ledger lit from the dash. The choice is remembered on this
-          machine.
+          Midnight is the default cabin look — mint on black. Daylight is the same dash lit from
+          above. The choice is remembered on this machine.
         </p>
       </section>
 
-      <section className="panel rounded-[14px] p-5">
-        <h2 className="label-caps mb-4">Keyboard</h2>
+      <section className="panel rounded-[20px] p-5">
+        <h2 className="panel-title mb-4">Keyboard</h2>
         <dl className="flex flex-col">
           {SHORTCUTS.map((item) => (
             <div

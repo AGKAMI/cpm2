@@ -118,7 +118,7 @@ export function SlotPurchaseConfirmModal({
 
   const cost = count * LIMITS.SLOT_COST_COINS;
   const newSlots = account.slots + count;
-  const newCapacity = carCapacity(newSlots);
+  const newCapacity = carCapacity(account.baseSlots, newSlots);
   const balanceAfter = account.coins - cost;
 
   return (

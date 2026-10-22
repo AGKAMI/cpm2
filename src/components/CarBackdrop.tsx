@@ -46,6 +46,7 @@ export function CarBackdrop() {
         referrerPolicy="no-referrer"
       />
       <div className="car-backdrop-scrim" />
+      <div className="car-backdrop-glow" />
       <a
         href={photo.authorUrl}
         target="_blank"

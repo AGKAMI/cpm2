@@ -34,7 +34,16 @@ export type { AccountSummary, FleetEvent, FleetStats } from "./types.ts";
 export type { ImportReport, ImportRowResult } from "./types.ts";
 export type { TrophyRecord, TrophySummary } from "./types.ts";
 
-const TRACKED_FIELDS = ["email", "cash", "coins", "cars", "slots", "coinsSpentOnCars", "notes"] as const;
+const TRACKED_FIELDS = [
+  "email",
+  "cash",
+  "coins",
+  "cars",
+  "baseSlots",
+  "slots",
+  "coinsSpentOnCars",
+  "notes",
+] as const;
 
 function toSummary(row: AccountRow): AccountSummary {
   return {
@@ -43,8 +52,9 @@ function toSummary(row: AccountRow): AccountSummary {
     cash: row.cash,
     coins: row.coins,
     cars: row.cars,
+    baseSlots: row.base_slots,
     slots: row.slots,
-    capacity: carCapacity(row.slots),
+    capacity: carCapacity(row.base_slots, row.slots),
     slotsValue: slotsLockedValue(row.slots),
     coinsSpentOnCars: row.coins_spent_on_cars,
     notes: row.notes,
@@ -132,8 +142,10 @@ export function createAccount(payload: unknown): AccountSummary {
   const stamp = now();
 
   const insert = db.prepare(
-    `INSERT INTO accounts (email, password_enc, cash, coins, cars, slots, notes, coins_spent_on_cars, archived, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+    `INSERT INTO accounts
+       (email, password_enc, cash, coins, cars, base_slots, slots, notes,
+        coins_spent_on_cars, archived, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
   );
 
   const created = db.transaction(() => {
@@ -143,6 +155,7 @@ export function createAccount(payload: unknown): AccountSummary {
       input.cash,
       input.coins,
       input.cars,
+      input.baseSlots,
       input.slots,
       input.notes,
       input.coinsSpentOnCars,
@@ -154,6 +167,7 @@ export function createAccount(payload: unknown): AccountSummary {
       cash: { from: 0, to: input.cash },
       coins: { from: 0, to: input.coins },
       cars: { from: 0, to: input.cars },
+      baseSlots: { from: 0, to: input.baseSlots },
       slots: { from: 0, to: input.slots },
     });
     return id;
@@ -181,16 +195,18 @@ export function updateAccount(id: number, payload: unknown): AccountSummary {
     cash: patch.cash ?? existing.cash,
     coins: patch.coins ?? existing.coins,
     cars: patch.cars ?? existing.cars,
+    baseSlots: patch.baseSlots ?? existing.base_slots,
     slots: patch.slots ?? existing.slots,
     coinsSpentOnCars: patch.coinsSpentOnCars ?? existing.coins_spent_on_cars,
     notes: patch.notes ?? existing.notes,
   };
 
-  if (next.cars > carCapacity(next.slots)) {
+  const capacity = carCapacity(next.baseSlots, next.slots);
+  if (next.cars > capacity) {
     throw new ApiError(
       422,
       "CAR_CAPACITY_EXCEEDED",
-      `${next.cars} cars need more room — this account holds ${next.slots} extra slot(s) for ${carCapacity(next.slots)} cars.`,
+      `${next.cars} cars need more room — this garage holds ${capacity} (${next.baseSlots} base + ${next.slots} extra slot(s)).`,
     );
   }
 
@@ -203,23 +219,30 @@ export function updateAccount(id: number, payload: unknown): AccountSummary {
     // AccountRow stores the ledger snake_case (coins_spent_on_cars); the patch
     // summary speaks camelCase. Map before diffing so both sides resolve.
     const before =
-      field === "coinsSpentOnCars" ? existing.coins_spent_on_cars : existing[field];
+      field === "coinsSpentOnCars"
+        ? existing.coins_spent_on_cars
+        : field === "baseSlots"
+          ? existing.base_slots
+          : existing[field];
     const after = next[field];
     if (before !== after) changes[field] = { from: before, to: after };
   }
 
   const removedSlots = existing.slots - next.slots;
+  const baseChanged = existing.base_slots !== next.baseSlots;
   const eventType: FleetEvent["type"] = removedSlots > 0 ? "slots_removed" : "updated";
   const summary =
     removedSlots > 0
       ? `Removed ${removedSlots} car slot(s) — the game does not refund slot coins`
-      : "Account details updated";
+      : baseChanged
+        ? `Base garage size set to ${next.baseSlots}`
+        : "Account details updated";
 
   const db = getDb();
   db.transaction(() => {
     db.prepare(
       `UPDATE accounts
-         SET email = ?, password_enc = ?, cash = ?, coins = ?, cars = ?, slots = ?, notes = ?, coins_spent_on_cars = ?, updated_at = ?
+         SET email = ?, password_enc = ?, cash = ?, coins = ?, cars = ?, base_slots = ?, slots = ?, notes = ?, coins_spent_on_cars = ?, updated_at = ?
        WHERE id = ?`,
     ).run(
       next.email,
@@ -227,6 +250,7 @@ export function updateAccount(id: number, payload: unknown): AccountSummary {
       next.cash,
       next.coins,
       next.cars,
+      next.baseSlots,
       next.slots,
       next.notes,
       next.coinsSpentOnCars,
@@ -519,6 +543,7 @@ export function exportFleet(
             "cash",
             "coins",
             "cars",
+            "base_slots",
             "slots",
             "capacity",
             "coins_spent_on_cars",
@@ -534,6 +559,7 @@ export function exportFleet(
               account.cash,
               account.coins,
               account.cars,
+              account.baseSlots,
               account.slots,
               account.capacity,
               account.coinsSpentOnCars,

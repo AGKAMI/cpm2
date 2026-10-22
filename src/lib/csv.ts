@@ -76,7 +76,16 @@ export function escapeCsvValue(value: unknown): string {
   return `"${String(value ?? "").replace(/"/g, '""')}"`;
 }
 
-const NUMERIC_FIELDS = ["cash", "coins", "cars", "slots", "coinsSpentOnCars", "coins_spent_on_cars"] as const;
+const NUMERIC_FIELDS = [
+  "cash",
+  "coins",
+  "cars",
+  "baseSlots",
+  "base_slots",
+  "slots",
+  "coinsSpentOnCars",
+  "coins_spent_on_cars",
+] as const;
 
 /**
  * Normalises an imported row before validation: trims strings, coerces
@@ -93,6 +102,10 @@ export function normalizeImportRow(row: unknown): Record<string, unknown> {
   if ("coins_spent_on_cars" in normalized && !("coinsSpentOnCars" in normalized)) {
     normalized.coinsSpentOnCars = normalized.coins_spent_on_cars;
     delete normalized.coins_spent_on_cars;
+  }
+  if ("base_slots" in normalized && !("baseSlots" in normalized)) {
+    normalized.baseSlots = normalized.base_slots;
+    delete normalized.base_slots;
   }
 
   for (const field of NUMERIC_FIELDS) {

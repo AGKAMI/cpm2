@@ -67,8 +67,8 @@ export default function ActivityPage() {
                 onClick={() => setFilter(item.key)}
                 className={`cursor-pointer rounded-full border px-3 py-1.5 font-sans text-[11px] font-semibold transition-colors ${
                   filter === item.key
-                    ? "border-racing bg-racing text-paper"
-                    : "border-ink/10 bg-paper-raised text-ink-soft hover:border-racing/40 hover:text-racing"
+                    ? "glass-accent border-racing/40 text-paper"
+                    : "glass-control text-ink-soft hover:text-racing"
                 }`}
               >
                 {item.label}

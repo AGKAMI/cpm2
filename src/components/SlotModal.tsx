@@ -23,7 +23,7 @@ export function SlotModal({ open, account, onClose, onReview }: SlotModalProps) 
   const affordable = Math.floor(account.coins / LIMITS.SLOT_COST_COINS);
   const max = Math.max(0, Math.min(slotsLeft, affordable));
   const cost = count * LIMITS.SLOT_COST_COINS;
-  const newCapacity = carCapacity(account.slots + count);
+  const newCapacity = carCapacity(account.baseSlots, account.slots + count);
 
   const blocker =
     slotsLeft === 0
@@ -96,14 +96,14 @@ export function SlotModal({ open, account, onClose, onReview }: SlotModalProps) 
           </div>
         </div>
 
-        <div className="flex items-center justify-between rounded-[14px] border border-ink/10 bg-paper-sunken px-4 py-3">
+        <div className="flex items-center justify-between rounded-[14px] border border-ink/10 bg-ink/[0.04] px-4 py-3 backdrop-blur-md">
           <span className="label-caps">New garage size</span>
           <span className="num text-sm text-racing">
             {account.cars}/{newCapacity} slots
           </span>
         </div>
 
-        <div className="flex items-center justify-between rounded-[14px] border border-ink/10 bg-paper-sunken px-4 py-3">
+        <div className="flex items-center justify-between rounded-[14px] border border-ink/10 bg-ink/[0.04] px-4 py-3 backdrop-blur-md">
           <span className="label-caps">Total cost</span>
           <span className="num text-sm text-racing">{formatNumber(cost)} coins</span>
         </div>

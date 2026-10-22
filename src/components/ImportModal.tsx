@@ -97,7 +97,7 @@ export function ImportModal({ open, busy, onClose, onImport }: ImportModalProps)
               ))}
             </ul>
             {report.results.some((row) => row.status !== "created") ? (
-              <div className="max-h-44 overflow-y-auto rounded-[14px] border border-ink/10 bg-paper-sunken p-2">
+              <div className="max-h-44 overflow-y-auto rounded-[14px] border border-ink/10 bg-ink/[0.04] p-2 backdrop-blur-md">
                 {report.results
                   .filter((row) => row.status !== "created")
                   .map((row) => (
@@ -122,7 +122,7 @@ export function ImportModal({ open, busy, onClose, onImport }: ImportModalProps)
             <p className="text-[11px] text-ink-faint">
               Duplicates are skipped, bad rows are reported — nothing is half-imported. Hard caps
               ({LIMITS.MAX_CASH.toLocaleString("en-US")} cash · {LIMITS.MAX_COINS.toLocaleString("en-US")} coins ·
-              {" "}{LIMITS.BASE_CAR_SLOTS}+{LIMITS.MAX_PURCHASED_SLOTS} slots) are enforced per row.
+              {" "}base garage + up to {LIMITS.MAX_PURCHASED_SLOTS} slots) are enforced per row.
             </p>
             {error ? (
               <p className="rounded-[14px] border border-oxblood/35 bg-oxblood/8 px-3 py-2 text-xs text-oxblood">

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, IBM_Plex_Mono } from "next/font/google";
+import { Archivo, IBM_Plex_Mono, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { FleetProvider } from "@/components/FleetProvider";
 import { AppShell } from "@/components/AppShell";
@@ -18,6 +18,13 @@ const mono = IBM_Plex_Mono({
   display: "swap",
 });
 
+const display = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-playfair",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "CPM2 // FLEET LEDGER",
   description:
@@ -26,14 +33,14 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#0a0b0a" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0b0a" },
+    { media: "(prefers-color-scheme: light)", color: "#05100a" },
+    { media: "(prefers-color-scheme: dark)", color: "#05100a" },
   ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${body.variable} ${mono.variable}`}>
+    <html lang="en" className={`${body.variable} ${mono.variable} ${display.variable}`}>
       <body className="min-h-screen antialiased">
         <ToastProvider>
           <FleetProvider>

@@ -148,7 +148,7 @@ export function AccountTable({
                   />
                 </td>
                 <td className="px-2.5 py-3">
-                  <CapacityGauge cars={account.cars} capacity={account.capacity} />
+                  <CapacityGauge cars={account.cars} capacity={account.capacity} baseSlots={account.baseSlots} />
                   {archived ? null : (
                     <button
                       type="button"
@@ -289,7 +289,7 @@ export function AccountTable({
             </dl>
 
             <div className="mt-3">
-              <CapacityGauge cars={account.cars} capacity={account.capacity} />
+              <CapacityGauge cars={account.cars} capacity={account.capacity} baseSlots={account.baseSlots} />
             </div>
 
             {archived ? null : (

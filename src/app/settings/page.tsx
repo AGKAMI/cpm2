@@ -30,13 +30,16 @@ export default function SettingsPage() {
         <dl className="flex flex-col">
           <Row label="Cash per account" value={formatNumber(LIMITS.MAX_CASH)} />
           <Row label="Coins per account" value={formatNumber(LIMITS.MAX_COINS)} />
-          <Row label="Base car slots" value={String(LIMITS.BASE_CAR_SLOTS)} />
-          <Row label="Extra slots per account" value={`${LIMITS.MAX_PURCHASED_SLOTS} (max ${LIMITS.BASE_CAR_SLOTS + LIMITS.MAX_PURCHASED_SLOTS} cars)`} />
+          <Row label="Base car slots" value={`${LIMITS.BASE_CAR_SLOTS} default · editable per account`} />
+          <Row
+            label="Extra slots per account"
+            value={`${LIMITS.MAX_PURCHASED_SLOTS} max (garage up to ${LIMITS.MAX_BASE_CAR_SLOTS + LIMITS.MAX_PURCHASED_SLOTS})`}
+          />
           <Row label="Price of an extra slot" value={`${LIMITS.SLOT_COST_COINS} coins`} />
         </dl>
         <p className="mt-4 text-[11px] leading-snug text-ink-faint">
-          Slots can only be bought — the tracker charges the coins for you. A PATCH that tries to raise the slot
-          count is rejected with <span className="num">SLOTS_PURCHASE_ONLY</span>.
+          Every account carries its own base garage size — edit it from the account form when a profile has
+          more than the default. Slots can only be bought; the tracker charges the coins for you.
         </p>
       </section>
 
@@ -94,7 +97,7 @@ export default function SettingsPage() {
               className="flex items-baseline justify-between gap-4 border-b border-ink/8 py-2 last:border-0"
             >
               <dt className="text-[12px] text-ink-soft">{item.action}</dt>
-              <dd className="num rounded-full border border-ink/15 bg-paper-sunken px-1.5 py-0.5 text-[11px] text-ink">
+              <dd className="num rounded-full border border-ink/15 bg-ink/[0.05] px-1.5 py-0.5 text-[11px] text-ink backdrop-blur-md">
                 {item.keys}
               </dd>
             </div>

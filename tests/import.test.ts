@@ -136,6 +136,18 @@ describe("bulk import (json)", () => {
 });
 
 describe("bulk import (csv)", () => {
+  it("imports the base_slots column from a CSV export", () => {
+    const csv = [
+      "id,email,password,cash,coins,cars,base_slots,slots,capacity,notes,created_at,updated_at",
+      ',"roomy-csv@cpm2.gg","p",0,0,40,50,0,50,,',
+    ].join("\n");
+    const report = importAccounts(csv, "csv");
+    assert.equal(report.created, 1);
+    const imported = listAccounts().find((account) => account.email === "roomy-csv@cpm2.gg");
+    assert.equal(imported?.baseSlots, 50);
+    assert.equal(imported?.capacity, 50);
+  });
+
   it("parses a raw CSV body with quoted notes", () => {
     const csv = [
       "id,email,password,cash,coins,cars,slots,capacity,notes,created_at,updated_at",

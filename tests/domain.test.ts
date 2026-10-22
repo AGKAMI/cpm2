@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import Database from "better-sqlite3";
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cpm2-test-"));
 process.env.CPM2_DB_PATH = path.join(tmp, "fleet.db");
@@ -13,7 +14,7 @@ const { createAccount, updateAccount, archiveAccount, purchaseSlots, listAccount
 );
 const { ApiError } = await import("../src/lib/api.ts");
 const { encryptSecret, decryptSecret, resetKeyCache } = await import("../src/lib/crypto.ts");
-const { closeDb } = await import("../src/lib/db.ts");
+const { closeDb, createDatabase } = await import("../src/lib/db.ts");
 
 const valid = {
   email: "alpha@cpm2.gg",
@@ -193,6 +194,116 @@ describe("car slots", () => {
   });
 });
 
+describe("custom garage size", () => {
+  it("stores a per-account base garage size and derives capacity", () => {
+    const account = createAccount({
+      ...valid,
+      email: "garage@cpm2.gg",
+      cars: 120,
+      baseSlots: 120,
+      slots: 0,
+    });
+    assert.equal(account.baseSlots, 120);
+    assert.equal(account.capacity, 120);
+  });
+
+  it("adds purchased slots on top of the custom base", () => {
+    const account = createAccount({
+      ...valid,
+      email: "garage-plus@cpm2.gg",
+      cars: 0,
+      baseSlots: 120,
+      slots: 3,
+    });
+    assert.equal(account.capacity, 123);
+  });
+
+  it("rejects a base garage above the sanity cap", () => {
+    assert.throws(
+      () => createAccount({ ...valid, email: "garage-max@cpm2.gg", baseSlots: 1000 }),
+      /Base slots cannot exceed 999/,
+    );
+  });
+
+  it("rejects shrinking the base below the stored cars", () => {
+    const account = createAccount({
+      ...valid,
+      email: "garage-shrink@cpm2.gg",
+      cars: 40,
+      baseSlots: 50,
+      slots: 0,
+    });
+    assert.throws(
+      () => updateAccount(account.id, { baseSlots: 39 }),
+      (err: unknown) => {
+        assert.ok(err instanceof ApiError);
+        assert.equal(err.code, "CAR_CAPACITY_EXCEEDED");
+        return true;
+      },
+    );
+  });
+
+  it("tracks the base garage change in the event log", () => {
+    const account = createAccount({ ...valid, email: "garage-log@cpm2.gg", cars: 10 });
+    updateAccount(account.id, { baseSlots: 40 });
+    const event = listEvents(50).find(
+      (item) => item.email === "garage-log@cpm2.gg" && item.type === "updated",
+    );
+    assert.ok(event);
+    assert.deepEqual(event.changes.baseSlots, { from: 20, to: 40 });
+  });
+});
+
+describe("schema migration", () => {
+  it("rebuilds the legacy 20+slots CHECK and keeps every row", () => {
+    const legacyPath = path.join(tmp, "legacy.db");
+    const legacy = new Database(legacyPath);
+    legacy.exec(`
+      CREATE TABLE accounts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT NOT NULL,
+        password_enc TEXT NOT NULL,
+        cash INTEGER NOT NULL DEFAULT 0,
+        coins INTEGER NOT NULL DEFAULT 0,
+        cars INTEGER NOT NULL DEFAULT 0,
+        slots INTEGER NOT NULL DEFAULT 0,
+        notes TEXT NOT NULL DEFAULT '',
+        archived INTEGER NOT NULL DEFAULT 0,
+        coins_spent_on_cars INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        CHECK (cars >= 0 AND cars <= 20 + slots),
+        CHECK (slots >= 0 AND slots <= 15)
+      );
+      INSERT INTO accounts (email, password_enc, cash, coins, cars, slots, created_at, updated_at)
+      VALUES ('legacy@cpm2.gg', 'x', 10, 20, 3, 1, 'now', 'now');
+    `);
+    legacy.close();
+
+    const db = createDatabase(legacyPath);
+    try {
+      const columns = db.prepare(`PRAGMA table_info(accounts)`).all() as { name: string }[];
+      assert.equal(columns.some((column) => column.name === "base_slots"), true);
+
+      const row = db
+        .prepare(`SELECT email, cars, slots, base_slots FROM accounts WHERE email = 'legacy@cpm2.gg'`)
+        .get() as { email: string; cars: number; slots: number; base_slots: number };
+      assert.deepEqual({ ...row }, { email: "legacy@cpm2.gg", cars: 3, slots: 1, base_slots: 20 });
+
+      db.prepare(
+        `INSERT INTO accounts (email, password_enc, cars, base_slots, slots, created_at, updated_at)
+         VALUES ('roomy@cpm2.gg', 'x', 40, 50, 0, 'now', 'now')`,
+      ).run();
+      const roomy = db
+        .prepare(`SELECT cars, base_slots FROM accounts WHERE email = 'roomy@cpm2.gg'`)
+        .get() as { cars: number; base_slots: number };
+      assert.deepEqual(roomy, { cars: 40, base_slots: 50 });
+    } finally {
+      db.close();
+    }
+  });
+});
+
 describe("encryption", () => {
   it("never stores the password in plain text", () => {
     const account = createAccount({ ...valid, email: "secret@cpm2.gg", password: "hunter2" });
@@ -224,6 +335,7 @@ describe("stats + export", () => {
     const csv = exportFleet("csv", { confirmed: true });
     assert.equal(csv.contentType.includes("text/csv"), true);
     assert.equal(csv.body.split("\n")[0].includes("password"), true);
+    assert.equal(csv.body.split("\n")[0].includes("base_slots"), true);
   });
 
   it("exports json", () => {

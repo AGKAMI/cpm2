@@ -239,7 +239,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           Skip to content
         </a>
-        <header className="sticky top-0 z-30 overflow-hidden border-b border-ink/8 bg-paper/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
+        <header className="glass-header sticky top-0 z-30 overflow-hidden pt-[env(safe-area-inset-top)]">
           <div className="dial-sweep" aria-hidden />
           <div className="relative mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-6 gap-y-3 px-4 pb-3 pt-4 sm:px-6">
             <Link href="/" className="flex items-center gap-3">
@@ -285,7 +285,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </nav>
 
             <div className="ml-auto flex flex-wrap items-center gap-2 sm:ml-0">
-              <span className="hidden items-center gap-2 rounded-full border border-ink/10 bg-paper-raised px-3 py-1.5 sm:flex">
+              <span className="glass-control hidden items-center gap-2 rounded-full px-3 py-1.5 sm:flex">
                 <span
                   className={`h-1.5 w-1.5 rounded-full ${
                     fleet.error ? "bg-oxblood" : fleet.loading ? "bg-brass animate-blink" : "bg-racing"
@@ -343,8 +343,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="rule-double mb-3" />
           <div className="flex flex-wrap items-baseline justify-between gap-3">
             <p className="num text-[10px] text-ink-faint">
-              Fleet Ledger · Car Parking Multiplayer 2 · 20 base car slots · 15 extra slots max per account · 100
-              coins per slot
+              Fleet Ledger · Car Parking Multiplayer 2 · custom base garage per account · 15 extra slots max ·
+              100 coins per slot
             </p>
             <p className="num text-[10px] text-ink-faint">passwords encrypted at rest · AES-256-GCM</p>
           </div>
@@ -352,9 +352,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <nav
           aria-label="Primary"
-          className="fixed inset-x-0 bottom-0 z-40 border-t border-ink/10 bg-paper/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl sm:hidden"
+          className="mobile-dock sm:hidden"
         >
-          <div className="mx-auto flex max-w-md items-stretch justify-around px-2">
+          <div className="mx-auto flex max-w-md items-stretch justify-around">
             {NAV.map((item) => {
               const active =
                 item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
@@ -363,8 +363,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                   key={item.href}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
-                  className={`flex flex-1 flex-col items-center gap-1 rounded-2xl py-2.5 text-[10px] font-semibold transition-colors ${
-                    active ? "text-racing" : "text-ink-faint hover:text-ink-soft"
+                  className={`flex flex-1 flex-col items-center gap-1 rounded-full py-2.5 text-[10px] font-semibold transition-colors ${
+                    active
+                      ? "bg-racing/12 text-racing shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]"
+                      : "text-ink-faint hover:text-ink-soft"
                   }`}
                 >
                   {NAV_ICONS[item.href]}
@@ -463,7 +465,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 className="flex items-baseline justify-between gap-4 border-b border-ink/8 py-2 last:border-0"
               >
                 <dt className="num text-[12px] text-ink">{item.action}</dt>
-                <dd className="num rounded-full border border-ink/15 bg-paper-sunken px-1.5 py-0.5 text-[11px] text-ink-soft">
+                <dd className="num rounded-full border border-ink/15 bg-ink/[0.05] px-1.5 py-0.5 text-[11px] text-ink-soft backdrop-blur-md">
                   {item.keys}
                 </dd>
               </div>

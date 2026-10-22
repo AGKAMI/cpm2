@@ -9,6 +9,7 @@ export type AccountRow = {
   cash: number;
   coins: number;
   cars: number;
+  base_slots: number;
   slots: number;
   notes: string;
   archived: number;
@@ -27,14 +28,14 @@ export type EventRow = {
   created_at: string;
 };
 
-const SCHEMA = `
-CREATE TABLE IF NOT EXISTS accounts (
+const ACCOUNT_COLUMNS = `
   id           INTEGER PRIMARY KEY AUTOINCREMENT,
   email        TEXT    NOT NULL,
   password_enc TEXT    NOT NULL,
   cash         INTEGER NOT NULL DEFAULT 0,
   coins        INTEGER NOT NULL DEFAULT 0,
   cars         INTEGER NOT NULL DEFAULT 0,
+  base_slots   INTEGER NOT NULL DEFAULT 20,
   slots        INTEGER NOT NULL DEFAULT 0,
   notes        TEXT    NOT NULL DEFAULT '',
   archived     INTEGER NOT NULL DEFAULT 0,
@@ -44,10 +45,14 @@ CREATE TABLE IF NOT EXISTS accounts (
   CHECK (length(email) > 2 AND length(email) <= 254),
   CHECK (cash >= 0 AND cash <= 50000000),
   CHECK (coins >= 0 AND coins <= 30000),
-  CHECK (cars >= 0 AND cars <= 20 + slots),
+  CHECK (base_slots >= 0 AND base_slots <= 999),
+  CHECK (cars >= 0 AND cars <= base_slots + slots),
   CHECK (slots >= 0 AND slots <= 15),
   CHECK (coins_spent_on_cars >= 0)
-);
+`;
+
+const SCHEMA = `
+CREATE TABLE IF NOT EXISTS accounts (${ACCOUNT_COLUMNS});
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_email
   ON accounts (email COLLATE NOCASE);
@@ -116,6 +121,36 @@ function migrate(db: Database.Database): void {
   if (!columns.some((column) => column.name === "coins_spent_on_cars")) {
     db.exec(`ALTER TABLE accounts ADD COLUMN coins_spent_on_cars INTEGER NOT NULL DEFAULT 0`);
   }
+  if (!columns.some((column) => column.name === "base_slots")) {
+    db.exec(`ALTER TABLE accounts ADD COLUMN base_slots INTEGER NOT NULL DEFAULT 20`);
+  }
+
+  // The v1 garage CHECK hard-coded `20 + slots`. SQLite cannot alter a CHECK,
+  // so rebuild the table once when that legacy constraint is still present.
+  const table = db
+    .prepare(`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'accounts'`)
+    .get() as { sql: string } | undefined;
+  if (table && /cars\s*<=\s*20\s*\+\s*slots/i.test(table.sql)) {
+    rebuildAccounts(db);
+  }
+}
+
+function rebuildAccounts(db: Database.Database): void {
+  db.transaction(() => {
+    db.exec(`ALTER TABLE accounts RENAME TO accounts_legacy`);
+    db.exec(`DROP INDEX IF EXISTS idx_accounts_email`);
+    db.exec(`CREATE TABLE accounts (${ACCOUNT_COLUMNS})`);
+    db.exec(
+      `INSERT INTO accounts
+         (id, email, password_enc, cash, coins, cars, base_slots, slots, notes,
+          archived, coins_spent_on_cars, created_at, updated_at)
+       SELECT id, email, password_enc, cash, coins, cars, base_slots, slots, notes,
+              archived, coins_spent_on_cars, created_at, updated_at
+         FROM accounts_legacy`,
+    );
+    db.exec(`DROP TABLE accounts_legacy`);
+    db.exec(`CREATE UNIQUE INDEX idx_accounts_email ON accounts (email COLLATE NOCASE)`);
+  })();
 }
 
 declare global {

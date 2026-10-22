@@ -34,6 +34,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
   const [cash, setCash] = useState(account?.cash ?? 0);
   const [coins, setCoins] = useState(account?.coins ?? 0);
   const [cars, setCars] = useState(account?.cars ?? 0);
+  const [baseSlots, setBaseSlots] = useState(account?.baseSlots ?? LIMITS.BASE_CAR_SLOTS);
   const [slots, setSlots] = useState(account?.slots ?? 0);
   const [coinsSpentOnCars, setCoinsSpentOnCars] = useState(account?.coinsSpentOnCars ?? 0);
   const [notes, setNotes] = useState(account?.notes ?? "");
@@ -42,12 +43,12 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
 
   const editing = account !== null;
 
-  const capacity = carCapacity(slots);
+  const capacity = carCapacity(baseSlots, slots);
   const carsOverflow = cars > capacity;
 
   /** Move the caret to whatever went wrong first — never leave the user guessing. */
   function focusFirstError(issues: Record<string, string>) {
-    const order = ["email", "password", "cash", "coins", "cars", "slots", "notes"];
+    const order = ["email", "password", "cash", "coins", "cars", "baseSlots", "slots", "notes"];
     const first = order.find((field) => issues[field]);
     if (!first) return;
     const field = document.getElementById(`account-${first}`);
@@ -61,7 +62,16 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
     event.preventDefault();
     setErrors({});
 
-    const payload: Record<string, unknown> = { email, cash, coins, cars, slots, coinsSpentOnCars, notes };
+    const payload: Record<string, unknown> = {
+      email,
+      cash,
+      coins,
+      cars,
+      baseSlots,
+      slots,
+      coinsSpentOnCars,
+      notes,
+    };
     if (password) payload.password = password;
 
     if (!editing) {
@@ -85,6 +95,10 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
       else if (coins > LIMITS.MAX_COINS) {
         next.coins = `Coins cannot exceed ${formatNumber(LIMITS.MAX_COINS)}.`;
       }
+      if (baseSlots < 0) next.baseSlots = "Base slots cannot be negative.";
+      else if (baseSlots > LIMITS.MAX_BASE_CAR_SLOTS) {
+        next.baseSlots = `Base slots cannot exceed ${LIMITS.MAX_BASE_CAR_SLOTS}.`;
+      }
       if (slots < 0) next.slots = "Slots cannot be negative.";
       else if (slots > LIMITS.MAX_PURCHASED_SLOTS) {
         next.slots = `Extra slots cannot exceed ${LIMITS.MAX_PURCHASED_SLOTS} per account.`;
@@ -93,7 +107,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
       }
       if (cars < 0) next.cars = "Cars cannot be negative.";
       else if (cars > capacity) {
-        next.cars = `Cars cannot exceed ${capacity} with ${slots} extra slot(s).`;
+        next.cars = `Cars cannot exceed ${capacity} (${baseSlots} base + ${slots} extra slot(s)).`;
       }
       if (password.length > LIMITS.MAX_PASSWORD_LENGTH) {
         next.password = `Password must be ${LIMITS.MAX_PASSWORD_LENGTH} characters or fewer.`;
@@ -233,18 +247,18 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
           </Field>
 
           <Field
-            label="Coins spent on cars"
-            htmlFor="account-coins-spent"
-            error={errors.coinsSpentOnCars}
-            hint="ledger only — keeps the fleet stats honest"
+            label="Base garage size"
+            htmlFor="account-baseSlots"
+            error={errors.baseSlots}
+            hint={`free slots · default ${LIMITS.BASE_CAR_SLOTS}`}
           >
             <NumericInput
-              id="account-coins-spent"
-              value={coinsSpentOnCars}
-              onChange={setCoinsSpentOnCars}
-              max={LIMITS.MAX_COINS}
-              invalid={Boolean(errors.coinsSpentOnCars)}
-              suffix="COINS"
+              id="account-baseSlots"
+              value={baseSlots}
+              onChange={setBaseSlots}
+              max={LIMITS.MAX_BASE_CAR_SLOTS}
+              invalid={Boolean(errors.baseSlots)}
+              suffix="SLOTS"
             />
           </Field>
 
@@ -265,6 +279,22 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
               max={LIMITS.MAX_PURCHASED_SLOTS}
               invalid={Boolean(errors.slots)}
               suffix="SLOTS"
+            />
+          </Field>
+
+          <Field
+            label="Coins spent on cars"
+            htmlFor="account-coins-spent"
+            error={errors.coinsSpentOnCars}
+            hint="ledger only — keeps the fleet stats honest"
+          >
+            <NumericInput
+              id="account-coins-spent"
+              value={coinsSpentOnCars}
+              onChange={setCoinsSpentOnCars}
+              max={LIMITS.MAX_COINS}
+              invalid={Boolean(errors.coinsSpentOnCars)}
+              suffix="COINS"
             />
           </Field>
         </div>

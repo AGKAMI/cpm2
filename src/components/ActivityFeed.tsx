@@ -55,7 +55,7 @@ export function ActivityFeed({ events }: { events: FleetEvent[] }) {
                   {Object.entries(event.changes).map(([field, change]) => (
                     <span
                       key={field}
-                      className="num rounded-full border border-ink/12 bg-paper-sunken px-1.5 py-0.5 text-[10px] text-ink-soft"
+                      className="num rounded-full border border-ink/12 bg-ink/[0.05] px-1.5 py-0.5 text-[10px] text-ink-soft backdrop-blur-md"
                     >
                       <span className="text-ink-faint">{field}</span>{" "}
                       <span className="text-ink">{renderValue(change.from)}</span>{" "}

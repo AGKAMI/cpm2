@@ -162,10 +162,14 @@ export default function AccountPage() {
           <div className="mt-6 border-t border-ink/10 pt-4">
             <h3 className="panel-title">Garage</h3>
             <div className="mt-3">
-              <CapacityGauge cars={account.cars} capacity={account.capacity} />
+              <CapacityGauge
+                cars={account.cars}
+                capacity={account.capacity}
+                baseSlots={account.baseSlots}
+              />
             </div>
             <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-4">
-              <Fact label="Base slots" value={String(LIMITS.BASE_CAR_SLOTS)} />
+              <Fact label="Base slots" value={String(account.baseSlots)} />
               <Fact label="Purchased" value={String(account.slots)} tone="text-brass" />
               <Fact label="Capacity" value={String(account.capacity)} tone="text-racing" />
               <Fact label="Slot value" value={`${formatNumber(slotValue)} coins`} tone="text-brass" />

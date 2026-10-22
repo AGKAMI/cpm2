@@ -53,8 +53,9 @@ if not errorlevel 1 (
 )
 
 rem --- 5. start the production server FULLY HIDDEN (no taskbar window at all) ---
+rem binds 0.0.0.0 so KAMI's phone can open it on the same Wi-Fi (see section 6)
 echo Starting server (runs hidden)...
-powershell -NoProfile -Command "Start-Process cmd -ArgumentList '/c','cd /d C:\Users\ojuni\Documents\GAMES\cpm2 && npm run start -- --port 3457 > %TEMP%\cpm2-server.log 2>&1' -WindowStyle Hidden"
+powershell -NoProfile -Command "Start-Process cmd -ArgumentList '/c','cd /d C:\Users\ojuni\Documents\GAMES\cpm2 && npm run start -- -H 0.0.0.0 --port 3457 > %TEMP%\cpm2-server.log 2>&1' -WindowStyle Hidden"
 
 set /a tries=0
 :wait
@@ -68,5 +69,9 @@ exit /b 1
 
 :ready
 echo Ready - opening the app window...
+echo.
+echo PHONE (same Wi-Fi): open http://192.168.8.126:3457
+echo   - find this PC's IP any time: ipconfig ^| findstr IPv4
+echo.
 start "" "%EDGE%" --app=http://127.0.0.1:3457/ --window-size=1280,860
 exit /b 0

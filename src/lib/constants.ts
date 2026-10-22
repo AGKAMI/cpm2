@@ -8,8 +8,10 @@ export const LIMITS = {
   MAX_CASH: 50_000_000,
   /** Maximum in-game coins a single account can hold. */
   MAX_COINS: 30_000,
-  /** Free car slots every account starts with. */
+  /** Default free car slots every new account starts with (editable per account). */
   BASE_CAR_SLOTS: 20,
+  /** Upper bound for the per-account base garage size. */
+  MAX_BASE_CAR_SLOTS: 999,
   /** Maximum extra car slots a single account can own. */
   MAX_PURCHASED_SLOTS: 15,
   /** Coin price of one extra car slot. */
@@ -22,13 +24,13 @@ export const LIMITS = {
   MAX_IMPORT_ROWS: 1000,
 } as const;
 
-/** Total garage capacity for an account that owns `purchasedSlots` extra slots. */
-export function carCapacity(purchasedSlots: number): number {
-  return LIMITS.BASE_CAR_SLOTS + Math.max(0, Math.trunc(purchasedSlots || 0));
+/** Total garage capacity for an account's base size plus purchased slots. */
+export function carCapacity(baseSlots: number, purchasedSlots: number): number {
+  return Math.max(0, Math.trunc(baseSlots || 0)) + Math.max(0, Math.trunc(purchasedSlots || 0));
 }
 
 /** Absolute ceiling on cars an account can ever hold. */
-export const MAX_CARS = carCapacity(LIMITS.MAX_PURCHASED_SLOTS);
+export const MAX_CARS = LIMITS.MAX_BASE_CAR_SLOTS + LIMITS.MAX_PURCHASED_SLOTS;
 
 /** Coins that are locked up in purchased slots across every account. */
 export function slotsLockedValue(purchasedSlots: number): number {

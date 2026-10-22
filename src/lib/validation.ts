@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   LIMITS,
+  MAX_CARS,
   MAX_TROPHIES_PER_CLASS,
   TROPHY_CLASSES,
   carCapacity,
@@ -38,8 +39,13 @@ export const coinsSchema = z
 export const carsSchema = z
   .int({ error: "Cars must be a whole number." })
   .min(0, { error: "Cars cannot be negative." })
-  .max(LIMITS.BASE_CAR_SLOTS + LIMITS.MAX_PURCHASED_SLOTS, {
-    error: `Cars cannot exceed ${LIMITS.BASE_CAR_SLOTS + LIMITS.MAX_PURCHASED_SLOTS}.`,
+  .max(MAX_CARS, { error: `Cars cannot exceed ${MAX_CARS}.` });
+
+export const baseSlotsSchema = z
+  .int({ error: "Base slots must be a whole number." })
+  .min(0, { error: "Base slots cannot be negative." })
+  .max(LIMITS.MAX_BASE_CAR_SLOTS, {
+    error: `Base slots cannot exceed ${LIMITS.MAX_BASE_CAR_SLOTS}.`,
   });
 
 export const slotsSchema = z
@@ -71,17 +77,18 @@ export const accountCreateSchema = z
     cash: cashSchema.default(0),
     coins: coinsSchema.default(0),
     cars: carsSchema.default(0),
+    baseSlots: baseSlotsSchema.default(LIMITS.BASE_CAR_SLOTS),
     slots: slotsSchema.default(0),
     coinsSpentOnCars: coinsSpentOnCarsSchema.optional().default(0),
     notes: notesSchema,
   })
   .superRefine((data, ctx) => {
-    const capacity = carCapacity(data.slots);
+    const capacity = carCapacity(data.baseSlots, data.slots);
     if (data.cars > capacity) {
       ctx.addIssue({
         code: "custom",
         path: ["cars"],
-        message: `Cars cannot exceed ${capacity} with ${data.slots} extra slot(s).`,
+        message: `Cars cannot exceed ${capacity} (${data.baseSlots} base + ${data.slots} extra slot(s)).`,
       });
     }
   });
@@ -94,6 +101,7 @@ export const accountPatchSchema = z
     cash: cashSchema.optional(),
     coins: coinsSchema.optional(),
     cars: carsSchema.optional(),
+    baseSlots: baseSlotsSchema.optional(),
     slots: slotsSchema.optional(),
     coinsSpentOnCars: coinsSpentOnCarsSchema.optional(),
     notes: z.string().max(LIMITS.MAX_NOTES_LENGTH).optional(),

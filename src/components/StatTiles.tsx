@@ -106,7 +106,7 @@ export function StatTiles({ stats }: { stats: FleetStats | null }) {
         />
       </section>
       <p className="sr-only">
-        Caps: cash {LIMITS.MAX_CASH}, coins {LIMITS.MAX_COINS}, {LIMITS.BASE_CAR_SLOTS} base car slots,
+        Caps: cash {LIMITS.MAX_CASH}, coins {LIMITS.MAX_COINS}, editable base garage per account,
         {LIMITS.MAX_PURCHASED_SLOTS} purchasable slots at {LIMITS.SLOT_COST_COINS} coins each.
       </p>
     </>

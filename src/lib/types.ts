@@ -4,6 +4,7 @@ export type AccountSummary = {
   cash: number;
   coins: number;
   cars: number;
+  baseSlots: number;
   slots: number;
   capacity: number;
   slotsValue: number;

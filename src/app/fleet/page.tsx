@@ -145,7 +145,7 @@ function FleetPageInner() {
       ) : null}
 
       <section className="panel animate-rise overflow-hidden rounded-[20px]">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/10 bg-paper-sunken px-4 py-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/10 bg-ink/[0.04] px-4 py-2.5">
           <span className="label-caps">
             {visible.length} of {source.length} account{source.length === 1 ? "" : "s"}
             {showArchived ? " (archived)" : ""}

@@ -1,7 +1,5 @@
 "use client";
 
-import { LIMITS } from "@/lib/constants";
-
 /**
  * Garage gauge: a swept instrument dial rather than a row of boxes.
  * The arc is the whole garage, the needle points at the cars in it.
@@ -9,13 +7,15 @@ import { LIMITS } from "@/lib/constants";
 export function CapacityGauge({
   cars,
   capacity,
+  baseSlots,
   compact = false,
 }: {
   cars: number;
   capacity: number;
+  baseSlots: number;
   compact?: boolean;
 }) {
-  const slots = Math.max(0, Math.min(LIMITS.MAX_PURCHASED_SLOTS, capacity - LIMITS.BASE_CAR_SLOTS));
+  const slots = Math.max(0, capacity - baseSlots);
   const atCapacity = cars >= capacity;
   const safe = Math.max(1, capacity);
   const ratio = Math.min(1, cars / safe);
@@ -24,7 +24,7 @@ export function CapacityGauge({
   const start = 160;
   const sweep = 220;
   const angle = start + ratio * sweep;
-  const purchasedFrom = start + (LIMITS.BASE_CAR_SLOTS / safe) * sweep;
+  const purchasedFrom = start + (Math.min(baseSlots, safe) / safe) * sweep;
 
   const arcPath = (from: number, to: number) => {
     const polar = (deg: number) => {

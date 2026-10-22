@@ -8,6 +8,7 @@ import {
   slotsLockedValue,
   type TrophyClass,
 } from "./constants.ts";
+import { carByCode } from "./car-catalog.ts";
 import { csvToRecords, escapeCsvValue, normalizeImportRow } from "./csv.ts";
 import { decryptSecret, encryptSecret } from "./crypto.ts";
 import { getDb, type AccountRow, type EventRow } from "./db.ts";
@@ -20,12 +21,15 @@ import type {
   ImportRowResult,
   TrophyRecord,
   TrophySummary,
+  CarRecord,
+  GarageSummary,
 } from "./types.ts";
 import {
   accountCreateSchema,
   accountPatchSchema,
   slotPurchaseSchema,
   trophyUpdateSchema,
+  carAssignSchema,
   type AccountCreateInput,
   type AccountPatchInput,
 } from "./validation.ts";
@@ -33,6 +37,7 @@ import {
 export type { AccountSummary, FleetEvent, FleetStats } from "./types.ts";
 export type { ImportReport, ImportRowResult } from "./types.ts";
 export type { TrophyRecord, TrophySummary } from "./types.ts";
+export type { CarRecord, GarageSummary } from "./types.ts";
 
 const TRACKED_FIELDS = [
   "email",
@@ -479,6 +484,133 @@ export function setTrophies(accountId: number, payload: unknown): TrophyRecord {
     total: parsed.gold + parsed.silver + parsed.bronze,
     updatedAt: stamp,
   };
+}
+
+/* ------------------------------------------------------------------ */
+/* Garage inventory (per-account car lists from the static catalog)    */
+/* ------------------------------------------------------------------ */
+
+type CarRow = {
+  id: number;
+  account_id: number;
+  car_code: number;
+  notes: string;
+  created_at: string;
+};
+
+/** Every car in one account's garage, newest first, names joined from the catalog. */
+export function listGarage(accountId: number): GarageSummary {
+  const account = requireAccount(accountId, { includeArchived: true });
+  const rows = getDb()
+    .prepare(`SELECT * FROM account_cars WHERE account_id = ? ORDER BY id DESC`)
+    .all(accountId) as CarRow[];
+
+  const cars: CarRecord[] = rows.map((row) => {
+    const entry = carByCode(row.car_code);
+    return {
+      id: row.id,
+      accountId: row.account_id,
+      carCode: row.car_code,
+      carName: entry?.name ?? `UNKNOWN CODE ${row.car_code}`,
+      notes: row.notes,
+      addedAt: row.created_at,
+    };
+  });
+
+  return {
+    accountId: account.id,
+    email: account.email,
+    cars,
+    count: cars.length,
+    capacity: carCapacity(account.base_slots, account.slots),
+  };
+}
+
+/** Garages for the whole fleet (overview page). */
+export function fleetGarages(): GarageSummary[] {
+  const accounts = listAccounts({ archived: "include" });
+  return accounts.map((account) => listGarage(account.id));
+}
+
+/**
+ * Adds one catalog car to one account's garage.
+ * Fails loudly when the code is not in the catalog, the garage is full,
+ * or the car is already parked there.
+ */
+export function addGarageCar(accountId: number, payload: unknown): CarRecord {
+  const account = requireAccount(accountId);
+  const parsed = carAssignSchema.parse(payload);
+  const entry = carByCode(parsed.carCode);
+  if (!entry) {
+    throw new ApiError(400, "car_unknown", `No car with code ${parsed.carCode} in the catalog.`);
+  }
+
+  const db = getDb();
+  const owned = db
+    .prepare(`SELECT COUNT(*) AS n FROM account_cars WHERE account_id = ?`)
+    .get(accountId) as { n: number };
+  const capacity = carCapacity(account.base_slots, account.slots);
+  if (owned.n >= capacity) {
+    throw new ApiError(400, "garage_full", `Garage is full (${owned.n}/${capacity}). Buy more slots first.`);
+  }
+
+  const dupe = db
+    .prepare(`SELECT id FROM account_cars WHERE account_id = ? AND car_code = ?`)
+    .get(accountId, parsed.carCode);
+  if (dupe) {
+    throw new ApiError(400, "car_duplicate", `${entry.name} (#${entry.code}) is already in this garage.`);
+  }
+
+  const stamp = now();
+  const result = db
+    .prepare(
+      `INSERT INTO account_cars (account_id, car_code, notes, created_at)
+       VALUES (?, ?, ?, ?)`,
+    )
+    .run(accountId, parsed.carCode, parsed.notes, stamp);
+
+  logEvent(
+    accountId,
+    account.email,
+    "car_added",
+    `Added ${entry.name} (#${entry.code}) to the garage`,
+    { car: { from: null, to: `#${entry.code} ${entry.name}` } },
+  );
+
+  return {
+    id: Number(result.lastInsertRowid),
+    accountId,
+    carCode: entry.code,
+    carName: entry.name,
+    notes: parsed.notes,
+    addedAt: stamp,
+  };
+}
+
+/** Removes one car from one account's garage by its inventory row id. */
+export function removeGarageCar(accountId: number, carId: number): { removed: number; carName: string } {
+  const account = requireAccount(accountId);
+  const db = getDb();
+  const row = db
+    .prepare(`SELECT * FROM account_cars WHERE id = ? AND account_id = ?`)
+    .get(carId, accountId) as CarRow | undefined;
+  if (!row) {
+    throw new ApiError(404, "car_not_found", "That car is not in this garage.");
+  }
+
+  const entry = carByCode(row.car_code);
+  const carName = entry?.name ?? `UNKNOWN CODE ${row.car_code}`;
+  db.prepare(`DELETE FROM account_cars WHERE id = ?`).run(carId);
+
+  logEvent(
+    accountId,
+    account.email,
+    "car_removed",
+    `Removed ${carName} (#${row.car_code}) from the garage`,
+    { car: { from: `#${row.car_code} ${carName}`, to: null } },
+  );
+
+  return { removed: carId, carName };
 }
 
 export function listEvents(limit = 100): FleetEvent[] {

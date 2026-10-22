@@ -24,7 +24,9 @@ export type FleetEventType =
   | "deleted"
   | "export_performed"
   | "password_revealed"
-  | "trophies_updated";
+  | "trophies_updated"
+  | "car_added"
+  | "car_removed";
 
 export type FleetEvent = {
   id: number;
@@ -87,6 +89,25 @@ export type TrophySummary = {
   bronze: number;
   total: number;
   byClass: TrophyRecord[];
+};
+
+/** One car in one account's garage (references the static catalog by code). */
+export type CarRecord = {
+  id: number;
+  accountId: number;
+  carCode: number;
+  carName: string;
+  notes: string;
+  addedAt: string;
+};
+
+/** Garage inventory for one account. */
+export type GarageSummary = {
+  accountId: number;
+  email: string;
+  cars: CarRecord[];
+  count: number;
+  capacity: number;
 };
 
 export type ImportReport = {

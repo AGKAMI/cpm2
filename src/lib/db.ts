@@ -85,6 +85,20 @@ CREATE TABLE IF NOT EXISTS account_trophies (
 
 CREATE INDEX IF NOT EXISTS idx_account_trophies_class
   ON account_trophies (class);
+
+CREATE TABLE IF NOT EXISTS account_cars (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  account_id INTEGER NOT NULL,
+  car_code   INTEGER NOT NULL,
+  notes      TEXT    NOT NULL DEFAULT '',
+  created_at TEXT    NOT NULL,
+  UNIQUE (account_id, car_code),
+  CHECK (car_code >= 0 AND car_code <= 9999),
+  FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_account_cars_account
+  ON account_cars (account_id);
 `;
 
 export function resolveDbPath(): string {

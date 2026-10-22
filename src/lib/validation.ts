@@ -151,3 +151,14 @@ export const trophyUpdateSchema = z.object({
 });
 
 export type TrophyUpdateInput = z.infer<typeof trophyUpdateSchema>;
+
+/** Assign (or update the notes of) one catalog car in one account's garage. */
+export const carAssignSchema = z.object({
+  carCode: z
+    .int({ error: "Car code must be a whole number." })
+    .min(0, { error: "Car code cannot be negative." })
+    .max(9999, { error: "Car code is out of range." }),
+  notes: z.string().max(200, { error: "Notes must be 200 characters or fewer." }).default(""),
+});
+
+export type CarAssignInput = z.infer<typeof carAssignSchema>;

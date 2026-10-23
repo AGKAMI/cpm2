@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 
 /**
- * Dash heading — a mint folio pill, a heavy display title and a hairline rule.
+ * Dash heading — an accent folio pill, a heavy display title and a hairline rule.
  */
 export function PageHeading({
   folio,

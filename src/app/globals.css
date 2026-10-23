@@ -5,74 +5,172 @@
   --font-sans: var(--font-archivo), "Segoe UI", sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, "Cascadia Mono", monospace;
 
-  /* Deep-glass dash — the default cabin. */
-  --color-paper: #05100a;
-  --color-paper-raised: #0b1a11;
-  --color-paper-sunken: #10261a;
+  /* Neutral graphite dash — no colour cast in the materials. */
+  --color-paper: #0a0c10;
+  --color-paper-raised: #12151b;
+  --color-paper-sunken: #181c23;
 
   /* Instrument white */
-  --color-ink: #f2f7f1;
-  --color-ink-soft: #a7b7aa;
-  --color-ink-faint: #87998b;
+  --color-ink: #f3f5f7;
+  --color-ink-soft: #a6aeb9;
+  --color-ink-faint: #7d8793;
 
-  /* Charge accent */
-  --color-racing: #74f0b4;
-  --color-racing-deep: #2fbf82;
-  --color-brass: #e7c56f;
-  --color-oxblood: #ff7c7c;
-  --color-blueprint: #83c8f2;
+  /* Titanium — the default single-tone accent. */
+  --color-racing: #dbe2ea;
+  --color-racing-deep: #aab6c4;
+  --color-brass: #e3c27c;
+  --color-oxblood: #ff6b6b;
+  --color-blueprint: #9aa7b8;
 
-  /* Trophy metals — readable on midnight */
-  --color-silver: #c3ccd3;
-  --color-bronze: #d99a6c;
+  /* Trophy metals — readable on graphite */
+  --color-silver: #cbd2da;
+  --color-bronze: #d49a6a;
 }
 
-/* Liquid-glass materials — frosted layers that pick up the car photo. */
+/* Liquid-glass materials — neutral frosted layers that pick up the car photo. */
 :root {
-  --glass-fill: color-mix(in srgb, #0c2416 40%, transparent);
-  --glass-fill-soft: color-mix(in srgb, #0c2416 30%, transparent);
-  --glass-tint: color-mix(in srgb, #d8ffe8 14%, transparent);
-  --glass-border: color-mix(in srgb, #baffd9 28%, transparent);
-  --glass-border-soft: color-mix(in srgb, #baffd9 15%, transparent);
-  --glass-edge-top: color-mix(in srgb, #e8fff2 45%, transparent);
-  --glass-edge-bottom: color-mix(in srgb, #000000 34%, transparent);
-  --glass-ridge: color-mix(in srgb, #d8ffe8 4%, transparent);
-  --glass-shadow: 0 30px 80px -40px rgba(0, 6, 2, 0.95);
-  --glass-shadow-hover: 0 40px 100px -42px rgba(0, 6, 2, 1);
-  --glass-dock-shadow: 0 32px 80px -26px rgba(0, 6, 2, 1);
-  --glass-sheet-shadow: 0 60px 160px -50px rgba(0, 4, 1, 1);
-  --glass-blur: blur(28px) saturate(175%);
+  color-scheme: dark;
+  --glass-fill: color-mix(in srgb, #14171d 46%, transparent);
+  --glass-fill-soft: color-mix(in srgb, #14171d 34%, transparent);
+  --glass-tint: color-mix(in srgb, var(--color-racing) 7%, transparent);
+  --glass-border: color-mix(in srgb, var(--color-blueprint) 30%, transparent);
+  --glass-border-soft: color-mix(in srgb, var(--color-blueprint) 18%, transparent);
+  --glass-edge-top: color-mix(in srgb, #ffffff 38%, transparent);
+  --glass-edge-bottom: color-mix(in srgb, #000000 42%, transparent);
+  --glass-ridge: color-mix(in srgb, #ffffff 3.5%, transparent);
+  --glass-shadow: 0 30px 80px -40px rgba(0, 0, 0, 0.92);
+  --glass-shadow-hover: 0 40px 100px -42px rgba(0, 0, 0, 0.96);
+  --glass-dock-shadow: 0 32px 80px -26px rgba(0, 0, 0, 0.94);
+  --glass-sheet-shadow: 0 60px 160px -50px rgba(0, 0, 0, 0.96);
+  --glass-blur: blur(28px) saturate(155%);
 }
 
-/* Daylight variant: the same dash, lit from above. */
+/* Daylight variant: the same neutral dash, lit from above. */
 [data-theme="paper"] {
   color-scheme: light;
-  --color-paper: #edf3ec;
-  --color-paper-raised: #f8fcf7;
-  --color-paper-sunken: #dde8de;
-  --color-ink: #0a1710;
-  --color-ink-soft: #435449;
-  --color-ink-faint: #5b6d60;
-  --color-racing: #0a7a4e;
-  --color-racing-deep: #08603d;
+  --color-paper: #f1f3f5;
+  --color-paper-raised: #fafbfc;
+  --color-paper-sunken: #e4e7eb;
+  --color-ink: #101318;
+  --color-ink-soft: #4b5563;
+  --color-ink-faint: #68727e;
+  --color-racing: #3f4a57;
+  --color-racing-deep: #2a333e;
   --color-brass: #86621a;
-  --color-oxblood: #a62a38;
-  --color-blueprint: #2a5f8f;
+  --color-oxblood: #b32636;
+  --color-blueprint: #5c6b7c;
   --color-silver: #56636c;
   --color-bronze: #8f4e27;
 
-  --glass-fill: color-mix(in srgb, #ffffff 46%, transparent);
-  --glass-fill-soft: color-mix(in srgb, #ffffff 32%, transparent);
-  --glass-tint: color-mix(in srgb, #ffffff 52%, transparent);
-  --glass-border: color-mix(in srgb, #0e1410 14%, transparent);
-  --glass-border-soft: color-mix(in srgb, #0e1410 9%, transparent);
+  --glass-fill: color-mix(in srgb, #ffffff 58%, transparent);
+  --glass-fill-soft: color-mix(in srgb, #ffffff 44%, transparent);
+  --glass-tint: color-mix(in srgb, var(--color-racing) 6%, transparent);
+  --glass-border: color-mix(in srgb, var(--color-blueprint) 28%, transparent);
+  --glass-border-soft: color-mix(in srgb, var(--color-blueprint) 16%, transparent);
   --glass-edge-top: color-mix(in srgb, #ffffff 92%, transparent);
-  --glass-edge-bottom: color-mix(in srgb, #0e1410 8%, transparent);
+  --glass-edge-bottom: color-mix(in srgb, #0b0d10 8%, transparent);
   --glass-ridge: color-mix(in srgb, #ffffff 32%, transparent);
-  --glass-shadow: 0 26px 60px -40px rgba(16, 40, 26, 0.34);
-  --glass-shadow-hover: 0 34px 80px -44px rgba(16, 40, 26, 0.3);
-  --glass-dock-shadow: 0 24px 50px -28px rgba(16, 40, 26, 0.32);
-  --glass-sheet-shadow: 0 50px 120px -50px rgba(16, 40, 26, 0.36);
+  --glass-shadow: 0 26px 60px -40px rgba(0, 0, 0, 0.22);
+  --glass-shadow-hover: 0 34px 80px -44px rgba(0, 0, 0, 0.2);
+  --glass-dock-shadow: 0 24px 50px -28px rgba(0, 0, 0, 0.2);
+  --glass-sheet-shadow: 0 50px 120px -50px rgba(0, 0, 0, 0.24);
+}
+
+/* Accent palettes — keep in sync with src/lib/themes.ts. */
+[data-palette="titanium"] {
+  --color-racing: #dbe2ea;
+  --color-racing-deep: #aab6c4;
+  --color-blueprint: #9aa7b8;
+}
+
+[data-theme="paper"][data-palette="titanium"] {
+  --color-racing: #3f4a57;
+  --color-racing-deep: #2a333e;
+  --color-blueprint: #5c6b7c;
+}
+
+[data-palette="ember"] {
+  --color-racing: #ffb35c;
+  --color-racing-deep: #d9822b;
+  --color-blueprint: #ffd8a8;
+}
+
+[data-theme="paper"][data-palette="ember"] {
+  --color-racing: #a85f0e;
+  --color-racing-deep: #7d4506;
+  --color-blueprint: #b97a2a;
+}
+
+[data-palette="crimson"] {
+  --color-racing: #ff5d6c;
+  --color-racing-deep: #c92f3f;
+  --color-blueprint: #ffb3b8;
+}
+
+[data-theme="paper"][data-palette="crimson"] {
+  --color-racing: #b31f33;
+  --color-racing-deep: #8a1526;
+  --color-blueprint: #c25660;
+}
+
+[data-palette="azure"] {
+  --color-racing: #6cc7ff;
+  --color-racing-deep: #2f8fd6;
+  --color-blueprint: #a8e0ff;
+}
+
+[data-theme="paper"][data-palette="azure"] {
+  --color-racing: #0e6fae;
+  --color-racing-deep: #0a5487;
+  --color-blueprint: #2a8bbd;
+}
+
+[data-palette="monaco"] {
+  --color-racing: #ff5a5f;
+  --color-racing-deep: #c92f3f;
+  --color-blueprint: #f2d6a2;
+}
+
+[data-theme="paper"][data-palette="monaco"] {
+  --color-racing: #c02434;
+  --color-racing-deep: #8f1725;
+  --color-blueprint: #9a6b1f;
+}
+
+[data-palette="solar"] {
+  --color-racing: #ff9f43;
+  --color-racing-deep: #d97706;
+  --color-blueprint: #5ad2ff;
+}
+
+[data-theme="paper"][data-palette="solar"] {
+  --color-racing: #b45c00;
+  --color-racing-deep: #8a4600;
+  --color-blueprint: #0b7fa8;
+}
+
+[data-palette="neon"] {
+  --color-racing: #ff5ccb;
+  --color-racing-deep: #c0268f;
+  --color-blueprint: #58e0ff;
+}
+
+[data-theme="paper"][data-palette="neon"] {
+  --color-racing: #b0177a;
+  --color-racing-deep: #850f5c;
+  --color-blueprint: #0a7f9e;
+}
+
+[data-palette="grandprix"] {
+  --color-racing: #e8c15a;
+  --color-racing-deep: #b8902f;
+  --color-blueprint: #ff6b6b;
+}
+
+[data-theme="paper"][data-palette="grandprix"] {
+  --color-racing: #8a651a;
+  --color-racing-deep: #6b4c0f;
+  --color-blueprint: #a62a38;
 }
 
 @layer base {
@@ -261,7 +359,7 @@
   .panel {
     position: relative;
     background:
-      linear-gradient(180deg, color-mix(in srgb, #eafff3 6%, transparent), transparent 42%),
+      linear-gradient(180deg, color-mix(in srgb, #ffffff 6%, transparent), transparent 42%),
       radial-gradient(130% 110% at 12% 0%, var(--glass-tint) 0%, transparent 58%),
       repeating-linear-gradient(94deg, var(--glass-ridge) 0 1px, transparent 1px 8px),
       var(--glass-fill);
@@ -335,7 +433,7 @@
     letter-spacing: 0.035em;
     text-transform: uppercase;
     text-wrap: balance;
-    text-shadow: 0 2px 24px rgba(0, 10, 4, 0.45);
+    text-shadow: 0 2px 24px rgba(0, 0, 0, 0.45);
   }
 
   [data-theme="paper"] .display-title {
@@ -387,7 +485,7 @@
       inset 1px 0 0 color-mix(in srgb, var(--color-blueprint) 10%, transparent),
       inset -1px 0 0 color-mix(in srgb, var(--color-racing) 14%, transparent),
       inset 0 -1px 0 var(--glass-edge-bottom),
-      0 22px 50px -36px rgba(0, 6, 2, 0.92);
+      0 22px 50px -36px rgba(0, 0, 0, 0.92);
     transition: border-color 0.18s ease;
   }
 
@@ -629,7 +727,7 @@
     background:
       linear-gradient(
         180deg,
-        color-mix(in srgb, #0a2013 46%, transparent) 0%,
+        color-mix(in srgb, var(--color-paper-raised) 72%, transparent) 0%,
         color-mix(in srgb, var(--color-paper) 58%, transparent) 100%
       ),
       repeating-linear-gradient(94deg, var(--glass-ridge) 0 1px, transparent 1px 10px);
@@ -638,7 +736,7 @@
     border-bottom: 1px solid var(--glass-border-soft);
     box-shadow:
       inset 0 1px 0 color-mix(in srgb, #ffffff 10%, transparent),
-      0 24px 60px -48px rgba(0, 6, 2, 0.95);
+      0 24px 60px -48px rgba(0, 0, 0, 0.95);
   }
 
   .mobile-dock {
@@ -696,7 +794,7 @@
     border: 1px solid var(--glass-border-soft);
     box-shadow:
       inset 0 1px 0 color-mix(in srgb, var(--glass-edge-top) 75%, transparent),
-      0 10px 24px -18px rgba(0, 6, 2, 0.88);
+      0 10px 24px -18px rgba(0, 0, 0, 0.88);
   }
 
   .glass-control:hover {

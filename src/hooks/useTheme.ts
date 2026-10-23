@@ -1,15 +1,30 @@
 "use client";
 
 import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { DEFAULT_PALETTE, isPaletteId, type PaletteId, type ThemeMode } from "@/lib/themes";
 
-export type ThemeName = "paper" | "night";
+export type ThemeName = ThemeMode;
 
-const KEY = "cpm2:theme:v2";
+type ThemeState = {
+  mode: ThemeMode;
+  palette: PaletteId;
+};
+
+const MODE_KEY = "cpm2:theme:v2";
+const PALETTE_KEY = "cpm2:palette:v1";
+const SERVER_STATE: ThemeState = { mode: "night", palette: DEFAULT_PALETTE };
 const listeners = new Set<() => void>();
+let cached: ThemeState | null = null;
 
-function readTheme(): ThemeName {
-  if (typeof window === "undefined") return "night";
-  return window.localStorage.getItem(KEY) === "paper" ? "paper" : "night";
+function readState(): ThemeState {
+  if (typeof window === "undefined") return SERVER_STATE;
+  const mode: ThemeMode = window.localStorage.getItem(MODE_KEY) === "paper" ? "paper" : "night";
+  const storedPalette = window.localStorage.getItem(PALETTE_KEY);
+  const palette = isPaletteId(storedPalette) ? storedPalette : DEFAULT_PALETTE;
+  if (!cached || cached.mode !== mode || cached.palette !== palette) {
+    cached = { mode, palette };
+  }
+  return cached;
 }
 
 function subscribe(listener: () => void): () => void {
@@ -19,22 +34,56 @@ function subscribe(listener: () => void): () => void {
   };
 }
 
-function writeTheme(next: ThemeName) {
-  window.localStorage.setItem(KEY, next);
-  document.documentElement.setAttribute("data-theme", next);
+function apply(state: ThemeState) {
+  const root = document.documentElement;
+  root.setAttribute("data-theme", state.mode);
+  root.setAttribute("data-palette", state.palette);
+}
+
+function write(next: ThemeState) {
+  window.localStorage.setItem(MODE_KEY, next.mode);
+  window.localStorage.setItem(PALETTE_KEY, next.palette);
+  cached = next;
+  apply(next);
   for (const listener of listeners) listener();
 }
 
 export function useTheme() {
-  const theme = useSyncExternalStore(subscribe, readTheme, () => "night" as ThemeName);
+  const state = useSyncExternalStore(subscribe, readState, () => SERVER_STATE);
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-  }, [theme]);
+    apply(state);
+  }, [state]);
+
+  useEffect(() => {
+    const onStorage = () => {
+      cached = null;
+      for (const listener of listeners) listener();
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  const setMode = useCallback((mode: ThemeMode) => {
+    write({ ...readState(), mode });
+  }, []);
+
+  const setPalette = useCallback((palette: PaletteId) => {
+    write({ ...readState(), palette });
+  }, []);
 
   const toggleTheme = useCallback(() => {
-    writeTheme(theme === "night" ? "paper" : "night");
-  }, [theme]);
+    const current = readState();
+    write({ ...current, mode: current.mode === "night" ? "paper" : "night" });
+  }, []);
 
-  return { theme, toggleTheme, setTheme: writeTheme };
+  return {
+    theme: state.mode,
+    mode: state.mode,
+    palette: state.palette,
+    setTheme: setMode,
+    setMode,
+    setPalette,
+    toggleTheme,
+  };
 }

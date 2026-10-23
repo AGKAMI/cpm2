@@ -13,7 +13,7 @@ import { ExportConfirmModal, SlotPurchaseConfirmModal } from "@/components/Confi
 import { CarBackdrop } from "@/components/CarBackdrop";
 import { ImportModal } from "@/components/ImportModal";
 import { useFleet } from "@/components/FleetProvider";
-import { useTheme } from "@/hooks/useTheme";
+import { ThemeMenu } from "@/components/ThemeMenu";
 
 export type ConfirmOptions = {
   title: string;
@@ -93,7 +93,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const fleet = useFleet();
   const router = useRouter();
   const pathname = usePathname();
-  const { theme, toggleTheme } = useTheme();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<AccountSummary | null>(null);
@@ -296,27 +295,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </span>
               </span>
 
-              <button
-                type="button"
-                onClick={toggleTheme}
-                title={theme === "night" ? "Switch to light" : "Switch to midnight"}
-                aria-label={theme === "night" ? "Switch to light theme" : "Switch to midnight theme"}
-                className="square-btn h-9 w-9"
-              >
-                {theme === "night" ? (
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-                    <circle cx="12" cy="12" r="4" />
-                    <path
-                      d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-                    <path d="M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 1010.5 10.5z" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </button>
+              <ThemeMenu />
 
               <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
                 Export

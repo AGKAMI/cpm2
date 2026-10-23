@@ -1,9 +1,8 @@
 "use client";
 
 import { useFleet } from "@/components/FleetProvider";
-import { useTheme } from "@/hooks/useTheme";
 import { PageHeading } from "@/components/PageHeading";
-import { Button } from "@/components/ui/Button";
+import { ThemeGallery } from "@/components/ThemeGallery";
 import { LIMITS, formatNumber } from "@/lib/constants";
 
 const SHORTCUTS = [
@@ -19,7 +18,6 @@ const SHORTCUTS = [
 
 export default function SettingsPage() {
   const fleet = useFleet();
-  const { theme, setTheme } = useTheme();
 
   return (
     <div className="flex flex-col gap-4">
@@ -64,28 +62,9 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      <section className="panel rounded-[20px] p-5">
+      <section className="panel rounded-[20px] p-5 lg:col-span-2">
         <h2 className="panel-title mb-4">Appearance</h2>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant={theme === "paper" ? "primary" : "outline"}
-            size="sm"
-            onClick={() => setTheme("paper")}
-          >
-            Daylight
-          </Button>
-          <Button
-            variant={theme === "night" ? "primary" : "outline"}
-            size="sm"
-            onClick={() => setTheme("night")}
-          >
-            Midnight
-          </Button>
-        </div>
-        <p className="mt-3 text-[11px] leading-snug text-ink-faint">
-          Midnight is the default cabin look — mint on black. Daylight is the same dash lit from
-          above. The choice is remembered on this machine.
-        </p>
+        <ThemeGallery />
       </section>
 
       <section className="panel rounded-[20px] p-5">

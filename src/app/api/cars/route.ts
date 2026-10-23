@@ -1,7 +1,7 @@
 import { CAR_CATALOG, searchCars } from "@/lib/car-catalog";
 import { fail, ok } from "@/lib/route";
 
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
 /**
  * The full CPM2 car catalog, optionally filtered.

@@ -14,7 +14,7 @@ const TYPES: Record<FleetEventType, { label: string; mark: string; text: string 
   export_performed: { label: "Export", mark: "bg-blueprint", text: "text-blueprint" },
   password_revealed: { label: "Reveal", mark: "bg-brass", text: "text-brass" },
   trophies_updated: { label: "Trophy", mark: "bg-brass", text: "text-brass" },
-  car_added: { label: "Garage", mark: "bg-mint", text: "text-mint" },
+  car_added: { label: "Garage", mark: "bg-racing", text: "text-racing" },
   car_removed: { label: "Garage", mark: "bg-bronze", text: "text-bronze" },
 };
 

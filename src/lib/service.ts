@@ -534,8 +534,8 @@ export function fleetGarages(): GarageSummary[] {
 
 /**
  * Adds one catalog car to one account's garage.
- * Fails loudly when the code is not in the catalog, the garage is full,
- * or the car is already parked there.
+ * Fails loudly when the code is not in the catalog or the garage is full.
+ * The same code can be added more than once (the game allows duplicate models).
  */
 export function addGarageCar(accountId: number, payload: unknown): CarRecord {
   const account = requireAccount(accountId);
@@ -552,13 +552,6 @@ export function addGarageCar(accountId: number, payload: unknown): CarRecord {
   const capacity = carCapacity(account.base_slots, account.slots);
   if (owned.n >= capacity) {
     throw new ApiError(400, "garage_full", `Garage is full (${owned.n}/${capacity}). Buy more slots first.`);
-  }
-
-  const dupe = db
-    .prepare(`SELECT id FROM account_cars WHERE account_id = ? AND car_code = ?`)
-    .get(accountId, parsed.carCode);
-  if (dupe) {
-    throw new ApiError(400, "car_duplicate", `${entry.name} (#${entry.code}) is already in this garage.`);
   }
 
   const stamp = now();

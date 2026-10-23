@@ -29,8 +29,8 @@
 
 /* Liquid-glass materials — frosted layers that pick up the car photo. */
 :root {
-  --glass-fill: color-mix(in srgb, #0c2416 48%, transparent);
-  --glass-fill-soft: color-mix(in srgb, #0c2416 34%, transparent);
+  --glass-fill: color-mix(in srgb, #0c2416 40%, transparent);
+  --glass-fill-soft: color-mix(in srgb, #0c2416 30%, transparent);
   --glass-tint: color-mix(in srgb, #d8ffe8 14%, transparent);
   --glass-border: color-mix(in srgb, #baffd9 28%, transparent);
   --glass-border-soft: color-mix(in srgb, #baffd9 15%, transparent);
@@ -41,7 +41,7 @@
   --glass-shadow-hover: 0 40px 100px -42px rgba(0, 6, 2, 1);
   --glass-dock-shadow: 0 32px 80px -26px rgba(0, 6, 2, 1);
   --glass-sheet-shadow: 0 60px 160px -50px rgba(0, 4, 1, 1);
-  --glass-blur: blur(32px) saturate(185%);
+  --glass-blur: blur(28px) saturate(175%);
 }
 
 /* Daylight variant: the same dash, lit from above. */
@@ -629,8 +629,8 @@
     background:
       linear-gradient(
         180deg,
-        color-mix(in srgb, #0a2013 54%, transparent) 0%,
-        color-mix(in srgb, var(--color-paper) 68%, transparent) 100%
+        color-mix(in srgb, #0a2013 46%, transparent) 0%,
+        color-mix(in srgb, var(--color-paper) 58%, transparent) 100%
       ),
       repeating-linear-gradient(94deg, var(--glass-ridge) 0 1px, transparent 1px 10px);
     -webkit-backdrop-filter: blur(34px) saturate(180%);

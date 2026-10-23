@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useFleet } from "@/components/FleetProvider";
 import { StatTiles } from "@/components/StatTiles";
 import { ActivityFeed } from "@/components/ActivityFeed";
+import { CarCatalogPanel } from "@/components/CarCatalogPanel";
 import { CashBars, CapacityBars, CoinLedger } from "@/components/charts";
 import { PageHeading } from "@/components/PageHeading";
 import { ClassCompletion } from "@/components/ClassCompletion";
@@ -165,6 +166,8 @@ export default function OverviewPage() {
           </Panel>
         </div>
       </div>
+
+      <CarCatalogPanel />
 
       <section>
         <div className="mb-3 flex items-baseline justify-between gap-3">

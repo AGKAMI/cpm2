@@ -8,6 +8,7 @@ import { useShell } from "@/components/AppShell";
 import { CapacityGauge } from "@/components/CapacityGauge";
 import { PasswordCell } from "@/components/PasswordCell";
 import { ActivityFeed } from "@/components/ActivityFeed";
+import { GaragePanel } from "@/components/GaragePanel";
 import { TrophyCabinet } from "@/components/TrophyCabinet";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
@@ -160,7 +161,7 @@ export default function AccountPage() {
           </div>
 
           <div className="mt-6 border-t border-ink/10 pt-4">
-            <h3 className="panel-title">Garage</h3>
+            <h3 className="panel-title">Garage capacity</h3>
             <div className="mt-3">
               <CapacityGauge
                 cars={account.cars}
@@ -216,6 +217,13 @@ export default function AccountPage() {
           </section>
         </div>
       </div>
+
+      <GaragePanel
+        key={account.id}
+        account={account}
+        readOnly={archived}
+        onChanged={() => void fleet.refresh(true)}
+      />
 
       <section className="panel rounded-[20px] p-5">
         <TrophyCabinet accountId={account.id} readOnly={archived} onChanged={() => void fleet.refresh(true)} />

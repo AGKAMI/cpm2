@@ -51,6 +51,16 @@ const ACCOUNT_COLUMNS = `
   CHECK (coins_spent_on_cars >= 0)
 `;
 
+const CAR_TABLE_COLUMNS = `
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  account_id INTEGER NOT NULL,
+  car_code   INTEGER NOT NULL,
+  notes      TEXT    NOT NULL DEFAULT '',
+  created_at TEXT    NOT NULL,
+  CHECK (car_code >= 0 AND car_code <= 9999),
+  FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+`;
+
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS accounts (${ACCOUNT_COLUMNS});
 
@@ -86,16 +96,7 @@ CREATE TABLE IF NOT EXISTS account_trophies (
 CREATE INDEX IF NOT EXISTS idx_account_trophies_class
   ON account_trophies (class);
 
-CREATE TABLE IF NOT EXISTS account_cars (
-  id         INTEGER PRIMARY KEY AUTOINCREMENT,
-  account_id INTEGER NOT NULL,
-  car_code   INTEGER NOT NULL,
-  notes      TEXT    NOT NULL DEFAULT '',
-  created_at TEXT    NOT NULL,
-  UNIQUE (account_id, car_code),
-  CHECK (car_code >= 0 AND car_code <= 9999),
-  FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
-);
+CREATE TABLE IF NOT EXISTS account_cars (${CAR_TABLE_COLUMNS});
 
 CREATE INDEX IF NOT EXISTS idx_account_cars_account
   ON account_cars (account_id);
@@ -147,6 +148,16 @@ function migrate(db: Database.Database): void {
   if (table && /cars\s*<=\s*20\s*\+\s*slots/i.test(table.sql)) {
     rebuildAccounts(db);
   }
+
+  const garageTable = db
+    .prepare(`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'account_cars'`)
+    .get() as { sql: string } | undefined;
+  if (
+    garageTable &&
+    /UNIQUE\s*\(\s*account_id\s*,\s*car_code\s*\)/i.test(garageTable.sql)
+  ) {
+    rebuildGarage(db);
+  }
 }
 
 function rebuildAccounts(db: Database.Database): void {
@@ -164,6 +175,20 @@ function rebuildAccounts(db: Database.Database): void {
     );
     db.exec(`DROP TABLE accounts_legacy`);
     db.exec(`CREATE UNIQUE INDEX idx_accounts_email ON accounts (email COLLATE NOCASE)`);
+  })();
+}
+
+function rebuildGarage(db: Database.Database): void {
+  db.transaction(() => {
+    db.exec(`ALTER TABLE account_cars RENAME TO account_cars_legacy`);
+    db.exec(`DROP INDEX IF EXISTS idx_account_cars_account`);
+    db.exec(`CREATE TABLE account_cars (${CAR_TABLE_COLUMNS})`);
+    db.exec(
+      `INSERT INTO account_cars (id, account_id, car_code, notes, created_at)
+       SELECT id, account_id, car_code, notes, created_at FROM account_cars_legacy`,
+    );
+    db.exec(`DROP TABLE account_cars_legacy`);
+    db.exec(`CREATE INDEX idx_account_cars_account ON account_cars (account_id)`);
   })();
 }
 

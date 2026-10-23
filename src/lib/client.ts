@@ -1,8 +1,10 @@
 import type {
   AccountSummary,
   ApiErrorBody,
+  CarRecord,
   FleetEvent,
   FleetStats,
+  GarageSummary,
   ImportReport,
   TrophyRecord,
   TrophySummary,
@@ -104,4 +106,17 @@ export const api = {
       accounts: TrophySummary[];
       totals: { gold: number; silver: number; bronze: number; total: number };
     }>("/api/trophies"),
+  garage: (id: number) =>
+    request<{ garage: GarageSummary }>(`/api/accounts/${id}/garage`),
+  addCar: (id: number, payload: { carCode: number; notes?: string }) =>
+    request<{ car: CarRecord; garage: GarageSummary }>(`/api/accounts/${id}/garage`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  removeCar: (id: number, carId: number) =>
+    request<{ removed: number; carName: string; garage: GarageSummary }>(
+      `/api/accounts/${id}/garage?carId=${carId}`,
+      { method: "DELETE" },
+    ),
+  garages: () => request<{ garages: GarageSummary[] }>("/api/garages"),
 };

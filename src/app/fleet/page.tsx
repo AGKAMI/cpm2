@@ -8,6 +8,7 @@ import { AccountTable, type SortKey } from "@/components/AccountTable";
 import { FleetToolbar, type FleetFilter } from "@/components/Toolbar";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
+import { GAMES, GAME_LABELS, formatNumber } from "@/lib/constants";
 
 function matchesFilter(account: {
   cash: number;
@@ -88,6 +89,25 @@ function FleetPageInner() {
     });
   }, [source, query, filter, sortKey, sortDir]);
 
+  /**
+   * The register is split by game, always, in a fixed order.
+   *
+   * CPM1 and CPM2 are separate games with separate car catalogs, separate
+   * economies and separate garages — a mixed list invites reading a CPM1
+   * account's garage against the CPM2 code list. Sections make the boundary
+   * explicit rather than leaving it to a column nobody reads.
+   *
+   * Empty games drop out entirely: a heading over nothing is noise.
+   */
+  const sections = useMemo(
+    () =>
+      GAMES.map((game) => ({
+        game,
+        accounts: visible.filter((account) => account.game === game),
+      })).filter((section) => section.accounts.length > 0),
+    [visible],
+  );
+
   function handleSort(key: SortKey) {
     if (key === sortKey) {
       patchParams({ dir: sortDir === "asc" ? "desc" : "asc" });
@@ -144,18 +164,12 @@ function FleetPageInner() {
         </div>
       ) : null}
 
-      <section className="panel animate-rise overflow-hidden rounded-[20px]">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/10 bg-ink/[0.04] px-4 py-2.5">
-          <span className="label-caps">
-            {visible.length} of {source.length} account{source.length === 1 ? "" : "s"}
-            {showArchived ? " (archived)" : ""}
-          </span>
-          <span className="num text-[10px] text-ink-faint">click an account plate to open its page</span>
-        </div>
-
-        {fleet.loading && source.length === 0 ? (
+      {fleet.loading && source.length === 0 ? (
+        <section className="panel animate-rise rounded-[20px]">
           <div className="px-4 py-10 text-center text-sm text-ink-faint">Loading the register…</div>
-        ) : visible.length === 0 ? (
+        </section>
+      ) : visible.length === 0 ? (
+        <section className="panel animate-rise rounded-[20px]">
           <div className="px-4 py-10 text-center">
             <p className="font-sans text-[13px] font-semibold tracking-[-0.01em] text-ink">
               {source.length === 0 ? (showArchived ? "Archive is empty" : "No accounts yet") : "No match"}
@@ -173,45 +187,87 @@ function FleetPageInner() {
               </p>
             ) : null}
           </div>
-        ) : (
-          <AccountTable
-            accounts={visible}
-            busyId={null}
-            trophies={fleet.trophies}
-            sortKey={sortKey}
-            sortDir={sortDir}
-            onSort={handleSort}
-            mode={showArchived ? "archived" : "active"}
-            selectable={!showArchived}
-            selectedIds={selected}
-            onToggleSelect={(id) =>
-              setSelected((current) =>
-                current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
-              )
-            }
-            onToggleAll={() =>
-              setSelected((current) =>
-                current.length === visible.length ? [] : visible.map((item) => item.id),
-              )
-            }
-            onEdit={shell.openEditAccount}
-            onBuySlot={shell.openSlotPurchase}
-            onDelete={(account) => {
-              void shell
-                .confirm({
-                  title: "Archive this account?",
-                  message: `${account.email} is filed away with every balance intact. You can restore it from the archived view at any time.`,
-                  confirmLabel: "Archive",
-                })
-                .then((ok) => {
-                  if (ok) void fleet.archiveAccount(account);
-                });
-            }}
-            onRestore={(account) => void fleet.restoreAccount(account)}
-            onAdjust={(account, field, delta) => void fleet.adjust(account, field, delta)}
-          />
-        )}
-      </section>
+        </section>
+      ) : (
+        // One region per game. Space does the grouping between sections;
+        // each section's own header band carries its identity and totals.
+        <div className="flex flex-col gap-5">
+          <p className="num px-1 text-[10px] text-ink-faint">
+            {visible.length} of {source.length} account{source.length === 1 ? "" : "s"}
+            {showArchived ? " (archived)" : ""} · grouped by game · click a plate to open it
+          </p>
+
+          {sections.map(({ game, accounts: rows }) => {
+            const cars = rows.reduce((sum, account) => sum + account.cars, 0);
+            const capacity = rows.reduce((sum, account) => sum + account.capacity, 0);
+            const slots = rows.reduce((sum, account) => sum + account.slots, 0);
+            const sectionIds = rows.map((account) => account.id);
+
+            return (
+              <section
+                key={game}
+                className="panel animate-rise overflow-hidden rounded-[20px]"
+                aria-label={`${GAME_LABELS[game]} accounts`}
+              >
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-ink/10 bg-ink/[0.04] px-4 py-2.5">
+                  <span className="flex items-baseline gap-2.5">
+                    <span className="panel-title">{GAME_LABELS[game]}</span>
+                    <span className="num text-[10px] text-ink-faint">
+                      {rows.length} account{rows.length === 1 ? "" : "s"}
+                    </span>
+                  </span>
+                  <span className="num text-[10px] text-ink-faint">
+                    {formatNumber(cars)}/{formatNumber(capacity)} cars
+                    {slots > 0 ? ` · ${slots} bought slot${slots === 1 ? "" : "s"}` : ""}
+                  </span>
+                </div>
+
+                <AccountTable
+                  accounts={rows}
+                  busyId={null}
+                  trophies={fleet.trophies}
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                  mode={showArchived ? "archived" : "active"}
+                  selectable={!showArchived}
+                  selectedIds={selected}
+                  onToggleSelect={(id) =>
+                    setSelected((current) =>
+                      current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
+                    )
+                  }
+                  onToggleAll={() =>
+                    // Adds/removes ONLY this section's rows, so ticking one
+                    // game's header never clears a selection made in the other.
+                    setSelected((current) => {
+                      const allOn = sectionIds.every((id) => current.includes(id));
+                      return allOn
+                        ? current.filter((id) => !sectionIds.includes(id))
+                        : [...new Set([...current, ...sectionIds])];
+                    })
+                  }
+                  onEdit={shell.openEditAccount}
+                  onBuySlot={shell.openSlotPurchase}
+                  onDelete={(account) => {
+                    void shell
+                      .confirm({
+                        title: "Archive this account?",
+                        message: `${account.email} is filed away with every balance intact. You can restore it from the archived view at any time.`,
+                        confirmLabel: "Archive",
+                      })
+                      .then((ok) => {
+                        if (ok) void fleet.archiveAccount(account);
+                      });
+                  }}
+                  onRestore={(account) => void fleet.restoreAccount(account)}
+                  onAdjust={(account, field, delta) => void fleet.adjust(account, field, delta)}
+                />
+              </section>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

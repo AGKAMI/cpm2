@@ -1,11 +1,13 @@
 import { ZodError } from "zod";
 import { ApiError } from "./api.ts";
 import {
+  GAME_LABELS,
   LIMITS,
   TROPHY_CLASSES,
   TROPHY_CLASS_LABELS,
   carCapacity,
   slotsLockedValue,
+  type GameType,
   type TrophyClass,
 } from "./constants.ts";
 import { carByCode } from "./car-catalog.ts";
@@ -41,6 +43,7 @@ export type { CarRecord, GarageSummary } from "./types.ts";
 
 const TRACKED_FIELDS = [
   "email",
+  "game",
   "cash",
   "coins",
   "cars",
@@ -54,6 +57,7 @@ function toSummary(row: AccountRow): AccountSummary {
   return {
     id: row.id,
     email: row.email,
+    game: row.game,
     cash: row.cash,
     coins: row.coins,
     cars: row.cars,
@@ -148,15 +152,16 @@ export function createAccount(payload: unknown): AccountSummary {
 
   const insert = db.prepare(
     `INSERT INTO accounts
-       (email, password_enc, cash, coins, cars, base_slots, slots, notes,
+       (email, password_enc, game, cash, coins, cars, base_slots, slots, notes,
         coins_spent_on_cars, archived, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
   );
 
   const created = db.transaction(() => {
     const result = insert.run(
       input.email,
       encryptSecret(input.password),
+      input.game,
       input.cash,
       input.coins,
       input.cars,
@@ -168,7 +173,7 @@ export function createAccount(payload: unknown): AccountSummary {
       stamp,
     );
     const id = Number(result.lastInsertRowid);
-    logEvent(id, input.email, "created", "Account added to the fleet", {
+    logEvent(id, input.email, "created", `Account added to the fleet (${GAME_LABELS[input.game]})`, {
       cash: { from: 0, to: input.cash },
       coins: { from: 0, to: input.coins },
       cars: { from: 0, to: input.cars },
@@ -195,8 +200,25 @@ export function updateAccount(id: number, payload: unknown): AccountSummary {
     );
   }
 
+  // Moving an account between games would leave every car already in its
+  // garage pointing at the OTHER game's catalog — same code, different car —
+  // so the change is allowed only while the garage is empty.
+  if (patch.game !== undefined && patch.game !== existing.game) {
+    const owned = getDb()
+      .prepare(`SELECT COUNT(*) AS n FROM account_cars WHERE account_id = ?`)
+      .get(id) as { n: number };
+    if (owned.n > 0) {
+      throw new ApiError(
+        422,
+        "GAME_LOCKED",
+        `This account has ${owned.n} car(s) logged under ${GAME_LABELS[existing.game]}. Remove them before switching it to ${GAME_LABELS[patch.game]}, or the codes would resolve to different cars.`,
+      );
+    }
+  }
+
   const next = {
     email: patch.email ?? existing.email,
+    game: patch.game ?? existing.game,
     cash: patch.cash ?? existing.cash,
     coins: patch.coins ?? existing.coins,
     cars: patch.cars ?? existing.cars,
@@ -247,11 +269,12 @@ export function updateAccount(id: number, payload: unknown): AccountSummary {
   db.transaction(() => {
     db.prepare(
       `UPDATE accounts
-         SET email = ?, password_enc = ?, cash = ?, coins = ?, cars = ?, base_slots = ?, slots = ?, notes = ?, coins_spent_on_cars = ?, updated_at = ?
+         SET email = ?, password_enc = ?, game = ?, cash = ?, coins = ?, cars = ?, base_slots = ?, slots = ?, notes = ?, coins_spent_on_cars = ?, updated_at = ?
        WHERE id = ?`,
     ).run(
       next.email,
       patch.password !== undefined ? encryptSecret(patch.password) : existing.password_enc,
+      next.game,
       next.cash,
       next.coins,
       next.cars,
@@ -494,9 +517,15 @@ type CarRow = {
   id: number;
   account_id: number;
   car_code: number;
+  game: GameType;
   notes: string;
   created_at: string;
 };
+
+/** Resolves a stored car code against ITS OWN game's catalog. */
+function carNameFor(code: number, game: GameType): string {
+  return carByCode(code, game)?.name ?? `UNKNOWN CODE ${code}`;
+}
 
 /** Every car in one account's garage, newest first, names joined from the catalog. */
 export function listGarage(accountId: number): GarageSummary {
@@ -505,21 +534,20 @@ export function listGarage(accountId: number): GarageSummary {
     .prepare(`SELECT * FROM account_cars WHERE account_id = ? ORDER BY id DESC`)
     .all(accountId) as CarRow[];
 
-  const cars: CarRecord[] = rows.map((row) => {
-    const entry = carByCode(row.car_code);
-    return {
-      id: row.id,
-      accountId: row.account_id,
-      carCode: row.car_code,
-      carName: entry?.name ?? `UNKNOWN CODE ${row.car_code}`,
-      notes: row.notes,
-      addedAt: row.created_at,
-    };
-  });
+  const cars: CarRecord[] = rows.map((row) => ({
+    id: row.id,
+    accountId: row.account_id,
+    carCode: row.car_code,
+    carName: carNameFor(row.car_code, row.game),
+    game: row.game,
+    notes: row.notes,
+    addedAt: row.created_at,
+  }));
 
   return {
     accountId: account.id,
     email: account.email,
+    game: account.game,
     cars,
     count: cars.length,
     capacity: carCapacity(account.base_slots, account.slots),
@@ -536,13 +564,33 @@ export function fleetGarages(): GarageSummary[] {
  * Adds one catalog car to one account's garage.
  * Fails loudly when the code is not in the catalog or the garage is full.
  * The same code can be added more than once (the game allows duplicate models).
+ *
+ * The code is resolved against the ACCOUNT's game, never against a guess. An
+ * explicit `game` that disagrees with the account is rejected rather than
+ * honoured, because car codes collide across titles — honouring it would put a
+ * car in the garage that the account can never actually own, and list it under
+ * the wrong name.
  */
 export function addGarageCar(accountId: number, payload: unknown): CarRecord {
   const account = requireAccount(accountId);
   const parsed = carAssignSchema.parse(payload);
-  const entry = carByCode(parsed.carCode);
+  const game = parsed.game ?? account.game;
+
+  if (game !== account.game) {
+    throw new ApiError(
+      400,
+      "car_game_mismatch",
+      `This is a ${GAME_LABELS[account.game]} account, so only ${GAME_LABELS[account.game]} cars can be added. Got a ${GAME_LABELS[game]} car.`,
+    );
+  }
+
+  const entry = carByCode(parsed.carCode, game);
   if (!entry) {
-    throw new ApiError(400, "car_unknown", `No car with code ${parsed.carCode} in the catalog.`);
+    throw new ApiError(
+      400,
+      "car_unknown",
+      `No ${GAME_LABELS[game]} car with code ${parsed.carCode} in the catalog.`,
+    );
   }
 
   const db = getDb();
@@ -557,16 +605,16 @@ export function addGarageCar(accountId: number, payload: unknown): CarRecord {
   const stamp = now();
   const result = db
     .prepare(
-      `INSERT INTO account_cars (account_id, car_code, notes, created_at)
-       VALUES (?, ?, ?, ?)`,
+      `INSERT INTO account_cars (account_id, car_code, game, notes, created_at)
+       VALUES (?, ?, ?, ?, ?)`,
     )
-    .run(accountId, parsed.carCode, parsed.notes, stamp);
+    .run(accountId, parsed.carCode, game, parsed.notes, stamp);
 
   logEvent(
     accountId,
     account.email,
     "car_added",
-    `Added ${entry.name} (#${entry.code}) to the garage`,
+    `Added ${entry.name} (#${entry.code}) [${GAME_LABELS[game]}] to the garage`,
     { car: { from: null, to: `#${entry.code} ${entry.name}` } },
   );
 
@@ -575,6 +623,7 @@ export function addGarageCar(accountId: number, payload: unknown): CarRecord {
     accountId,
     carCode: entry.code,
     carName: entry.name,
+    game,
     notes: parsed.notes,
     addedAt: stamp,
   };
@@ -591,15 +640,14 @@ export function removeGarageCar(accountId: number, carId: number): { removed: nu
     throw new ApiError(404, "car_not_found", "That car is not in this garage.");
   }
 
-  const entry = carByCode(row.car_code);
-  const carName = entry?.name ?? `UNKNOWN CODE ${row.car_code}`;
+  const carName = carNameFor(row.car_code, row.game);
   db.prepare(`DELETE FROM account_cars WHERE id = ?`).run(carId);
 
   logEvent(
     accountId,
     account.email,
     "car_removed",
-    `Removed ${carName} (#${row.car_code}) from the garage`,
+    `Removed ${carName} (#${row.car_code}) [${GAME_LABELS[row.game]}] from the garage`,
     { car: { from: `#${row.car_code} ${carName}`, to: null } },
   );
 
@@ -664,6 +712,7 @@ export function exportFleet(
           [
             "id",
             "email",
+            "game",
             "password",
             "cash",
             "coins",
@@ -680,6 +729,7 @@ export function exportFleet(
             [
               account.id,
               account.email,
+              account.game,
               account.password,
               account.cash,
               account.coins,

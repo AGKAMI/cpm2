@@ -1,6 +1,10 @@
+import type { GameType } from "./constants.ts";
+
 export type AccountSummary = {
   id: number;
   email: string;
+  /** Which title this account belongs to. Drives which catalog its garage uses. */
+  game: GameType;
   cash: number;
   coins: number;
   cars: number;
@@ -91,12 +95,17 @@ export type TrophySummary = {
   byClass: TrophyRecord[];
 };
 
-/** One car in one account's garage (references the static catalog by code). */
+/**
+ * One car in one account's garage (references the static catalog by code).
+ * `game` is required to resolve the name — the same code is a different car
+ * per title, so (game, carCode) is the real identity of this record.
+ */
 export type CarRecord = {
   id: number;
   accountId: number;
   carCode: number;
   carName: string;
+  game: GameType;
   notes: string;
   addedAt: string;
 };
@@ -105,6 +114,7 @@ export type CarRecord = {
 export type GarageSummary = {
   accountId: number;
   email: string;
+  game: GameType;
   cars: CarRecord[];
   count: number;
   capacity: number;

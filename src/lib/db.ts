@@ -1,6 +1,7 @@
 import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
+import type { GameType } from "./constants.ts";
 
 export type AccountRow = {
   id: number;
@@ -14,6 +15,8 @@ export type AccountRow = {
   notes: string;
   archived: number;
   coins_spent_on_cars: number;
+  /** Which Car Parking Multiplayer title this account belongs to. */
+  game: GameType;
   created_at: string;
   updated_at: string;
 };
@@ -40,6 +43,7 @@ const ACCOUNT_COLUMNS = `
   notes        TEXT    NOT NULL DEFAULT '',
   archived     INTEGER NOT NULL DEFAULT 0,
   coins_spent_on_cars INTEGER NOT NULL DEFAULT 0,
+  game         TEXT    NOT NULL DEFAULT 'cpm2',
   created_at   TEXT    NOT NULL,
   updated_at   TEXT    NOT NULL,
   CHECK (length(email) > 2 AND length(email) <= 254),
@@ -48,16 +52,25 @@ const ACCOUNT_COLUMNS = `
   CHECK (base_slots >= 0 AND base_slots <= 999),
   CHECK (cars >= 0 AND cars <= base_slots + slots),
   CHECK (slots >= 0 AND slots <= 15),
-  CHECK (coins_spent_on_cars >= 0)
+  CHECK (coins_spent_on_cars >= 0),
+  CHECK (game IN ('cpm1', 'cpm2'))
 `;
 
+/**
+ * A car in a garage. `game` is NOT decoration and NOT derivable from
+ * account_id alone at query time without a join — car codes collide between
+ * the two titles (CPM1 #13 = 2007 Peugeot 308, CPM2 #13 = HONDA CIVIC), so the
+ * code only identifies a car once the game is known.
+ */
 const CAR_TABLE_COLUMNS = `
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   account_id INTEGER NOT NULL,
   car_code   INTEGER NOT NULL,
+  game       TEXT    NOT NULL DEFAULT 'cpm2',
   notes      TEXT    NOT NULL DEFAULT '',
   created_at TEXT    NOT NULL,
   CHECK (car_code >= 0 AND car_code <= 9999),
+  CHECK (game IN ('cpm1', 'cpm2')),
   FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
 `;
 
@@ -102,6 +115,21 @@ CREATE INDEX IF NOT EXISTS idx_account_cars_account
   ON account_cars (account_id);
 `;
 
+/**
+ * Indexes over the `game` column. These CANNOT live in SCHEMA: on an existing
+ * database SCHEMA's CREATE TABLE IF NOT EXISTS is a no-op, so `game` only
+ * arrives later via migrate() — and an index over a column that does not exist
+ * yet is a hard SQLITE_ERROR that would crash the app on boot. They run after
+ * the migration instead.
+ */
+const GAME_INDEXES = `
+CREATE INDEX IF NOT EXISTS idx_account_cars_game
+  ON account_cars (account_id, game);
+
+CREATE INDEX IF NOT EXISTS idx_accounts_game
+  ON accounts (game);
+`;
+
 export function resolveDbPath(): string {
   const override = process.env.CPM2_DB_PATH;
   if (override && override.trim()) return path.resolve(override.trim());
@@ -120,6 +148,9 @@ export function createDatabase(filePath: string): Database.Database {
   db.pragma("foreign_keys = ON");
   db.exec(SCHEMA);
   migrate(db);
+  // After migrate(): the game columns must exist before they can be indexed,
+  // and the table rebuilds inside migrate() drop any index on the old table.
+  db.exec(GAME_INDEXES);
   return db;
 }
 
@@ -138,6 +169,26 @@ function migrate(db: Database.Database): void {
   }
   if (!columns.some((column) => column.name === "base_slots")) {
     db.exec(`ALTER TABLE accounts ADD COLUMN base_slots INTEGER NOT NULL DEFAULT 20`);
+  }
+
+  // Game discriminator. Every row that predates CPM1 support is a CPM2 row,
+  // so DEFAULT 'cpm2' IS the correct backfill — SQLite applies the default to
+  // existing rows on ADD COLUMN, which is why no separate UPDATE is needed.
+  // This must run BEFORE the table rebuilds below: those rebuilds copy the
+  // `game` column, so it has to exist first.
+  if (!columns.some((column) => column.name === "game")) {
+    db.exec(
+      `ALTER TABLE accounts ADD COLUMN game TEXT NOT NULL DEFAULT 'cpm2'
+         CHECK (game IN ('cpm1', 'cpm2'))`,
+    );
+  }
+
+  const garages = db.prepare(`PRAGMA table_info(account_cars)`).all() as { name: string }[];
+  if (garages.length && !garages.some((column) => column.name === "game")) {
+    db.exec(
+      `ALTER TABLE account_cars ADD COLUMN game TEXT NOT NULL DEFAULT 'cpm2'
+         CHECK (game IN ('cpm1', 'cpm2'))`,
+    );
   }
 
   // The v1 garage CHECK hard-coded `20 + slots`. SQLite cannot alter a CHECK,
@@ -168,9 +219,9 @@ function rebuildAccounts(db: Database.Database): void {
     db.exec(
       `INSERT INTO accounts
          (id, email, password_enc, cash, coins, cars, base_slots, slots, notes,
-          archived, coins_spent_on_cars, created_at, updated_at)
+          archived, coins_spent_on_cars, game, created_at, updated_at)
        SELECT id, email, password_enc, cash, coins, cars, base_slots, slots, notes,
-              archived, coins_spent_on_cars, created_at, updated_at
+              archived, coins_spent_on_cars, game, created_at, updated_at
          FROM accounts_legacy`,
     );
     db.exec(`DROP TABLE accounts_legacy`);
@@ -184,8 +235,8 @@ function rebuildGarage(db: Database.Database): void {
     db.exec(`DROP INDEX IF EXISTS idx_account_cars_account`);
     db.exec(`CREATE TABLE account_cars (${CAR_TABLE_COLUMNS})`);
     db.exec(
-      `INSERT INTO account_cars (id, account_id, car_code, notes, created_at)
-       SELECT id, account_id, car_code, notes, created_at FROM account_cars_legacy`,
+      `INSERT INTO account_cars (id, account_id, car_code, game, notes, created_at)
+       SELECT id, account_id, car_code, game, notes, created_at FROM account_cars_legacy`,
     );
     db.exec(`DROP TABLE account_cars_legacy`);
     db.exec(`CREATE INDEX idx_account_cars_account ON account_cars (account_id)`);

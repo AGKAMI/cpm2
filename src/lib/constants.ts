@@ -3,6 +3,23 @@
  * Single source of truth for every limit enforced by the API, the DB and the UI.
  */
 
+/**
+ * The fleet tracks BOTH Car Parking Multiplayer titles.
+ *
+ * Discriminator for EVERY car lookup and every account. It is not cosmetic:
+ * car codes are not unique across games — CPM1 #13 is a 2007 Peugeot 308 while
+ * CPM2 #13 is a HONDA CIVIC — so any lookup by code alone returns the wrong
+ * car with no error. See src/lib/car-catalog.ts.
+ */
+export type GameType = "cpm1" | "cpm2";
+
+export const GAMES = ["cpm1", "cpm2"] as const satisfies readonly GameType[];
+
+export const GAME_LABELS: Record<GameType, string> = {
+  cpm1: "CPM1",
+  cpm2: "CPM2",
+};
+
 export const LIMITS = {
   /** Maximum in-game cash a single account can hold. */
   MAX_CASH: 50_000_000,

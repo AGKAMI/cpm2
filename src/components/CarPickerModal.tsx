@@ -5,7 +5,8 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toaster";
 import { api, ApiRequestError } from "@/lib/client";
-import { CAR_CATALOG, searchCars, type CarEntry } from "@/lib/car-catalog";
+import { carsForGame, searchCars, type CarEntry } from "@/lib/car-catalog";
+import { GAME_LABELS } from "@/lib/constants";
 import type { GarageSummary } from "@/lib/types";
 
 type CarPickerModalProps = {
@@ -45,9 +46,14 @@ export function CarPickerModal({
     return counts;
   }, [garage.cars]);
 
+  // Search ONLY this account's game. Car codes collide between CPM1 and CPM2
+  // (code 13 is a Peugeot 308 in one and a Honda Civic in the other), so
+  // searching both would offer cars this account can never actually own, and
+  // the add would silently park a different car than the one on screen.
+  const catalogSize = useMemo(() => carsForGame(garage.game).length, [garage.game]);
   const results = useMemo(
-    () => searchCars(debounced, CAR_CATALOG.length),
-    [debounced],
+    () => searchCars(debounced, catalogSize, garage.game),
+    [debounced, catalogSize, garage.game],
   );
 
   const full = garage.count >= garage.capacity;
@@ -81,8 +87,8 @@ export function CarPickerModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Add a car"
-      subtitle="Search the catalog by code or name. Every car you park is logged to this account."
+      title={`Add a ${GAME_LABELS[garage.game]} car`}
+      subtitle={`Searching the ${GAME_LABELS[garage.game]} catalog by code or name. Every car you park is logged to this account.`}
       width="max-w-2xl"
       footer={
         <Button variant="primary" onClick={onClose} type="button">
@@ -149,7 +155,7 @@ export function CarPickerModal({
             ) : null}
           </div>
           <p className="num mt-1.5 text-[10px] text-ink-faint">
-            {results.length} of {CAR_CATALOG.length} codes
+            {results.length} of {catalogSize} {GAME_LABELS[garage.game]} codes
           </p>
         </div>
 

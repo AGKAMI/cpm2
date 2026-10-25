@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  GAMES,
   LIMITS,
   MAX_CARS,
   MAX_TROPHIES_PER_CLASS,
@@ -8,6 +9,14 @@ import {
 } from "./constants.ts";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+/**
+ * Which title a record belongs to. Required wherever a car code appears,
+ * because a code alone does not identify a car across the two games.
+ */
+export const gameSchema = z.enum([...GAMES], {
+  error: `Game must be one of ${GAMES.join(", ")}.`,
+});
 
 export const emailSchema = z
   .string({ error: "Email is required." })
@@ -74,6 +83,9 @@ export const accountCreateSchema = z
   .object({
     email: emailSchema,
     password: passwordSchema,
+    // Defaults to CPM2 so every pre-existing caller keeps its behaviour; a
+    // CPM1 account must state game explicitly.
+    game: gameSchema.default("cpm2"),
     cash: cashSchema.default(0),
     coins: coinsSchema.default(0),
     cars: carsSchema.default(0),
@@ -98,6 +110,7 @@ export const accountPatchSchema = z
   .object({
     email: emailSchema.optional(),
     password: passwordSchema.optional(),
+    game: gameSchema.optional(),
     cash: cashSchema.optional(),
     coins: coinsSchema.optional(),
     cars: carsSchema.optional(),
@@ -152,12 +165,19 @@ export const trophyUpdateSchema = z.object({
 
 export type TrophyUpdateInput = z.infer<typeof trophyUpdateSchema>;
 
-/** Assign (or update the notes of) one catalog car in one account's garage. */
+/**
+ * Assign (or update the notes of) one catalog car in one account's garage.
+ *
+ * `game` is optional here but NOT ambiguous: when omitted the account's own
+ * game is used, and a value that disagrees with the account is rejected. The
+ * caller can never silently land a car in the wrong catalog.
+ */
 export const carAssignSchema = z.object({
   carCode: z
     .int({ error: "Car code must be a whole number." })
     .min(0, { error: "Car code cannot be negative." })
     .max(9999, { error: "Car code is out of range." }),
+  game: gameSchema.optional(),
   notes: z.string().max(200, { error: "Notes must be 200 characters or fewer." }).default(""),
 });
 

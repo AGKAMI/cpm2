@@ -125,5 +125,18 @@ export function normalizeImportRow(row: unknown): Record<string, unknown> {
   if (typeof normalized.password !== "string") delete normalized.password;
   if (typeof normalized.notes !== "string") delete normalized.notes;
 
+  // `game` must be absent, not blank, when unspecified — the zod default only
+  // applies to an ABSENT key, so an empty CSV cell ("") would fail the enum
+  // instead of falling back to cpm2. Trim + lowercase so "CPM1" also lands.
+  if ("game" in normalized) {
+    if (typeof normalized.game === "string") {
+      const game = normalized.game.trim().toLowerCase();
+      if (game === "") delete normalized.game;
+      else normalized.game = game;
+    } else {
+      delete normalized.game;
+    }
+  }
+
   return normalized;
 }

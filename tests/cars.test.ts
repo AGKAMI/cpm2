@@ -9,9 +9,12 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cpm2-cars-"));
 process.env.CPM2_DB_PATH = path.join(tmp, "fleet.db");
 process.env.CPM2_KEY_PATH = path.join(tmp, ".secret-key");
 
-const { CAR_CATALOG, carByCode, searchCars } = await import("../src/lib/car-catalog.ts");
+const { CAR_CATALOG, carByCode, carsByCode, carsForGame, searchCars } = await import(
+  "../src/lib/car-catalog.ts"
+);
 const {
   createAccount,
+  updateAccount,
   archiveAccount,
   listGarage,
   fleetGarages,
@@ -37,28 +40,61 @@ function hasCode(fn: () => unknown, code: string) {
 }
 
 describe("car catalog", () => {
-  it("holds 208 catalog entries with unique ascending codes", () => {
-    assert.equal(CAR_CATALOG.length, 208);
-    const codes = CAR_CATALOG.map((entry) => entry.code);
-    assert.equal(new Set(codes).size, codes.length);
-    assert.deepEqual(codes, [...codes].sort((a, b) => a - b));
+  it("holds both games' catalogs: 207 CPM1 + 208 CPM2", () => {
+    assert.equal(carsForGame("cpm1").length, 207);
+    assert.equal(carsForGame("cpm2").length, 208);
+    assert.equal(CAR_CATALOG.length, 415);
   });
 
-  it("looks cars up by code", () => {
-    assert.equal(carByCode(49)?.name, "TOYOTA SUPRA A80 (MK4)");
-    assert.equal(carByCode(0)?.name, "BMW 3 SERIES (E36)");
-    assert.equal(carByCode(11)?.name, "NISSAN SKYLINE GT-R (R34)");
-    assert.equal(carByCode(17)?.name, "MERCEDES-BENZ C-CLASS (W204)");
-    assert.equal(carByCode(104)?.name, "BMW M5 (F90)");
-    assert.equal(carByCode(9999), undefined);
+  it("keeps codes unique WITHIN each game", () => {
+    for (const game of ["cpm1", "cpm2"] as const) {
+      const codes = carsForGame(game).map((entry) => entry.code);
+      assert.equal(new Set(codes).size, codes.length, `${game} has duplicate codes`);
+    }
+  });
+
+  it("keeps codes ascending, apart from CPM1's documented 1114 outlier", () => {
+    const cpm2 = carsForGame("cpm2").map((entry) => entry.code);
+    assert.deepEqual(cpm2, [...cpm2].sort((a, b) => a - b), "CPM2 is not ascending");
+
+    // KAMI's CPM1 sheet has a typo: "1114" where 114 belongs. It is preserved
+    // verbatim (renumbering would shift every later code), so it sits out of
+    // sequence — the rest of the list must still be ordered.
+    const cpm1 = carsForGame("cpm1").map((entry) => entry.code);
+    const inOrder = cpm1.filter((code) => code !== 1114);
+    assert.deepEqual(inOrder, [...inOrder].sort((a, b) => a - b), "CPM1 is not ascending");
+    assert.ok(cpm1.includes(1114), "the 1114 outlier must be preserved, not silently fixed");
+  });
+
+  it("looks cars up by code WITHIN a game", () => {
+    assert.equal(carByCode(49, "cpm2")?.name, "TOYOTA SUPRA A80 (MK4)");
+    assert.equal(carByCode(0, "cpm2")?.name, "BMW 3 SERIES (E36)");
+    assert.equal(carByCode(11, "cpm2")?.name, "NISSAN SKYLINE GT-R (R34)");
+    assert.equal(carByCode(17, "cpm2")?.name, "MERCEDES-BENZ C-CLASS (W204)");
+    assert.equal(carByCode(104, "cpm2")?.name, "BMW M5 (F90)");
+    assert.equal(carByCode(9999, "cpm2"), undefined);
+
+    assert.equal(carByCode(1, "cpm1")?.name, "HONDA CIVIC EK9");
+    assert.equal(carByCode(9999, "cpm1"), undefined);
+  });
+
+  it("resolves COLLIDING codes to different cars per game", () => {
+    // The whole reason `game` exists: same integer, different car.
+    assert.equal(carByCode(13, "cpm1")?.name, "2007 PEUGEOT 308");
+    assert.equal(carByCode(13, "cpm2")?.name, "HONDA CIVIC");
+    assert.notEqual(carByCode(13, "cpm1")?.name, carByCode(13, "cpm2")?.name);
+
+    const both = carsByCode(13);
+    assert.equal(both.length, 2);
+    assert.deepEqual(both.map((c) => c.game).sort(), ["cpm1", "cpm2"]);
   });
 
   it("searchCars matches code prefixes for numeric queries", () => {
-    const exact = searchCars("49");
+    const exact = searchCars("49", 30, "cpm2");
     assert.equal(exact[0]?.code, 49);
     assert.equal(exact[0]?.name, "TOYOTA SUPRA A80 (MK4)");
 
-    const prefix = searchCars("4");
+    const prefix = searchCars("4", 30, "cpm2");
     assert.ok(prefix.length > 5);
     for (const entry of prefix) {
       assert.ok(String(entry.code).startsWith("4"), `#${entry.code} does not start with 4`);
@@ -75,11 +111,22 @@ describe("car catalog", () => {
     assert.deepEqual(searchCars("  supra  "), hits);
   });
 
+  it("searchCars can be scoped to one game", () => {
+    // "supra" exists in both games; scoping must not leak across them.
+    const cpm1 = searchCars("supra", 30, "cpm1");
+    const cpm2 = searchCars("supra", 30, "cpm2");
+    assert.ok(cpm1.length > 0 && cpm2.length > 0);
+    for (const entry of cpm1) assert.equal(entry.game, "cpm1");
+    for (const entry of cpm2) assert.equal(entry.game, "cpm2");
+
+    // An empty scoped query returns that game's slice, not the global one.
+    assert.deepEqual(searchCars("", 5, "cpm1"), carsForGame("cpm1").slice(0, 5));
+    assert.equal(searchCars("", 9999, "cpm1").length, 207);
+    assert.equal(searchCars("", 9999, "cpm2").length, 208);
+  });
+
   it("searchCars returns the catalog slice for empty queries and respects the limit", () => {
-    assert.deepEqual(
-      searchCars("", 5),
-      CAR_CATALOG.slice(0, 5),
-    );
+    assert.deepEqual(searchCars("", 5), CAR_CATALOG.slice(0, 5));
     assert.equal(searchCars("", CAR_CATALOG.length).length, CAR_CATALOG.length);
     assert.equal(searchCars("gt", 3).length, 3);
     assert.deepEqual(searchCars("no-such-car"), []);
@@ -180,6 +227,50 @@ describe("garage inventory", () => {
     assert.ok(match);
     assert.equal(match.count, 1);
     assert.equal(match.cars[0]?.carName, "LEXUS LFA");
+  });
+
+  it("parks a colliding code under ITS OWN game's car name", () => {
+    // Code 13 is the sharpest case: 2007 PEUGEOT 308 in CPM1, HONDA CIVIC in
+    // CPM2. Before the game dimension these were indistinguishable.
+    const cpm1 = createAccount({
+      email: "cpm1-garage@cpm2.gg",
+      password: "pw",
+      game: "cpm1",
+      cash: 0,
+      coins: 0,
+      cars: 0,
+      baseSlots: 5,
+      slots: 0,
+    });
+    assert.equal(cpm1.game, "cpm1");
+    const parked = addGarageCar(cpm1.id, { carCode: 13 });
+    assert.equal(parked.game, "cpm1");
+    assert.equal(parked.carName, "2007 PEUGEOT 308");
+
+    const garage = listGarage(cpm1.id);
+    assert.equal(garage.game, "cpm1");
+    assert.equal(garage.cars[0]?.carName, "2007 PEUGEOT 308");
+  });
+
+  it("defaults new accounts to CPM2 so existing flows are unchanged", () => {
+    const account = makeAccount("cpm2-default@cpm2.gg", 5, 0);
+    assert.equal(account.game, "cpm2");
+    assert.equal(addGarageCar(account.id, { carCode: 13 }).carName, "HONDA CIVIC");
+  });
+
+  it("refuses a car from the other game", () => {
+    const account = makeAccount("cpm2-mismatch@cpm2.gg", 5, 0);
+    hasCode(() => addGarageCar(account.id, { carCode: 1, game: "cpm1" }), "car_game_mismatch");
+    assert.equal(listGarage(account.id).count, 0);
+  });
+
+  it("lets an empty account switch game but locks one holding cars", () => {
+    const parked = makeAccount("cpm2-locked@cpm2.gg", 5, 0);
+    addGarageCar(parked.id, { carCode: 13 });
+    hasCode(() => updateAccount(parked.id, { game: "cpm1" }), "GAME_LOCKED");
+
+    const empty = makeAccount("cpm2-switch@cpm2.gg", 5, 0);
+    assert.equal(updateAccount(empty.id, { game: "cpm1" }).game, "cpm1");
   });
 
   it("keeps archived garages readable but frozen", () => {

@@ -261,7 +261,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   Fleet <span className="text-racing">Ledger</span>
                 </span>
                 <span className="label-caps mt-1.5 block">
-                  CPM2 · account register
+                  CPM · CPM1 + CPM2 account register
                 </span>
               </span>
             </Link>

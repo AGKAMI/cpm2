@@ -29,9 +29,9 @@ const display = Playfair_Display({
 const themeScript = `(function(){try{var d=document.documentElement;var m=localStorage.getItem("cpm2:theme:v2");d.setAttribute("data-theme",m==="paper"?"paper":"night");var p=localStorage.getItem("cpm2:palette:v1");var ids=${JSON.stringify(PALETTE_IDS)};d.setAttribute("data-palette",ids.indexOf(p)>=0?p:"${DEFAULT_PALETTE}");}catch(e){}})();`;
 
 export const metadata: Metadata = {
-  title: "CPM2 // FLEET LEDGER",
+  title: "CPM // FLEET LEDGER",
   description:
-    "Track Car Parking Multiplayer 2 accounts — balances, coins, cars and purchased car slots.",
+    "Track Car Parking Multiplayer accounts — CPM1 and CPM2 — balances, coins, cars and purchased car slots.",
 };
 
 export const viewport: Viewport = {

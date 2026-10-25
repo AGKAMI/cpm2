@@ -42,8 +42,18 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
+  // suppressHydrationWarning: the themeScript above writes data-theme and
+  // data-palette onto <html> before React hydrates, so the client element
+  // deliberately carries attributes the server HTML does not have. Without it
+  // React reports a mismatch on every load and may revert them, which shows up
+  // as a theme flash. Scoped to this one element — it suppresses the attribute
+  // diff here and nothing else.
   return (
-    <html lang="en" className={`${body.variable} ${mono.variable} ${display.variable}`}>
+    <html
+      lang="en"
+      className={`${body.variable} ${mono.variable} ${display.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>

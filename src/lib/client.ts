@@ -2,6 +2,7 @@ import type {
   AccountSummary,
   ApiErrorBody,
   CarRecord,
+  CarOwners,
   FleetEvent,
   FleetStats,
   GarageSummary,
@@ -9,6 +10,7 @@ import type {
   TrophyRecord,
   TrophySummary,
 } from "./types.ts";
+import type { GameType } from "./constants.ts";
 
 export class ApiRequestError extends Error {
   status: number;
@@ -119,4 +121,6 @@ export const api = {
       { method: "DELETE" },
     ),
   garages: () => request<{ garages: GarageSummary[] }>("/api/garages"),
+  carOwners: (game: GameType, carCode: number) =>
+    request<{ owners: CarOwners }>(`/api/cars/${game}/${carCode}/owners`),
 };

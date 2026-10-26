@@ -120,6 +120,25 @@ export type GarageSummary = {
   capacity: number;
 };
 
+/**
+ * One account that holds a given car, for the "who owns this model" lookup.
+ * `count` is how many of that code the account has — duplicates are allowed.
+ */
+export type CarOwner = {
+  accountId: number;
+  email: string;
+  game: GameType;
+  count: number;
+};
+
+/** Which accounts hold a given car code inside one game. */
+export type CarOwners = {
+  carCode: number;
+  carName: string;
+  game: GameType;
+  owners: CarOwner[];
+};
+
 export type ImportReport = {
   total: number;
   created: number;

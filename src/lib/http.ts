@@ -22,3 +22,21 @@ export function parseId(raw: string): number {
   }
   return id;
 }
+
+/**
+ * Parses a route param into a car code. NOT parseId: CPM2 legitimately has a
+ * car #0, so a strict "positive integer" parse would reject a real catalog
+ * entry. The catalog lookup itself is the final authority — anything not in
+ * it returns car_unknown, so this only guards the shape of the input.
+ */
+export function parseCarCode(raw: string): number {
+  const code = Number(raw);
+  if (!Number.isInteger(code) || code < 0) {
+    throw new ApiError(
+      400,
+      "INVALID_CAR_CODE",
+      "Car code must be a whole number of zero or more.",
+    );
+  }
+  return code;
+}

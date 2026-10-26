@@ -20,6 +20,11 @@ export const GAME_LABELS: Record<GameType, string> = {
   cpm2: "CPM2",
 };
 
+/** Narrows an arbitrary string to a GameType, or false when it is not one. */
+export function isGameType(value: string): value is GameType {
+  return (GAMES as readonly string[]).includes(value);
+}
+
 export const LIMITS = {
   /** Maximum in-game cash a single account can hold. */
   MAX_CASH: 50_000_000,

@@ -1,281 +1,62 @@
-"use client";
-
-import { Suspense, useCallback, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useFleet } from "@/components/FleetProvider";
-import { useShell } from "@/components/AppShell";
-import { AccountTable, type SortKey } from "@/components/AccountTable";
-import { FleetToolbar, type FleetFilter } from "@/components/Toolbar";
+import Link from "next/link";
 import { PageHeading } from "@/components/PageHeading";
-import { Button } from "@/components/ui/Button";
 import { GAMES, GAME_LABELS, formatNumber } from "@/lib/constants";
+import { carsForGame } from "@/lib/car-catalog";
 
-function matchesFilter(account: {
-  cash: number;
-  coins: number;
-  cars: number;
-  capacity: number;
-  slots: number;
-}, filter: FleetFilter): boolean {
-  switch (filter) {
-    case "full":
-      return account.cars >= account.capacity;
-    case "slots":
-      return account.slots > 0;
-    case "cash-cap":
-      return account.cash >= 50_000_000;
-    case "coin-cap":
-      return account.coins >= 30_000;
-    default:
-      return true;
-  }
-}
-
-function FleetPageInner() {
-  const fleet = useFleet();
-  const shell = useShell();
-  const router = useRouter();
-  const params = useSearchParams();
-
-  const query = params.get("q") ?? "";
-  const filter = (params.get("filter") as FleetFilter) ?? "all";
-  const sortKey = (params.get("sort") as SortKey) ?? "updated";
-  const sortDir = params.get("dir") === "asc" ? "asc" : "desc";
-  const showArchived = params.get("view") === "archived";
-  const [selected, setSelected] = useState<number[]>([]);
-
-  const patchParams = useCallback(
-    (patch: Record<string, string | null>) => {
-      const next = new URLSearchParams(params.toString());
-      for (const [key, value] of Object.entries(patch)) {
-        if (value === null || value === "") next.delete(key);
-        else next.set(key, value);
-      }
-      const queryString = next.toString();
-      router.replace(queryString ? `/fleet?${queryString}` : "/fleet", { scroll: false });
-    },
-    [params, router],
-  );
-
-  const source = showArchived ? fleet.archived : fleet.accounts;
-
-  const visible = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    const filtered = source.filter((account) => {
-      if (!matchesFilter(account, filter)) return false;
-      if (!needle) return true;
-      return (
-        account.email.toLowerCase().includes(needle) ||
-        account.notes.toLowerCase().includes(needle)
-      );
-    });
-
-    const direction = sortDir === "asc" ? 1 : -1;
-    return [...filtered].sort((a, b) => {
-      switch (sortKey) {
-        case "email":
-          return a.email.localeCompare(b.email) * direction;
-        case "cash":
-          return (a.cash - b.cash) * direction;
-        case "coins":
-          return (a.coins - b.coins) * direction;
-        case "cars":
-          return (a.cars - b.cars) * direction;
-        case "updated":
-          return (new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()) * direction;
-        default:
-          return 0;
-      }
-    });
-  }, [source, query, filter, sortKey, sortDir]);
-
-  /**
-   * The register is split by game, always, in a fixed order.
-   *
-   * CPM1 and CPM2 are separate games with separate car catalogs, separate
-   * economies and separate garages — a mixed list invites reading a CPM1
-   * account's garage against the CPM2 code list. Sections make the boundary
-   * explicit rather than leaving it to a column nobody reads.
-   *
-   * Empty games drop out entirely: a heading over nothing is noise.
-   */
-  const sections = useMemo(
-    () =>
-      GAMES.map((game) => ({
-        game,
-        accounts: visible.filter((account) => account.game === game),
-      })).filter((section) => section.accounts.length > 0),
-    [visible],
-  );
-
-  function handleSort(key: SortKey) {
-    if (key === sortKey) {
-      patchParams({ dir: sortDir === "asc" ? "desc" : "asc" });
-      return;
-    }
-    patchParams({ sort: key, dir: "desc" });
-  }
-
-  async function archiveSelected() {
-    const ids = selected.slice();
-    for (const id of ids) {
-      const account = source.find((item) => item.id === id);
-      if (account) await fleet.archiveAccount(account);
-    }
-    setSelected([]);
-  }
-
+/**
+ * Fleet entry point — a game picker, not a register.
+ *
+ * Each game is its own page so the two car catalogs stay apart: sharing a
+ * link, reloading, or pressing back can never silently land you in the wrong
+ * game's register. /fleet/cpm1 and /fleet/cpm2 also give the nav a stable
+ * place to show which game you are in.
+ */
+export default function FleetIndexPage() {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       <PageHeading
-        folio="F-02"
-        title={showArchived ? "Archive" : "Fleet register"}
-        meta={`${source.length} on file${showArchived ? " · restore any time" : ""}`}
-      />
-      <FleetToolbar
-        query={query}
-        onQuery={(value) => patchParams({ q: value })}
-        filter={filter}
-        onFilter={(value) => patchParams({ filter: value === "all" ? null : value })}
-        archivedCount={fleet.archived.length}
-        showArchived={showArchived}
-        onShowArchived={(value) => {
-          patchParams({ view: value ? "archived" : null });
-          setSelected([]);
-        }}
-        onRefresh={() => void fleet.refresh()}
+        folio="F-10"
+        title="Fleet"
+        meta="choose a game — each has its own catalog and garage"
       />
 
-      {selected.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-3 rounded-[16px] border border-racing/25 bg-racing/8 px-4 py-2.5">
-          <span className="num text-[11px] text-racing">{selected.length} selected</span>
-          <Button variant="danger" size="sm" onClick={() => void archiveSelected()}>
-            Archive selected
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setSelected([])}>
-            Clear
-          </Button>
-        </div>
-      ) : null}
-
-      {fleet.error ? (
-        <div className="rounded-[14px] border border-oxblood/35 bg-oxblood/8 px-4 py-3 text-sm text-oxblood">
-          {fleet.error}
-        </div>
-      ) : null}
-
-      {fleet.loading && source.length === 0 ? (
-        <section className="panel animate-rise rounded-[20px]">
-          <div className="px-4 py-10 text-center text-sm text-ink-faint">Loading the register…</div>
-        </section>
-      ) : visible.length === 0 ? (
-        <section className="panel animate-rise rounded-[20px]">
-          <div className="px-4 py-10 text-center">
-            <p className="font-sans text-[13px] font-semibold tracking-[-0.01em] text-ink">
-              {source.length === 0 ? (showArchived ? "Archive is empty" : "No accounts yet") : "No match"}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {GAMES.map((game) => (
+          <Link
+            key={game}
+            href={`/fleet/${game}`}
+            className="panel animate-rise group rounded-[20px] p-5 transition-transform hover:-translate-y-0.5"
+          >
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="panel-title">{GAME_LABELS[game]}</span>
+              <span className="num text-[10px] text-ink-faint">
+                {formatNumber(carsForGame(game).length)} cars
+              </span>
+            </div>
+            <p className="num mt-1 text-[10px] text-ink-faint">
+              Car Parking Multiplayer {game === "cpm1" ? "1" : "2"} · own catalog, own garage
             </p>
-            <p className="mt-2 text-sm text-ink-faint">
-              {source.length === 0
-                ? showArchived
-                  ? "Archived accounts keep every balance and can be restored at any time."
-                  : "Add your first account with the button up top."
-                : "Nothing matches this search or filter."}
-            </p>
-            {source.length === 0 && !showArchived ? (
-              <p className="num mt-3 text-[10px] text-ink-faint">
-                use “+ Add account” in the header to log the first one
-              </p>
-            ) : null}
-          </div>
-        </section>
-      ) : (
-        // One region per game. Space does the grouping between sections;
-        // each section's own header band carries its identity and totals.
-        <div className="flex flex-col gap-5">
-          <p className="num px-1 text-[10px] text-ink-faint">
-            {visible.length} of {source.length} account{source.length === 1 ? "" : "s"}
-            {showArchived ? " (archived)" : ""} · grouped by game · click a plate to open it
-          </p>
-
-          {sections.map(({ game, accounts: rows }) => {
-            const cars = rows.reduce((sum, account) => sum + account.cars, 0);
-            const capacity = rows.reduce((sum, account) => sum + account.capacity, 0);
-            const slots = rows.reduce((sum, account) => sum + account.slots, 0);
-            const sectionIds = rows.map((account) => account.id);
-
-            return (
-              <section
-                key={game}
-                className="panel animate-rise overflow-hidden rounded-[20px]"
-                aria-label={`${GAME_LABELS[game]} accounts`}
+            <p className="num mt-4 flex items-center gap-1.5 text-[11px] text-racing">
+              open the register
+              <svg
+                viewBox="0 0 24 24"
+                className="h-3 w-3"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
               >
-                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-ink/10 bg-ink/[0.04] px-4 py-2.5">
-                  <span className="flex items-baseline gap-2.5">
-                    <span className="panel-title">{GAME_LABELS[game]}</span>
-                    <span className="num text-[10px] text-ink-faint">
-                      {rows.length} account{rows.length === 1 ? "" : "s"}
-                    </span>
-                  </span>
-                  <span className="num text-[10px] text-ink-faint">
-                    {formatNumber(cars)}/{formatNumber(capacity)} cars
-                    {slots > 0 ? ` · ${slots} bought slot${slots === 1 ? "" : "s"}` : ""}
-                  </span>
-                </div>
+                <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </p>
+          </Link>
+        ))}
+      </div>
 
-                <AccountTable
-                  accounts={rows}
-                  busyId={null}
-                  trophies={fleet.trophies}
-                  sortKey={sortKey}
-                  sortDir={sortDir}
-                  onSort={handleSort}
-                  mode={showArchived ? "archived" : "active"}
-                  selectable={!showArchived}
-                  selectedIds={selected}
-                  onToggleSelect={(id) =>
-                    setSelected((current) =>
-                      current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
-                    )
-                  }
-                  onToggleAll={() =>
-                    // Adds/removes ONLY this section's rows, so ticking one
-                    // game's header never clears a selection made in the other.
-                    setSelected((current) => {
-                      const allOn = sectionIds.every((id) => current.includes(id));
-                      return allOn
-                        ? current.filter((id) => !sectionIds.includes(id))
-                        : [...new Set([...current, ...sectionIds])];
-                    })
-                  }
-                  onEdit={shell.openEditAccount}
-                  onBuySlot={shell.openSlotPurchase}
-                  onDelete={(account) => {
-                    void shell
-                      .confirm({
-                        title: "Archive this account?",
-                        message: `${account.email} is filed away with every balance intact. You can restore it from the archived view at any time.`,
-                        confirmLabel: "Archive",
-                      })
-                      .then((ok) => {
-                        if (ok) void fleet.archiveAccount(account);
-                      });
-                  }}
-                  onRestore={(account) => void fleet.restoreAccount(account)}
-                  onAdjust={(account, field, delta) => void fleet.adjust(account, field, delta)}
-                />
-              </section>
-            );
-          })}
-        </div>
-      )}
+      <p className="num px-1 text-[10px] text-ink-faint">
+        codes collide between the two games — #13 is a 2007 PEUGEOT 308 in CPM1 and a HONDA CIVIC in
+        CPM2 — so each register only ever shows its own game&rsquo;s cars
+      </p>
     </div>
-  );
-}
-
-export default function FleetPage() {
-  return (
-    <Suspense fallback={<div className="px-1 py-10 text-sm text-ink-faint">Loading the register…</div>}>
-      <FleetPageInner />
-    </Suspense>
   );
 }

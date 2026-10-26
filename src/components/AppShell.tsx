@@ -42,10 +42,32 @@ export function useShell(): ShellContextValue {
 
 const NAV = [
   { href: "/", label: "Overview", hint: "O" },
-  { href: "/fleet", label: "Fleet", hint: "F" },
+  { href: "/fleet/cpm1", label: "CPM1", hint: "1" },
+  { href: "/fleet/cpm2", label: "CPM2", hint: "2" },
   { href: "/activity", label: "Activity", hint: "A" },
   { href: "/settings", label: "Settings", hint: "S" },
 ];
+
+/**
+ * Fleet nav icon for one game — the car glyph with the game number as a
+ * badge. Two identical car icons would not tell the games apart at a glance,
+ * which is the whole point of splitting the registers.
+ */
+function GameNavIcon({ badge }: { badge: string }) {
+  return (
+    <span className="relative inline-flex h-[19px] w-[19px] items-center justify-center">
+      <svg viewBox="0 0 24 24" className="h-[19px] w-[19px]" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+        <path d="M4 13l1.5-4.5A2 2 0 017.4 7h9.2a2 2 0 011.9 1.5L20 13" strokeLinecap="round" />
+        <path d="M3.5 13h17v4.5h-17z" strokeLinejoin="round" />
+        <circle cx="7" cy="17.5" r="1.6" />
+        <circle cx="17" cy="17.5" r="1.6" />
+      </svg>
+      <span className="num absolute -right-1.5 -top-1.5 grid h-3 min-w-3 place-items-center rounded-full border border-ink/25 bg-paper px-0.5 text-[7px] font-bold leading-none text-ink">
+        {badge}
+      </span>
+    </span>
+  );
+}
 
 const NAV_ICONS: Record<string, ReactNode> = {
   "/": (
@@ -56,14 +78,8 @@ const NAV_ICONS: Record<string, ReactNode> = {
       <rect x="13.5" y="13.5" width="7" height="7" rx="2.2" />
     </svg>
   ),
-  "/fleet": (
-    <svg viewBox="0 0 24 24" className="h-[19px] w-[19px]" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-      <path d="M4 13l1.5-4.5A2 2 0 017.4 7h9.2a2 2 0 011.9 1.5L20 13" strokeLinecap="round" />
-      <path d="M3.5 13h17v4.5h-17z" strokeLinejoin="round" />
-      <circle cx="7" cy="17.5" r="1.6" />
-      <circle cx="17" cy="17.5" r="1.6" />
-    </svg>
-  ),
+  "/fleet/cpm1": <GameNavIcon badge="1" />,
+  "/fleet/cpm2": <GameNavIcon badge="2" />,
   "/activity": (
     <svg viewBox="0 0 24 24" className="h-[19px] w-[19px]" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
       <path d="M3 12h4l2.4-6 4.2 12 2.4-6h5" strokeLinecap="round" strokeLinejoin="round" />
@@ -82,7 +98,8 @@ const SHORTCUTS = [
   { keys: "N", action: "New account" },
   { keys: "/", action: "Search the fleet" },
   { keys: "E", action: "Export the fleet" },
-  { keys: "G then F", action: "Go to fleet" },
+  { keys: "G then 1", action: "Go to the CPM1 register" },
+  { keys: "G then 2", action: "Go to the CPM2 register" },
   { keys: "G then A", action: "Go to activity" },
   { keys: "G then S", action: "Go to settings" },
   { keys: "?", action: "Show this list" },
@@ -157,6 +174,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         pendingG = false;
         window.clearTimeout(timer);
         const key = event.key.toLowerCase();
+        // 1 and 2 pick a game register; "f" (legacy) opens the game picker.
+        if (key === "1") router.push("/fleet/cpm1");
+        if (key === "2") router.push("/fleet/cpm2");
         if (key === "f") router.push("/fleet");
         if (key === "a") router.push("/activity");
         if (key === "s") router.push("/settings");

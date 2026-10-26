@@ -25,6 +25,7 @@ import type {
   TrophySummary,
   CarRecord,
   GarageSummary,
+  CarOwners,
 } from "./types.ts";
 import {
   accountCreateSchema,
@@ -558,6 +559,46 @@ export function listGarage(accountId: number): GarageSummary {
 export function fleetGarages(): GarageSummary[] {
   const accounts = listAccounts({ archived: "include" });
   return accounts.map((account) => listGarage(account.id));
+}
+
+/**
+ * Every account holding one car code, inside ONE game — the "which account
+ * has the Supra" answer.
+ *
+ * The game argument is what makes this safe: codes collide across titles, so
+ * without it a lookup for CPM1 #13 would also return every CPM2 account that
+ * owns a Honda Civic. Archived accounts are included — they still hold the
+ * car, so hiding them would under-report real ownership.
+ */
+export function carOwners(game: GameType, carCode: number): CarOwners {
+  const entry = carByCode(carCode, game);
+  if (!entry) {
+    throw new ApiError(404, "car_unknown", `No ${GAME_LABELS[game]} car has code #${carCode}.`);
+  }
+
+  type OwnerRow = { account_id: number; email: string; hits: number };
+  const rows = getDb()
+    .prepare(
+      `SELECT a.id AS account_id, a.email AS email, COUNT(c.id) AS hits
+         FROM account_cars c
+         JOIN accounts a ON a.id = c.account_id
+        WHERE c.game = ? AND c.car_code = ?
+        GROUP BY a.id
+        ORDER BY hits DESC, a.email ASC`,
+    )
+    .all(game, carCode) as OwnerRow[];
+
+  return {
+    carCode,
+    carName: entry.name,
+    game,
+    owners: rows.map((row) => ({
+      accountId: row.account_id,
+      email: row.email,
+      game,
+      count: row.hits,
+    })),
+  };
 }
 
 /**

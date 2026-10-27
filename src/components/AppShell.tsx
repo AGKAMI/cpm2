@@ -98,7 +98,6 @@ const NAV_ICONS: Record<string, ReactNode> = {
 const SHORTCUTS = [
   { keys: "N", action: "New account" },
   { keys: "/", action: "Search the fleet" },
-  { keys: "E", action: "Export the fleet" },
   { keys: "G then 1", action: "Go to the CPM1 register" },
   { keys: "G then 2", action: "Go to the CPM2 register" },
   { keys: "G then A", action: "Go to activity" },
@@ -216,10 +215,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         event.preventDefault();
         openNewAccount();
       }
-      if (key === "e") {
-        event.preventDefault();
-        setExportOpen(true);
-      }
     };
     window.addEventListener("keydown", onKey);
     return () => {
@@ -318,12 +313,6 @@ export function AppShell({ children }: { children: ReactNode }) {
 
               <ThemeMenu />
 
-              <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
-                Export
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
-                Import
-              </Button>
               <Button variant="primary" size="sm" onClick={openNewAccount}>
                 + Add account
               </Button>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useFleet } from "@/components/FleetProvider";
+import { useShell } from "@/components/AppShell";
 import { PageHeading } from "@/components/PageHeading";
 import { ThemeGallery } from "@/components/ThemeGallery";
 import { Button } from "@/components/ui/Button";
@@ -21,6 +22,7 @@ const SHORTCUTS = [
 
 export default function SettingsPage() {
   const fleet = useFleet();
+  const shell = useShell();
   const [ownerLabel, setOwnerLabel] = useState("checking…");
 
   // Whose Telegram account owns this console (read-only display; the binding
@@ -87,9 +89,22 @@ export default function SettingsPage() {
             decrypts the passwords. Copy the folder to back it up. Losing the key means losing every stored
             password.
           </p>
-          <p className="num mt-3 text-[10px] text-ink-faint">
-            Use the Export and Import buttons in the header to move a fleet in or out.
-          </p>
+          <div className="mt-3 flex gap-2">
+            <Button variant="outline" size="sm" onClick={shell.openExport}>
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M12 4v10M12 4l-3.5 3.5M12 4l3.5 3.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M5 19h14" strokeLinecap="round" />
+              </svg>
+              Export
+            </Button>
+            <Button variant="outline" size="sm" onClick={shell.openImport}>
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M12 14V4M12 14l-3.5-3.5M12 14l3.5-3.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M5 19h14" strokeLinecap="round" />
+              </svg>
+              Import
+            </Button>
+          </div>
         </div>
       </section>
 

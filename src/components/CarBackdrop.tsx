@@ -43,6 +43,9 @@ export function CarBackdrop() {
         alt=""
         className="car-backdrop-img"
         loading="eager"
+        // The backdrop must never race the ledger for bandwidth on a phone.
+        fetchPriority="low"
+        decoding="async"
         referrerPolicy="no-referrer"
       />
       <div className="car-backdrop-scrim" />

@@ -37,7 +37,9 @@ export async function GET() {
 
   const cached = CACHE.get(cacheKey);
   if (cached && cached.expires > Date.now()) {
-    return NextResponse.json({ ...cached, cached: true });
+    return NextResponse.json({ ...cached, cached: true }, {
+      headers: { "Cache-Control": "private, max-age=300" },
+    });
   }
 
   const key = process.env.UNSPLASH_ACCESS_KEY;
@@ -80,7 +82,9 @@ export async function GET() {
       expires: Date.now() + TTL,
     };
     CACHE.set(cacheKey, out);
-    return NextResponse.json(out);
+    return NextResponse.json(out, {
+      headers: { "Cache-Control": "private, max-age=300" },
+    });
   } catch (err) {
     return NextResponse.json(
       {

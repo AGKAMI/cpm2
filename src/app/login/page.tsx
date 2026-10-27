@@ -33,7 +33,17 @@ export default function LoginPage() {
       // Yield one tick first so the checking plate paints before any state flip.
       await Promise.resolve();
 
-      const initData = window.Telegram?.WebApp?.initData;
+      // Inside a Telegram webview the SDK can land a beat after hydration —
+      // wait for it briefly rather than mis-detecting as a plain browser.
+      // A real browser never grows a window.Telegram, so it falls through
+      // instantly to the password form.
+      let initData = window.Telegram?.WebApp?.initData;
+      if (!initData && /telegram/i.test(navigator.userAgent)) {
+        for (let waited = 0; waited < 25 && !initData; waited += 1) {
+          await new Promise((resolve) => window.setTimeout(resolve, 100));
+          initData = window.Telegram?.WebApp?.initData;
+        }
+      }
       if (!initData) {
         // Plain browser — straight to the password form.
         setPhase("password");

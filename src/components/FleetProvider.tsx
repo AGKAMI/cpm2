@@ -6,10 +6,12 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 import { api, ApiRequestError } from "@/lib/client";
+import { computeFleetStats } from "@/lib/stats";
 import type { AccountSummary, FleetEvent, FleetStats, ImportReport, TrophySummary } from "@/lib/types";
 import { useToast } from "@/components/ui/Toaster";
 
@@ -59,6 +61,13 @@ export function FleetProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const toast = useToast();
+  const syncTimer = useRef<number | null>(null);
+  // Mirror of the active list, so stats can be recomputed synchronously after
+  // a local patch without waiting for the server.
+  const accountsRef = useRef<AccountSummary[]>([]);
+  useEffect(() => {
+    accountsRef.current = accounts;
+  }, [accounts]);
 
   const refresh = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -93,6 +102,47 @@ export function FleetProvider({ children }: { children: ReactNode }) {
     return () => window.clearTimeout(timer);
   }, [refresh]);
 
+  useEffect(
+    () => () => {
+      if (syncTimer.current) window.clearTimeout(syncTimer.current);
+    },
+    [],
+  );
+
+  /**
+   * One quiet full sync, debounced. Mutations apply their server response
+   * locally INSTANTLY (the phone feels immediate even over the tailnet) and
+   * the audit log / trophy totals catch up in a single burst — a burst of
+   * taps costs ONE round trip instead of four requests per tap.
+   */
+  const scheduleSync = useCallback(() => {
+    if (syncTimer.current) window.clearTimeout(syncTimer.current);
+    syncTimer.current = window.setTimeout(() => {
+      syncTimer.current = null;
+      void refresh(true);
+    }, 1200);
+  }, [refresh]);
+
+  /** Applies one server-confirmed account into whichever list holds it. */
+  const applyAccount = useCallback((next: AccountSummary) => {
+    let placed = false;
+    setAccounts((current) =>
+      current.map((account) => {
+        if (account.id !== next.id) return account;
+        placed = true;
+        return next;
+      }),
+    );
+    setArchived((current) =>
+      current.map((account) => {
+        if (account.id !== next.id) return account;
+        placed = true;
+        return next;
+      }),
+    );
+    return placed;
+  }, []);
+
   /** Optimistic local patch so steppers feel instant. */
   const patchLocal = useCallback((id: number, patch: Partial<AccountSummary>) => {
     setAccounts((current) =>
@@ -107,21 +157,32 @@ export function FleetProvider({ children }: { children: ReactNode }) {
       const next = Math.max(0, account[field] + delta);
       patchLocal(account.id, { [field]: next } as Partial<AccountSummary>);
       try {
-        await api.update(account.id, { [field]: next });
-        await refresh(true);
+        const { account: saved } = await api.update(account.id, { [field]: next });
+        applyAccount(saved);
+        // Stats recompute locally — zero round trips for the header tiles.
+        setStats(
+          computeFleetStats(
+            accountsRef.current.map((item) => (item.id === saved.id ? saved : item)),
+          ),
+        );
+        scheduleSync();
       } catch (err) {
         patchLocal(account.id, { [field]: account[field] } as Partial<AccountSummary>);
         toast.error("Rejected", describe(err));
       }
     },
-    [patchLocal, refresh, toast],
+    [applyAccount, patchLocal, scheduleSync, toast],
   );
 
   const createAccount = useCallback(
     async (payload: unknown) => {
       try {
         const { account } = await api.create(payload);
-        await refresh(true);
+        setAccounts((current) => [account, ...current]);
+        setStats((current) =>
+          current ? { ...current, accounts: current.accounts + 1 } : current,
+        );
+        scheduleSync();
         toast.success("Account added", `${account.email} is on the books.`);
         return account;
       } catch (err) {
@@ -129,33 +190,44 @@ export function FleetProvider({ children }: { children: ReactNode }) {
         return null;
       }
     },
-    [refresh, toast],
+    [scheduleSync, toast],
   );
 
   const updateAccount = useCallback(
     async (id: number, payload: unknown) => {
       try {
-        await api.update(id, payload);
-        await refresh(true);
+        const { account } = await api.update(id, payload);
+        if (!applyAccount(account)) setAccounts((current) => [account, ...current]);
+        scheduleSync();
         toast.success("Saved", "Changes are written to the ledger.");
       } catch (err) {
         toast.error("Could not save", describe(err));
       }
     },
-    [refresh, toast],
+    [applyAccount, scheduleSync, toast],
   );
 
   const archiveAccount = useCallback(
     async (account: AccountSummary) => {
       try {
         await api.archive(account.id);
-        await refresh(true);
+        setAccounts((current) => current.filter((item) => item.id !== account.id));
+        setArchived((current) => [account, ...current]);
+        setStats(computeFleetStats(accountsRef.current.filter((item) => item.id !== account.id)));
+        scheduleSync();
         toast.success("Archived", `${account.email} is filed away — balances kept.`, {
           label: "Undo",
           onClick: () => {
             void api
               .restore(account.id)
-              .then(() => refresh(true))
+              .then(({ account: restored }) => {
+                setArchived((current) => current.filter((item) => item.id !== restored.id));
+                setAccounts((current) => [restored, ...current]);
+                setStats(
+                  computeFleetStats([restored, ...accountsRef.current]),
+                );
+                scheduleSync();
+              })
               .catch((err: unknown) => toast.error("Could not restore", describe(err)));
           },
         });
@@ -163,33 +235,36 @@ export function FleetProvider({ children }: { children: ReactNode }) {
         toast.error("Could not archive", describe(err));
       }
     },
-    [refresh, toast],
+    [scheduleSync, toast],
   );
 
   const restoreAccount = useCallback(
     async (account: AccountSummary) => {
       try {
-        await api.restore(account.id);
-        await refresh(true);
-        toast.success("Restored", `${account.email} is back in the fleet.`);
+        const { account: restored } = await api.restore(account.id);
+        setArchived((current) => current.filter((item) => item.id !== restored.id));
+        setAccounts((current) => [restored, ...current]);
+        scheduleSync();
+        toast.success("Restored", `${restored.email} is back in the fleet.`);
       } catch (err) {
         toast.error("Could not restore", describe(err));
       }
     },
-    [refresh, toast],
+    [scheduleSync, toast],
   );
 
   const buySlots = useCallback(
     async (account: AccountSummary, count: number) => {
       try {
-        await api.buySlots(account.id, count);
-        await refresh(true);
-        toast.success("Slot purchased", `${count} slot${count === 1 ? "" : "s"} added to ${account.email}.`);
+        const { account: saved } = await api.buySlots(account.id, count);
+        applyAccount(saved);
+        scheduleSync();
+        toast.success("Slot purchased", `${count} slot${count === 1 ? "" : "s"} added to ${saved.email}.`);
       } catch (err) {
         toast.error("Purchase rejected", describe(err));
       }
     },
-    [refresh, toast],
+    [applyAccount, scheduleSync, toast],
   );
 
   const importCsv = useCallback(

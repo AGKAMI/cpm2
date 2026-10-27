@@ -5,11 +5,11 @@ import {
   LIMITS,
   TROPHY_CLASSES,
   TROPHY_CLASS_LABELS,
-  carCapacity,
   slotsLockedValue,
   type GameType,
   type TrophyClass,
 } from "./constants.ts";
+import { allowsDuplicateModels, garageCapacity } from "./garage.ts";
 import { carByCode } from "./car-catalog.ts";
 import { csvToRecords, escapeCsvValue, normalizeImportRow } from "./csv.ts";
 import { decryptSecret, encryptSecret } from "./crypto.ts";
@@ -50,6 +50,7 @@ const TRACKED_FIELDS = [
   "cars",
   "baseSlots",
   "slots",
+  "newGarage",
   "coinsSpentOnCars",
   "notes",
 ] as const;
@@ -64,7 +65,12 @@ function toSummary(row: AccountRow): AccountSummary {
     cars: row.cars,
     baseSlots: row.base_slots,
     slots: row.slots,
-    capacity: carCapacity(row.base_slots, row.slots),
+    newGarage: Boolean(row.new_garage),
+    capacity: garageCapacity(row.game, {
+      baseSlots: row.base_slots,
+      slots: row.slots,
+      newGarage: Boolean(row.new_garage),
+    }),
     slotsValue: slotsLockedValue(row.slots),
     coinsSpentOnCars: row.coins_spent_on_cars,
     notes: row.notes,
@@ -72,6 +78,25 @@ function toSummary(row: AccountRow): AccountSummary {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+/**
+ * The garage shape of an account, with the game's own rules applied.
+ *
+ * CPM1 has no slots: any slot value on a CPM1 row is meaningless, so it is
+ * dropped rather than stored. CPM2 keeps the free slots, the coin-bought slot
+ * and the second garage.
+ */
+function garageShape(
+  game: GameType,
+  baseSlots: number,
+  slots: number,
+  newGarage: boolean,
+): { baseSlots: number; slots: number; newGarage: boolean } {
+  if (game === "cpm1") {
+    return { baseSlots: 0, slots: 0, newGarage: false };
+  }
+  return { baseSlots, slots, newGarage };
 }
 
 function now(): string {
@@ -150,12 +175,13 @@ export function createAccount(payload: unknown): AccountSummary {
 
   const db = getDb();
   const stamp = now();
+  const shape = garageShape(input.game, input.baseSlots, input.slots, input.newGarage);
 
   const insert = db.prepare(
     `INSERT INTO accounts
-       (email, password_enc, game, cash, coins, cars, base_slots, slots, notes,
+       (email, password_enc, game, cash, coins, cars, base_slots, slots, new_garage, notes,
         coins_spent_on_cars, archived, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
   );
 
   const created = db.transaction(() => {
@@ -166,8 +192,9 @@ export function createAccount(payload: unknown): AccountSummary {
       input.cash,
       input.coins,
       input.cars,
-      input.baseSlots,
-      input.slots,
+      shape.baseSlots,
+      shape.slots,
+      shape.newGarage ? 1 : 0,
       input.notes,
       input.coinsSpentOnCars,
       stamp,
@@ -178,8 +205,8 @@ export function createAccount(payload: unknown): AccountSummary {
       cash: { from: 0, to: input.cash },
       coins: { from: 0, to: input.coins },
       cars: { from: 0, to: input.cars },
-      baseSlots: { from: 0, to: input.baseSlots },
-      slots: { from: 0, to: input.slots },
+      baseSlots: { from: 0, to: shape.baseSlots },
+      slots: { from: 0, to: shape.slots },
     });
     return id;
   })();
@@ -194,6 +221,13 @@ export function updateAccount(id: number, payload: unknown): AccountSummary {
   // The slot economy lives in exactly one place: buying a slot costs coins.
   // A PATCH may therefore never hand out slots for free.
   if (patch.slots !== undefined && patch.slots > existing.slots) {
+    if (existing.game === "cpm1") {
+      throw new ApiError(
+        422,
+        "CPM1_HAS_NO_SLOTS",
+        "CPM1 has no car slots — every model in the game can be owned, one of each.",
+      );
+    }
     throw new ApiError(
       422,
       "SLOTS_PURCHASE_ONLY",
@@ -225,16 +259,27 @@ export function updateAccount(id: number, payload: unknown): AccountSummary {
     cars: patch.cars ?? existing.cars,
     baseSlots: patch.baseSlots ?? existing.base_slots,
     slots: patch.slots ?? existing.slots,
+    newGarage: patch.newGarage ?? Boolean(existing.new_garage),
     coinsSpentOnCars: patch.coinsSpentOnCars ?? existing.coins_spent_on_cars,
     notes: patch.notes ?? existing.notes,
   };
 
-  const capacity = carCapacity(next.baseSlots, next.slots);
+  // CPM1 has no slots: any slot value is dropped instead of stored.
+  const shape = garageShape(next.game, next.baseSlots, next.slots, next.newGarage);
+  next.baseSlots = shape.baseSlots;
+  next.slots = shape.slots;
+  next.newGarage = shape.newGarage;
+
+  const capacity = garageCapacity(next.game, shape);
   if (next.cars > capacity) {
     throw new ApiError(
       422,
       "CAR_CAPACITY_EXCEEDED",
-      `${next.cars} cars need more room — this garage holds ${capacity} (${next.baseSlots} base + ${next.slots} extra slot(s)).`,
+      next.game === "cpm1"
+        ? `${next.cars} cars need more room — CPM1 holds one of every model in the game (${capacity} models).`
+        : `${next.cars} cars need more room — this garage holds ${capacity} (${next.baseSlots} base + ${next.slots} coin slot(s)${
+            next.newGarage ? ` + ${LIMITS.NEW_GARAGE_SLOTS} new-garage slots` : ""
+          }).`,
     );
   }
 
@@ -251,16 +296,26 @@ export function updateAccount(id: number, payload: unknown): AccountSummary {
         ? existing.coins_spent_on_cars
         : field === "baseSlots"
           ? existing.base_slots
-          : existing[field];
+          : field === "newGarage"
+            ? Boolean(existing.new_garage)
+            : existing[field];
     const after = next[field];
     if (before !== after) changes[field] = { from: before, to: after };
   }
 
   const removedSlots = existing.slots - next.slots;
   const baseChanged = existing.base_slots !== next.baseSlots;
-  const eventType: FleetEvent["type"] = removedSlots > 0 ? "slots_removed" : "updated";
-  const summary =
-    removedSlots > 0
+  const garageChanged = Boolean(existing.new_garage) !== next.newGarage;
+  const eventType: FleetEvent["type"] = garageChanged
+    ? "garage_upgraded"
+    : removedSlots > 0
+      ? "slots_removed"
+      : "updated";
+  const summary = garageChanged
+    ? next.newGarage
+      ? `New garage added (+${LIMITS.NEW_GARAGE_SLOTS} slots, ${LIMITS.NEW_GARAGE_PRICE})`
+      : `New garage removed (-${LIMITS.NEW_GARAGE_SLOTS} slots)`
+    : removedSlots > 0
       ? `Removed ${removedSlots} car slot(s) — the game does not refund slot coins`
       : baseChanged
         ? `Base garage size set to ${next.baseSlots}`
@@ -270,7 +325,7 @@ export function updateAccount(id: number, payload: unknown): AccountSummary {
   db.transaction(() => {
     db.prepare(
       `UPDATE accounts
-         SET email = ?, password_enc = ?, game = ?, cash = ?, coins = ?, cars = ?, base_slots = ?, slots = ?, notes = ?, coins_spent_on_cars = ?, updated_at = ?
+         SET email = ?, password_enc = ?, game = ?, cash = ?, coins = ?, cars = ?, base_slots = ?, slots = ?, new_garage = ?, notes = ?, coins_spent_on_cars = ?, updated_at = ?
        WHERE id = ?`,
     ).run(
       next.email,
@@ -281,6 +336,7 @@ export function updateAccount(id: number, payload: unknown): AccountSummary {
       next.cars,
       next.baseSlots,
       next.slots,
+      next.newGarage ? 1 : 0,
       next.notes,
       next.coinsSpentOnCars,
       now(),
@@ -329,16 +385,31 @@ export function restoreAccount(id: number): AccountSummary {
   return getAccount(id);
 }
 
-/** Buys `count` extra car slots, spending coins from the account balance. */
+/**
+ * Buys the coin-bought car slot (CPM2's 21st), spending coins from the
+ * account balance.
+ *
+ * CPM1 has no slots at all, so the purchase is refused there. CPM2 sells
+ * exactly one coin slot — the 21st — for 100 coins; the 15 extra slots come
+ * with the purchasable second garage instead.
+ */
 export function purchaseSlots(id: number, payload: unknown): AccountSummary {
   const { count } = slotPurchaseSchema.parse(payload ?? { count: 1 });
   const existing = requireAccount(id);
 
-  if (existing.slots + count > LIMITS.MAX_PURCHASED_SLOTS) {
+  if (existing.game === "cpm1") {
+    throw new ApiError(
+      422,
+      "CPM1_HAS_NO_SLOTS",
+      "CPM1 has no car slots — every model in the game can be owned, one of each.",
+    );
+  }
+
+  if (existing.slots + count > LIMITS.MAX_COIN_SLOTS) {
     throw new ApiError(
       422,
       "SLOT_LIMIT_REACHED",
-      `An account can hold ${LIMITS.MAX_PURCHASED_SLOTS} extra slots max (this one already has ${existing.slots}).`,
+      `A CPM2 garage has ${LIMITS.MAX_COIN_SLOTS} coin slot — the 21st, for ${LIMITS.SLOT_COST_COINS} coins (this one already has ${existing.slots}). The other ${LIMITS.NEW_GARAGE_SLOTS} slots come with the ${LIMITS.NEW_GARAGE_PRICE} garage.`,
     );
   }
 
@@ -551,7 +622,11 @@ export function listGarage(accountId: number): GarageSummary {
     game: account.game,
     cars,
     count: cars.length,
-    capacity: carCapacity(account.base_slots, account.slots),
+    capacity: garageCapacity(account.game, {
+      baseSlots: account.base_slots,
+      slots: account.slots,
+      newGarage: Boolean(account.new_garage),
+    }),
   };
 }
 
@@ -604,7 +679,10 @@ export function carOwners(game: GameType, carCode: number): CarOwners {
 /**
  * Adds one catalog car to one account's garage.
  * Fails loudly when the code is not in the catalog or the garage is full.
- * The same code can be added more than once (the game allows duplicate models).
+ *
+ * Duplicates follow the GAME's rule: CPM2 garages hold the same model more
+ * than once, CPM1 holds one of each model — so a second copy of a CPM1 model
+ * is refused with `car_duplicate`.
  *
  * The code is resolved against the ACCOUNT's game, never against a guess. An
  * explicit `game` that disagrees with the account is rejected rather than
@@ -638,9 +716,34 @@ export function addGarageCar(accountId: number, payload: unknown): CarRecord {
   const owned = db
     .prepare(`SELECT COUNT(*) AS n FROM account_cars WHERE account_id = ?`)
     .get(accountId) as { n: number };
-  const capacity = carCapacity(account.base_slots, account.slots);
+
+  // CPM1: one of each model. The same code cannot be parked twice.
+  if (!allowsDuplicateModels(game)) {
+    const sameModel = db
+      .prepare(`SELECT COUNT(*) AS n FROM account_cars WHERE account_id = ? AND car_code = ?`)
+      .get(accountId, parsed.carCode) as { n: number };
+    if (sameModel.n > 0) {
+      throw new ApiError(
+        400,
+        "car_duplicate",
+        `CPM1 holds one of each model — #${entry.code} ${entry.name} is already in this garage.`,
+      );
+    }
+  }
+
+  const capacity = garageCapacity(account.game, {
+    baseSlots: account.base_slots,
+    slots: account.slots,
+    newGarage: Boolean(account.new_garage),
+  });
   if (owned.n >= capacity) {
-    throw new ApiError(400, "garage_full", `Garage is full (${owned.n}/${capacity}). Buy more slots first.`);
+    throw new ApiError(
+      400,
+      "garage_full",
+      account.game === "cpm1"
+        ? `Garage is full (${owned.n}/${capacity}) — CPM1 holds one of every model in the game.`
+        : `Garage is full (${owned.n}/${capacity}). Unlock a slot or buy the new garage first.`,
+    );
   }
 
   const stamp = now();
@@ -760,6 +863,7 @@ export function exportFleet(
             "cars",
             "base_slots",
             "slots",
+            "new_garage",
             "capacity",
             "coins_spent_on_cars",
             "notes",
@@ -777,6 +881,7 @@ export function exportFleet(
               account.cars,
               account.baseSlots,
               account.slots,
+              account.newGarage ? 1 : 0,
               account.capacity,
               account.coinsSpentOnCars,
               account.notes,

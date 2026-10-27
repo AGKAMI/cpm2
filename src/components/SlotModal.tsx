@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { LIMITS, carCapacity, formatNumber } from "@/lib/constants";
+import { GARAGE_RULES, LIMITS, formatNumber } from "@/lib/constants";
+import { garageCapacity } from "@/lib/garage";
 import type { AccountSummary } from "@/lib/types";
 
 type SlotModalProps = {
@@ -13,23 +14,35 @@ type SlotModalProps = {
   onReview: (count: number) => void;
 };
 
+/**
+ * The CPM2 coin slot: one slot — the 21st — for 100 coins.
+ *
+ * CPM1 has no slots at all, so the modal refuses to open for a CPM1 account.
+ * The 15 extra slots are NOT sold here: they come with the purchasable second
+ * garage (R299.99), which is toggled in the account form.
+ */
 export function SlotModal({ open, account, onClose, onReview }: SlotModalProps) {
   const [count, setCount] = useState(1);
   const [busy, setBusy] = useState(false);
 
   if (!account) return null;
+  if (!GARAGE_RULES[account.game].hasSlots) return null;
 
-  const slotsLeft = Math.max(0, LIMITS.MAX_PURCHASED_SLOTS - account.slots);
+  const slotsLeft = Math.max(0, LIMITS.MAX_COIN_SLOTS - account.slots);
   const affordable = Math.floor(account.coins / LIMITS.SLOT_COST_COINS);
   const max = Math.max(0, Math.min(slotsLeft, affordable));
   const cost = count * LIMITS.SLOT_COST_COINS;
-  const newCapacity = carCapacity(account.baseSlots, account.slots + count);
+  const newCapacity = garageCapacity(account.game, {
+    baseSlots: account.baseSlots,
+    slots: account.slots + count,
+    newGarage: account.newGarage,
+  });
 
   const blocker =
     slotsLeft === 0
-      ? `This account already owns all ${LIMITS.MAX_PURCHASED_SLOTS} extra slots.`
+      ? `This account already owns the coin slot — the 21st is unlocked.`
       : affordable === 0
-        ? `Needs at least ${LIMITS.SLOT_COST_COINS} coins — this account has ${formatNumber(account.coins)}.`
+        ? `Needs ${LIMITS.SLOT_COST_COINS} coins — this account has ${formatNumber(account.coins)}.`
         : "";
 
   async function confirm() {
@@ -45,8 +58,8 @@ export function SlotModal({ open, account, onClose, onReview }: SlotModalProps) 
     <Modal
       open={open}
       onClose={onClose}
-      title="Buy car slot"
-      subtitle="Extra slots unlock more garage space. The price is deducted from the account balance."
+      title="Unlock the 21st slot"
+      subtitle="The stock CPM2 garage holds 20 slots. The 21st is the one the game sells for coins."
       width="max-w-lg"
       footer={
         <>
@@ -61,7 +74,11 @@ export function SlotModal({ open, account, onClose, onReview }: SlotModalProps) 
     >
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-          <Stat label="Slots owned" value={`${account.slots}/${LIMITS.MAX_PURCHASED_SLOTS}`} tone="text-racing" />
+          <Stat
+            label="Coin slots"
+            value={`${account.slots}/${LIMITS.MAX_COIN_SLOTS}`}
+            tone="text-racing"
+          />
           <Stat label="Balance" value={formatNumber(account.coins)} tone="text-racing" />
           <Stat label="Garage" value={`${account.cars}/${account.capacity}`} tone="text-blueprint" />
         </div>
@@ -107,6 +124,11 @@ export function SlotModal({ open, account, onClose, onReview }: SlotModalProps) 
           <span className="label-caps">Total cost</span>
           <span className="num text-sm text-racing">{formatNumber(cost)} coins</span>
         </div>
+
+        <p className="rounded-[14px] border border-brass/30 bg-brass/8 px-3 py-2 text-[11px] leading-snug text-ink-soft">
+          The {LIMITS.NEW_GARAGE_PRICE} new garage is bought in the game, not with coins — it adds{" "}
+          {LIMITS.NEW_GARAGE_SLOTS} slots at once. Tick it in the account form.
+        </p>
 
         {blocker ? (
           <p className="rounded-[14px] border border-oxblood/35 bg-oxblood/8 px-3 py-2 text-xs text-oxblood">

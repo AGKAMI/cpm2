@@ -22,7 +22,7 @@ const valid = {
   cash: 1_000_000,
   coins: 5_000,
   cars: 12,
-  slots: 2,
+  slots: 1,
   notes: "main",
 };
 
@@ -50,12 +50,15 @@ describe("limits", () => {
     assert.equal(account.coins, 30_000);
   });
 
-  it("rejects more than 15 purchased slots", () => {
-    assert.throws(() => createAccount({ ...valid, email: "slots@cpm2.gg", slots: 16 }), /Extra slots cannot exceed/);
+  it("rejects more than one coin-bought slot", () => {
+    assert.throws(() => createAccount({ ...valid, email: "slots@cpm2.gg", slots: 2 }), /Extra slots cannot exceed/);
   });
 
-  it("rejects cars above the 35 hard ceiling", () => {
-    assert.throws(() => createAccount({ ...valid, email: "cars@cpm2.gg", cars: 36, slots: 15 }), /Cars cannot exceed/);
+  it("rejects cars above the garage ceiling", () => {
+    assert.throws(
+      () => createAccount({ ...valid, email: "cars@cpm2.gg", cars: 37, slots: 1, newGarage: true }),
+      /Cars cannot exceed 36/,
+    );
   });
 
   it("rejects negative values", () => {
@@ -73,13 +76,25 @@ describe("limits", () => {
     const account = createAccount({ ...valid, email: "fits@cpm2.gg", cars: 21, slots: 1 });
     assert.equal(account.capacity, 21);
   });
+
+  it("adds the new garage's 15 slots", () => {
+    const account = createAccount({
+      ...valid,
+      email: "garage-buy@cpm2.gg",
+      cars: 0,
+      slots: 1,
+      newGarage: true,
+    });
+    assert.equal(account.newGarage, true);
+    assert.equal(account.capacity, 36);
+  });
 });
 
 describe("accounts", () => {
   it("creates an account and logs the event", () => {
     const account = createAccount(valid);
     assert.equal(account.email, "alpha@cpm2.gg");
-    assert.equal(account.capacity, 22);
+    assert.equal(account.capacity, 21);
     const events = listEvents(20);
     assert.ok(events.some((event) => event.type === "created" && event.email === "alpha@cpm2.gg"));
   });
@@ -153,12 +168,12 @@ describe("accounts", () => {
 });
 
 describe("car slots", () => {
-  it("spends 100 coins per slot and grows the garage", () => {
+  it("spends 100 coins for the 21st slot and grows the garage", () => {
     const account = createAccount({ ...valid, email: "buy@cpm2.gg", coins: 1_000, slots: 0, cars: 20 });
-    const updated = purchaseSlots(account.id, { count: 3 });
-    assert.equal(updated.slots, 3);
-    assert.equal(updated.coins, 700);
-    assert.equal(updated.capacity, 23);
+    const updated = purchaseSlots(account.id, { count: 1 });
+    assert.equal(updated.slots, 1);
+    assert.equal(updated.coins, 900);
+    assert.equal(updated.capacity, 21);
   });
 
   it("refuses when the balance is too low", () => {
@@ -171,7 +186,7 @@ describe("car slots", () => {
   });
 
   it("refuses when the slot ceiling would be passed", () => {
-    const account = createAccount({ ...valid, email: "maxed@cpm2.gg", coins: 30_000, slots: 15 });
+    const account = createAccount({ ...valid, email: "maxed@cpm2.gg", coins: 30_000, slots: 1 });
     assert.throws(() => purchaseSlots(account.id, { count: 1 }), (err: unknown) => {
       assert.ok(err instanceof ApiError);
       assert.equal(err.code, "SLOT_LIMIT_REACHED");
@@ -179,11 +194,11 @@ describe("car slots", () => {
     });
   });
 
-  it("allows buying up to the 15 slot ceiling", () => {
-    const account = createAccount({ ...valid, email: "toomany@cpm2.gg", coins: 30_000, slots: 14 });
+  it("sells exactly one coin slot — the 21st", () => {
+    const account = createAccount({ ...valid, email: "toomany@cpm2.gg", coins: 30_000, slots: 0 });
     const updated = purchaseSlots(account.id, { count: 1 });
-    assert.equal(updated.slots, 15);
-    assert.equal(updated.capacity, 35);
+    assert.equal(updated.slots, 1);
+    assert.equal(updated.capacity, 21);
   });
 
   it("never lets the stored balance go negative", () => {
@@ -191,6 +206,21 @@ describe("car slots", () => {
     purchaseSlots(account.id, { count: 1 });
     const after = listAccounts().find((item) => item.id === account.id);
     assert.equal(after?.coins, 0);
+  });
+
+  it("refuses to sell a slot to a CPM1 account", () => {
+    const account = createAccount({
+      ...valid,
+      email: "cpm1-slot@cpm2.gg",
+      game: "cpm1",
+      cars: 0,
+      slots: 0,
+    });
+    assert.throws(() => purchaseSlots(account.id, { count: 1 }), (err: unknown) => {
+      assert.ok(err instanceof ApiError);
+      assert.equal(err.code, "CPM1_HAS_NO_SLOTS");
+      return true;
+    });
   });
 });
 
@@ -213,9 +243,9 @@ describe("custom garage size", () => {
       email: "garage-plus@cpm2.gg",
       cars: 0,
       baseSlots: 120,
-      slots: 3,
+      slots: 1,
     });
-    assert.equal(account.capacity, 123);
+    assert.equal(account.capacity, 121);
   });
 
   it("rejects a base garage above the sanity cap", () => {
@@ -284,11 +314,15 @@ describe("schema migration", () => {
     try {
       const columns = db.prepare(`PRAGMA table_info(accounts)`).all() as { name: string }[];
       assert.equal(columns.some((column) => column.name === "base_slots"), true);
+      assert.equal(columns.some((column) => column.name === "new_garage"), true);
 
       const row = db
-        .prepare(`SELECT email, cars, slots, base_slots FROM accounts WHERE email = 'legacy@cpm2.gg'`)
-        .get() as { email: string; cars: number; slots: number; base_slots: number };
-      assert.deepEqual({ ...row }, { email: "legacy@cpm2.gg", cars: 3, slots: 1, base_slots: 20 });
+        .prepare(`SELECT email, cars, slots, base_slots, new_garage FROM accounts WHERE email = 'legacy@cpm2.gg'`)
+        .get() as { email: string; cars: number; slots: number; base_slots: number; new_garage: number };
+      assert.deepEqual(
+        { ...row },
+        { email: "legacy@cpm2.gg", cars: 3, slots: 1, base_slots: 20, new_garage: 0 },
+      );
 
       db.prepare(
         `INSERT INTO accounts (email, password_enc, cars, base_slots, slots, created_at, updated_at)
@@ -298,6 +332,102 @@ describe("schema migration", () => {
         .prepare(`SELECT cars, base_slots FROM accounts WHERE email = 'roomy@cpm2.gg'`)
         .get() as { cars: number; base_slots: number };
       assert.deepEqual(roomy, { cars: 40, base_slots: 50 });
+    } finally {
+      db.close();
+    }
+  });
+
+  it("drops the slots a legacy CPM1 row carried — CPM1 has no slots", () => {
+    const legacyPath = path.join(tmp, "legacy-cpm1.db");
+    const legacy = new Database(legacyPath);
+    legacy.exec(`
+      CREATE TABLE accounts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT NOT NULL,
+        password_enc TEXT NOT NULL,
+        cash INTEGER NOT NULL DEFAULT 0,
+        coins INTEGER NOT NULL DEFAULT 0,
+        cars INTEGER NOT NULL DEFAULT 0,
+        base_slots INTEGER NOT NULL DEFAULT 20,
+        slots INTEGER NOT NULL DEFAULT 0,
+        notes TEXT NOT NULL DEFAULT '',
+        archived INTEGER NOT NULL DEFAULT 0,
+        coins_spent_on_cars INTEGER NOT NULL DEFAULT 0,
+        game TEXT NOT NULL DEFAULT 'cpm2',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        CHECK (cars >= 0 AND cars <= base_slots + slots)
+      );
+      INSERT INTO accounts (email, password_enc, game, cars, base_slots, slots, created_at, updated_at)
+      VALUES ('old-cpm1@cpm2.gg', 'x', 'cpm1', 0, 20, 1, 'now', 'now');
+    `);
+    legacy.close();
+
+    const db = createDatabase(legacyPath);
+    try {
+      const row = db
+        .prepare(`SELECT base_slots, slots FROM accounts WHERE email = 'old-cpm1@cpm2.gg'`)
+        .get() as { base_slots: number; slots: number };
+      assert.deepEqual(row, { base_slots: 0, slots: 0 });
+    } finally {
+      db.close();
+    }
+  });
+
+  it("keeps the garage rows and their foreign key through the rebuild", () => {
+    const legacyPath = path.join(tmp, "legacy-fk.db");
+    const legacy = new Database(legacyPath);
+    legacy.exec(`
+      CREATE TABLE accounts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT NOT NULL,
+        password_enc TEXT NOT NULL,
+        cash INTEGER NOT NULL DEFAULT 0,
+        coins INTEGER NOT NULL DEFAULT 0,
+        cars INTEGER NOT NULL DEFAULT 0,
+        base_slots INTEGER NOT NULL DEFAULT 20,
+        slots INTEGER NOT NULL DEFAULT 0,
+        notes TEXT NOT NULL DEFAULT '',
+        archived INTEGER NOT NULL DEFAULT 0,
+        coins_spent_on_cars INTEGER NOT NULL DEFAULT 0,
+        game TEXT NOT NULL DEFAULT 'cpm2',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        CHECK (cars >= 0 AND cars <= base_slots + slots)
+      );
+      INSERT INTO accounts (email, password_enc, cars, base_slots, slots, created_at, updated_at)
+      VALUES ('with-cars@cpm2.gg', 'x', 2, 20, 0, 'now', 'now');
+
+      CREATE TABLE account_cars (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        account_id INTEGER NOT NULL,
+        car_code INTEGER NOT NULL,
+        game TEXT NOT NULL DEFAULT 'cpm2',
+        notes TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+      );
+      INSERT INTO account_cars (account_id, car_code, game, notes, created_at)
+      VALUES (1, 49, 'cpm2', 'weekend', 'now');
+    `);
+    legacy.close();
+
+    const db = createDatabase(legacyPath);
+    try {
+      const garageSql = db
+        .prepare(`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'account_cars'`)
+        .get() as { sql: string };
+      assert.match(
+        garageSql.sql,
+        /REFERENCES\s+accounts\(id\)/i,
+        "the garage must still point at the accounts table after the rebuild",
+      );
+
+      const cars = db.prepare(`SELECT car_code, notes FROM account_cars`).all() as {
+        car_code: number;
+        notes: string;
+      }[];
+      assert.deepEqual(cars, [{ car_code: 49, notes: "weekend" }]);
     } finally {
       db.close();
     }

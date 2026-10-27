@@ -5,8 +5,8 @@ import {
   MAX_CARS,
   MAX_TROPHIES_PER_CLASS,
   TROPHY_CLASSES,
-  carCapacity,
 } from "./constants.ts";
+import { garageCapacity } from "./garage.ts";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -60,9 +60,13 @@ export const baseSlotsSchema = z
 export const slotsSchema = z
   .int({ error: "Slots must be a whole number." })
   .min(0, { error: "Slots cannot be negative." })
-  .max(LIMITS.MAX_PURCHASED_SLOTS, {
-    error: `Extra slots cannot exceed ${LIMITS.MAX_PURCHASED_SLOTS} per account.`,
+  .max(LIMITS.MAX_COIN_SLOTS, {
+    error: `Extra slots cannot exceed ${LIMITS.MAX_COIN_SLOTS} per account.`,
   });
+
+export const newGarageSchema = z.boolean({
+  error: "The new garage flag must be true or false.",
+});
 
 export const coinsSpentOnCarsSchema = z
   .int({ error: "Coins spent on cars must be a whole number." })
@@ -91,16 +95,31 @@ export const accountCreateSchema = z
     cars: carsSchema.default(0),
     baseSlots: baseSlotsSchema.default(LIMITS.BASE_CAR_SLOTS),
     slots: slotsSchema.default(0),
+    newGarage: newGarageSchema.default(false),
     coinsSpentOnCars: coinsSpentOnCarsSchema.optional().default(0),
     notes: notesSchema,
   })
   .superRefine((data, ctx) => {
-    const capacity = carCapacity(data.baseSlots, data.slots);
+    // CPM1 has no slots at all — the garage is the whole catalog, one of each
+    // model. CPM2 is slot-based, with the second garage adding 15 slots.
+    const capacity =
+      data.game === "cpm1"
+        ? garageCapacity("cpm1", { baseSlots: 0, slots: 0, newGarage: false })
+        : garageCapacity("cpm2", {
+            baseSlots: data.baseSlots,
+            slots: data.slots,
+            newGarage: data.newGarage,
+          });
     if (data.cars > capacity) {
       ctx.addIssue({
         code: "custom",
         path: ["cars"],
-        message: `Cars cannot exceed ${capacity} (${data.baseSlots} base + ${data.slots} extra slot(s)).`,
+        message:
+          data.game === "cpm1"
+            ? `Cars cannot exceed ${capacity} — CPM1 holds one of every model in the game.`
+            : `Cars cannot exceed ${capacity} (${data.baseSlots} base + ${data.slots} coin slot(s)${
+                data.newGarage ? ` + ${LIMITS.NEW_GARAGE_SLOTS} new-garage slots` : ""
+              }).`,
       });
     }
   });
@@ -116,6 +135,7 @@ export const accountPatchSchema = z
     cars: carsSchema.optional(),
     baseSlots: baseSlotsSchema.optional(),
     slots: slotsSchema.optional(),
+    newGarage: newGarageSchema.optional(),
     coinsSpentOnCars: coinsSpentOnCarsSchema.optional(),
     notes: z.string().max(LIMITS.MAX_NOTES_LENGTH).optional(),
   })
@@ -130,8 +150,8 @@ export const slotPurchaseSchema = z
     count: z
       .int({ error: "Slot count must be a whole number." })
       .min(1, { error: "Buy at least one slot." })
-      .max(LIMITS.MAX_PURCHASED_SLOTS, {
-        error: `You can buy at most ${LIMITS.MAX_PURCHASED_SLOTS} slots at a time.`,
+      .max(LIMITS.MAX_COIN_SLOTS, {
+        error: `You can buy at most ${LIMITS.MAX_COIN_SLOTS} slot at a time.`,
       })
       .default(1),
   })

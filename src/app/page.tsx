@@ -47,7 +47,7 @@ export default function OverviewPage() {
         title="Overview"
         meta={
           fleet.stats
-            ? `${fleet.stats.accounts} accounts · ${formatNumber(fleet.stats.totalCars)}/${formatNumber(fleet.stats.totalCapacity)} garage slots`
+            ? `${fleet.stats.accounts} accounts · ${formatNumber(fleet.stats.totalCars)}/${formatNumber(fleet.stats.totalCapacity)} cars in garages`
             : undefined
         }
       />

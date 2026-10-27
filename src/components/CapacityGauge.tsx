@@ -1,21 +1,30 @@
 "use client";
 
+import { GARAGE_RULES, type GameType } from "@/lib/constants";
+
 /**
  * Garage gauge: a swept instrument dial rather than a row of boxes.
  * The arc is the whole garage, the needle points at the cars in it.
+ *
+ * The two games read differently on purpose. CPM2 is a slot grid (20 free, the
+ * 21st bought for coins, 15 more with the second garage). CPM1 has no slots:
+ * the dial is the whole catalog and one of each model fits.
  */
 export function CapacityGauge({
   cars,
   capacity,
   baseSlots,
+  game,
   compact = false,
 }: {
   cars: number;
   capacity: number;
   baseSlots: number;
+  game: GameType;
   compact?: boolean;
 }) {
-  const slots = Math.max(0, capacity - baseSlots);
+  const slotless = !GARAGE_RULES[game].hasSlots;
+  const slots = slotless ? 0 : Math.max(0, capacity - baseSlots);
   const atCapacity = cars >= capacity;
   const safe = Math.max(1, capacity);
   const ratio = Math.min(1, cars / safe);
@@ -53,13 +62,15 @@ export function CapacityGauge({
             strokeLinecap="round"
             className="stroke-ink/10"
           />
-          <path
-            d={arcPath(start, purchasedFrom)}
-            fill="none"
-            strokeWidth="8"
-            strokeLinecap="round"
-            className="stroke-brass/35"
-          />
+          {slots > 0 ? (
+            <path
+              d={arcPath(start, purchasedFrom)}
+              fill="none"
+              strokeWidth="8"
+              strokeLinecap="round"
+              className="stroke-brass/35"
+            />
+          ) : null}
           <path
             d={arcPath(start, angle)}
             fill="none"
@@ -86,7 +97,13 @@ export function CapacityGauge({
           {slots > 0 ? <span className="text-brass"> +{slots}</span> : null}
         </span>
         <p className="num whitespace-nowrap text-[10px] text-ink-faint">
-          {atCapacity ? "garage full" : `${capacity - cars} free`}
+          {slotless
+            ? atCapacity
+              ? "every model owned"
+              : `${capacity - cars} models free`
+            : atCapacity
+              ? "garage full"
+              : `${capacity - cars} free`}
         </p>
       </div>
 

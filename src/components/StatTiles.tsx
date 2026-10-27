@@ -102,12 +102,17 @@ export function StatTiles({ stats }: { stats: FleetStats | null }) {
           label="Fleet capacity"
           icon={ICONS.capacity}
           value={s ? `${formatNumber(s.totalCars)}/${formatNumber(s.totalCapacity)}` : "—"}
-          sub={s ? `${s.totalSlots} extra slot${s.totalSlots === 1 ? "" : "s"} owned` : "loading fleet"}
+          sub={
+            s
+              ? `${s.totalSlots} coin slot${s.totalSlots === 1 ? "" : "s"} owned · CPM1 holds every model`
+              : "loading fleet"
+          }
         />
       </section>
       <p className="sr-only">
-        Caps: cash {LIMITS.MAX_CASH}, coins {LIMITS.MAX_COINS}, editable base garage per account,
-        {LIMITS.MAX_PURCHASED_SLOTS} purchasable slots at {LIMITS.SLOT_COST_COINS} coins each.
+        Caps: cash {LIMITS.MAX_CASH}, coins {LIMITS.MAX_COINS}. CPM1 has no car slots and holds one of
+        each model; CPM2 holds {LIMITS.BASE_CAR_SLOTS} free slots, the 21st for {LIMITS.SLOT_COST_COINS}{" "}
+        coins, plus {LIMITS.NEW_GARAGE_SLOTS} slots with the {LIMITS.NEW_GARAGE_PRICE} garage.
       </p>
     </>
   );

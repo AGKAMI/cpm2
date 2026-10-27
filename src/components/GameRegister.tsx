@@ -323,7 +323,7 @@ export function GameRegister({ game }: { game: GameType }) {
             </span>
             <span className="num text-[10px] text-ink-faint">
               {formatNumber(cars)}/{formatNumber(capacity)} cars
-              {slots > 0 ? ` · ${slots} bought slot${slots === 1 ? "" : "s"}` : ""}
+              {slots > 0 ? ` · ${slots} coin slot${slots === 1 ? "" : "s"}` : ""}
               {carFilter ? ` · holding #${carFilter.carCode}` : ""}
             </span>
           </div>

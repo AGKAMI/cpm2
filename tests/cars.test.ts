@@ -20,19 +20,40 @@ const {
   fleetGarages,
   addGarageCar,
   removeGarageCar,
+  purchaseSlots,
   listEvents,
 } = await import("../src/lib/service.ts");
 const { closeDb, createDatabase } = await import("../src/lib/db.ts");
 const { ApiError } = await import("../src/lib/api.ts");
-const { carCapacity } = await import("../src/lib/constants.ts");
+const { garageCapacity } = await import("../src/lib/garage.ts");
 
 after(() => {
   closeDb();
   fs.rmSync(tmp, { recursive: true, force: true });
 });
 
-function makeAccount(email: string, baseSlots = 2, slots = 0) {
-  return createAccount({ email, password: "pw", cash: 0, coins: 0, cars: 0, baseSlots, slots });
+function makeAccount(email: string, baseSlots = 2, slots = 0, game = "cpm2") {
+  return createAccount({
+    email,
+    password: "pw",
+    cash: 0,
+    coins: 0,
+    cars: 0,
+    game,
+    baseSlots,
+    slots,
+  });
+}
+
+function cpm1Account(email: string) {
+  return createAccount({
+    email,
+    password: "pw",
+    game: "cpm1",
+    cash: 0,
+    coins: 0,
+    cars: 0,
+  });
 }
 
 function hasCode(fn: () => unknown, code: string) {
@@ -135,10 +156,10 @@ describe("car catalog", () => {
 
 describe("garage inventory", () => {
   it("starts empty with capacity from base slots plus purchased slots", () => {
-    const account = makeAccount("garage-empty@cpm2.gg", 3, 2);
+    const account = makeAccount("garage-empty@cpm2.gg", 3, 1);
     const garage = listGarage(account.id);
     assert.equal(garage.count, 0);
-    assert.equal(garage.capacity, carCapacity(3, 2));
+    assert.equal(garage.capacity, garageCapacity("cpm2", { baseSlots: 3, slots: 1, newGarage: false }));
     assert.deepEqual(garage.cars, []);
     assert.equal(garage.email, "garage-empty@cpm2.gg");
   });
@@ -283,6 +304,54 @@ describe("garage inventory", () => {
     assert.equal(garage.cars[0]?.carCode, 13);
 
     hasCode(() => addGarageCar(account.id, { carCode: 14 }), "NOT_FOUND");
+  });
+});
+
+describe("CPM1 garage (no slots, one of each model)", () => {
+  it("holds every model in the game and keeps no slots at all", () => {
+    const account = createAccount({
+      email: "cpm1-rules@cpm2.gg",
+      password: "pw",
+      game: "cpm1",
+      cars: 0,
+      baseSlots: 20,
+      slots: 1,
+    });
+
+    assert.equal(account.baseSlots, 0, "CPM1 has no slots to store");
+    assert.equal(account.slots, 0);
+    assert.equal(account.capacity, carsForGame("cpm1").length);
+    assert.equal(listGarage(account.id).capacity, carsForGame("cpm1").length);
+  });
+
+  it("refuses a second copy of the same model", () => {
+    const account = cpm1Account("cpm1-once@cpm2.gg");
+    const first = addGarageCar(account.id, { carCode: 13 });
+    assert.equal(first.carName, "2007 PEUGEOT 308");
+
+    hasCode(() => addGarageCar(account.id, { carCode: 13 }), "car_duplicate");
+    assert.equal(listGarage(account.id).count, 1);
+
+    // A different model of the same game is fine.
+    assert.equal(addGarageCar(account.id, { carCode: 14 }).carCode, 14);
+    assert.equal(listGarage(account.id).count, 2);
+  });
+
+  it("cannot buy a slot — there is no slot economy in CPM1", () => {
+    const account = cpm1Account("cpm1-noslots@cpm2.gg");
+    hasCode(() => purchaseSlots(account.id, { count: 1 }), "CPM1_HAS_NO_SLOTS");
+    assert.equal(listGarage(account.id).capacity, carsForGame("cpm1").length);
+  });
+
+  it("drops slot values when the game changes to CPM1", () => {
+    const account = makeAccount("cpm2-to-cpm1@cpm2.gg", 20, 1);
+    assert.equal(account.slots, 1);
+
+    const switched = updateAccount(account.id, { game: "cpm1" });
+    assert.equal(switched.game, "cpm1");
+    assert.equal(switched.baseSlots, 0);
+    assert.equal(switched.slots, 0);
+    assert.equal(switched.capacity, carsForGame("cpm1").length);
   });
 });
 

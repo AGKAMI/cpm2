@@ -107,6 +107,23 @@ export function normalizeImportRow(row: unknown): Record<string, unknown> {
     normalized.baseSlots = normalized.base_slots;
     delete normalized.base_slots;
   }
+  // The second garage is a flag: CSV exports it as 1/0, the schema wants a
+  // boolean. Anything else (true/false/yes/no) is understood too.
+  if ("new_garage" in normalized && !("newGarage" in normalized)) {
+    const raw = normalized.new_garage;
+    if (typeof raw === "string") {
+      const value = raw.trim().toLowerCase();
+      if (value === "") delete normalized.new_garage;
+      else if (["1", "true", "yes"].includes(value)) normalized.newGarage = true;
+      else if (["0", "false", "no"].includes(value)) normalized.newGarage = false;
+      else normalized.newGarage = raw;
+    } else if (typeof raw === "number") {
+      normalized.newGarage = raw !== 0;
+    } else {
+      normalized.newGarage = Boolean(raw);
+    }
+    delete normalized.new_garage;
+  }
 
   for (const field of NUMERIC_FIELDS) {
     const value = normalized[field];

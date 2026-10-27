@@ -76,7 +76,9 @@ export function GaragePanel({ account, readOnly = false, onChanged }: GaragePane
         <div>
           <h2 className="panel-title">Garage inventory</h2>
           <p className="num mt-1 text-[10px] text-ink-faint">
-            catalog cars logged to this account · separate from the cars count
+            {account.game === "cpm1"
+              ? "catalog cars logged to this account · one of each model"
+              : "catalog cars logged to this account · separate from the cars count"}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -85,6 +87,7 @@ export function GaragePanel({ account, readOnly = false, onChanged }: GaragePane
               cars={garage.count}
               capacity={garage.capacity}
               baseSlots={account.baseSlots}
+              game={account.game}
               compact
             />
           ) : null}

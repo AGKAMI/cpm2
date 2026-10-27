@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toaster";
 import { api, ApiRequestError } from "@/lib/client";
 import { carsForGame, searchCars, type CarEntry } from "@/lib/car-catalog";
-import { GAME_LABELS } from "@/lib/constants";
+import { GAME_LABELS, GARAGE_RULES } from "@/lib/constants";
 import type { GarageSummary } from "@/lib/types";
 
 type CarPickerModalProps = {
@@ -59,10 +59,14 @@ export function CarPickerModal({
   const full = garage.count >= garage.capacity;
   const free = Math.max(0, garage.capacity - garage.count);
   const ratio = garage.capacity > 0 ? Math.min(1, garage.count / garage.capacity) : 0;
+  // CPM1 holds one of each model: a model already in the garage cannot be
+  // parked twice, so those rows are closed off here instead of failing later.
+  const oneOfEach = !GARAGE_RULES[garage.game].allowDuplicateModels;
 
   async function add(entry: CarEntry) {
     if (full || busyCode !== null) return;
     const alreadyOwned = parked.get(entry.code) ?? 0;
+    if (oneOfEach && alreadyOwned > 0) return;
     setBusyCode(entry.code);
     setError(null);
     try {
@@ -88,7 +92,11 @@ export function CarPickerModal({
       open={open}
       onClose={onClose}
       title={`Add a ${GAME_LABELS[garage.game]} car`}
-      subtitle={`Searching the ${GAME_LABELS[garage.game]} catalog by code or name. Every car you park is logged to this account.`}
+      subtitle={
+        oneOfEach
+          ? `Searching the ${GAME_LABELS[garage.game]} catalog by code or name. CPM1 holds one of each model.`
+          : `Searching the ${GAME_LABELS[garage.game]} catalog by code or name. Every car you park is logged to this account.`
+      }
       width="max-w-2xl"
       footer={
         <Button variant="primary" onClick={onClose} type="button">
@@ -181,7 +189,10 @@ export function CarPickerModal({
             results.map((entry) => {
               const parkedCount = parked.get(entry.code) ?? 0;
               const working = busyCode === entry.code;
-              const disabled = full || busyCode !== null;
+              // One of each model (CPM1): the model is already parked, so the
+              // row is closed off rather than offering a duplicate.
+              const owned = oneOfEach && parkedCount > 0;
+              const disabled = full || busyCode !== null || owned;
               return (
                 <li key={entry.code}>
                   <button
@@ -189,10 +200,10 @@ export function CarPickerModal({
                     onClick={() => void add(entry)}
                     disabled={disabled}
                     aria-label={`Add ${
-                      parkedCount > 0 ? "another " : ""
+                      parkedCount > 0 && !oneOfEach ? "another " : ""
                     }#${entry.code} ${entry.name} to the garage`}
                     className={`flex w-full items-center gap-3 rounded-[12px] border border-transparent px-3 py-2.5 text-left transition-colors ${
-                      full
+                      full || owned
                         ? "cursor-not-allowed opacity-45"
                         : "cursor-pointer hover:border-racing/30 hover:bg-racing/6"
                     }`}
@@ -204,7 +215,11 @@ export function CarPickerModal({
                       {entry.name}
                     </span>
                     <span className="flex shrink-0 items-center gap-2">
-                      {parkedCount > 0 ? (
+                      {owned ? (
+                        <span className="rounded-full border border-ink/12 px-2 py-0.5 font-sans text-[9px] font-semibold uppercase tracking-[0.1em] text-ink-faint">
+                          owned
+                        </span>
+                      ) : parkedCount > 0 ? (
                         <span className="num rounded-full border border-ink/12 px-2 py-0.5 text-[9px] font-semibold tracking-[0.08em] text-ink-faint">
                           ×{parkedCount}
                         </span>
@@ -215,7 +230,7 @@ export function CarPickerModal({
                         <span className="font-sans text-[9px] font-semibold uppercase tracking-[0.12em] text-oxblood">
                           Full
                         </span>
-                      ) : (
+                      ) : owned ? null : (
                         <svg
                           viewBox="0 0 24 24"
                           className="h-4 w-4 text-racing"

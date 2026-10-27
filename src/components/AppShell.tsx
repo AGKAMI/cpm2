@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { AccountSummary } from "@/lib/types";
+import { LIMITS } from "@/lib/constants";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { AccountFormModal } from "@/components/AccountFormModal";
@@ -342,8 +343,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="rule-double mb-3" />
           <div className="flex flex-wrap items-baseline justify-between gap-3">
             <p className="num text-[10px] text-ink-faint">
-              Fleet Ledger · Car Parking Multiplayer 2 · custom base garage per account · 15 extra slots max ·
-              100 coins per slot
+              Fleet Ledger · Car Parking Multiplayer 2 · CPM1 has no car slots (one of each model) · CPM2:{" "}
+              {LIMITS.BASE_CAR_SLOTS} free + the 21st for {LIMITS.SLOT_COST_COINS} coins +{" "}
+              {LIMITS.NEW_GARAGE_SLOTS} with the {LIMITS.NEW_GARAGE_PRICE} garage
             </p>
             <p className="num text-[10px] text-ink-faint">passwords encrypted at rest · AES-256-GCM</p>
           </div>
@@ -364,7 +366,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   aria-current={active ? "page" : undefined}
                   className={`flex flex-1 flex-col items-center gap-1 rounded-full py-2.5 text-[10px] font-semibold transition-colors ${
                     active
-                      ? "bg-racing/12 text-racing shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]"
+                      ? "bg-racing/12 text-racing shadow-[inset_0_1px_0_color-mix(in_srgb,var(--color-edge)_14%,transparent)]"
                       : "text-ink-faint hover:text-ink-soft"
                   }`}
                 >

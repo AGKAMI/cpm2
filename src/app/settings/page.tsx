@@ -4,6 +4,7 @@ import { useFleet } from "@/components/FleetProvider";
 import { PageHeading } from "@/components/PageHeading";
 import { ThemeGallery } from "@/components/ThemeGallery";
 import { LIMITS, formatNumber } from "@/lib/constants";
+import { carsForGame } from "@/lib/car-catalog";
 
 const SHORTCUTS = [
   { keys: "N", action: "New account" },
@@ -28,16 +29,16 @@ export default function SettingsPage() {
         <dl className="flex flex-col">
           <Row label="Cash per account" value={formatNumber(LIMITS.MAX_CASH)} />
           <Row label="Coins per account" value={formatNumber(LIMITS.MAX_COINS)} />
-          <Row label="Base car slots" value={`${LIMITS.BASE_CAR_SLOTS} default · editable per account`} />
-          <Row
-            label="Extra slots per account"
-            value={`${LIMITS.MAX_PURCHASED_SLOTS} max (garage up to ${LIMITS.MAX_BASE_CAR_SLOTS + LIMITS.MAX_PURCHASED_SLOTS})`}
-          />
-          <Row label="Price of an extra slot" value={`${LIMITS.SLOT_COST_COINS} coins`} />
+          <Row label="CPM1 car slots" value="none · one of each model" />
+          <Row label="CPM1 garage size" value={`every model in the game (${carsForGame("cpm1").length})`} />
+          <Row label="CPM2 base slots" value={`${LIMITS.BASE_CAR_SLOTS} free · editable per account`} />
+          <Row label="CPM2 21st slot" value={`${LIMITS.SLOT_COST_COINS} coins (one per account)`} />
+          <Row label="CPM2 new garage" value={`${LIMITS.NEW_GARAGE_PRICE} · +${LIMITS.NEW_GARAGE_SLOTS} slots`} />
         </dl>
         <p className="mt-4 text-[11px] leading-snug text-ink-faint">
-          Every account carries its own base garage size — edit it from the account form when a profile has
-          more than the default. Slots can only be bought; the tracker charges the coins for you.
+          CPM1 has no slots at all: every model in the game can be owned, but only one of each. CPM2 is
+          slot-based — {LIMITS.BASE_CAR_SLOTS} free slots, the 21st bought for {LIMITS.SLOT_COST_COINS}{" "}
+          coins, and {LIMITS.NEW_GARAGE_SLOTS} more slots with the {LIMITS.NEW_GARAGE_PRICE} garage.
         </p>
       </section>
 

@@ -8,8 +8,12 @@ export type AccountSummary = {
   cash: number;
   coins: number;
   cars: number;
+  /** Free slots (CPM2 only — CPM1 has no slots). */
   baseSlots: number;
+  /** Coin-bought slots (CPM2's 21st slot only). */
   slots: number;
+  /** CPM2 only: the account owns the purchasable second garage (R299.99). */
+  newGarage: boolean;
   capacity: number;
   slotsValue: number;
   coinsSpentOnCars: number;
@@ -24,6 +28,7 @@ export type FleetEventType =
   | "updated"
   | "slots_removed"
   | "slots_purchased"
+  | "garage_upgraded"
   | "archived"
   | "deleted"
   | "export_performed"

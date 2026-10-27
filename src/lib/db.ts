@@ -1,7 +1,7 @@
 import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
-import type { GameType } from "./constants.ts";
+import { LIMITS, MAX_CARS, type GameType } from "./constants.ts";
 
 export type AccountRow = {
   id: number;
@@ -17,6 +17,8 @@ export type AccountRow = {
   coins_spent_on_cars: number;
   /** Which Car Parking Multiplayer title this account belongs to. */
   game: GameType;
+  /** CPM2 only: the account owns the purchasable second garage (R299.99). */
+  new_garage: number;
   created_at: string;
   updated_at: string;
 };
@@ -44,16 +46,21 @@ const ACCOUNT_COLUMNS = `
   archived     INTEGER NOT NULL DEFAULT 0,
   coins_spent_on_cars INTEGER NOT NULL DEFAULT 0,
   game         TEXT    NOT NULL DEFAULT 'cpm2',
+  new_garage   INTEGER NOT NULL DEFAULT 0,
   created_at   TEXT    NOT NULL,
   updated_at   TEXT    NOT NULL,
   CHECK (length(email) > 2 AND length(email) <= 254),
   CHECK (cash >= 0 AND cash <= 50000000),
   CHECK (coins >= 0 AND coins <= 30000),
   CHECK (base_slots >= 0 AND base_slots <= 999),
-  CHECK (cars >= 0 AND cars <= base_slots + slots),
-  CHECK (slots >= 0 AND slots <= 15),
+  CHECK (cars >= 0 AND cars <= CASE WHEN game = 'cpm1'
+      THEN ${MAX_CARS}
+      ELSE base_slots + slots + new_garage * ${LIMITS.NEW_GARAGE_SLOTS} END),
+  CHECK (slots >= 0 AND slots <= ${LIMITS.MAX_COIN_SLOTS}),
+  CHECK (new_garage IN (0, 1)),
   CHECK (coins_spent_on_cars >= 0),
-  CHECK (game IN ('cpm1', 'cpm2'))
+  CHECK (game IN ('cpm1', 'cpm2')),
+  CHECK (game <> 'cpm1' OR (base_slots = 0 AND slots = 0 AND new_garage = 0))
 `;
 
 /**
@@ -183,6 +190,11 @@ function migrate(db: Database.Database): void {
     );
   }
 
+  // The purchasable second garage (CPM2 only). Existing rows never owned it.
+  if (!columns.some((column) => column.name === "new_garage")) {
+    db.exec(`ALTER TABLE accounts ADD COLUMN new_garage INTEGER NOT NULL DEFAULT 0`);
+  }
+
   const garages = db.prepare(`PRAGMA table_info(account_cars)`).all() as { name: string }[];
   if (garages.length && !garages.some((column) => column.name === "game")) {
     db.exec(
@@ -191,12 +203,13 @@ function migrate(db: Database.Database): void {
     );
   }
 
-  // The v1 garage CHECK hard-coded `20 + slots`. SQLite cannot alter a CHECK,
-  // so rebuild the table once when that legacy constraint is still present.
+  // The garage CHECK is game-aware now (CPM1 has no slots, CPM2 has the coin
+  // slot and the second garage). SQLite cannot alter a CHECK, so the table is
+  // rebuilt once when the current constraint is still the old flat one.
   const table = db
     .prepare(`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'accounts'`)
     .get() as { sql: string } | undefined;
-  if (table && /cars\s*<=\s*20\s*\+\s*slots/i.test(table.sql)) {
+  if (table && !/CASE\s+WHEN\s+game\s*=\s*'cpm1'/i.test(table.sql)) {
     rebuildAccounts(db);
   }
 
@@ -212,21 +225,39 @@ function migrate(db: Database.Database): void {
 }
 
 function rebuildAccounts(db: Database.Database): void {
-  db.transaction(() => {
-    db.exec(`ALTER TABLE accounts RENAME TO accounts_legacy`);
-    db.exec(`DROP INDEX IF EXISTS idx_accounts_email`);
-    db.exec(`CREATE TABLE accounts (${ACCOUNT_COLUMNS})`);
-    db.exec(
-      `INSERT INTO accounts
-         (id, email, password_enc, cash, coins, cars, base_slots, slots, notes,
-          archived, coins_spent_on_cars, game, created_at, updated_at)
-       SELECT id, email, password_enc, cash, coins, cars, base_slots, slots, notes,
-              archived, coins_spent_on_cars, game, created_at, updated_at
-         FROM accounts_legacy`,
-    );
-    db.exec(`DROP TABLE accounts_legacy`);
-    db.exec(`CREATE UNIQUE INDEX idx_accounts_email ON accounts (email COLLATE NOCASE)`);
-  })();
+  // SQLite rewrites the foreign keys of OTHER tables when a table is renamed,
+  // so `account_cars` would end up pointing at the temporary `accounts_legacy`
+  // name — and dropping that table would then fail the FK check. Foreign keys
+  // off + legacy_alter_table keeps `account_cars` pointing at `accounts`.
+  db.pragma("foreign_keys = OFF");
+  db.pragma("legacy_alter_table = ON");
+  try {
+    db.transaction(() => {
+      db.exec(`ALTER TABLE accounts RENAME TO accounts_legacy`);
+      db.exec(`DROP INDEX IF EXISTS idx_accounts_email`);
+      db.exec(`CREATE TABLE accounts (${ACCOUNT_COLUMNS})`);
+      // CPM1 rows are copied with their slots zeroed: CPM1 has no slots, so a
+      // legacy row that still carries the CPM2 default (20 base) would fail the
+      // new "CPM1 has no slots" CHECK.
+      db.exec(
+        `INSERT INTO accounts
+           (id, email, password_enc, cash, coins, cars, base_slots, slots, notes,
+            archived, coins_spent_on_cars, game, new_garage, created_at, updated_at)
+         SELECT id, email, password_enc, cash, coins, cars,
+                CASE WHEN game = 'cpm1' THEN 0 ELSE base_slots END,
+                CASE WHEN game = 'cpm1' THEN 0 ELSE slots END,
+                notes, archived, coins_spent_on_cars, game,
+                CASE WHEN game = 'cpm1' THEN 0 ELSE new_garage END,
+                created_at, updated_at
+           FROM accounts_legacy`,
+      );
+      db.exec(`DROP TABLE accounts_legacy`);
+      db.exec(`CREATE UNIQUE INDEX idx_accounts_email ON accounts (email COLLATE NOCASE)`);
+    })();
+  } finally {
+    db.pragma("legacy_alter_table = OFF");
+    db.pragma("foreign_keys = ON");
+  }
 }
 
 function rebuildGarage(db: Database.Database): void {

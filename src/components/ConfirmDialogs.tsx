@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { LIMITS, carCapacity, formatNumber } from "@/lib/constants";
+import { LIMITS, formatNumber } from "@/lib/constants";
+import { garageCapacity } from "@/lib/garage";
 import type { AccountSummary } from "@/lib/types";
 
 type ExportConfirmProps = {
@@ -118,7 +119,11 @@ export function SlotPurchaseConfirmModal({
 
   const cost = count * LIMITS.SLOT_COST_COINS;
   const newSlots = account.slots + count;
-  const newCapacity = carCapacity(account.baseSlots, newSlots);
+  const newCapacity = garageCapacity(account.game, {
+    baseSlots: account.baseSlots,
+    slots: newSlots,
+    newGarage: account.newGarage,
+  });
   const balanceAfter = account.coins - cost;
 
   return (

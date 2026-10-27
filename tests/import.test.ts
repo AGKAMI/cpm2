@@ -125,13 +125,24 @@ describe("bulk import (json)", () => {
     // a restore replays history, it does not re-buy it
     const before = fleetStats().coinsLockedInSlots;
     const report = importAccounts(
-      { accounts: [{ email: "slotted@cpm2.gg", password: "x", coins: 1_000, slots: 3 }] },
+      { accounts: [{ email: "slotted@cpm2.gg", password: "x", coins: 1_000, slots: 1 }] },
       "json",
     );
     assert.equal(report.created, 1);
-    assert.equal(fleetStats().coinsLockedInSlots, before + 300);
+    assert.equal(fleetStats().coinsLockedInSlots, before + 100);
     const imported = listAccounts().find((a) => a.email === "slotted@cpm2.gg");
     assert.equal(imported!.coins, 1_000, "coins untouched by import");
+  });
+
+  it("imports the new garage flag", () => {
+    const report = importAccounts(
+      { accounts: [{ email: "garage-buy@cpm2.gg", password: "x", newGarage: true }] },
+      "json",
+    );
+    assert.equal(report.created, 1);
+    const imported = listAccounts().find((a) => a.email === "garage-buy@cpm2.gg");
+    assert.equal(imported?.newGarage, true);
+    assert.equal(imported?.capacity, 35);
   });
 });
 

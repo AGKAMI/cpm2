@@ -25,19 +25,59 @@ export function isGameType(value: string): value is GameType {
   return (GAMES as readonly string[]).includes(value);
 }
 
+/**
+ * The garage rules are PER GAME — one shared rule set would be wrong for both
+ * titles.
+ *
+ * CPM1 has NO car slots: the garage is not a numbered grid, so every model in
+ * the game can be owned — but only ONE of each model, because a duplicate model
+ * cannot exist in the same garage.
+ *
+ * CPM2 is slot-based: the stock garage holds 20 free slots, the 21st slot is a
+ * one-off unlock for 100 coins, and the purchasable second garage (R299.99)
+ * adds 15 more slots on top (36 in total).
+ */
+export const GARAGE_RULES = {
+  cpm1: {
+    /** CPM1 has no slots at all — nothing to buy, nothing to unlock. */
+    hasSlots: false,
+    /** One of each model: the same car code cannot be parked twice. */
+    allowDuplicateModels: false,
+  },
+  cpm2: {
+    hasSlots: true,
+    /** CPM2 garages hold duplicates — a fleet can own three of the same Supra. */
+    allowDuplicateModels: true,
+    /** Free slots in the stock garage. */
+    freeSlots: 20,
+    /** The 21st slot is the only one the game sells for coins. */
+    coinSlotsMax: 1,
+    /** Coin price of that one slot. */
+    coinSlotCost: 100,
+    /** Slots added by the purchasable second garage. */
+    newGarageSlots: 15,
+    /** What the second garage costs outside the game. */
+    newGaragePrice: "R299.99",
+  },
+} as const;
+
 export const LIMITS = {
   /** Maximum in-game cash a single account can hold. */
   MAX_CASH: 50_000_000,
   /** Maximum in-game coins a single account can hold. */
   MAX_COINS: 30_000,
-  /** Default free car slots every new account starts with (editable per account). */
-  BASE_CAR_SLOTS: 20,
+  /** Free car slots in a CPM2 garage (editable per account). CPM1 has none. */
+  BASE_CAR_SLOTS: GARAGE_RULES.cpm2.freeSlots,
   /** Upper bound for the per-account base garage size. */
   MAX_BASE_CAR_SLOTS: 999,
-  /** Maximum extra car slots a single account can own. */
-  MAX_PURCHASED_SLOTS: 15,
-  /** Coin price of one extra car slot. */
-  SLOT_COST_COINS: 100,
+  /** Coin-bought slots per account — CPM2's 21st slot, one only. */
+  MAX_COIN_SLOTS: GARAGE_RULES.cpm2.coinSlotsMax,
+  /** Coin price of the one coin-bought slot. */
+  SLOT_COST_COINS: GARAGE_RULES.cpm2.coinSlotCost,
+  /** Slots the purchasable CPM2 garage adds. */
+  NEW_GARAGE_SLOTS: GARAGE_RULES.cpm2.newGarageSlots,
+  /** Price of the purchasable CPM2 garage (real money, not coins). */
+  NEW_GARAGE_PRICE: GARAGE_RULES.cpm2.newGaragePrice,
   MAX_EMAIL_LENGTH: 254,
   MIN_PASSWORD_LENGTH: 1,
   MAX_PASSWORD_LENGTH: 128,
@@ -46,18 +86,18 @@ export const LIMITS = {
   MAX_IMPORT_ROWS: 1000,
 } as const;
 
-/** Total garage capacity for an account's base size plus purchased slots. */
-export function carCapacity(baseSlots: number, purchasedSlots: number): number {
-  return Math.max(0, Math.trunc(baseSlots || 0)) + Math.max(0, Math.trunc(purchasedSlots || 0));
-}
-
-/** Absolute ceiling on cars an account can ever hold. */
-export const MAX_CARS = LIMITS.MAX_BASE_CAR_SLOTS + LIMITS.MAX_PURCHASED_SLOTS;
-
-/** Coins that are locked up in purchased slots across every account. */
+/** Coins that are locked up in coin-bought slots across every account. */
 export function slotsLockedValue(purchasedSlots: number): number {
   return Math.max(0, Math.trunc(purchasedSlots || 0)) * LIMITS.SLOT_COST_COINS;
 }
+
+/**
+ * Absolute ceiling on the car counter of one account: the biggest CPM2 garage
+ * (999 base + the coin slot + the second garage). CPM1's ceiling is its
+ * catalog, which is far below this.
+ */
+export const MAX_CARS =
+  LIMITS.MAX_BASE_CAR_SLOTS + LIMITS.MAX_COIN_SLOTS + LIMITS.NEW_GARAGE_SLOTS;
 
 /** Drag racing classes, in the order they are shown. U is unlimited. */
 export const TROPHY_CLASSES = ["U", "S9", "S10", "S11", "S12", "S13"] as const;

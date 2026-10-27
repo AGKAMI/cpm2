@@ -37,7 +37,7 @@ function isApiError(err: unknown, code: string, status: number): boolean {
 }
 
 describe("review 1 · PATCH slot-economy bypass", () => {
-  it("rejects the exact repro: PATCH {slots:15,cars:35} on an account with 0 coins", () => {
+  it("rejects the exact repro: PATCH {slots:1,cars:21} on an account with 0 coins", () => {
     const account = createAccount({
       email: "bypass@cpm2.gg",
       password: "pw",
@@ -48,7 +48,7 @@ describe("review 1 · PATCH slot-economy bypass", () => {
     });
 
     assert.throws(
-      () => updateAccount(account.id, { slots: 15, cars: 35 }),
+      () => updateAccount(account.id, { slots: 1, cars: 21 }),
       (err: unknown) => isApiError(err, "SLOTS_PURCHASE_ONLY", 422),
     );
 
@@ -57,6 +57,20 @@ describe("review 1 · PATCH slot-economy bypass", () => {
     assert.equal(stored?.cars, 20);
     assert.equal(stored?.coins, 0);
     assert.equal(stored?.capacity, 20);
+  });
+
+  it("rejects a slot count the game does not sell", () => {
+    assert.throws(
+      () =>
+        createAccount({
+          email: "greedy@cpm2.gg",
+          password: "pw",
+          coins: 30_000,
+          cars: 20,
+          slots: 15,
+        }),
+      /Extra slots cannot exceed 1/,
+    );
   });
 
   it("rejects any slot increase through PATCH, even when the account can afford it", () => {
@@ -80,35 +94,35 @@ describe("review 1 · PATCH slot-economy bypass", () => {
       email: "shrink@cpm2.gg",
       password: "pw",
       coins: 5_000,
-      cars: 21,
-      slots: 3,
+      cars: 20,
+      slots: 1,
     });
 
-    const updated = updateAccount(account.id, { slots: 1 });
-    assert.equal(updated.slots, 1);
+    const updated = updateAccount(account.id, { slots: 0 });
+    assert.equal(updated.slots, 0);
     assert.equal(updated.coins, 5_000, "the game does not refund slot coins");
-    assert.equal(updated.capacity, 21);
+    assert.equal(updated.capacity, 20);
 
     const event = listEvents(80).find(
       (item) => item.email === "shrink@cpm2.gg" && item.type === "slots_removed",
     );
     assert.ok(event, "expected a slots_removed event");
-    assert.deepEqual(event.changes.slots, { from: 3, to: 1 });
+    assert.deepEqual(event.changes.slots, { from: 1, to: 0 });
   });
 
   it("refuses a slot decrease that would not fit the cars", () => {
     const account = createAccount({
       email: "overfull@cpm2.gg",
       password: "pw",
-      cars: 22,
-      slots: 2,
+      cars: 21,
+      slots: 1,
     });
 
     assert.throws(
-      () => updateAccount(account.id, { slots: 1 }),
+      () => updateAccount(account.id, { slots: 0 }),
       (err: unknown) => isApiError(err, "CAR_CAPACITY_EXCEEDED", 422),
     );
-    assert.equal(listAccounts().find((item) => item.id === account.id)?.slots, 2);
+    assert.equal(listAccounts().find((item) => item.id === account.id)?.slots, 1);
   });
 
   it("still sells slots through the purchase endpoint", () => {
@@ -120,10 +134,10 @@ describe("review 1 · PATCH slot-economy bypass", () => {
       slots: 0,
     });
 
-    const updated = purchaseSlots(account.id, { count: 2 });
-    assert.equal(updated.slots, 2);
-    assert.equal(updated.coins, 800);
-    assert.equal(updated.capacity, 22);
+    const updated = purchaseSlots(account.id, { count: 1 });
+    assert.equal(updated.slots, 1);
+    assert.equal(updated.coins, 900);
+    assert.equal(updated.capacity, 21);
   });
 
   it("rejects a purchase the account cannot afford (INSUFFICIENT_COINS)", () => {

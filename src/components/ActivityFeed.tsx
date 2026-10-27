@@ -9,6 +9,7 @@ const TYPES: Record<FleetEventType, { label: string; mark: string; text: string 
   updated: { label: "Edit", mark: "bg-blueprint", text: "text-blueprint" },
   slots_removed: { label: "Slots-", mark: "bg-brass/70", text: "text-brass" },
   slots_purchased: { label: "Slots", mark: "bg-brass", text: "text-brass" },
+  garage_upgraded: { label: "Garage", mark: "bg-brass", text: "text-brass" },
   archived: { label: "Archived", mark: "bg-oxblood", text: "text-oxblood" },
   deleted: { label: "Gone", mark: "bg-oxblood", text: "text-oxblood" },
   export_performed: { label: "Export", mark: "bg-blueprint", text: "text-blueprint" },

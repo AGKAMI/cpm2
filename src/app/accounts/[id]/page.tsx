@@ -12,7 +12,7 @@ import { GaragePanel } from "@/components/GaragePanel";
 import { TrophyCabinet } from "@/components/TrophyCabinet";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
-import { LIMITS, formatNumber } from "@/lib/constants";
+import { LIMITS, GARAGE_RULES, formatNumber } from "@/lib/constants";
 
 const STEPS = { cash: 1_000_000, coins: 1_000, cars: 1 } as const;
 
@@ -98,9 +98,11 @@ export default function AccountPage() {
             </Button>
           ) : (
             <>
-              <Button variant="outline" size="sm" onClick={() => shell.openSlotPurchase(account)}>
-                + Buy slot · 100c
-              </Button>
+              {GARAGE_RULES[account.game].hasSlots ? (
+                <Button variant="outline" size="sm" onClick={() => shell.openSlotPurchase(account)}>
+                  + Unlock 21st slot · 100c
+                </Button>
+              ) : null}
               <Button
                 variant="danger"
                 size="sm"
@@ -167,14 +169,32 @@ export default function AccountPage() {
                 cars={account.cars}
                 capacity={account.capacity}
                 baseSlots={account.baseSlots}
+                game={account.game}
               />
             </div>
-            <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-4">
-              <Fact label="Base slots" value={String(account.baseSlots)} />
-              <Fact label="Purchased" value={String(account.slots)} tone="text-brass" />
-              <Fact label="Capacity" value={String(account.capacity)} tone="text-racing" />
-              <Fact label="Slot value" value={`${formatNumber(slotValue)} coins`} tone="text-brass" />
-            </dl>
+            {GARAGE_RULES[account.game].hasSlots ? (
+              <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-4">
+                <Fact label="Base slots" value={String(account.baseSlots)} />
+                <Fact label="Coin slot" value={String(account.slots)} tone="text-brass" />
+                <Fact
+                  label="New garage"
+                  value={account.newGarage ? `+${LIMITS.NEW_GARAGE_SLOTS}` : "—"}
+                  tone="text-brass"
+                />
+                <Fact label="Capacity" value={String(account.capacity)} tone="text-racing" />
+              </dl>
+            ) : (
+              <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
+                <Fact label="Car slots" value="none" />
+                <Fact label="Models in game" value={String(account.capacity)} tone="text-racing" />
+                <Fact label="Per model" value="one only" tone="text-brass" />
+              </dl>
+            )}
+            <p className="mt-3 text-[11px] leading-snug text-ink-faint">
+              {GARAGE_RULES[account.game].hasSlots
+                ? `CPM2 garage: ${LIMITS.BASE_CAR_SLOTS} free slots, the 21st for ${LIMITS.SLOT_COST_COINS} coins, plus ${LIMITS.NEW_GARAGE_SLOTS} more with the ${LIMITS.NEW_GARAGE_PRICE} garage.`
+                : "CPM1 has no car slots — every model in the game can be owned, but only one of each."}
+            </p>
           </div>
         </section>
 
@@ -209,9 +229,11 @@ export default function AccountPage() {
             </dl>
             {!archived ? (
               <p className="mt-4 border-t border-ink/10 pt-3 text-[11px] leading-snug text-ink-faint">
-                {spendable >= LIMITS.SLOT_COST_COINS
-                  ? `${formatNumber(spendable)} coins are spendable — “+ Buy slot” above turns them into garage space.`
-                  : `You need ${LIMITS.SLOT_COST_COINS} coins to buy a slot for this account.`}
+                {!GARAGE_RULES[account.game].hasSlots
+                  ? "CPM1 has no car slots — there is nothing to buy, every model in the game fits once."
+                  : spendable >= LIMITS.SLOT_COST_COINS
+                    ? `${formatNumber(spendable)} coins are spendable — “+ Unlock 21st slot” above turns them into garage space.`
+                    : `You need ${LIMITS.SLOT_COST_COINS} coins to unlock the 21st slot for this account.`}
               </p>
             ) : null}
           </section>

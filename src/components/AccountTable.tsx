@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { AccountSummary, TrophySummary } from "@/lib/types";
-import { formatNumber } from "@/lib/constants";
+import { GARAGE_RULES, formatNumber } from "@/lib/constants";
 import { relativeTime } from "@/lib/format";
 import { CapacityGauge } from "@/components/CapacityGauge";
 import { PasswordCell } from "@/components/PasswordCell";
@@ -148,14 +148,19 @@ export function AccountTable({
                   />
                 </td>
                 <td className="px-2.5 py-3">
-                  <CapacityGauge cars={account.cars} capacity={account.capacity} baseSlots={account.baseSlots} />
-                  {archived ? null : (
+                  <CapacityGauge
+                    cars={account.cars}
+                    capacity={account.capacity}
+                    baseSlots={account.baseSlots}
+                    game={account.game}
+                  />
+                  {archived || !GARAGE_RULES[account.game].hasSlots ? null : (
                     <button
                       type="button"
                       onClick={() => onBuySlot(account)}
                       className="mt-1.5 inline-flex min-h-[24px] cursor-pointer items-center font-sans text-[11px] font-medium text-ink-faint transition hover:text-racing"
                     >
-                      + buy slot (100c)
+                      + unlock 21st slot (100c)
                     </button>
                   )}
                 </td>
@@ -289,16 +294,21 @@ export function AccountTable({
             </dl>
 
             <div className="mt-3">
-              <CapacityGauge cars={account.cars} capacity={account.capacity} baseSlots={account.baseSlots} />
+              <CapacityGauge
+                cars={account.cars}
+                capacity={account.capacity}
+                baseSlots={account.baseSlots}
+                game={account.game}
+              />
             </div>
 
-            {archived ? null : (
+            {archived || !GARAGE_RULES[account.game].hasSlots ? null : (
               <button
                 type="button"
                 onClick={() => onBuySlot(account)}
                 className="mt-3 w-full cursor-pointer rounded-full border border-racing/35 py-2 font-sans text-[11px] font-semibold text-racing transition-colors hover:bg-racing hover:text-paper"
               >
-                + Buy car slot · 100 coins
+                + Unlock the 21st slot · 100 coins
               </button>
             )}
           </article>

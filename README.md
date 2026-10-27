@@ -45,11 +45,15 @@ node scripts/telegram-bot.mjs status   # shows what is wired up
 - **In-app adaptation** — the console detects Telegram, calls `ready()` +
   `expand()` (no loading card, full height) and tracks the app's own paper
   colour in the webview header; in a normal browser it stays a plain site.
-- **Requests are signed** — every fetch carries `X-Telegram-Init-Data`
-  (Telegram's signed initData). `src/proxy.ts` verifies the signature against
-  the bot token before any logic runs: tampered/stale → `401
-  TELEGRAM_AUTH_INVALID`. Requests without the header (desktop window, LAN)
-  pass untouched, as today.
+- **The console is locked** — every page and API call passes a gate
+  (`src/proxy.ts`). Two keys open it: the console password (`APP_PASSWORD`)
+  for the desktop browser, or the mini app's signed initData — but ONLY from
+  the Telegram account that claimed the console. The first login from
+  Telegram asks for the password once and binds that Telegram user id as the
+  owner (stored in `data/telegram-owner.json`); from then on anyone else who
+  finds the bot sees a locked screen, even with a valid Telegram signature.
+  Sessions are HMAC-signed cookies valid for 30 days (`/api/auth/logout`
+  clears one). Password attempts are rate-limited.
 - **No bot backend** — the sync script only calls the Bot API once; there is
   no webhook and nothing else to keep running.
 
@@ -184,3 +188,5 @@ Set `CPM2_ENCRYPTION_KEY` (base64, 32 bytes) to use your own key instead of the 
 | `CPM2_KEY_PATH` | `data/.secret-key` | Where the encryption key lives |
 | `CPM2_ENCRYPTION_KEY` | — | Use your own base64 key instead of the key file |
 | `TELEGRAM_BOT_TOKEN` | — | The bot token for the Telegram Mini App (scripts/telegram-bot.mjs + proxy) |
+| `APP_PASSWORD` | — | The console password — gates the browser and the one-time Telegram owner claim |
+| `CPM2_OWNER_PATH` | `data/telegram-owner.json` | Where the bound Telegram owner id is stored |

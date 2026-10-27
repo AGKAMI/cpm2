@@ -25,6 +25,7 @@
  */
 
 import { ApiError } from "./api.ts";
+import { telegramOwnerId } from "./auth.ts";
 
 /** The request header that carries the raw initData to the server. */
 export const TELEGRAM_INIT_DATA_HEADER = "X-Telegram-Init-Data";
@@ -123,9 +124,25 @@ export async function verifyTelegramInitData(
 }
 
 /**
- * Guards one request: a `X-Telegram-Init-Data` header must be a real
- * Telegram signature for THIS bot; a missing header is allowed (local
- * context). Throws 401 TELEGRAM_AUTH_INVALID on anything forged or stale.
+ * The Telegram user id inside one raw initData string, or null when the
+ * `user` field is missing, malformed, or has no numeric id.
+ */
+export function initDataUserId(raw: string): number | null {
+  try {
+    const user = JSON.parse(new URLSearchParams(raw.trim()).get("user") ?? "null") as {
+      id?: unknown;
+    } | null;
+    return typeof user?.id === "number" && Number.isInteger(user.id) ? user.id : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Guards one request that claims to come from the mini app: the
+ * `X-Telegram-Init-Data` header must be a real Telegram signature for THIS
+ * bot AND come from the bound owner. A missing header is allowed (the session
+ * cookie path covers it). Throws on anything forged, stale, or foreign.
  */
 export async function assertTelegramAuth(request: Request): Promise<void> {
   const token = telegramBotToken();
@@ -134,10 +151,27 @@ export async function assertTelegramAuth(request: Request): Promise<void> {
   const initData = request.headers.get(TELEGRAM_INIT_DATA_HEADER);
   if (!initData) return;
 
-  if (await verifyTelegramInitData(initData, token)) return;
-  throw new ApiError(
-    401,
-    "TELEGRAM_AUTH_INVALID",
-    "The Telegram signature did not verify — reopen the console from Telegram and try again.",
-  );
+  if (!(await verifyTelegramInitData(initData, token))) {
+    throw new ApiError(
+      401,
+      "TELEGRAM_AUTH_INVALID",
+      "The Telegram signature did not verify — reopen the console from Telegram and try again.",
+    );
+  }
+
+  const owner = telegramOwnerId();
+  if (owner === null) {
+    // Nobody has claimed the console yet — that happens only through the
+    // password prompt on /login, never through bare API calls.
+    throw new ApiError(401, "AUTH_REQUIRED", "The console has no owner yet — claim it on the login screen.");
+  }
+
+  const userId = initDataUserId(initData);
+  if (userId !== owner) {
+    throw new ApiError(
+      403,
+      "TELEGRAM_NOT_OWNER",
+      "This console belongs to another Telegram account.",
+    );
+  }
 }

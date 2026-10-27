@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useFleet } from "@/components/FleetProvider";
 import { PageHeading } from "@/components/PageHeading";
 import { ThemeGallery } from "@/components/ThemeGallery";
+import { Button } from "@/components/ui/Button";
 import { LIMITS, formatNumber } from "@/lib/constants";
 import { carsForGame } from "@/lib/car-catalog";
 
@@ -19,6 +21,34 @@ const SHORTCUTS = [
 
 export default function SettingsPage() {
   const fleet = useFleet();
+  const [ownerLabel, setOwnerLabel] = useState("checking…");
+
+  // Whose Telegram account owns this console (read-only display; the binding
+  // itself only ever happens through the login screen's claim flow).
+  useEffect(() => {
+    void (async () => {
+      try {
+        const response = await fetch("/api/auth/owner");
+        const body = (await response.json().catch(() => null)) as
+          | { owner?: { userId: number | null } }
+          | null;
+        const id = body?.owner?.userId;
+        setOwnerLabel(id === null || id === undefined ? "not claimed yet" : `telegram id ${id}`);
+      } catch {
+        setOwnerLabel("unknown");
+      }
+    })();
+  }, []);
+
+  async function lockConsole() {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      // Full reload on purpose: the whole app must re-render unauthenticated.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.assign("/login");
+    }
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -66,6 +96,32 @@ export default function SettingsPage() {
       <section className="panel rounded-[20px] p-5 lg:col-span-2">
         <h2 className="panel-title mb-4">Appearance</h2>
         <ThemeGallery />
+      </section>
+
+      <section className="panel rounded-[20px] p-5">
+        <h2 className="panel-title mb-4">Access</h2>
+        <dl className="flex flex-col">
+          <Row label="Console lock" value="password + owner-bound Telegram" />
+          <Row label="Telegram owner" value={ownerLabel} mono={ownerLabel !== "not claimed yet"} />
+        </dl>
+        <div className="mt-4 border-t border-ink/10 pt-4">
+          <p className="text-[12px] leading-relaxed text-ink-soft">
+            Only your Telegram account can open the console from the bot — anyone else who finds it sees
+            a locked screen. The browser asks for the console password instead.
+          </p>
+          <Button
+            variant="danger"
+            size="sm"
+            className="mt-3"
+            onClick={lockConsole}
+          >
+            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <rect x="5" y="10.5" width="14" height="9.5" rx="2.5" />
+              <path d="M8 10.5V8a4 4 0 1 1 8 0v2.5" strokeLinecap="round" />
+            </svg>
+            Lock the console
+          </Button>
+        </div>
       </section>
 
       <section className="panel rounded-[20px] p-5">

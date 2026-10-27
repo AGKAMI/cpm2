@@ -1,27 +1,46 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { assertTelegramAuth } from "@/lib/telegram";
+import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
 import { errorPayload } from "@/lib/api";
 
 /**
- * The single choke point in front of the API.
+ * The single gate in front of the whole console.
  *
- * Requests that carry the Telegram Mini App's `X-Telegram-Init-Data` header
- * must carry a real Telegram signature for THIS bot — a forged or stale one
- * is refused with 401 before any business logic runs. Requests without the
- * header (the desktop window, the LAN, Tailscale) pass untouched, because the
- * tracker has no other auth layer and gating them here would break everything
- * that already works.
+ * Two keys open it:
+ * 1. a valid signed session cookie (desktop login, or a Telegram session the
+ *    login screen established), or
+ * 2. the Telegram initData header — verified against the bot token AND bound
+ *    to the owner's Telegram user id, so a stranger who finds the bot and
+ *    opens the mini app gets nothing but a locked screen.
+ *
+ * Everything else is refused: API calls get a JSON 401/403, page navigations
+ * are redirected to /login. /login itself, the /api/auth routes and static
+ * assets stay public so the lock screen can do its job.
  */
 export async function proxy(request: NextRequest) {
+  if (verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value)) {
+    return NextResponse.next();
+  }
+
   try {
     await assertTelegramAuth(request);
   } catch (err) {
     const { status, body } = errorPayload(err);
     return NextResponse.json(body, { status });
   }
-  return NextResponse.next();
+  if (request.headers.get("X-Telegram-Init-Data")) {
+    return NextResponse.next();
+  }
+
+  if (request.nextUrl.pathname.startsWith("/api/")) {
+    return NextResponse.json(
+      { error: { code: "AUTH_REQUIRED", message: "Sign in to use the console." } },
+      { status: 401 },
+    );
+  }
+  return NextResponse.redirect(new URL("/login", request.url));
 }
 
 export const config = {
-  matcher: ["/api/:path*"],
+  matcher: ["/((?!login|api/auth|_next|icon.svg|favicon.ico).*)"],
 };

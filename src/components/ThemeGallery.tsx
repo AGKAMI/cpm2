@@ -37,7 +37,7 @@ export function ThemeGallery() {
                 aria-pressed={active}
                 className={`cursor-pointer rounded-full px-3 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors ${
                   active
-                    ? "bg-racing/14 text-racing shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+                    ? "bg-racing/14 text-racing shadow-[inset_0_1px_0_color-mix(in_srgb,var(--color-edge)_12%,transparent)]"
                     : "text-ink-faint hover:text-ink"
                 }`}
               >
@@ -106,7 +106,7 @@ function PaletteCard({
         {swatches.map((color) => (
           <span
             key={color}
-            className="h-7 flex-1 rounded-[7px] border border-ink/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]"
+            className="h-7 flex-1 rounded-[7px] border border-ink/15 shadow-[inset_0_1px_0_color-mix(in_srgb,var(--color-edge)_18%,transparent)]"
             style={{ backgroundColor: color }}
           />
         ))}

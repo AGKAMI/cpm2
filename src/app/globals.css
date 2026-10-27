@@ -1,176 +1,204 @@
 @import "tailwindcss";
 
+/*
+   COLOR STRATEGY — restrained.
+   Graphite-slate neutrals carrying chroma <= 0.015 at hue ~262 (the titanium
+   brand axis), plus ONE accent (`racing`, <= 10% of the UI) over the car photo,
+   plus three semantic roles for state.
+
+   Roles (all values OKLCH; every color traces to a token here):
+   - surface   paper / paper-raised / paper-sunken — night ladder 15 / 20 / 25
+               lightness, higher elevations lighter; day 96.3 / 98.8 / 92.7.
+   - text      ink / ink-soft / ink-faint — primary / secondary / caption duty.
+   - accent    racing (+ racing-deep for pressed/deep gradient stops) — the
+               cabin light; switches per palette below, <= 10% of the UI.
+   - semantic  blueprint — structural/intinfo badges & borders; brass —
+               gain & possession (purchased slots); oxblood — alert /
+               capacity-full; silver / bronze — trophy metals (rank tiers).
+   - void/edge  void — shadow ink; edge — glass highlight white. Neither pure
+               black nor pure white anywhere in the system.
+
+   Every text-bearing pairing (ink ladder, all 8 palettes' primary/secondary
+   over all three surfaces in both modes, accent-button labels over the
+   racing->deep gradient top/mid/bottom) is verified >= 4.5:1.
+*/
 @theme {
   --font-display: var(--font-playfair), "Playfair Display", Georgia, serif;
   --font-sans: var(--font-archivo), "Segoe UI", sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, "Cascadia Mono", monospace;
 
-  /* Neutral graphite dash — no colour cast in the materials. */
-  --color-paper: #0a0c10;
-  --color-paper-raised: #12151b;
-  --color-paper-sunken: #181c23;
+  /* Graphite dash — a whisper of cool cast toward the titanium axis. */
+  --color-paper: oklch(0.15 0.008 262);
+  --color-paper-raised: oklch(0.2 0.01 262);
+  --color-paper-sunken: oklch(0.25 0.012 262);
 
-  /* Instrument white */
-  --color-ink: #f3f5f7;
-  --color-ink-soft: #a6aeb9;
-  --color-ink-faint: #7d8793;
+  /* Instrument white — barely tinted. */
+  --color-ink: oklch(0.969 0.005 250);
+  --color-ink-soft: oklch(0.755 0.014 257);
+  --color-ink-faint: oklch(0.66 0.015 254);
+
+  /* Shadow ink and glass highlight — stand-ins for #000/#fff. */
+  --color-void: oklch(0.145 0.01 262);
+  --color-edge: oklch(0.985 0.004 255);
 
   /* Titanium — the default single-tone accent. */
-  --color-racing: #dbe2ea;
-  --color-racing-deep: #aab6c4;
-  --color-brass: #e3c27c;
-  --color-oxblood: #ff6b6b;
-  --color-blueprint: #9aa7b8;
+  --color-racing: oklch(0.91 0.013 251.6);
+  --color-racing-deep: oklch(0.771 0.024 252.2);
+  --color-brass: oklch(0.827 0.096 85.2);
+  --color-oxblood: oklch(0.712 0.181 22.8);
+  --color-blueprint: oklch(0.724 0.029 255.1);
 
-  /* Trophy metals — readable on graphite */
-  --color-silver: #cbd2da;
-  --color-bronze: #d49a6a;
+  /* Trophy metals — readable on graphite. */
+  --color-silver: oklch(0.861 0.013 251.6);
+  --color-bronze: oklch(0.731 0.094 60.2);
 }
 
 /* Liquid-glass materials — neutral frosted layers that pick up the car photo. */
 :root {
   color-scheme: dark;
-  --glass-fill: color-mix(in srgb, #14171d 46%, transparent);
-  --glass-fill-soft: color-mix(in srgb, #14171d 34%, transparent);
+  --glass-fill: color-mix(in srgb, var(--color-paper-raised) 46%, transparent);
+  --glass-fill-soft: color-mix(in srgb, var(--color-paper-raised) 34%, transparent);
   --glass-tint: color-mix(in srgb, var(--color-racing) 7%, transparent);
   --glass-border: color-mix(in srgb, var(--color-blueprint) 30%, transparent);
   --glass-border-soft: color-mix(in srgb, var(--color-blueprint) 18%, transparent);
-  --glass-edge-top: color-mix(in srgb, #ffffff 38%, transparent);
-  --glass-edge-bottom: color-mix(in srgb, #000000 42%, transparent);
-  --glass-ridge: color-mix(in srgb, #ffffff 3.5%, transparent);
-  --glass-shadow: 0 30px 80px -40px rgba(0, 0, 0, 0.92);
-  --glass-shadow-hover: 0 40px 100px -42px rgba(0, 0, 0, 0.96);
-  --glass-dock-shadow: 0 32px 80px -26px rgba(0, 0, 0, 0.94);
-  --glass-sheet-shadow: 0 60px 160px -50px rgba(0, 0, 0, 0.96);
+  --glass-edge-top: color-mix(in srgb, var(--color-edge) 38%, transparent);
+  --glass-edge-bottom: color-mix(in srgb, var(--color-void) 42%, transparent);
+  --glass-ridge: color-mix(in srgb, var(--color-edge) 3.5%, transparent);
+  --glass-shadow: 0 30px 80px -40px color-mix(in srgb, var(--color-void) 92%, transparent);
+  --glass-shadow-hover: 0 40px 100px -42px color-mix(in srgb, var(--color-void) 96%, transparent);
+  --glass-dock-shadow: 0 32px 80px -26px color-mix(in srgb, var(--color-void) 94%, transparent);
+  --glass-sheet-shadow: 0 60px 160px -50px color-mix(in srgb, var(--color-void) 96%, transparent);
   --glass-blur: blur(28px) saturate(155%);
 }
 
 /* Daylight variant: the same neutral dash, lit from above. */
 [data-theme="paper"] {
   color-scheme: light;
-  --color-paper: #f1f3f5;
-  --color-paper-raised: #fafbfc;
-  --color-paper-sunken: #e4e7eb;
-  --color-ink: #101318;
-  --color-ink-soft: #4b5563;
-  --color-ink-faint: #68727e;
-  --color-racing: #3f4a57;
-  --color-racing-deep: #2a333e;
-  --color-brass: #86621a;
-  --color-oxblood: #b32636;
-  --color-blueprint: #5c6b7c;
-  --color-silver: #56636c;
-  --color-bronze: #8f4e27;
+  --color-paper: oklch(0.963 0.004 250);
+  --color-paper-raised: oklch(0.988 0.003 250);
+  --color-paper-sunken: oklch(0.927 0.006 255);
+  --color-ink: oklch(0.18 0.012 255);
+  --color-ink-soft: oklch(0.46 0.015 257);
+  --color-ink-faint: oklch(0.505 0.015 253);
+  --color-racing: oklch(0.405 0.026 252.8);
+  --color-racing-deep: oklch(0.317 0.023 253.6);
+  --color-brass: oklch(0.51 0.097 80.2);
+  --color-oxblood: oklch(0.504 0.176 20.7);
+  --color-blueprint: oklch(0.51 0.033 251.7);
+  --color-silver: oklch(0.492 0.022 238.2);
+  --color-bronze: oklch(0.494 0.102 49.5);
+  --color-void: oklch(0.18 0.012 258);
+  --color-edge: oklch(0.995 0.002 250);
 
-  --glass-fill: color-mix(in srgb, #ffffff 58%, transparent);
-  --glass-fill-soft: color-mix(in srgb, #ffffff 44%, transparent);
+  --glass-fill: color-mix(in srgb, var(--color-edge) 58%, transparent);
+  --glass-fill-soft: color-mix(in srgb, var(--color-edge) 44%, transparent);
   --glass-tint: color-mix(in srgb, var(--color-racing) 6%, transparent);
   --glass-border: color-mix(in srgb, var(--color-blueprint) 28%, transparent);
   --glass-border-soft: color-mix(in srgb, var(--color-blueprint) 16%, transparent);
-  --glass-edge-top: color-mix(in srgb, #ffffff 92%, transparent);
-  --glass-edge-bottom: color-mix(in srgb, #0b0d10 8%, transparent);
-  --glass-ridge: color-mix(in srgb, #ffffff 32%, transparent);
-  --glass-shadow: 0 26px 60px -40px rgba(0, 0, 0, 0.22);
-  --glass-shadow-hover: 0 34px 80px -44px rgba(0, 0, 0, 0.2);
-  --glass-dock-shadow: 0 24px 50px -28px rgba(0, 0, 0, 0.2);
-  --glass-sheet-shadow: 0 50px 120px -50px rgba(0, 0, 0, 0.24);
+  --glass-edge-top: color-mix(in srgb, var(--color-edge) 92%, transparent);
+  --glass-edge-bottom: color-mix(in srgb, var(--color-void) 8%, transparent);
+  --glass-ridge: color-mix(in srgb, var(--color-edge) 32%, transparent);
+  --glass-shadow: 0 26px 60px -40px color-mix(in srgb, var(--color-void) 22%, transparent);
+  --glass-shadow-hover: 0 34px 80px -44px color-mix(in srgb, var(--color-void) 20%, transparent);
+  --glass-dock-shadow: 0 24px 50px -28px color-mix(in srgb, var(--color-void) 20%, transparent);
+  --glass-sheet-shadow: 0 50px 120px -50px color-mix(in srgb, var(--color-void) 24%, transparent);
 }
 
-/* Accent palettes — keep in sync with src/lib/themes.ts. */
+/* Accent palettes — keep in sync with src/lib/themes.ts (swatch hex labels). */
 [data-palette="titanium"] {
-  --color-racing: #dbe2ea;
-  --color-racing-deep: #aab6c4;
-  --color-blueprint: #9aa7b8;
+  --color-racing: oklch(0.91 0.013 251.6);
+  --color-racing-deep: oklch(0.771 0.024 252.2);
+  --color-blueprint: oklch(0.724 0.029 255.1);
 }
 
 [data-theme="paper"][data-palette="titanium"] {
-  --color-racing: #3f4a57;
-  --color-racing-deep: #2a333e;
-  --color-blueprint: #5c6b7c;
+  --color-racing: oklch(0.405 0.026 252.8);
+  --color-racing-deep: oklch(0.317 0.023 253.6);
+  --color-blueprint: oklch(0.51 0.033 251.7);
 }
 
 [data-palette="ember"] {
-  --color-racing: #ffb35c;
-  --color-racing-deep: #d9822b;
-  --color-blueprint: #ffd8a8;
+  --color-racing: oklch(0.823 0.136 67.6);
+  --color-racing-deep: oklch(0.686 0.144 60.4);
+  --color-blueprint: oklch(0.904 0.076 72.4);
 }
 
 [data-theme="paper"][data-palette="ember"] {
-  --color-racing: #a85f0e;
-  --color-racing-deep: #7d4506;
-  --color-blueprint: #b97a2a;
+  --color-racing: oklch(0.52 0.126 60.1);
+  --color-racing-deep: oklch(0.449 0.102 60.2);
+  --color-blueprint: oklch(0.515 0.121 68.1);
 }
 
 [data-palette="crimson"] {
-  --color-racing: #ff5d6c;
-  --color-racing-deep: #c92f3f;
-  --color-blueprint: #ffb3b8;
+  --color-racing: oklch(0.695 0.196 18.5);
+  --color-racing-deep: oklch(0.552 0.189 20.9);
+  --color-blueprint: oklch(0.84 0.089 14.8);
 }
 
 [data-theme="paper"][data-palette="crimson"] {
-  --color-racing: #b31f33;
-  --color-racing-deep: #8a1526;
-  --color-blueprint: #c25660;
+  --color-racing: oklch(0.5 0.181 20.7);
+  --color-racing-deep: oklch(0.412 0.15 20.2);
+  --color-blueprint: oklch(0.53 0.139 16.7);
 }
 
 [data-palette="azure"] {
-  --color-racing: #6cc7ff;
-  --color-racing-deep: #2f8fd6;
-  --color-blueprint: #a8e0ff;
+  --color-racing: oklch(0.795 0.118 237.8);
+  --color-racing-deep: oklch(0.628 0.138 245.4);
+  --color-blueprint: oklch(0.879 0.072 232.9);
 }
 
 [data-theme="paper"][data-palette="azure"] {
-  --color-racing: #0e6fae;
-  --color-racing-deep: #0a5487;
-  --color-blueprint: #2a8bbd;
+  --color-racing: oklch(0.51 0.128 245.2);
+  --color-racing-deep: oklch(0.432 0.107 246.3);
+  --color-blueprint: oklch(0.505 0.115 236.3);
 }
 
 [data-palette="monaco"] {
-  --color-racing: #ff5a5f;
-  --color-racing-deep: #c92f3f;
-  --color-blueprint: #f2d6a2;
+  --color-racing: oklch(0.689 0.2 22.4);
+  --color-racing-deep: oklch(0.552 0.189 20.9);
+  --color-blueprint: oklch(0.887 0.074 82.7);
 }
 
 [data-theme="paper"][data-palette="monaco"] {
-  --color-racing: #c02434;
-  --color-racing-deep: #8f1725;
-  --color-blueprint: #9a6b1f;
+  --color-racing: oklch(0.53 0.19 22.1);
+  --color-racing-deep: oklch(0.423 0.153 21.6);
+  --color-blueprint: oklch(0.515 0.107 74.5);
 }
 
 [data-palette="solar"] {
-  --color-racing: #ff9f43;
-  --color-racing-deep: #d97706;
-  --color-blueprint: #5ad2ff;
+  --color-racing: oklch(0.785 0.154 60.7);
+  --color-racing-deep: oklch(0.666 0.157 58.3);
+  --color-blueprint: oklch(0.813 0.124 226.2);
 }
 
 [data-theme="paper"][data-palette="solar"] {
-  --color-racing: #b45c00;
-  --color-racing-deep: #8a4600;
-  --color-blueprint: #0b7fa8;
+  --color-racing: oklch(0.52 0.141 55.1);
+  --color-racing-deep: oklch(0.47 0.115 55.9);
+  --color-blueprint: oklch(0.5 0.109 230.3);
 }
 
 [data-palette="neon"] {
-  --color-racing: #ff5ccb;
-  --color-racing-deep: #c0268f;
-  --color-blueprint: #58e0ff;
+  --color-racing: oklch(0.723 0.227 342.6);
+  --color-racing-deep: oklch(0.554 0.211 344.7);
+  --color-blueprint: oklch(0.845 0.124 215.7);
 }
 
 [data-theme="paper"][data-palette="neon"] {
-  --color-racing: #b0177a;
-  --color-racing-deep: #850f5c;
-  --color-blueprint: #0a7f9e;
+  --color-racing: oklch(0.51 0.201 347.9);
+  --color-racing-deep: oklch(0.416 0.164 347.5);
+  --color-blueprint: oklch(0.5 0.101 223.3);
 }
 
 [data-palette="grandprix"] {
-  --color-racing: #e8c15a;
-  --color-racing-deep: #b8902f;
-  --color-blueprint: #ff6b6b;
+  --color-racing: oklch(0.825 0.129 88.5);
+  --color-racing-deep: oklch(0.674 0.121 85.4);
+  --color-blueprint: oklch(0.712 0.181 22.8);
 }
 
 [data-theme="paper"][data-palette="grandprix"] {
-  --color-racing: #8a651a;
-  --color-racing-deep: #6b4c0f;
-  --color-blueprint: #a62a38;
+  --color-racing: oklch(0.515 0.1 80.3);
+  --color-racing-deep: oklch(0.439 0.084 79);
+  --color-blueprint: oklch(0.485 0.159 19.6);
 }
 
 @layer base {
@@ -359,7 +387,7 @@
   .panel {
     position: relative;
     background:
-      linear-gradient(180deg, color-mix(in srgb, #ffffff 6%, transparent), transparent 42%),
+      linear-gradient(180deg, color-mix(in srgb, var(--color-edge) 6%, transparent), transparent 42%),
       radial-gradient(130% 110% at 12% 0%, var(--glass-tint) 0%, transparent 58%),
       repeating-linear-gradient(94deg, var(--glass-ridge) 0 1px, transparent 1px 8px),
       var(--glass-fill);
@@ -433,11 +461,11 @@
     letter-spacing: 0.035em;
     text-transform: uppercase;
     text-wrap: balance;
-    text-shadow: 0 2px 24px rgba(0, 0, 0, 0.45);
+    text-shadow: 0 2px 24px color-mix(in srgb, var(--color-void) 45%, transparent);
   }
 
   [data-theme="paper"] .display-title {
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+    text-shadow: 0 1px 0 color-mix(in srgb, var(--color-edge) 60%, transparent);
   }
 
   .num {
@@ -485,7 +513,7 @@
       inset 1px 0 0 color-mix(in srgb, var(--color-blueprint) 10%, transparent),
       inset -1px 0 0 color-mix(in srgb, var(--color-racing) 14%, transparent),
       inset 0 -1px 0 var(--glass-edge-bottom),
-      0 22px 50px -36px rgba(0, 0, 0, 0.92);
+      0 22px 50px -36px color-mix(in srgb, var(--color-void) 92%, transparent);
     transition: border-color 0.18s ease;
   }
 
@@ -525,7 +553,7 @@
     border-radius: 50%;
     border: 1px solid color-mix(in srgb, var(--color-racing) 38%, transparent);
     background:
-      radial-gradient(90% 90% at 32% 22%, color-mix(in srgb, #ffffff 30%, transparent), transparent 58%),
+      radial-gradient(90% 90% at 32% 22%, color-mix(in srgb, var(--color-edge) 30%, transparent), transparent 58%),
       color-mix(in srgb, var(--color-racing) 15%, transparent);
     -webkit-backdrop-filter: blur(12px) saturate(160%);
     backdrop-filter: blur(12px) saturate(160%);
@@ -535,9 +563,9 @@
     font-size: 11px;
     letter-spacing: 0.02em;
     box-shadow:
-      inset 0 1px 0 color-mix(in srgb, #ffffff 35%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--color-edge) 35%, transparent),
       inset 0 -8px 18px -12px color-mix(in srgb, var(--color-racing) 65%, transparent),
-      0 8px 22px -12px rgba(0, 0, 0, 0.9);
+      0 8px 22px -12px color-mix(in srgb, var(--color-void) 90%, transparent);
   }
 
   /* --- dark alloy number plate ---------------------------------------- */
@@ -557,7 +585,7 @@
     border: 1px solid color-mix(in srgb, var(--color-ink) 16%, transparent);
     box-shadow:
       inset 0 1px 0 color-mix(in srgb, var(--color-ink) 7%, transparent),
-      0 1px 2px rgba(0, 0, 0, 0.35);
+      0 1px 2px color-mix(in srgb, var(--color-void) 35%, transparent);
   }
 
   .plate::before,
@@ -646,8 +674,8 @@
     color: var(--color-ink);
     caret-color: var(--color-racing);
     box-shadow:
-      inset 0 1px 2px rgba(0, 0, 0, 0.24),
-      inset 0 -1px 0 color-mix(in srgb, #ffffff 5%, transparent);
+      inset 0 1px 2px color-mix(in srgb, var(--color-void) 24%, transparent),
+      inset 0 -1px 0 color-mix(in srgb, var(--color-edge) 5%, transparent);
     transition:
       border-color 0.15s ease,
       background-color 0.15s ease,
@@ -698,26 +726,26 @@
       linear-gradient(180deg, var(--glass-tint), transparent 60%),
       color-mix(in srgb, var(--color-ink) 6%, transparent);
     border-color: var(--glass-border-soft);
-    box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 12%, transparent);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-edge) 12%, transparent);
   }
 
   .tab-active {
     color: var(--color-racing);
     background:
-      linear-gradient(180deg, color-mix(in srgb, #ffffff 14%, transparent), transparent 60%),
+      linear-gradient(180deg, color-mix(in srgb, var(--color-edge) 14%, transparent), transparent 60%),
       color-mix(in srgb, var(--color-racing) 13%, transparent);
     border-color: color-mix(in srgb, var(--color-racing) 30%, transparent);
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     box-shadow:
-      inset 0 1px 0 color-mix(in srgb, #ffffff 18%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--color-edge) 18%, transparent),
       0 6px 16px -12px color-mix(in srgb, var(--color-racing) 50%, transparent);
   }
 
   .tab-active:hover {
     color: var(--color-racing);
     background:
-      linear-gradient(180deg, color-mix(in srgb, #ffffff 18%, transparent), transparent 60%),
+      linear-gradient(180deg, color-mix(in srgb, var(--color-edge) 18%, transparent), transparent 60%),
       color-mix(in srgb, var(--color-racing) 17%, transparent);
   }
 
@@ -735,8 +763,8 @@
     backdrop-filter: blur(34px) saturate(180%);
     border-bottom: 1px solid var(--glass-border-soft);
     box-shadow:
-      inset 0 1px 0 color-mix(in srgb, #ffffff 10%, transparent),
-      0 24px 60px -48px rgba(0, 0, 0, 0.95);
+      inset 0 1px 0 color-mix(in srgb, var(--color-edge) 10%, transparent),
+      0 24px 60px -48px color-mix(in srgb, var(--color-void) 95%, transparent);
   }
 
   .mobile-dock {
@@ -794,7 +822,7 @@
     border: 1px solid var(--glass-border-soft);
     box-shadow:
       inset 0 1px 0 color-mix(in srgb, var(--glass-edge-top) 75%, transparent),
-      0 10px 24px -18px rgba(0, 0, 0, 0.88);
+      0 10px 24px -18px color-mix(in srgb, var(--color-void) 88%, transparent);
   }
 
   .glass-control:hover {
@@ -804,21 +832,39 @@
       var(--glass-fill);
   }
 
+  /*
+     Accent surface — the one place the accent is allowed to be loud.
+     Night: glossy top (racing lifted toward edge-white; labels are the dark
+     paper ink, >= 7:1 at every stop). Day: flat dark accent — the white
+     sheen would push mid-tone accents (ember, solar, azure…) out from under
+     the light labels, so the sheen lives only in the inset edge highlight.
+  */
   .glass-accent {
     background:
-      repeating-linear-gradient(100deg, rgba(255, 255, 255, 0.12) 0 1px, transparent 1px 6px),
+      repeating-linear-gradient(100deg, color-mix(in srgb, var(--color-edge) 12%, transparent) 0 1px, transparent 1px 6px),
       linear-gradient(
         180deg,
-        color-mix(in srgb, var(--color-racing) 70%, #ffffff) 0%,
+        color-mix(in srgb, var(--color-racing) 70%, var(--color-edge)) 0%,
         var(--color-racing) 44%,
         var(--color-racing-deep) 100%
       );
     box-shadow:
-      inset 0 1px 0 color-mix(in srgb, #ffffff 55%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--color-edge) 55%, transparent),
       inset 1px 0 0 color-mix(in srgb, var(--color-blueprint) 20%, transparent),
       inset -1px 0 0 color-mix(in srgb, var(--color-brass) 18%, transparent),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.28),
+      inset 0 -1px 0 color-mix(in srgb, var(--color-void) 28%, transparent),
       0 14px 34px -14px color-mix(in srgb, var(--color-racing) 55%, transparent);
+  }
+
+  [data-theme="paper"] .glass-accent {
+    background:
+      repeating-linear-gradient(100deg, color-mix(in srgb, var(--color-edge) 12%, transparent) 0 1px, transparent 1px 6px),
+      linear-gradient(
+        180deg,
+        var(--color-racing) 0%,
+        color-mix(in srgb, var(--color-racing) 88%, var(--color-racing-deep)) 55%,
+        var(--color-racing-deep) 100%
+      );
   }
 
   @media (prefers-reduced-transparency: reduce) {

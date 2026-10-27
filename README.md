@@ -1,7 +1,7 @@
 # CPM2 // FLEET CONSOLE
 
-A local account tracker for **Car Parking Multiplayer 2**. Log every account you make, see who owns
-what, and never lose track of balances, coins, cars or purchased car slots.
+A local account tracker for **Car Parking Multiplayer 1 and 2**. Log every account you make, see who
+owns what, and never lose track of balances, coins, cars or car slots.
 
 - **Stack** — Next.js 16 (App Router) · React 19 · Tailwind v4 · SQLite (better-sqlite3)
 - **Data** — real SQLite file at `data/cpm2.db`, passwords encrypted at rest with AES-256-GCM
@@ -21,25 +21,65 @@ npm test                      # domain rules (node:test)
 npm run lint
 ```
 
+## Telegram Mini App (open the tracker from its own bot)
+
+The tracker is also a Telegram Mini App for its own bot — same app, same
+database, launched from the bot's ☰ menu button. The bot token lives in
+`.env.local` as `TELEGRAM_BOT_TOKEN` and is never committed or printed.
+
+The bot needs an HTTPS URL. Tailscale (already on this box) serves one for the
+PC over the tailnet, which is what the phone's Telegram reaches:
+
+```bash
+# 0. the fleet server is already running on 127.0.0.1:3457 (START CPM2 CONSOLE.bat)
+# 1. serve it as HTTPS on the tailnet (a real cert, once — survives reboots)
+tailscale serve --bg 443 http://127.0.0.1:3457
+
+# 2. point the bot's menu button at that URL
+node scripts/telegram-bot.mjs sync https://kami.tailc10831.ts.net
+
+# 3. in Telegram: open the bot → tap ☰ → the console runs
+node scripts/telegram-bot.mjs status   # shows what is wired up
+```
+
+- **In-app adaptation** — the console detects Telegram, calls `ready()` +
+  `expand()` (no loading card, full height) and tracks the app's own paper
+  colour in the webview header; in a normal browser it stays a plain site.
+- **Requests are signed** — every fetch carries `X-Telegram-Init-Data`
+  (Telegram's signed initData). `src/proxy.ts` verifies the signature against
+  the bot token before any logic runs: tampered/stale → `401
+  TELEGRAM_AUTH_INVALID`. Requests without the header (desktop window, LAN)
+  pass untouched, as today.
+- **No bot backend** — the sync script only calls the Bot API once; there is
+  no webhook and nothing else to keep running.
+
 ## Game rules the tracker enforces
+
+The two games do NOT share one garage rule — the tracker enforces each one separately.
 
 | Rule | Limit |
 | --- | --- |
 | Cash per account | 50,000,000 |
 | Coins per account | 30,000 |
-| Base car slots | 20 (free) |
-| Extra car slots | up to 15 per account |
-| Price of an extra slot | 100 coins (auto-deducted) |
+| CPM1 car slots | none — the garage holds every model in the game |
+| CPM1 per model | one only (a second copy is refused) |
+| CPM2 base car slots | 20 (free, editable per account) |
+| CPM2 21st slot | 100 coins (one per account) |
+| CPM2 new garage | R299.99 — adds 15 slots (36 in total) |
 
-Extra slots are bought from the account row (`+ BUY SLOT`) or the edit form — the coins come out of
-that account's balance, the garage grows to `20 + slots`, and the purchase is written to the log.
-The same limits are enforced three times over: zod validation in the API, SQLite `CHECK` constraints,
-and live counters in the UI.
+**CPM1 has no slots at all.** Every car in the game can be owned, but a model can only be owned
+once — parking a second copy is refused with `400 car_duplicate`. CPM1 accounts never store slot
+values, and buying a slot for one answers `422 CPM1_HAS_NO_SLOTS`.
+
+**CPM2 is slot-based.** The stock garage holds 20 free slots, the 21st slot is the only one the
+game sells for coins (100 coins, charged from the account balance), and the purchasable second
+garage (R299.99) adds 15 slots on top. The second garage is bought with real money, so the tracker
+records it as a flag on the account — tick **New garage** in the account form.
 
 ### Slot rules (read this before editing balances)
 
-- **Slots can only be bought.** `POST /api/accounts/{id}/slots` charges 100 coins per slot inside
-  one transaction. `PATCH` can never hand out a slot — it answers `422 SLOTS_PURCHASE_ONLY`.
+- **The 21st slot can only be bought.** `POST /api/accounts/{id}/slots` charges 100 coins inside one
+  transaction. `PATCH` can never hand out a slot — it answers `422 SLOTS_PURCHASE_ONLY`.
 - **Slots can be removed** (the game does not refund, so neither do we): the removal is written to
   the activity log as a `slots_removed` event and the balance stays untouched.
 - **Creating or importing an account may state how many slots it already owns.** That is a snapshot
@@ -64,8 +104,8 @@ and live counters in the UI.
 - **Settings** (`/settings`) — game limits, where the data lives, backup instructions, the
   paper/night theme switch and the keyboard map
 - **Fleet table** — inline ± steppers for cash/coins/cars, masked passwords with reveal + copy
-  (auto-remasks after 10s), per-account capacity gauge (cyan = base slots, amber = purchased
-  slots, red `FULL` flag at capacity)
+  (auto-remasks after 10s), per-account capacity gauge (cyan = base slots, amber = bought slots,
+  red `FULL` flag at capacity)
 - **Backups** — `CSV` and `JSON` export behind an explicit confirmation modal (the file contains
   every decrypted password) plus `POST /api/accounts/import` for restoring one
 - **Validation** — duplicate emails, blank passwords, oversized numbers, over-capacity garages and
@@ -106,7 +146,7 @@ dash. The choice is stored on the machine — switch it from the header or from 
 | `PATCH` | `/api/accounts/{id}` | Update — **cannot raise `slots`** |
 | `DELETE` | `/api/accounts/{id}` | Soft delete (archive) |
 | `POST` | `/api/accounts/{id}/restore` | Undo an archive |
-| `POST` | `/api/accounts/{id}/slots` | Buy slots (100 coins each, atomic) |
+| `POST` | `/api/accounts/{id}/slots` | Unlock the 21st slot (100 coins, atomic) |
 | `GET` | `/api/accounts/{id}/password` | Decrypt one password (audited) |
 | `GET` | `/api/accounts/{id}/trophies` | Trophies for every drag racing class |
 | `PUT` | `/api/accounts/{id}/trophies` | Set the gold/silver/bronze counts for one class |
@@ -118,7 +158,8 @@ dash. The choice is stored on the machine — switch it from the header or from 
 ## Files worth knowing
 
 ```
-src/lib/constants.ts   all limits + helpers (single source of truth)
+src/lib/constants.ts   all limits + per-game garage rules (single source of truth)
+src/lib/garage.ts      game-aware capacity (CPM1 models vs CPM2 slots)
 src/lib/validation.ts  zod schemas, shared by the API and the browser form
 src/lib/service.ts     business rules, transactions, audit log
 src/lib/crypto.ts      AES-256-GCM password encryption
@@ -142,3 +183,4 @@ Set `CPM2_ENCRYPTION_KEY` (base64, 32 bytes) to use your own key instead of the 
 | `CPM2_DB_PATH` | `data/cpm2.db` | Where the SQLite file lives |
 | `CPM2_KEY_PATH` | `data/.secret-key` | Where the encryption key lives |
 | `CPM2_ENCRYPTION_KEY` | — | Use your own base64 key instead of the key file |
+| `TELEGRAM_BOT_TOKEN` | — | The bot token for the Telegram Mini App (scripts/telegram-bot.mjs + proxy) |

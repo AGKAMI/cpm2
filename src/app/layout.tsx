@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Archivo, IBM_Plex_Mono, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { FleetProvider } from "@/components/FleetProvider";
 import { AppShell } from "@/components/AppShell";
+import { TelegramBridge } from "@/components/TelegramBridge";
 import { ToastProvider } from "@/components/ui/Toaster";
 import { DEFAULT_PALETTE, PALETTE_IDS } from "@/lib/themes";
 
@@ -37,7 +39,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#f1f3f5" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0c10" },
+    { media: "(prefers-color-scheme: dark)", color: "#090b0f" },
   ],
 };
 
@@ -58,10 +60,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="min-h-screen antialiased">
+        <Script
+          src="https://telegram.org/js/telegram-web-app.js"
+          strategy="beforeInteractive"
+        />
         <ToastProvider>
           <FleetProvider>
             <AppShell>{children}</AppShell>
           </FleetProvider>
+          {/* Silent adapter: only acts when the console runs inside Telegram. */}
+          <TelegramBridge />
         </ToastProvider>
       </body>
     </html>

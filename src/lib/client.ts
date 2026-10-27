@@ -26,9 +26,25 @@ export class ApiRequestError extends Error {
   }
 }
 
+/**
+ * The raw initData string, when the console runs as a Telegram Mini App
+ * (src/proxy.ts verifies its signature server-side). A browser outside
+ * Telegram has none, and the API treats that as the trusted local context it
+ * already is. Deliberately NOT imported from lib/telegram.ts — that file sits
+ * behind the zod-dependant server layer and must never reach this bundle.
+ */
+const TELEGRAM_INIT_DATA_HEADER = "X-Telegram-Init-Data";
+
+function telegramInitData(): string {
+  const webApp = window.Telegram?.WebApp;
+  return typeof webApp?.initData === "string" ? webApp.initData : "";
+}
+
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   if (init?.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+  const initData = telegramInitData();
+  if (initData) headers.set(TELEGRAM_INIT_DATA_HEADER, initData);
 
   let response: Response;
   try {

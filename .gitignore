@@ -42,6 +42,8 @@ next-env.d.ts
 
 # local database + encryption key + export dumps (never commit these)
 /data
+# stray DB copy from an old run at the repo root (the real one lives in /data)
+/cpm2.db
 /exports/
 *.cpm2-export.csv
 *.cpm2-export.json

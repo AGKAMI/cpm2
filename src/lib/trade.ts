@@ -1,4 +1,4 @@
-import { carsForGame } from "./car-catalog.ts";
+import { carsForGame, levenshtein } from "./car-catalog.ts";
 import type { GameType } from "./constants.ts";
 import type { CarMatch, TradePriceKind, TradeRates } from "./types.ts";
 
@@ -61,22 +61,6 @@ function normalizeName(name: string): string {
 
 function tokenSet(name: string): Set<string> {
   return new Set(normalizeName(name).split(" ").filter(Boolean));
-}
-
-function levenshtein(a: string, b: string): number {
-  if (a === b) return 0;
-  if (!a.length) return b.length;
-  if (!b.length) return a.length;
-  let previous = Array.from({ length: b.length + 1 }, (_, i) => i);
-  for (let i = 1; i <= a.length; i += 1) {
-    const current = [i];
-    for (let j = 1; j <= b.length; j += 1) {
-      const substitution = previous[j - 1]! + (a[i - 1] === b[j - 1] ? 0 : 1);
-      current.push(Math.min(previous[j]! + 1, current[j - 1]! + 1, substitution));
-    }
-    previous = current;
-  }
-  return previous[b.length]!;
 }
 
 /** 1 − edit-distance/length: 1 for identical strings, →0 for unrelated ones. */

@@ -477,17 +477,67 @@ export function carsForGame(game: GameType): CarEntry[] {
 }
 
 /**
- * Search by code prefix OR name substring (case-insensitive).
- * Pass `game` to restrict to one game; omit to search both.
- * Numeric query matches code prefix within the searched set.
+ * Edit distance between two strings — shared by the catalog search (typo
+ * tolerance) and the trade desk's Gemini name matcher.
+ */
+export function levenshtein(a: string, b: string): number {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  let previous = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i += 1) {
+    const current = [i];
+    for (let j = 1; j <= b.length; j += 1) {
+      const substitution = previous[j - 1]! + (a[i - 1] === b[j - 1] ? 0 : 1);
+      current.push(Math.min(previous[j]! + 1, current[j - 1]! + 1, substitution));
+    }
+    previous = current;
+  }
+  return previous[b.length]!;
+}
+
+/**
+ * Flexible catalog search. A car matches when ANY of these holds, best rank
+ * first:
+ * - numeric query → code prefix within the searched set (unchanged behaviour)
+ * - the whole query appears in the name ("land cruiser" → TOYOTA LAND CRUISER)
+ * - EVERY query token starts some word of the name — people search by
+ *   abbreviation: "def" → LAND ROVER DEFENDER, "must i" → FORD MUSTANG I
+ * - or every token is a near-miss of some word (Levenshtein ratio ≥ 0.7), so
+ *   one fat-fingered letter still finds the car ("defemder" → DEFENDER)
+ * Results are ordered by match rank, then by code.
  */
 export function searchCars(query: string, limit = 30, game?: GameType): CarEntry[] {
   const q = query.trim().toLowerCase();
   const pool = game ? carsForGame(game) : CAR_CATALOG;
   if (!q) return pool.slice(0, limit);
-  const isNumeric = /^\d+$/.test(q);
-  const hits = pool.filter((c) =>
-    isNumeric ? String(c.code).startsWith(q) : c.name.toLowerCase().includes(q),
-  );
-  return hits.slice(0, limit);
+  if (/^\d+$/.test(q)) {
+    return pool.filter((c) => String(c.code).startsWith(q)).slice(0, limit);
+  }
+
+  const tokens = q.split(/\s+/).filter(Boolean);
+  const scored: Array<{ entry: CarEntry; score: number }> = [];
+  for (const entry of pool) {
+    const name = entry.name.toLowerCase();
+    if (name.includes(q)) {
+      scored.push({ entry, score: 1 });
+      continue;
+    }
+    const words = name.split(/[^a-z0-9]+/).filter(Boolean);
+    if (tokens.every((token) => words.some((word) => word.startsWith(token)))) {
+      scored.push({ entry, score: 0.8 });
+      continue;
+    }
+    const fuzzy = tokens.every((token) =>
+      words.some(
+        (word) => 1 - levenshtein(token, word) / Math.max(token.length, word.length) >= 0.7,
+      ),
+    );
+    if (fuzzy) scored.push({ entry, score: 0.6 });
+  }
+
+  return scored
+    .sort((a, b) => b.score - a.score || a.entry.code - b.entry.code)
+    .slice(0, limit)
+    .map((match) => match.entry);
 }

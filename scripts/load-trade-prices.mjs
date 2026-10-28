@@ -99,6 +99,11 @@ const ENTRIES = [
   [226, "paid", 295.99], // BMW 7 SERIES (G70 / I7)
   [263, "paid", 410.99], // FORD MODEL A → catalog "FORD MODEL 1"
   [230, "paid", 246.99], // LAND ROVER DEFENDER 110 (2020+) — owner-identified code 230 (2026-10 update)
+  // --- From the second price pass (2026-10-29) — cars resolvable this time ---
+  [189, "coin", 1000], // FORD F-150 SVT RAPTOR
+  [164, "paid", 164.49], // CAN-AM MAVERICK X3 (UTV) — assumed: first buggy price → #164
+  [274, "paid", 131.49], // POLARIS RZR PRO XP (UTV) — assumed: second buggy price → #274
+  [165, "paid", 410.99], // SCUDERIA FERRARI F1 → catalog "F2" (only other F1 car)
 ];
 
 const RATES = { rand_per_coin: 328.99 / 10_000, rand_per_cash: 114.99 / 500_000 };

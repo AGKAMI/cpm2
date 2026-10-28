@@ -42,11 +42,9 @@ export function useShell(): ShellContextValue {
 }
 
 const NAV = [
-  { href: "/", label: "Overview", hint: "O" },
   { href: "/fleet/cpm1", label: "CPM1", hint: "1" },
   { href: "/fleet/cpm2", label: "CPM2", hint: "2" },
   { href: "/trade", label: "Trade", hint: "T" },
-  { href: "/activity", label: "Activity", hint: "A" },
   { href: "/settings", label: "Settings", hint: "S" },
 ];
 
@@ -72,25 +70,12 @@ function GameNavIcon({ badge }: { badge: string }) {
 }
 
 const NAV_ICONS: Record<string, ReactNode> = {
-  "/": (
-    <svg viewBox="0 0 24 24" className="h-[19px] w-[19px]" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-      <rect x="3.5" y="3.5" width="7" height="7" rx="2.2" />
-      <rect x="13.5" y="3.5" width="7" height="7" rx="2.2" />
-      <rect x="3.5" y="13.5" width="7" height="7" rx="2.2" />
-      <rect x="13.5" y="13.5" width="7" height="7" rx="2.2" />
-    </svg>
-  ),
   "/fleet/cpm1": <GameNavIcon badge="1" />,
   "/fleet/cpm2": <GameNavIcon badge="2" />,
   "/trade": (
     <svg viewBox="0 0 24 24" className="h-[19px] w-[19px]" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
       <path d="M4 8h13M14 4.5L17.5 8 14 11.5" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M20 16H7M10 12.5L6.5 16l3.5 3.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  ),
-  "/activity": (
-    <svg viewBox="0 0 24 24" className="h-[19px] w-[19px]" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-      <path d="M3 12h4l2.4-6 4.2 12 2.4-6h5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
   "/settings": (
@@ -108,7 +93,6 @@ const SHORTCUTS = [
   { keys: "G then 1", action: "Go to the CPM1 register" },
   { keys: "G then 2", action: "Go to the CPM2 register" },
   { keys: "G then T", action: "Go to the trade desk" },
-  { keys: "G then A", action: "Go to activity" },
   { keys: "G then S", action: "Go to settings" },
   { keys: "?", action: "Show this list" },
   { keys: "Esc", action: "Close a dialog" },
@@ -187,9 +171,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         if (key === "2") router.push("/fleet/cpm2");
         if (key === "f") router.push("/fleet");
         if (key === "t") router.push("/trade");
-        if (key === "a") router.push("/activity");
         if (key === "s") router.push("/settings");
-        if (key === "o") router.push("/");
         return;
       }
 
@@ -266,7 +248,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <header className="glass-header sticky top-0 z-30 overflow-hidden pt-[env(safe-area-inset-top)]">
           <div className="dial-sweep" aria-hidden />
           <div className="relative mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-6 gap-y-3 px-4 pb-3 pt-4 sm:px-6">
-            <Link href="/" className="flex items-center gap-3">
+            <Link href="/fleet/cpm2" className="flex items-center gap-3">
               <span className="roundel">
                 <svg
                   viewBox="0 0 24 24"

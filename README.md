@@ -92,19 +92,19 @@ records it as a flag on the account — tick **New garage** in the account form.
 
 ## What's in the box
 
-- **Overview** (`/`) — the spec strip, cash-by-account and garage-utilisation charts, the coin
-  ledger (free / locked in slots / spent on cars), an "needs attention" list (accounts at a cap,
-  full garages, archived rows) and the latest entries
 - **Fleet** (`/fleet`) — the register: search, filters, sortable columns, multi-select for bulk
   archiving, and an active/archived switch. The search, filter and sort live in the URL, so
-  `?q=kami&filter=full` is a bookmark you can share or reload
+  `?q=kami&filter=full` is a bookmark you can share or reload. `/` redirects to the CPM2
+  register — the app opens straight into the fleet
 - **Account page** (`/accounts/{id}`) — one account in full: balances with live steppers, the
   garage gauge, the credential cell, the coin ledger, the **drag racing trophy cabinet**, and that
   account's own history
 - **Trophy cabinet** — per account, per drag racing class (`U` unlimited, `S9`–`S13`), the count
   of gold / silver / bronze trophies. Steppers write straight to the ledger, every change is
   audited, and the fleet table shows a `4G 2S 1B` tally per account
-- **Activity** (`/activity`) — the permanent log, filterable by entry type and searchable
+- **Trade desk** (`/trade`) — the CPM2 deal calculator: cars + cash sweeteners on both sides,
+  valued through the editable price book, with a plain worth-it / fair / not-worth-it verdict.
+  Screenshot identification via Gemini (`GEMINI_API_KEY`)
 - **Settings** (`/settings`) — game limits, where the data lives, backup instructions, the
   paper/night theme switch and the keyboard map
 - **Fleet table** — inline ± steppers for cash/coins/cars, masked passwords with reveal + copy
@@ -131,7 +131,7 @@ records it as a flag on the account — tick **New garage** in the account form.
 | --- | --- |
 | `N` | new account |
 | `/` | jump to the fleet search |
-| `G` then `1` / `2` / `T` / `A` / `S` | go to CPM1 / CPM2 / trade desk / activity / settings |
+| `G` then `1` / `2` / `T` / `S` | go to CPM1 / CPM2 / trade desk / settings |
 | `?` | show the shortcut list |
 | `Esc` | close a dialog |
 

@@ -12,9 +12,9 @@ import { carsForGame } from "@/lib/car-catalog";
 const SHORTCUTS = [
   { keys: "N", action: "New account" },
   { keys: "/", action: "Search the fleet" },
-  { keys: "E", action: "Export the fleet" },
-  { keys: "G then F", action: "Go to fleet" },
-  { keys: "G then A", action: "Go to activity" },
+  { keys: "G then 1", action: "Go to the CPM1 register" },
+  { keys: "G then 2", action: "Go to the CPM2 register" },
+  { keys: "G then T", action: "Go to the trade desk" },
   { keys: "G then S", action: "Go to settings" },
   { keys: "?", action: "Show the shortcut list" },
   { keys: "Esc", action: "Close a dialog" },

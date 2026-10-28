@@ -47,3 +47,4 @@ next-env.d.ts
 /exports/
 *.cpm2-export.csv
 *.cpm2-export.json
+.firecrawl/

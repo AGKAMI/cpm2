@@ -32,7 +32,7 @@ export function cashValueRands(cash: number, rates: TradeRates): number {
 
 export type TradeVerdict = {
   status: "gain" | "fair" | "loss";
-  /** you minus them, in Rands — positive means you come out ahead. */
+  /** what you GET minus what you GIVE, in Rands — positive means you come out ahead. */
   delta: number;
 };
 
@@ -40,9 +40,13 @@ export type TradeVerdict = {
  * Compares both sides of a deal. A trade inside ±3% of the larger side is
  * "fair" — nobody wins a haggle to the last cent, and demanding exact
  * equality would flag every realistic deal.
+ *
+ * `youRands` is the value you HAND OVER, `themRands` what you RECEIVE, so
+ * positive delta (you get more) is a gain — trading a 5k-coin car for a
+ * 2.5k-coin one is a LOSS, the exact bug this argument order once produced.
  */
 export function tradeVerdict(youRands: number, themRands: number, tolerance = 0.03): TradeVerdict {
-  const delta = youRands - themRands;
+  const delta = themRands - youRands;
   const bigger = Math.max(Math.abs(youRands), Math.abs(themRands));
   if (bigger === 0 || Math.abs(delta) <= bigger * tolerance) {
     return { status: "fair", delta };

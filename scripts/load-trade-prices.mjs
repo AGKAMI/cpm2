@@ -42,6 +42,8 @@ const ENTRIES = [
   [181, "coin", 500], // FORD MUSTANG I FASTBACK 1964
   [200, "coin", 500], // DODGE DURANGO SRT
   [209, "coin", 1000], // LEXUS IS F
+  [104, "coin", 5000], // BMW M5 (F90) — owner-quoted in-game price
+  [103, "coin", 2500], // BMW M4 (F82) — owner-quoted in-game price
   [59, "coin", 1000], // SMART FORTWO
   [255, "coin", 500], // LEXUS IS250 / IS350
   [30, "coin", 1000], // BMW M5 E39 → catalog "BMW 5 SERIES (E39)"

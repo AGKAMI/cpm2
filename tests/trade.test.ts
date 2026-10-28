@@ -59,14 +59,21 @@ describe("trade verdict", () => {
     assert.equal(tradeVerdict(0, 0).status, "fair");
   });
 
-  it("calls a deal beyond the band in your favour", () => {
-    const verdict = tradeVerdict(1100, 900);
-    assert.equal(verdict.status, "gain");
-    assert.equal(verdict.delta, 200);
+  it("calls getting more than you give a gain — the F90/2.5k bug", () => {
+    // Give the 5k-coin car (≈R164.50), receive the 2.5k-coin one (≈R82.25):
+    // that must be a LOSS, never "worth it in your favour".
+    const robbed = tradeVerdict(164.5, 82.25);
+    assert.equal(robbed.status, "loss");
+    assert.ok(Math.abs(robbed.delta - -82.25) < 1e-9);
+
+    // The mirror: receive more than you give → gain.
+    const winning = tradeVerdict(900, 1100);
+    assert.equal(winning.status, "gain");
+    assert.equal(winning.delta, 200);
   });
 
   it("calls a deal beyond the band a loss, with the shortfall", () => {
-    const verdict = tradeVerdict(900, 1100);
+    const verdict = tradeVerdict(1100, 900);
     assert.equal(verdict.status, "loss");
     assert.equal(verdict.delta, -200);
   });

@@ -285,7 +285,7 @@ export function TradeDesk() {
             <path d="M7 12h.01M17 12h.01" strokeLinecap="round" />
           </svg>
           <label htmlFor={`${key}-cash`} className="shrink-0 text-[11px] text-ink-soft">
-            Cash sweetener
+            {key === "you" ? "Cash you add" : "Cash they add"}
           </label>
           <input
             id={`${key}-cash`}

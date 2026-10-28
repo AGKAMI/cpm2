@@ -36,12 +36,6 @@ function formatRands(value: number): string {
   return `R${rounded.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
 }
 
-function formatRate(value: number): string {
-  if (!Number.isFinite(value) || value <= 0) return "not set";
-  if (value >= 0.01) return `R${value.toFixed(4).replace(/\.?0+$/, "")}`;
-  return `R${value.toPrecision(3)}`;
-}
-
 function priceLabel(entry: TradePrice): string {
   if (entry.kind === "paid") return formatRands(entry.price);
   if (entry.kind === "coin") return `${formatNumber(entry.price)} coins`;
@@ -62,14 +56,6 @@ export function TradeDesk() {
   const [priceKind, setPriceKind] = useState<TradePriceKind>("paid");
   const [priceAmount, setPriceAmount] = useState("");
   const [savingPrice, setSavingPrice] = useState(false);
-
-  // Rate pack editor — the owner thinks in packs ("R29.99 buys 980 coins"),
-  // the store keeps a per-unit rate.
-  const [coinPackRands, setCoinPackRands] = useState("");
-  const [coinPackCoins, setCoinPackCoins] = useState("");
-  const [cashPackRands, setCashPackRands] = useState("");
-  const [cashPackCash, setCashPackCash] = useState("");
-  const [savingRates, setSavingRates] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -101,12 +87,9 @@ export function TradeDesk() {
       ...current,
       [side]: { ...current[side], cars: [...current[side].cars, code] },
     }));
-    if (!prices.get(code)) {
-      // Unpriced car — open the one-time price form right away.
-      setPricingCode(code);
-      setPriceKind("paid");
-      setPriceAmount("");
-    }
+    // No forced price entry — an unpriced car just shows as "no price on
+    // record" and the verdict carries a rough-call caveat. Recording a price
+    // is optional, one tap on the car row, and saved to the book forever.
   }
 
   function removeCar(side: SideKey, code: number) {
@@ -145,44 +128,6 @@ export function TradeDesk() {
     }
   }
 
-  async function saveRates() {
-    const coinRands = Number(coinPackRands);
-    const coinUnits = Number(coinPackCoins);
-    const cashRands = Number(cashPackRands);
-    const cashUnits = Number(cashPackCash);
-    const nextRates: TradeRates = { ...rates };
-
-    if (coinPackRands !== "" || coinPackCoins !== "") {
-      if (!Number.isFinite(coinRands) || coinRands < 0 || !Number.isFinite(coinUnits) || coinUnits <= 0) {
-        toast.error("Coins pack looks wrong", "Fill in both the Rand price and the coin amount.");
-        return;
-      }
-      nextRates.randPerCoin = coinRands / coinUnits;
-    }
-    if (cashPackRands !== "" || cashPackCash !== "") {
-      if (!Number.isFinite(cashRands) || cashRands < 0 || !Number.isFinite(cashUnits) || cashUnits <= 0) {
-        toast.error("Cash pack looks wrong", "Fill in both the Rand price and the cash amount.");
-        return;
-      }
-      nextRates.randPerCash = cashRands / cashUnits;
-    }
-
-    setSavingRates(true);
-    try {
-      const { rates: saved } = await api.setTradeRates(nextRates);
-      setRates(saved);
-      setCoinPackRands("");
-      setCoinPackCoins("");
-      setCashPackRands("");
-      setCashPackCash("");
-      toast.success("Rates saved", "Every deal on the desk is now valued at the new rates.");
-    } catch (err) {
-      toast.error("Could not save the rates", err instanceof ApiRequestError ? err.message : "Try again.");
-    } finally {
-      setSavingRates(false);
-    }
-  }
-
   const valued = useMemo(() => {
     function evaluate(side: Side) {
       let total = cashValueRands(side.cash, rates);
@@ -206,6 +151,7 @@ export function TradeDesk() {
   const leanBase = Math.max(valued.you.total, valued.them.total);
   const leanPct = leanBase > 0 ? Math.round((Math.abs(verdict.delta) / leanBase) * 100) : 0;
   const incomplete = valued.you.unpriced + valued.them.unpriced > 0;
+  const unpricedCount = valued.you.unpriced + valued.them.unpriced;
 
   function renderSide(key: SideKey) {
     const side = sides[key];
@@ -367,73 +313,6 @@ export function TradeDesk() {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Rates — the two conversion facts every valuation flows through. */}
-      <section className="panel-tight rounded-[18px] px-4 py-4">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <span className="label-caps">Conversion rates</span>
-          <span className="num text-[11px] text-ink-faint">
-            1 coin = {formatRate(rates.randPerCoin)} · 1 cash = {formatRate(rates.randPerCash)}
-          </span>
-        </div>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <div className="flex items-center gap-2">
-            <span className="shrink-0 text-[11px] text-ink-soft">R</span>
-            <input
-              type="number"
-              min={0}
-              step="any"
-              value={coinPackRands}
-              onChange={(event) => setCoinPackRands(event.target.value)}
-              placeholder="29.99"
-              aria-label="Coin pack price in Rands"
-              className="field-rule num w-24 px-3 py-1.5 text-[12px]"
-            />
-            <span className="shrink-0 text-[11px] text-ink-soft">buys</span>
-            <input
-              type="number"
-              min={0}
-              step="any"
-              value={coinPackCoins}
-              onChange={(event) => setCoinPackCoins(event.target.value)}
-              placeholder="980"
-              aria-label="Coins per pack"
-              className="field-rule num w-24 px-3 py-1.5 text-[12px]"
-            />
-            <span className="shrink-0 text-[11px] text-ink-soft">coins</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="shrink-0 text-[11px] text-ink-soft">R</span>
-            <input
-              type="number"
-              min={0}
-              step="any"
-              value={cashPackRands}
-              onChange={(event) => setCashPackRands(event.target.value)}
-              placeholder="49.99"
-              aria-label="Cash pack price in Rands"
-              className="field-rule num w-24 px-3 py-1.5 text-[12px]"
-            />
-            <span className="shrink-0 text-[11px] text-ink-soft">buys</span>
-            <input
-              type="number"
-              min={0}
-              step="any"
-              value={cashPackCash}
-              onChange={(event) => setCashPackCash(event.target.value)}
-              placeholder="20000000"
-              aria-label="Cash per pack"
-              className="field-rule num w-28 px-3 py-1.5 text-[12px]"
-            />
-            <span className="shrink-0 text-[11px] text-ink-soft">cash</span>
-          </div>
-        </div>
-        <div className="mt-3">
-          <Button variant="outline" size="sm" onClick={() => void saveRates()} disabled={savingRates || loading}>
-            Save rates
-          </Button>
-        </div>
-      </section>
-
       <div className="grid gap-4 lg:grid-cols-2">
         {renderSide("you")}
         {renderSide("them")}
@@ -458,11 +337,23 @@ export function TradeDesk() {
             Put cars on both sides — the desk prices the deal in Rands and tells you straight if it robs you.
           </p>
         ) : incomplete ? (
-          <p className="text-[13px] text-oxblood">
-            {valued.you.unpriced + valued.them.unpriced} car
-            {valued.you.unpriced + valued.them.unpriced === 1 ? " has" : "s have"} no price yet — set{" "}
-            {valued.you.unpriced + valued.them.unpriced === 1 ? "it" : "them"} before trusting the verdict.
-          </p>
+          <>
+            <p className="num text-[11px] uppercase tracking-[0.18em] text-ink-faint">
+              Rough call · {unpricedCount} unpriced
+            </p>
+            <p
+              className={`display-title mt-1 text-[28px] leading-none sm:text-[34px] ${
+                verdict.status === "loss" ? "text-oxblood/70" : verdict.status === "gain" ? "text-racing/70" : "text-ink/60"
+              }`}
+            >
+              {verdict.status === "gain" ? "Worth it" : verdict.status === "loss" ? "Not worth it" : "Fair trade"}
+            </p>
+            <p className="mt-2 text-[12px] text-ink-soft">
+              {unpricedCount === 1
+                ? "1 car has no price on record — record it once (tap it) and this becomes a final verdict."
+                : `${unpricedCount} cars have no price on record — record them once (tap each) and this becomes final.`}
+            </p>
+          </>
         ) : (
           <>
             <p className="num text-[11px] uppercase tracking-[0.18em] text-ink-faint">The verdict</p>

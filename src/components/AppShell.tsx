@@ -49,29 +49,23 @@ const NAV = [
 ];
 
 /**
- * Fleet nav icon for one game — the car glyph with the game number as a
- * badge. Two identical car icons would not tell the games apart at a glance,
- * which is the whole point of splitting the registers.
+ * Fleet nav icon for one game — the car glyph. The registers sit side by side
+ * and the text label does the distinguishing.
  */
-function GameNavIcon({ badge }: { badge: string }) {
+function GameNavIcon() {
   return (
-    <span className="relative inline-flex h-[19px] w-[19px] items-center justify-center">
-      <svg viewBox="0 0 24 24" className="h-[19px] w-[19px]" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-        <path d="M4 13l1.5-4.5A2 2 0 017.4 7h9.2a2 2 0 011.9 1.5L20 13" strokeLinecap="round" />
-        <path d="M3.5 13h17v4.5h-17z" strokeLinejoin="round" />
-        <circle cx="7" cy="17.5" r="1.6" />
-        <circle cx="17" cy="17.5" r="1.6" />
-      </svg>
-      <span className="num absolute -right-1.5 -top-1.5 grid h-3 min-w-3 place-items-center rounded-full border border-ink/25 bg-paper px-0.5 text-[7px] font-bold leading-none text-ink">
-        {badge}
-      </span>
-    </span>
+    <svg viewBox="0 0 24 24" className="h-[19px] w-[19px]" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+      <path d="M4 13l1.5-4.5A2 2 0 017.4 7h9.2a2 2 0 011.9 1.5L20 13" strokeLinecap="round" />
+      <path d="M3.5 13h17v4.5h-17z" strokeLinejoin="round" />
+      <circle cx="7" cy="17.5" r="1.6" />
+      <circle cx="17" cy="17.5" r="1.6" />
+    </svg>
   );
 }
 
 const NAV_ICONS: Record<string, ReactNode> = {
-  "/fleet/cpm1": <GameNavIcon badge="1" />,
-  "/fleet/cpm2": <GameNavIcon badge="2" />,
+  "/fleet/cpm1": <GameNavIcon />,
+  "/fleet/cpm2": <GameNavIcon />,
   "/trade": (
     <svg viewBox="0 0 24 24" className="h-[19px] w-[19px]" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
       <path d="M4 8h13M14 4.5L17.5 8 14 11.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -304,9 +298,13 @@ export function AppShell({ children }: { children: ReactNode }) {
 
               <ThemeMenu />
 
-              <Button variant="primary" size="sm" onClick={openNewAccount}>
-                + Add account
-              </Button>
+              {/* Adding an account only makes sense inside a register —
+                  the button lives there, not in every corner of the app. */}
+              {pathname.startsWith("/fleet") ? (
+                <Button variant="primary" size="sm" onClick={openNewAccount}>
+                  + Add account
+                </Button>
+              ) : null}
             </div>
           </div>
           <div className="rule-double mx-auto max-w-[1440px]" />

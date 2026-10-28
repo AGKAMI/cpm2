@@ -157,8 +157,10 @@ they are personal money. The desk compares both sides and verdicts plainly:
 no Rand totals on screen; the Rand math stays under the hood.
 
 The price book and the rates live in the database (`trade_prices`,
-`trade_rates`) and are edited in the app — nothing is hardcoded. An unpriced
-car asks for its kind and price once, then remembers it.
+`trade_rates`) — nothing is hardcoded, and rates are seeded from the store-pack
+anchors. An unpriced car never blocks the deal: the desk calls it a **rough
+verdict** with an unpriced-count caveat, and an optional one-tap "record price"
+adds the car to the book permanently.
 
 **Screenshot identification** uses Gemini (`gemini-2.5-flash`, server-side
 only). Put a free key from aistudio.google.com in `.env.local` as

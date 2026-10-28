@@ -14,15 +14,15 @@ import type { CarMatch, TradePriceKind, TradeRates } from "./types.ts";
  * - a PAID car is bought with real money → its Rand price IS its value
  * - a COIN car's value flows through the coins→Rands rate (coins are personal
  *   money, never a trade currency — they cannot sweeten a deal)
- * - a CASH-SHOP car is grindable in-game, so it carries no real value → R0.
- *   In-game CASH can still sweeten a deal (players price trades in cash, and
- *   cash is buyable with Rands) — see cashValueRands.
+ * - a CASH car's value flows through the cash→Rands rate — in-game cash is
+ *   grindable but also buyable with real money, so a cash price has a real
+ *   cost. In-game CASH can likewise sweeten a deal — see cashValueRands.
  */
 export function carValueRands(kind: TradePriceKind, price: number, rates: TradeRates): number {
   const safePrice = Math.max(0, price);
   if (kind === "paid") return safePrice;
   if (kind === "coin") return safePrice * Math.max(0, rates.randPerCoin);
-  return 0;
+  return safePrice * Math.max(0, rates.randPerCash);
 }
 
 /** Rand value of in-game cash offered as a trade sweetener. */

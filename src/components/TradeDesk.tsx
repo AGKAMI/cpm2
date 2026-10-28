@@ -28,7 +28,7 @@ type Side = {
 const KIND_LABELS: Record<TradePriceKind, string> = {
   paid: "Paid",
   coin: "Coin",
-  cash: "Cash shop",
+  cash: "Cash",
 };
 
 function formatRands(value: number): string {

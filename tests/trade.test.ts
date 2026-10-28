@@ -37,8 +37,9 @@ describe("car valuation", () => {
     assert.equal(carValueRands("coin", 1000, rates), 30);
   });
 
-  it("values a cash-shop car at nothing — it is grindable", () => {
-    assert.equal(carValueRands("cash", 25_000_000, rates), 0);
+  it("values a cash car through the cash rate", () => {
+    // Float-tolerant: 25M × 0.0000025 lands a hair off 62.5 in IEEE doubles.
+    assert.ok(Math.abs(carValueRands("cash", 25_000_000, rates) - 62.5) < 1e-9);
   });
 
   it("never returns a negative value", () => {

@@ -7,7 +7,7 @@
  * are listed in the session report for the owner to add in-app if wanted.
  *
  * Valuation model (owner's rule): paid = Rand price, coin = coins × rate,
- * cash-shop = R0 (grindable). Cash prices are still stored for display.
+ * cash = cash price × cash rate.
  *
  * Rates from the file's own store-pack anchors:
  *   10,000 coins = R328.99  → randPerCoin  = 0.032899
@@ -16,7 +16,6 @@
  * Idempotent: safe to re-run (upserts).
  */
 import Database from "better-sqlite3";
-import path from "node:path";
 import { resolveDbPath } from "../src/lib/db.ts";
 
 /** [code, kind, price] — kind: paid | coin | cash */
@@ -63,7 +62,7 @@ const ENTRIES = [
   [27, "coin", 10000], // BUGATTI VEYRON 16.4
   [7, "coin", 10000], // LEXUS LFA NÜRBURGRING
   [10, "coin", 10000], // FERRARI F12BERLINETTA
-  // --- Cash-shop cars (value R0 by rule; price stored for display) ---
+  // --- Cash cars (valued at cash × rate, like the file's ZAR column) ---
   [176, "cash", 25000], // CHEVROLET C10 PICKUP 1980s
   [140, "cash", 35000], // TOYOTA AE86 (LEVINO/TRUENO)
   [146, "cash", 35000], // LADA NIVA

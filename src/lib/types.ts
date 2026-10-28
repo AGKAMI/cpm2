@@ -154,7 +154,7 @@ export type ImportReport = {
 
 /**
  * How a CPM2 car is bought in-game — drives its Rand valuation on the trade
- * desk: paid = real money, coin = coins × rate, cash-shop = grindable (R0).
+ * desk: paid = real money, coin = coins × rate, cash = cash × rate.
  */
 export type TradePriceKind = "paid" | "coin" | "cash";
 

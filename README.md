@@ -147,7 +147,8 @@ happens. Every car is valued by how it is bought:
 
 - **Paid car** (real money) → its Rand price
 - **Coin car** → coin price × the coins→Rands rate
-- **Cash-shop car** → R0 (grindable, worth nothing in a deal)
+- **Cash car** → cash price × the cash→Rands rate (cash is grindable but
+  also buyable with real money, so a cash price has a real cost)
 
 In-game **cash** can sweeten either side (players price trades in cash, and
 cash is buyable with Rands). Coins are deliberately **not** a trade currency —

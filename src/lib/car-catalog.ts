@@ -417,6 +417,10 @@ export const CAR_CATALOG: CarEntry[] = [
   { code: 221, name: "HONDA NSX", game: "cpm2" },
   { code: 226, name: "BMW 7 SERIES", game: "cpm2" },
   { code: 227, name: "MERCEDES-AMG ONE", game: "cpm2" },
+  // Owner-identified from the 2026-10 update (post-dates the Gemini list):
+  // the empty 230 slot is the Defender 110. Parts of 228-235 are unassigned,
+  // so nothing collides.
+  { code: 230, name: "LAND ROVER DEFENDER 110 (2020+)", game: "cpm2" },
   { code: 236, name: "MOTORHOME / RV", game: "cpm2" },
   { code: 241, name: "FERRARI LAFERRARI", game: "cpm2" },
   { code: 243, name: "JEEP GLADIATOR", game: "cpm2" },

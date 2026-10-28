@@ -96,6 +96,7 @@ const ENTRIES = [
   [266, "paid", 295.99], // MASERATI MC20
   [226, "paid", 295.99], // BMW 7 SERIES (G70 / I7)
   [263, "paid", 410.99], // FORD MODEL A → catalog "FORD MODEL 1"
+  [230, "paid", 246.99], // LAND ROVER DEFENDER 110 (2020+) — owner-identified code 230 (2026-10 update)
 ];
 
 const RATES = { rand_per_coin: 328.99 / 10_000, rand_per_cash: 114.99 / 500_000 };

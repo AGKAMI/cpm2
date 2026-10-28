@@ -1,12 +1,15 @@
 import type {
   AccountSummary,
   ApiErrorBody,
+  CarMatch,
   CarRecord,
   CarOwners,
   FleetEvent,
   FleetStats,
   GarageSummary,
   ImportReport,
+  TradePrice,
+  TradeRates,
   TrophyRecord,
   TrophySummary,
 } from "./types.ts";
@@ -153,4 +156,25 @@ export const api = {
   garages: () => request<{ garages: GarageSummary[] }>("/api/garages"),
   carOwners: (game: GameType, carCode: number) =>
     request<{ owners: CarOwners }>(`/api/cars/${game}/${carCode}/owners`),
+  tradeRates: () => request<{ rates: TradeRates }>("/api/trade/rates"),
+  setTradeRates: (payload: unknown) =>
+    request<{ rates: TradeRates }>("/api/trade/rates", {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+  tradePrices: (game: GameType) => request<{ prices: TradePrice[] }>(`/api/trade/prices?game=${game}`),
+  setTradePrice: (payload: unknown) =>
+    request<{ price: TradePrice }>("/api/trade/prices", {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+  deleteTradePrice: (game: GameType, code: number) =>
+    request<{ deleted: boolean }>(`/api/trade/prices?game=${game}&code=${code}`, {
+      method: "DELETE",
+    }),
+  identifyCar: (payload: { imageBase64: string; mimeType: string }) =>
+    request<{ carName: string; matches: CarMatch[] }>("/api/trade/identify", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
 };

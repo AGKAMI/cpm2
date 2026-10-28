@@ -131,8 +131,7 @@ records it as a flag on the account — tick **New garage** in the account form.
 | --- | --- |
 | `N` | new account |
 | `/` | jump to the fleet search |
-| `E` | export the fleet |
-| `G` then `F` / `A` / `S` | go to fleet / activity / settings |
+| `G` then `1` / `2` / `T` / `A` / `S` | go to CPM1 / CPM2 / trade desk / activity / settings |
 | `?` | show the shortcut list |
 | `Esc` | close a dialog |
 
@@ -140,6 +139,30 @@ records it as a flag on the account — tick **New garage** in the account form.
 
 `Paper` (default) is the daylight service-manual look; `Night` is the same ledger lit from the
 dash. The choice is stored on the machine — switch it from the header or from Settings.
+
+## Trade desk (CPM2)
+
+The Trade page prices a car deal in Rands so a trade can be judged before it
+happens. Every car is valued by how it is bought:
+
+- **Paid car** (real money) → its Rand price
+- **Coin car** → coin price × the coins→Rands rate
+- **Cash-shop car** → R0 (grindable, worth nothing in a deal)
+
+In-game **cash** can sweeten either side (players price trades in cash, and
+cash is buyable with Rands). Coins are deliberately **not** a trade currency —
+they are personal money. Both sides are totaled and the desk verdicts:
+*you gain / fair (within 3%) / you'd lose*.
+
+The price book and the rates live in the database (`trade_prices`,
+`trade_rates`) and are edited in the app — nothing is hardcoded. An unpriced
+car asks for its kind and price once, then remembers it.
+
+**Screenshot identification** uses Gemini (`gemini-2.5-flash`, server-side
+only). Put a free key from aistudio.google.com in `.env.local` as
+`GEMINI_API_KEY` — never committed. Without it the identify button explains
+itself and everything else works. Gemini's read is fuzzy-matched against the
+CPM2 catalog and the user confirms the pick, so a misread never lands silently.
 
 ## API
 
@@ -158,6 +181,9 @@ dash. The choice is stored on the machine — switch it from the header or from 
 | `POST` | `/api/accounts/import` | Bulk import — `?format=json` or `?format=csv` |
 | `GET` | `/api/events` | Activity log |
 | `GET` | `/api/export` | Needs `?confirm=true` — audited |
+| `GET` / `PUT` | `/api/trade/rates` | The coins→Rands and cash→Rands rates |
+| `GET` / `PUT` / `DELETE` | `/api/trade/prices` | The price book (`?game=`, upsert body `{game, code, kind, price}`) |
+| `POST` | `/api/trade/identify` | Gemini screenshot → car name + catalog matches; 503 until `GEMINI_API_KEY` is set |
 
 ## Files worth knowing
 

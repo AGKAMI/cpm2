@@ -45,6 +45,7 @@ const NAV = [
   { href: "/", label: "Overview", hint: "O" },
   { href: "/fleet/cpm1", label: "CPM1", hint: "1" },
   { href: "/fleet/cpm2", label: "CPM2", hint: "2" },
+  { href: "/trade", label: "Trade", hint: "T" },
   { href: "/activity", label: "Activity", hint: "A" },
   { href: "/settings", label: "Settings", hint: "S" },
 ];
@@ -81,6 +82,12 @@ const NAV_ICONS: Record<string, ReactNode> = {
   ),
   "/fleet/cpm1": <GameNavIcon badge="1" />,
   "/fleet/cpm2": <GameNavIcon badge="2" />,
+  "/trade": (
+    <svg viewBox="0 0 24 24" className="h-[19px] w-[19px]" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+      <path d="M4 8h13M14 4.5L17.5 8 14 11.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M20 16H7M10 12.5L6.5 16l3.5 3.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
   "/activity": (
     <svg viewBox="0 0 24 24" className="h-[19px] w-[19px]" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
       <path d="M3 12h4l2.4-6 4.2 12 2.4-6h5" strokeLinecap="round" strokeLinejoin="round" />
@@ -100,6 +107,7 @@ const SHORTCUTS = [
   { keys: "/", action: "Search the fleet" },
   { keys: "G then 1", action: "Go to the CPM1 register" },
   { keys: "G then 2", action: "Go to the CPM2 register" },
+  { keys: "G then T", action: "Go to the trade desk" },
   { keys: "G then A", action: "Go to activity" },
   { keys: "G then S", action: "Go to settings" },
   { keys: "?", action: "Show this list" },
@@ -178,6 +186,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         if (key === "1") router.push("/fleet/cpm1");
         if (key === "2") router.push("/fleet/cpm2");
         if (key === "f") router.push("/fleet");
+        if (key === "t") router.push("/trade");
         if (key === "a") router.push("/activity");
         if (key === "s") router.push("/settings");
         if (key === "o") router.push("/");

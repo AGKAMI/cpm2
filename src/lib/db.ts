@@ -120,6 +120,26 @@ CREATE TABLE IF NOT EXISTS account_cars (${CAR_TABLE_COLUMNS});
 
 CREATE INDEX IF NOT EXISTS idx_account_cars_account
   ON account_cars (account_id);
+
+-- Trade desk: the editable price book (one row per catalog car per game) and
+-- the real-money conversion rates. Additive on every boot — no migration.
+CREATE TABLE IF NOT EXISTS trade_prices (
+  game       TEXT    NOT NULL,
+  code       INTEGER NOT NULL,
+  kind       TEXT    NOT NULL,
+  price      REAL    NOT NULL,
+  updated_at TEXT    NOT NULL,
+  PRIMARY KEY (game, code),
+  CHECK (game IN ('cpm1', 'cpm2')),
+  CHECK (kind IN ('paid', 'coin', 'cash')),
+  CHECK (price >= 0)
+);
+
+CREATE TABLE IF NOT EXISTS trade_rates (
+  key   TEXT PRIMARY KEY,
+  value REAL NOT NULL,
+  CHECK (value >= 0)
+);
 `;
 
 /**

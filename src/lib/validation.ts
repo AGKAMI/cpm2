@@ -202,3 +202,51 @@ export const carAssignSchema = z.object({
 });
 
 export type CarAssignInput = z.infer<typeof carAssignSchema>;
+
+/** How a car is bought in CPM2 — paid (Rands), coin, or the cash shop. */
+export const tradeKindSchema = z.enum(["paid", "coin", "cash"], {
+  error: "Kind must be paid, coin or cash.",
+});
+
+/** The real-money conversion rates behind every trade valuation. */
+export const tradeRatesSchema = z.object({
+  randPerCoin: z
+    .number({ error: "The coins rate is required." })
+    .min(0, { error: "The coins rate cannot be negative." })
+    .max(100_000, { error: "The coins rate looks wrong — check the pack price." }),
+  randPerCash: z
+    .number({ error: "The cash rate is required." })
+    .min(0, { error: "The cash rate cannot be negative." })
+    .max(100_000, { error: "The cash rate looks wrong — check the pack price." }),
+});
+
+export type TradeRatesInput = z.infer<typeof tradeRatesSchema>;
+
+/** Upserting one car's entry in the price book. */
+export const tradePriceSetSchema = z.object({
+  game: gameSchema,
+  code: z
+    .int({ error: "Car code must be a whole number." })
+    .min(0, { error: "Car code cannot be negative." })
+    .max(9999, { error: "Car code is out of range." }),
+  kind: tradeKindSchema,
+  price: z
+    .number({ error: "Price is required." })
+    .min(0, { error: "Price cannot be negative." })
+    .max(50_000_000, { error: "Price cannot exceed R50,000,000." }),
+});
+
+export type TradePriceSetInput = z.infer<typeof tradePriceSetSchema>;
+
+/** A screenshot handed to Gemini for car identification (≤ ~5MB binary). */
+export const tradeIdentifySchema = z.object({
+  imageBase64: z
+    .string({ error: "A screenshot is required." })
+    .min(50, { error: "That image looks empty." })
+    .max(7_000_000, { error: "Screenshot is too large — keep it under 5MB." }),
+  mimeType: z.enum(["image/png", "image/jpeg", "image/webp"], {
+    error: "Screenshot must be a PNG, JPEG or WebP image.",
+  }),
+});
+
+export type TradeIdentifyInput = z.infer<typeof tradeIdentifySchema>;

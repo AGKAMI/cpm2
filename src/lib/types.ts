@@ -151,3 +151,32 @@ export type ImportReport = {
   failed: number;
   results: ImportRowResult[];
 };
+
+/**
+ * How a CPM2 car is bought in-game — drives its Rand valuation on the trade
+ * desk: paid = real money, coin = coins × rate, cash-shop = grindable (R0).
+ */
+export type TradePriceKind = "paid" | "coin" | "cash";
+
+/** One car's entry in the editable trade price book. */
+export type TradePrice = {
+  game: GameType;
+  code: number;
+  carName: string;
+  kind: TradePriceKind;
+  price: number;
+  updatedAt: string;
+};
+
+/** Real-money conversion rates for the trade desk (Rands per unit). */
+export type TradeRates = {
+  randPerCoin: number;
+  randPerCash: number;
+};
+
+/** A catalog candidate for a Gemini-identified car name, best first. */
+export type CarMatch = {
+  code: number;
+  name: string;
+  score: number;
+};

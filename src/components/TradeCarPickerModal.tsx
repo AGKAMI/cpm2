@@ -5,9 +5,15 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { api, ApiRequestError } from "@/lib/client";
 import { carsForGame, searchCars } from "@/lib/car-catalog";
-import type { CarMatch } from "@/lib/types";
+import type { CarMatch, TradePrice } from "@/lib/types";
 
 type Tab = "catalog" | "screenshot";
+
+/** Short price text for the list rows — full labels live on the desk rows. */
+function priceLabel(entry: TradePrice): string {
+  if (entry.kind === "paid") return `R${entry.price.toLocaleString("en-US")}`;
+  return `${entry.price.toLocaleString("en-US")} ${entry.kind === "coin" ? "coins" : "cash"}`;
+}
 
 /**
  * Car picker for the trade desk, two ways:
@@ -20,10 +26,12 @@ export function TradeCarPickerModal({
   open,
   onClose,
   onPick,
+  prices,
 }: {
   open: boolean;
   onClose: () => void;
   onPick: (code: number) => void;
+  prices: Map<number, TradePrice>;
 }) {
   const [tab, setTab] = useState<Tab>("catalog");
   const [query, setQuery] = useState("");
@@ -103,18 +111,27 @@ export function TradeCarPickerModal({
 
   function pick(code: number) {
     onPick(code);
+    handleClose();
+  }
+
+  // Every exit routes through one reset — a fresh add deserves a fresh
+  // search, so reopening never shows the previous car's query.
+  function handleClose() {
+    setQuery("");
+    setDebounced("");
+    resetScreenshot();
     onClose();
   }
 
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       title="Add a car to the deal"
       subtitle="Search the CPM2 catalog, or let Gemini read a screenshot — you confirm the match either way."
       width="max-w-2xl"
       footer={
-        <Button variant="primary" onClick={onClose} type="button">
+        <Button variant="primary" onClick={handleClose} type="button">
           Done
         </Button>
       }
@@ -196,6 +213,11 @@ export function TradeCarPickerModal({
                         #{entry.code}
                       </span>
                       <span className="min-w-0 flex-1 truncate text-[13px] text-ink">{entry.name}</span>
+                      {prices.get(entry.code) ? (
+                        <span className="num shrink-0 text-[10px] text-ink-faint">
+                          {priceLabel(prices.get(entry.code)!)}
+                        </span>
+                      ) : null}
                       <svg
                         viewBox="0 0 24 24"
                         className="h-4 w-4 shrink-0 text-racing"
@@ -297,6 +319,11 @@ export function TradeCarPickerModal({
                             <span className="min-w-0 flex-1 truncate text-[13px] text-ink">
                               {match.name}
                             </span>
+                            {prices.get(match.code) ? (
+                              <span className="num shrink-0 text-[10px] text-ink-faint">
+                                {priceLabel(prices.get(match.code)!)}
+                              </span>
+                            ) : null}
                             <span className="num shrink-0 rounded-full border border-ink/12 px-2 py-0.5 text-[9px] text-ink-faint">
                               {Math.round(match.score * 100)}%
                             </span>

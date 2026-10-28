@@ -381,6 +381,7 @@ export function TradeDesk() {
         onPick={(code) => {
           if (pickerSide) addCar(pickerSide, code);
         }}
+        prices={prices}
       />
     </div>
   );

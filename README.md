@@ -151,8 +151,9 @@ happens. Every car is valued by how it is bought:
 
 In-game **cash** can sweeten either side (players price trades in cash, and
 cash is buyable with Rands). Coins are deliberately **not** a trade currency —
-they are personal money. Both sides are totaled and the desk verdicts:
-*you gain / fair (within 3%) / you'd lose*.
+they are personal money. The desk compares both sides and verdicts plainly:
+*worth it / fair (within 3%) / not worth it*, with a rough percentage lean —
+no Rand totals on screen; the Rand math stays under the hood.
 
 The price book and the rates live in the database (`trade_prices`,
 `trade_rates`) and are edited in the app — nothing is hardcoded. An unpriced

@@ -201,6 +201,10 @@ export function TradeDesk() {
   }, [sides, prices, rates]);
 
   const verdict = tradeVerdict(valued.you.total, valued.them.total);
+  // Percentage lean instead of Rand figures — the owner wants the call, not
+  // the accounting. The Rands stay under the hood.
+  const leanBase = Math.max(valued.you.total, valued.them.total);
+  const leanPct = leanBase > 0 ? Math.round((Math.abs(verdict.delta) / leanBase) * 100) : 0;
   const incomplete = valued.you.unpriced + valued.them.unpriced > 0;
 
   function renderSide(key: SideKey) {
@@ -252,9 +256,6 @@ export function TradeDesk() {
                           {KIND_LABELS[entry.kind]}
                         </span>
                         <span className="num shrink-0 text-[11px] text-ink-faint">{priceLabel(entry)}</span>
-                        <span className="num shrink-0 text-[12px] font-semibold text-ink">
-                          {formatRands(carValueRands(entry.kind, entry.price, rates))}
-                        </span>
                       </>
                     ) : (
                       <button
@@ -353,15 +354,8 @@ export function TradeDesk() {
             placeholder="0"
             className="field-rule num min-w-0 flex-1 px-3 py-1.5 text-[12px]"
           />
-          <span className="num shrink-0 text-[12px] font-semibold text-ink">
-            {formatRands(cashValueRands(side.cash, rates))}
-          </span>
         </div>
 
-        <div className="flex items-baseline justify-between gap-2 border-t border-ink/8 pt-3">
-          <span className="label-caps">Side total</span>
-          <span className="num text-[16px] font-semibold text-ink">{formatRands(value.total)}</span>
-        </div>
         {value.unpriced > 0 ? (
           <p className="text-[10.5px] text-oxblood">
             {value.unpriced} unpriced car{value.unpriced === 1 ? "" : "s"} — not counted yet.
@@ -471,24 +465,20 @@ export function TradeDesk() {
           </p>
         ) : (
           <>
-            <p className="num text-[11px] uppercase tracking-[0.18em] text-ink-faint">
-              {verdict.status === "gain" ? "You gain" : verdict.status === "loss" ? "You'd lose" : "Fair trade"}
-            </p>
+            <p className="num text-[11px] uppercase tracking-[0.18em] text-ink-faint">The verdict</p>
             <p
               className={`display-title mt-1 text-[28px] leading-none sm:text-[34px] ${
                 verdict.status === "loss" ? "text-oxblood" : verdict.status === "gain" ? "text-racing" : "text-ink"
               }`}
             >
-              {verdict.status === "fair"
-                ? "Fair trade"
-                : formatRands(Math.abs(verdict.delta))}
+              {verdict.status === "gain" ? "Worth it" : verdict.status === "loss" ? "Not worth it" : "Fair trade"}
             </p>
             <p className="mt-2 text-[12px] text-ink-soft">
               {verdict.status === "gain"
-                ? "This deal is in your favour."
+                ? `Roughly ${leanPct}% in your favour — take the deal.`
                 : verdict.status === "loss"
-                  ? "You'd be robbing yourself — ask for more or walk away."
-                  : "Within 3% — nobody is getting robbed."}
+                  ? `Roughly ${leanPct}% against you — you'd be robbing yourself.`
+                  : "Too close to call — nobody is getting robbed."}
             </p>
           </>
         )}

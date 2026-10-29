@@ -10,14 +10,10 @@
  *   10,000 coins = R328.99  → randPerCoin  = 0.032899
  *   500,000 cash = R114.99  → randPerCash = 0.00022998
  *
- * Cars priced here: 205. Outside this table:
+ * Cars priced here: 208. Outside this table:
  *   - #119 HUMMER H1 CUSTOM OFFROAD BUILD: no currency symbol — assumed cash
- *   - #165 FORMULA 2 / OPEN-WHEEL RACE CAR: Unverified — skipped
- *   - #172 ROLLS-ROYCE CULLINAN: Direct Purchase (amount unknown) — skipped
- *   - #253 FORD F-650 SUPER DUTY: Direct Purchase (amount unknown) — skipped
- * plus #230 LAND ROVER DEFENDER 110 (2020+), owner-verified separately and
- * preserved below. #165's price was marked Unverified and is DELETED here —
- * the desk treats it as unpriced until a real value is recorded.
+ * plus #165/#172/#253/#230, owner-quoted separately and preserved below
+ * (#230 LAND ROVER DEFENDER 110 (2020+) = R246.99 paid).
  */
 import Database from "better-sqlite3";
 import { resolveDbPath } from "../src/lib/db.ts";
@@ -155,11 +151,13 @@ const ENTRIES = [
   [162, "coin", 10000], // MCLAREN 720S
   [163, "cash", 320000], // MERCEDES-BENZ 230 SL PAGODA (W113)
   [164, "paid", 131.49], // CAN-AM MAVERICK X3 BUGGY
+  [165, "coin", 15000], // FORMULA 2 / OPEN-WHEEL RACE CAR — owner-quoted
   [166, "coin", 2500], // CHEVROLET CORVETTE C8 STINGRAY
   [167, "coin", 1500], // RAM 1500 TRX PICKUP
   [169, "coin", 2500], // BENTLEY CONTINENTAL GT
   [170, "coin", 5000], // KENWORTH T680 USA SEMI-TRUCK
   [171, "coin", 5000], // SINOTRUK SITRAK C7H COMMERCIAL TRUCK
+  [172, "coin", 5000], // ROLLS-ROYCE CULLINAN — owner-quoted
   [173, "coin", 5000], // MERCEDES-BENZ CLS 63 AMG
   [175, "coin", 1000], // MERCEDES-BENZ E-CLASS (W210)
   [176, "cash", 25000], // CHEVROLET C10 PICKUP (1983)
@@ -212,6 +210,7 @@ const ENTRIES = [
   [241, "coin", 10000], // LAFERRARI
   [243, "paid", 246.99], // JEEP GLADIATOR RUBICON
   [252, "paid", 65.99], // TOYOTA ALTEZZA / LEXUS IS300 (SXE10)
+  [253, "coin", 5000], // FORD F-650 SUPER DUTY — owner-quoted
   [255, "coin", 1000], // LEXUS IS250 / IS350
   [256, "coin", 1500], // FORD MUSTANG MACH 1 (1969)
   [257, "coin", 2500], // BMW M2 COUPE (F87)
@@ -255,8 +254,6 @@ const load = db.transaction(() => {
   upsertRate.run("rand_per_coin", RATES.rand_per_coin);
   upsertRate.run("rand_per_cash", RATES.rand_per_cash);
   for (const [code, kind, price] of ENTRIES) upsertPrice.run(code, kind, price, now);
-  // The owner marked #165's price Unverified — unprice it.
-  db.prepare("DELETE FROM trade_prices WHERE game = 'cpm2' AND code = 165").run();
 });
 load();
 

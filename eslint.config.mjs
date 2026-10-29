@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // One-off CommonJS script from a parallel session; its prices live in
+    // scripts/load-trade-prices.mjs now.
+    "scripts/apply-prices.cjs",
   ]),
 ]);
 

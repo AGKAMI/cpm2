@@ -46,7 +46,7 @@ describe("car ownership lookup", () => {
 
     const result = carOwners("cpm2", 49);
     assert.equal(result.carCode, 49);
-    assert.equal(result.carName, "TOYOTA SUPRA A80 (MK4)");
+    assert.equal(result.carName, "TOYOTA SUPRA MK4 (A80)");
     assert.equal(result.game, "cpm2");
 
     const mine = result.owners.find((owner) => owner.accountId === one.id);
@@ -61,7 +61,7 @@ describe("car ownership lookup", () => {
     addGarageCar(one.id, { carCode: 40, notes: "street" });
 
     const result = carOwners("cpm2", 40);
-    assert.equal(result.carName, "CHEVROLET CORVETTE (C7)");
+    assert.equal(result.carName, "CHEVROLET CORVETTE C7 STINGRAY");
 
     const mine = result.owners.filter((owner) => owner.accountId === one.id);
     assert.equal(mine.length, 1, "one row per account, not one row per car");
@@ -69,7 +69,7 @@ describe("car ownership lookup", () => {
   });
 
   it("keeps a colliding code from leaking into the other game's owners", () => {
-    // CPM2 #49 is a TOYOTA SUPRA A80; CPM1 #49 is a 2001 BMW M3 GTR.
+    // CPM2 #49 is a TOYOTA SUPRA MK4 (A80); CPM1 #49 is a 2001 BMW M3 GTR.
     const holder = account("supra-holder@cpm2.gg", "cpm2");
     addGarageCar(holder.id, { carCode: 49 });
 
@@ -103,7 +103,7 @@ describe("car ownership lookup", () => {
     addGarageCar(one.id, { carCode: 0 });
 
     const result = carOwners("cpm2", 0);
-    assert.equal(result.carName, "BMW 3 SERIES (E36)");
+    assert.equal(result.carName, "BMW 3 SERIES SEDAN (E36)");
     assert.ok(result.owners.some((owner) => owner.accountId === one.id));
   });
 

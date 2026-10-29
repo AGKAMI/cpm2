@@ -88,10 +88,10 @@ describe("car catalog", () => {
   });
 
   it("looks cars up by code WITHIN a game", () => {
-    assert.equal(carByCode(49, "cpm2")?.name, "TOYOTA SUPRA A80 (MK4)");
-    assert.equal(carByCode(0, "cpm2")?.name, "BMW 3 SERIES (E36)");
-    assert.equal(carByCode(11, "cpm2")?.name, "NISSAN SKYLINE GT-R (R34)");
-    assert.equal(carByCode(17, "cpm2")?.name, "MERCEDES-BENZ C-CLASS (W204)");
+    assert.equal(carByCode(49, "cpm2")?.name, "TOYOTA SUPRA MK4 (A80)");
+    assert.equal(carByCode(0, "cpm2")?.name, "BMW 3 SERIES SEDAN (E36)");
+    assert.equal(carByCode(11, "cpm2")?.name, "NISSAN GT-R (R34 SKYLINE)");
+    assert.equal(carByCode(17, "cpm2")?.name, "MERCEDES-BENZ C63 AMG (W204)");
     assert.equal(carByCode(104, "cpm2")?.name, "BMW M5 (F90)");
     assert.equal(carByCode(9999, "cpm2"), undefined);
 
@@ -102,7 +102,7 @@ describe("car catalog", () => {
   it("resolves COLLIDING codes to different cars per game", () => {
     // The whole reason `game` exists: same integer, different car.
     assert.equal(carByCode(13, "cpm1")?.name, "2007 PEUGEOT 308");
-    assert.equal(carByCode(13, "cpm2")?.name, "HONDA CIVIC");
+    assert.equal(carByCode(13, "cpm2")?.name, "HONDA CIVIC SEDAN (8TH GEN)");
     assert.notEqual(carByCode(13, "cpm1")?.name, carByCode(13, "cpm2")?.name);
 
     const both = carsByCode(13);
@@ -113,7 +113,7 @@ describe("car catalog", () => {
   it("searchCars matches code prefixes for numeric queries", () => {
     const exact = searchCars("49", 30, "cpm2");
     assert.equal(exact[0]?.code, 49);
-    assert.equal(exact[0]?.name, "TOYOTA SUPRA A80 (MK4)");
+    assert.equal(exact[0]?.name, "TOYOTA SUPRA MK4 (A80)");
 
     const prefix = searchCars("4", 30, "cpm2");
     assert.ok(prefix.length > 5);
@@ -168,7 +168,7 @@ describe("garage inventory", () => {
     const account = makeAccount("garage-add@cpm2.gg", 5, 0);
     const supra = addGarageCar(account.id, { carCode: 49, notes: "weekend car" });
     assert.equal(supra.carCode, 49);
-    assert.equal(supra.carName, "TOYOTA SUPRA A80 (MK4)");
+    assert.equal(supra.carName, "TOYOTA SUPRA MK4 (A80)");
     assert.equal(supra.notes, "weekend car");
 
     addGarageCar(account.id, { carCode: 40 });
@@ -226,14 +226,14 @@ describe("garage inventory", () => {
 
     const result = removeGarageCar(account.id, car.id);
     assert.equal(result.removed, car.id);
-    assert.equal(result.carName, "TOYOTA SUPRA A80 (MK4)");
+    assert.equal(result.carName, "TOYOTA SUPRA MK4 (A80)");
     assert.equal(listGarage(account.id).count, 0);
 
     const event = listEvents(10).find(
       (entry) => entry.accountId === account.id && entry.type === "car_removed",
     );
     assert.ok(event);
-    assert.match(event.summary, /TOYOTA SUPRA A80/);
+    assert.match(event.summary, /TOYOTA SUPRA MK4/);
 
     assert.doesNotThrow(() => addGarageCar(account.id, { carCode: 49 }));
     hasCode(() => removeGarageCar(account.id, 999999), "car_not_found");
@@ -276,7 +276,7 @@ describe("garage inventory", () => {
   it("defaults new accounts to CPM2 so existing flows are unchanged", () => {
     const account = makeAccount("cpm2-default@cpm2.gg", 5, 0);
     assert.equal(account.game, "cpm2");
-    assert.equal(addGarageCar(account.id, { carCode: 13 }).carName, "HONDA CIVIC");
+    assert.equal(addGarageCar(account.id, { carCode: 13 }).carName, "HONDA CIVIC SEDAN (8TH GEN)");
   });
 
   it("refuses a car from the other game", () => {

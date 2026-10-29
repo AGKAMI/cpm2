@@ -12,7 +12,7 @@ describe("flexible catalog search", () => {
 
   it("matches several abbreviations at once", () => {
     const hits = searchCars("must i", 30, "cpm2");
-    assert.ok(hits.some((car) => car.code === 181 && car.name === "FORD MUSTANG I 1964"));
+    assert.ok(hits.some((car) => car.code === 181 && car.name === "FORD MUSTANG I FASTBACK (1964)"));
   });
 
   it("survives a typo via near-match", () => {

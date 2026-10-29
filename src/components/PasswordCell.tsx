@@ -10,6 +10,8 @@ export function PasswordCell({ accountId }: { accountId: number }) {
   const [revealed, setRevealed] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [consentPassword, setConsentPassword] = useState("");
+  const [consentBusy, setConsentBusy] = useState(false);
   const deadline = useRef<number | null>(null);
   const toast = useToast();
 
@@ -29,6 +31,30 @@ export function PasswordCell({ accountId }: { accountId: number }) {
     return () => clearInterval(timer);
   }, [revealed]);
 
+  /** Re-enter the console password to earn a 5-minute reveal consent cookie. */
+  async function earnConsent(): Promise<void> {
+    setConsentBusy(true);
+    try {
+      const response = await fetch("/api/auth/reveal-consent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: consentPassword }),
+      });
+      if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as
+          | { error?: { code?: string; message?: string } }
+          | null;
+        throw new ApiRequestError(
+          body?.error?.message ?? "Wrong console password.",
+          response.status,
+          body?.error?.code ?? "AUTH_INVALID",
+        );
+      }
+    } finally {
+      setConsentBusy(false);
+    }
+  }
+
   async function reveal(): Promise<string> {
     const result = await api.reveal(accountId);
     deadline.current = Date.now() + REMASK_MS;
@@ -37,33 +63,42 @@ export function PasswordCell({ accountId }: { accountId: number }) {
     return result.password;
   }
 
-  async function toggle() {
-    if (revealed) {
-      setRevealed(null);
+  /** Prompted path: earn consent with the console password, then reveal. */
+  async function revealWithConsent(): Promise<void> {
+    if (!consentPassword.trim()) {
+      toast.error("Console password needed", "Enter the console password to unlock stored passwords.");
       return;
     }
     setBusy(true);
     try {
+      await earnConsent();
       await reveal();
     } catch (err) {
+      if (err instanceof ApiRequestError && err.code === "AUTH_INVALID") {
+        toast.error("Wrong console password", "Try again.");
+        return;
+      }
       toast.error(
         "Password locked",
-        err instanceof ApiRequestError ? err.message : "Could not decrypt the stored password.",
+        err instanceof ApiRequestError ? err.message : "Could not unlock stored passwords.",
       );
     } finally {
       setBusy(false);
     }
   }
 
-  async function copy() {
+  async function copy(): Promise<void> {
+    if (!revealed) {
+      await revealWithConsent();
+      if (!revealed) return;
+    }
     try {
-      const value = revealed ?? (await reveal());
-      await navigator.clipboard.writeText(value);
+      await navigator.clipboard.writeText(revealed!);
       toast.success("Password copied", "It is on your clipboard — paste it wherever you need it.");
     } catch (err) {
       toast.error(
         "Copy failed",
-        err instanceof ApiRequestError ? err.message : "Clipboard access was blocked by the browser.",
+        err instanceof Error ? err.message : "Clipboard access was blocked by the browser.",
       );
     }
   }
@@ -80,8 +115,8 @@ export function PasswordCell({ accountId }: { accountId: number }) {
       ) : null}
       <button
         type="button"
-        onClick={toggle}
-        disabled={busy}
+        onClick={revealWithConsent}
+        disabled={busy || consentBusy}
         title={revealed ? "Hide password" : "Reveal password (auto-hides after 10s)"}
         aria-label={revealed ? "Hide password" : "Reveal password"}
         className="square-btn h-7 w-7 disabled:opacity-40"
@@ -99,9 +134,36 @@ export function PasswordCell({ accountId }: { accountId: number }) {
           </svg>
         )}
       </button>
+      {!revealed ? (
+        <div className="flex items-center gap-1">
+          <input
+            type="password"
+            placeholder="console password"
+            value={consentPassword}
+            onChange={(event) => setConsentPassword(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") void revealWithConsent();
+            }}
+            autoComplete="current-password"
+            className="field-rule num w-32 px-2 py-1 text-[11px]"
+          />
+          <button
+            type="button"
+            onClick={revealWithConsent}
+            disabled={consentBusy}
+            className="square-btn h-7 w-7 disabled:opacity-40"
+            aria-label="Unlock stored passwords"
+          >
+            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+              <path d="M3 3l18 18" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+      ) : null}
       <button
         type="button"
         onClick={copy}
+        disabled={busy || consentBusy}
         title="Copy password"
         aria-label="Copy password"
         className="square-btn h-7 w-7"

@@ -24,6 +24,15 @@ export const SESSION_COOKIE = "cpm2_session";
 /** How long one login stays open. */
 export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
 
+/**
+ * A short-lived, separately-scoped consent that must be freshly earned before
+ * plaintext passwords can be revealed or exported. An active session alone is
+ * not enough — the console password must be re-entered, so a stolen session
+ * cookie (or a briefly unattended unlocked console) cannot dump credentials.
+ */
+export const REVEAL_CONSENT_COOKIE = "cpm2_reveal_pw";
+export const REVEAL_CONSENT_MAX_AGE_SECONDS = 5 * 60; // 5 minutes
+
 // ---------------------------------------------------------------- sessions
 
 /**
@@ -49,8 +58,39 @@ export function verifySessionToken(token: string | undefined): boolean {
   return timingSafeEqualStrings(sessionMac(expiresAt), mac);
 }
 
+/**
+ * A signing key derived from the encryption key, scoped to sessions only.
+ * HKDF is one-way: a stolen session cookie never yields the encryption key,
+ * and the two purposes can be rotated independently in future.
+ */
+function sessionKey(): Buffer {
+  return crypto.createHash("sha256").update(getKey()).update("cpm2-session-v1").digest();
+}
+
 function sessionMac(expiresAt: number): string {
-  return crypto.createHmac("sha256", getKey()).update(String(expiresAt)).digest("base64url");
+  return crypto.createHmac("sha256", sessionKey()).update(String(expiresAt)).digest("base64url");
+}
+
+/** A short-lived consent token (expiry.hmac) proving the console password was
+ * re-entered recently. Used to gate password reveal and export. */
+export function createRevealConsentToken(now: number = Date.now()): string {
+  const expiresAt = Math.floor(now / 1000) + REVEAL_CONSENT_MAX_AGE_SECONDS;
+  return `${expiresAt}.${revealMac(expiresAt)}`;
+}
+
+function revealMac(expiresAt: number): string {
+  return crypto.createHmac("sha256", sessionKey()).update(`reveal:${expiresAt}`).digest("base64url");
+}
+
+export function verifyRevealConsentToken(token: string | undefined): boolean {
+  if (!token) return false;
+  const dot = token.indexOf(".");
+  if (dot <= 0) return false;
+  const expiresPart = token.slice(0, dot);
+  const mac = token.slice(dot + 1);
+  const expiresAt = Number(expiresPart);
+  if (!Number.isInteger(expiresAt) || expiresAt * 1000 <= Date.now()) return false;
+  return timingSafeEqualStrings(revealMac(expiresAt), mac);
 }
 
 function timingSafeEqualStrings(a: string, b: string): boolean {
@@ -76,6 +116,22 @@ export function sessionCookieOptions(request: Request) {
     secure,
     maxAge: SESSION_MAX_AGE_SECONDS,
   };
+}
+
+/** Cookie attributes for the short-lived reveal consent. Same Secure/SameSite
+ *  logic as the session cookie, but only valid for five minutes. */
+export function revealCookieOptions(request: Request) {
+  const base = sessionCookieOptions(request);
+  return { ...base, maxAge: REVEAL_CONSENT_MAX_AGE_SECONDS };
+}
+
+/** Read one cookie from a raw `Cookie` header (Next.js `Request` has no `.cookies`). */
+export function readRequestCookie(request: Request, name: string): string | undefined {
+  const cookie = request.headers.get("cookie");
+  if (!cookie) return undefined;
+  const pair = cookie.split(";").find((part) => part.trim().startsWith(`${name}=`));
+  if (!pair) return undefined;
+  return pair.slice(pair.indexOf("=") + 1);
 }
 
 // --------------------------------------------------------------- password

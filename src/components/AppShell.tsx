@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import type { AccountSummary } from "@/lib/types";
 import { LIMITS } from "@/lib/constants";
 import { Button } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/Toaster";
 import { Modal } from "@/components/ui/Modal";
 import { AccountFormModal } from "@/components/AccountFormModal";
 import { SlotModal } from "@/components/SlotModal";
@@ -108,6 +109,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [confirmState, setConfirmState] = useState<ConfirmOptions | null>(null);
   const [confirmResolver, setConfirmResolver] = useState<((value: boolean) => void) | null>(null);
+  const toast = useToast();
+  /** Whether an export download is awaiting the console-password consent entry. */
+  const [awaitingExportConsent, setAwaitingExportConsent] = useState(false);
+  const [exportConsentPassword, setExportConsentPassword] = useState("");
+  const [exportConsentBusy, setExportConsentBusy] = useState(false);
+  const [exportFormat, setExportFormat] = useState<"csv" | "json">("json");
 
   function openNewAccount() {
     setEditing(null);
@@ -208,16 +215,46 @@ export function AppShell({ children }: { children: ReactNode }) {
     };
   }, [router]);
 
-  function performExport(format: "csv" | "json") {
-    setExportOpen(false);
+  /** Trigger the actual download once reveal consent has been earned. */
+  function triggerExport() {
     const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
     const link = document.createElement("a");
-    link.href = `/api/export?format=${format}&confirm=true`;
-    link.download = `cpm2-fleet-${stamp}.${format}`;
+    link.href = `/api/export?format=${exportFormat}&confirm=true`;
+    link.download = `cpm2-fleet-${stamp}.${exportFormat}`;
     link.rel = "noopener";
     document.body.appendChild(link);
     link.click();
     link.remove();
+    setAwaitingExportConsent(false);
+    setExportConsentPassword("");
+  }
+
+  /** Re-enter the console password to earn a fresh reveal-consent cookie, then
+   *  download the export. The export route refuses plaintext passwords without it. */
+  async function confirmExportConsent() {
+    if (!exportConsentPassword.trim()) return;
+    setExportConsentBusy(true);
+    try {
+      const response = await fetch("/api/auth/reveal-consent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: exportConsentPassword }),
+      });
+      if (!response.ok) {
+        toast.error("Wrong console password", "Try again.");
+        return;
+      }
+      triggerExport();
+    } finally {
+      setExportConsentBusy(false);
+    }
+  }
+
+  function performExport(format: "csv" | "json") {
+    setExportOpen(false);
+    setExportFormat(format);
+    setExportConsentPassword("");
+    setAwaitingExportConsent(true);
   }
 
   const shell: ShellContextValue = {
@@ -405,6 +442,41 @@ export function AppShell({ children }: { children: ReactNode }) {
           onCancel={() => setExportOpen(false)}
           onConfirm={performExport}
         />
+
+        {awaitingExportConsent && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-paper/80 px-4 backdrop-blur-xl">
+            <div className="panel w-full max-w-[340px] rounded-[20px] p-6 text-center">
+              <h2 className="font-display text-[18px] text-ink mb-2">Confirm the export</h2>
+              <p className="text-[11.5px] text-ink-soft mb-4">
+                Export exposes every stored password. Re-enter the console password to continue.
+              </p>
+              <input
+                type="password"
+                placeholder="console password"
+                value={exportConsentPassword}
+                onChange={(event) => setExportConsentPassword(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") void confirmExportConsent();
+                }}
+                autoComplete="current-password"
+                className="field-rule num w-full mb-3 px-3 py-1.5 text-[12px]"
+              />
+              <div className="flex gap-2 justify-center">
+                <Button variant="ghost" onClick={() => setAwaitingExportConsent(false)} type="button">
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={confirmExportConsent}
+                  disabled={exportConsentBusy}
+                  type="button"
+                >
+                  Confirm
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <ImportModal open={importOpen} busy={false} onClose={() => setImportOpen(false)} onImport={fleet.importCsv} />
 

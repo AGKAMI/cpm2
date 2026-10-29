@@ -1,7 +1,43 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="7" fill="#14171d"/>
-  <path d="M6.5 19l2-5.4A2.6 2.6 0 0111 11.8h10a2.6 2.6 0 012.5 1.8L25.5 19" fill="none" stroke="#f3f5f7" stroke-width="2" stroke-linecap="round"/>
-  <path d="M5.5 19h21v4.6a1 1 0 01-1 1h-19a1 1 0 01-1-1z" fill="none" stroke="#f3f5f7" stroke-width="2" stroke-linejoin="round"/>
-  <circle cx="10.5" cy="24.8" r="1.9" fill="#f3f5f7"/>
-  <circle cx="21.5" cy="24.8" r="1.9" fill="#f3f5f7"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="KAMI CPM Account Manager">
+  <defs>
+    <linearGradient id="kcRim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f4f6f8"/>
+      <stop offset="35%" stop-color="#9aa3ad"/>
+      <stop offset="55%" stop-color="#e8ecef"/>
+      <stop offset="100%" stop-color="#6b747e"/>
+    </linearGradient>
+    <radialGradient id="kcCore" cx="50%" cy="38%" r="72%">
+      <stop offset="0%" stop-color="#2b3138"/>
+      <stop offset="60%" stop-color="#171b21"/>
+      <stop offset="100%" stop-color="#0b0d10"/>
+    </radialGradient>
+    <linearGradient id="kcBlue" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#bfe4ff"/>
+      <stop offset="45%" stop-color="#4aa3f0"/>
+      <stop offset="100%" stop-color="#1d5fa8"/>
+    </linearGradient>
+  </defs>
+
+  <circle cx="32" cy="32" r="31" fill="url(#kcRim)"/>
+  <circle cx="32" cy="32" r="26.5" fill="url(#kcCore)"/>
+  <circle cx="32" cy="32" r="30" fill="none" stroke="#3c434b" stroke-width="0.6" opacity="0.6"/>
+
+  <circle cx="32" cy="3.2" r="1.1" fill="#c9d1d9"/>
+  <circle cx="60.8" cy="32" r="1.1" fill="#c9d1d9"/>
+  <circle cx="32" cy="60.8" r="1.1" fill="#c9d1d9"/>
+  <circle cx="3.2" cy="32" r="1.1" fill="#c9d1d9"/>
+
+  <rect x="9" y="24" width="46" height="3" rx="1.5" fill="#5b646e" opacity="0.35"/>
+
+  <g font-family="Arial Black, Arial, sans-serif" font-weight="900" text-anchor="middle">
+    <text x="32" y="24" fill="url(#kcBlue)" font-size="15" letter-spacing="1.2">KAMI</text>
+    <text x="32" y="41" fill="url(#kcBlue)" font-size="15" letter-spacing="1.2">CPM</text>
+  </g>
+
+  <g stroke="#dce6f2" stroke-width="1.05" fill="none" opacity="0.95">
+    <path d="M44 32.5c2.6 0 2.6 2.1 0 2.1s-2.6-2.1 0-2.1z"/>
+    <path d="M44 34.8c2.6 0 2.6 2.1 0 2.1s-2.6-2.1 0-2.1z"/>
+    <path d="M44 37.1c2.6 0 2.6 2.1 0 2.1s-2.6-2.1 0-2.1z"/>
+    <path d="M43.4 39.4h1.4v1.8h-1.4z" fill="#dce6f2" stroke="none"/>
+  </g>
+  </svg>

@@ -243,20 +243,17 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="dial-sweep" aria-hidden />
           <div className="relative mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-6 gap-y-3 px-4 pb-3 pt-4 sm:px-6">
             <Link href="/fleet/cpm2" className="flex items-center gap-3">
-              <span className="roundel">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-[18px] w-[18px]"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5" aria-hidden="true"
-                >
-                  <path d="M4 13l1.5-4.5A2 2 0 017.4 7h9.2a2 2 0 011.9 1.5L20 13" strokeLinecap="round" />
-                  <path d="M3.5 13h17v4.5h-17z" strokeLinejoin="round" />
-                  <circle cx="7" cy="17.5" r="1.6" />
-                  <circle cx="17" cy="17.5" r="1.6" />
-                </svg>
-              </span>
+              {/* KAMI's CPM badge (src/app/icon.svg) — replaces the old car
+                  glyph roundel. The badge carries its own metallic rim, so it
+                  stands alone instead of sitting inside another ring. */}
+              <img
+                src="/icon.svg"
+                alt=""
+                aria-hidden="true"
+                width={40}
+                height={40}
+                className="h-10 w-10 shrink-0"
+              />
               <span>
                 <span className="wordmark block text-[22px] leading-none text-ink" translate="no">
                   Fleet <span className="text-racing">Ledger</span>

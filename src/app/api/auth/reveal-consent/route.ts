@@ -6,6 +6,7 @@ import {
   rateLimited,
   revealCookieOptions,
 } from "@/lib/auth";
+import { logEvent } from "@/lib/service";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,7 @@ export const dynamic = "force-dynamic";
  * Earn a short-lived consent to view plaintext passwords. Verifies the console
  * password (brute-forced per IP) and sets an HttpOnly cookie valid five minutes.
  * The reveal and export routes require this cookie — an active session alone
- * is not enough to dump credentials.
+ * is not enough to dump credentials. Every successful consent is audited.
  */
 export async function POST(request: Request) {
   try {
@@ -35,6 +36,8 @@ export async function POST(request: Request) {
         { status: 401 },
       );
     }
+
+    logEvent(null, "(console)", "password_revealed", "Console password re-entered to earn reveal consent");
 
     const response = NextResponse.json({ ok: true });
     response.cookies.set(

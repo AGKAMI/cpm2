@@ -22,6 +22,11 @@ const {
   bindTelegramOwner,
   rateLimited,
   sessionCookieOptions,
+  REVEAL_CONSENT_MAX_AGE_SECONDS,
+  createRevealConsentToken,
+  verifyRevealConsentToken,
+  revealCookieOptions,
+  readRequestCookie,
 } = await import("../src/lib/auth.ts");
 const { resetKeyCache } = await import("../src/lib/crypto.ts");
 
@@ -140,6 +145,51 @@ describe("auth · cookie options", () => {
     assert.equal(local.httpOnly, true);
     assert.equal(local.path, "/");
     assert.equal(local.maxAge, SESSION_MAX_AGE_SECONDS);
+  });
+});
+
+describe("auth · reveal consent", () => {
+  it("round-trips a fresh consent token", () => {
+    assert.equal(verifyRevealConsentToken(createRevealConsentToken()), true);
+  });
+
+  it("refuses an expired consent token", () => {
+    const stale = createRevealConsentToken(Date.now() - (REVEAL_CONSENT_MAX_AGE_SECONDS + 60) * 1000);
+    assert.equal(verifyRevealConsentToken(stale), false);
+  });
+
+  it("refuses a tampered consent token", () => {
+    const token = createRevealConsentToken();
+    const [expiresAt] = token.split(".");
+    const forged = `${Number(expiresAt) + 60}.${token.split(".")[1]}`;
+    assert.equal(verifyRevealConsentToken(forged), false);
+  });
+
+  it("refuses garbage, empty and missing consent tokens", () => {
+    assert.equal(verifyRevealConsentToken(undefined), false);
+    assert.equal(verifyRevealConsentToken(""), false);
+    assert.equal(verifyRevealConsentToken("garbage"), false);
+    assert.equal(verifyRevealConsentToken("123456789.not-a-signature"), false);
+  });
+
+  it("readRequestCookie extracts one cookie from a header", () => {
+    const req = new Request("http://127.0.0.1:3457/api/auth/reveal-consent", {
+      headers: { cookie: "cpm2_session=abc; cpm2_reveal_pw=xyz.def; other=1" },
+    });
+    assert.equal(readRequestCookie(req, "cpm2_reveal_pw"), "xyz.def");
+    assert.equal(readRequestCookie(req, "cpm2_session"), "abc");
+    assert.equal(readRequestCookie(req, "missing"), undefined);
+  });
+
+  it("revealCookieOptions is short-lived and secure over HTTPS", () => {
+    const https = revealCookieOptions(
+      new Request("https://kami.tailc10831.ts.net/api/auth/reveal-consent", {
+        headers: { host: "kami.tailc10831.ts.net" },
+      }),
+    );
+    assert.equal(https.secure, true);
+    assert.equal(https.sameSite, "none");
+    assert.equal(https.maxAge, REVEAL_CONSENT_MAX_AGE_SECONDS);
   });
 });
 

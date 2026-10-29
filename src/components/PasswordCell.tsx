@@ -6,13 +6,27 @@ import { useToast } from "@/components/ui/Toaster";
 
 const REMASK_MS = 10_000;
 
+/** True on devices with a real hover capability (desktop), not touch screens. */
+let supportsHover: boolean | null = null;
+function hoverCapable(): boolean {
+  if (supportsHover === null) {
+    supportsHover =
+      typeof window !== "undefined" &&
+      window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  }
+  return supportsHover;
+}
+
 export function PasswordCell({ accountId }: { accountId: number }) {
   const [revealed, setRevealed] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [busy, setBusy] = useState(false);
   const [consentPassword, setConsentPassword] = useState("");
   const [consentBusy, setConsentBusy] = useState(false);
+  const [consentEarned, setConsentEarned] = useState(false);
   const deadline = useRef<number | null>(null);
+  // Set when the current reveal came from a hover (so leaving the button hides it).
+  const revealedViaHover = useRef(false);
   const toast = useToast();
 
   // Auto-remask: the password only stays on screen for 10 seconds.
@@ -24,6 +38,8 @@ export function PasswordCell({ accountId }: { accountId: number }) {
         clearInterval(timer);
         setRevealed(null);
         setSecondsLeft(0);
+        deadline.current = null;
+        revealedViaHover.current = false;
       } else {
         setSecondsLeft(Math.ceil(remaining / 1000));
       }
@@ -50,6 +66,7 @@ export function PasswordCell({ accountId }: { accountId: number }) {
           body?.error?.code ?? "AUTH_INVALID",
         );
       }
+      setConsentEarned(true);
     } finally {
       setConsentBusy(false);
     }
@@ -60,6 +77,8 @@ export function PasswordCell({ accountId }: { accountId: number }) {
     deadline.current = Date.now() + REMASK_MS;
     setRevealed(result.password);
     setSecondsLeft(Math.ceil(REMASK_MS / 1000));
+    revealedViaHover.current = false; // explicit reveal is persistent, not hover-driven
+    setConsentEarned(true);
     return result.password;
   }
 
@@ -87,9 +106,46 @@ export function PasswordCell({ accountId }: { accountId: number }) {
     }
   }
 
-  async function copy(): Promise<void> {
+  /** Hover reveal (desktop only): reveal on enter, hide on leave. */
+  function onRevealMouseEnter() {
+    if (!hoverCapable() || revealed || !consentEarned) return;
+    revealedViaHover.current = true;
+    void reveal();
+  }
+
+  function onRevealMouseLeave() {
+    if (!hoverCapable() || !revealedViaHover.current) return;
+    revealedViaHover.current = false;
+    if (revealed) {
+      setRevealed(null);
+      setSecondsLeft(0);
+      deadline.current = null;
+    }
+  }
+
+  /** Click the eye: toggle reveal (persistent, 10s auto-remask) or hide. */
+  async function onRevealClick(): Promise<void> {
+    if (revealed) {
+      setRevealed(null);
+      setSecondsLeft(0);
+      deadline.current = null;
+      revealedViaHover.current = false;
+      return;
+    }
+    if (consentEarned) {
+      await reveal();
+      return;
+    }
+    await revealWithConsent();
+  }
+
+  async function onCopy(): Promise<void> {
     if (!revealed) {
-      await revealWithConsent();
+      if (consentEarned) {
+        await reveal();
+      } else {
+        await revealWithConsent();
+      }
       if (!revealed) return;
     }
     try {
@@ -115,7 +171,9 @@ export function PasswordCell({ accountId }: { accountId: number }) {
       ) : null}
       <button
         type="button"
-        onClick={revealWithConsent}
+        onMouseEnter={onRevealMouseEnter}
+        onMouseLeave={onRevealMouseLeave}
+        onClick={onRevealClick}
         disabled={busy || consentBusy}
         title={revealed ? "Hide password" : "Reveal password (auto-hides after 10s)"}
         aria-label={revealed ? "Hide password" : "Reveal password"}
@@ -162,7 +220,7 @@ export function PasswordCell({ accountId }: { accountId: number }) {
       ) : null}
       <button
         type="button"
-        onClick={copy}
+        onClick={onCopy}
         disabled={busy || consentBusy}
         title="Copy password"
         aria-label="Copy password"

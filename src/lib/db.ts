@@ -175,6 +175,15 @@ export function createDatabase(filePath: string): Database.Database {
   db.pragma("foreign_keys = ON");
   db.exec(SCHEMA);
   migrate(db);
+  // Restrict the database file to the owner — the ledger holds decrypted
+  // passwords and must not be readable by other accounts on the machine.
+  if (filePath !== ":memory:") {
+    try {
+      fs.chmodSync(filePath, 0o600);
+    } catch {
+      // best effort — some containers / filesystems ignore chmod
+    }
+  }
   // After migrate(): the game columns must exist before they can be indexed,
   // and the table rebuilds inside migrate() drop any index on the old table.
   db.exec(GAME_INDEXES);

@@ -106,7 +106,7 @@ function now(): string {
 /** The activity log is capped so the table can never grow unbounded. */
 const EVENT_RETENTION = 10_000;
 
-function logEvent(
+export function logEvent(
   accountId: number | null,
   email: string,
   type: FleetEvent["type"],

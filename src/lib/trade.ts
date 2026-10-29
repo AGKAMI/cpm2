@@ -96,30 +96,38 @@ export function matchCarName(query: string, game: GameType, limit = 5): CarMatch
     const union = new Set([...qTokens, ...tokens]).size;
     const jaccard = union ? intersection / union : 0;
 
-    const shorter = qTokens.size <= tokens.size ? [...qTokens] : [...tokens];
-    const longer = qTokens.size <= tokens.size ? tokens : qTokens;
-    const contained = shorter.length > 0 && shorter.every((token) => longer.has(token));
+    // Every query token present in the catalog name (query is a partial, e.g.
+    // "golf r" → VOLKSWAGEN GOLF R).
+    const qContained = qTokens.size > 0 && [...qTokens].every((token) => tokens.has(token));
+    // Every catalog token present in the query (catalog name is a partial).
+    const catalogContained = tokens.size > 0 && [...tokens].every((token) => qTokens.has(token));
+    // Identical token sets — an exact catalog name match.
+    const exact = qContained && catalogContained;
 
     // A match must share at least one token with the query — a pure
     // edit-distance match (e.g. "Golf R" → Golf MK2 / MK6 / Scirocco) is not
-    // plausible and must not be offered. Containment and token overlap still
-    // score high; levenshtein only breaks ties between token-overlapping names.
+    // plausible and must not be offered. Levenshtein only kicks in when at
+    // least two tokens overlap, so a shared prefix alone can't inflate the
+    // score for a different model. The threshold (0.6) is deliberately high:
+    // when nothing in the catalog is a genuine match, return nothing and let
+    // the user pick from the catalog search instead of confirming a wrong car.
     const score = Math.max(
+      exact ? 1 : 0,
       jaccard * 0.9,
-      contained ? 0.85 : 0,
-      intersection > 0 ? levenshteinRatio(q, normalized) : 0,
+      qContained ? 0.9 : 0,
+      catalogContained ? 0.85 : 0,
+      intersection >= 2 ? levenshteinRatio(q, normalized) * 0.8 : 0,
     );
 
     return {
       code: car.code,
       name: car.name,
       score,
-      intersection,
     };
   });
 
   return scored
-    .filter((match) => match.intersection > 0 && match.score >= 0.5)
+    .filter((match) => match.score >= 0.6)
     .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
     .slice(0, limit);
 }

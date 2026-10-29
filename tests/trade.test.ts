@@ -111,6 +111,20 @@ describe("fuzzy car matcher", () => {
     assert.deepEqual(matchCarName("", "cpm2", 5), []);
     assert.deepEqual(matchCarName("zzzz qqqv xxxv", "cpm2", 5), []);
   });
+
+  it("does not offer the wrong Golf generation for a Golf R screenshot", () => {
+    // Gemini read "Volkswagen Golf R" (the CPM2 MK7 Golf R). The catalog has
+    // no Golf MK7 / Golf R, so the closest entries (Golf MK2 GTI #157, Golf
+    // MK6 GTI #113, Scirocco III #2) share only a prefix and must NOT be
+    // offered — confirming them would price the wrong car.
+    const matches = matchCarName("Volkswagen Golf R", "cpm2", 6);
+    const codes = new Set(matches.map((match) => match.code));
+    assert.ok(!codes.has(157), "Golf MK2 GTI must not be offered for a Golf R");
+    assert.ok(!codes.has(113), "Golf MK6 GTI must not be offered for a Golf R");
+    assert.ok(!codes.has(2), "Scirocco III must not be offered for a Golf R");
+    // With no genuine match in the catalog, the list should be empty.
+    assert.deepEqual(matches, []);
+  });
 });
 
 describe("trade store", () => {

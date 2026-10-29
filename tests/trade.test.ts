@@ -38,7 +38,7 @@ describe("car valuation", () => {
   });
 
   it("values a cash car through the cash rate", () => {
-    // Float-tolerant: 25M Ã— 0.0000025 lands a hair off 62.5 in IEEE doubles.
+    // Float-tolerant: 25M Ãƒâ€” 0.0000025 lands a hair off 62.5 in IEEE doubles.
     assert.ok(Math.abs(carValueRands("cash", 25_000_000, rates) - 62.5) < 1e-9);
   });
 
@@ -59,14 +59,14 @@ describe("trade verdict", () => {
     assert.equal(tradeVerdict(0, 0).status, "fair");
   });
 
-  it("calls getting more than you give a gain â€” the F90/2.5k bug", () => {
-    // Give the 5k-coin car (â‰ˆR164.50), receive the 2.5k-coin one (â‰ˆR82.25):
+  it("calls getting more than you give a gain Ã¢â‚¬â€ the F90/2.5k bug", () => {
+    // Give the 5k-coin car (Ã¢â€°Ë†R164.50), receive the 2.5k-coin one (Ã¢â€°Ë†R82.25):
     // that must be a LOSS, never "worth it in your favour".
     const robbed = tradeVerdict(164.5, 82.25);
     assert.equal(robbed.status, "loss");
     assert.ok(Math.abs(robbed.delta - -82.25) < 1e-9);
 
-    // The mirror: receive more than you give â†’ gain.
+    // The mirror: receive more than you give Ã¢â€ â€™ gain.
     const winning = tradeVerdict(900, 1100);
     assert.equal(winning.status, "gain");
     assert.equal(winning.delta, 200);
@@ -98,7 +98,7 @@ describe("fuzzy car matcher", () => {
   });
 
   it("never leaks another game's car for the same code", () => {
-    // Code 13 is a Honda Civic in CPM2 and a Peugeot in CPM1 â€” a CPM2 query
+    // Code 13 is a Honda Civic in CPM2 and a Peugeot in CPM1 Ã¢â‚¬â€ a CPM2 query
     // scoped to CPM1 must not return the Civic.
     const civic = carsForGame("cpm2").find((entry) => entry.code === 13);
     if (civic && /CIVIC/i.test(civic.name)) {
@@ -115,7 +115,7 @@ describe("fuzzy car matcher", () => {
   it("matches the MK7 when a Golf VR6 / R is scanned", () => {
     // #113 was renamed from MK6 to MK7 GTI (there is no MK6 in the game).
     // A Gemini read of "Volkswagen Golf VR6" / "Volkswagen Golf R" must now
-    // match #113 (MK7 GTI) â€” same make + model â€” and must NOT match Scirocco
+    // match #113 (MK7 GTI) Ã¢â‚¬â€ same make + model Ã¢â‚¬â€ and must NOT match Scirocco
     // (#2), which shares only the brand token.
     const byR = matchCarName("Volkswagen Golf R", "cpm2", 6);
     const codesR = new Set(byR.map((match) => match.code));
@@ -126,6 +126,7 @@ describe("fuzzy car matcher", () => {
     const codesVR6 = new Set(byVR6.map((match) => match.code));
     assert.ok(codesVR6.has(113), "Golf MK7 GTI must be offered for a Golf VR6 scan");
     assert.ok(!codesVR6.has(2), "Scirocco III must not be offered for a Golf VR6 scan");
+    assert.ok(!codesVR6.has(157), "Golf MK2 GTI must not be offered for a Golf VR6 scan");
   });
 });
 

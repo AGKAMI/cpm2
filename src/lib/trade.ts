@@ -82,14 +82,37 @@ function levenshteinRatio(a: string, b: string): number {
  * Matches below 0.4 are dropped — the user confirms the pick anyway, so the
  * list should stay short and plausible rather than exhaustive.
  */
+/** Generation tokens used in catalog names (MK2, MK7, …). VR6 is mapped to
+ *  MK7 because in the CPM2 catalog the VR6 badge only appears on the Mk7 Golf. */
+const GEN_TOKENS = new Set([
+  "MK1", "MK2", "MK3", "MK4", "MK5", "MK6", "MK7", "MK8",
+]);
+
+function genTokenOf(tokens: Set<string>): string | null {
+  for (const token of tokens) {
+    if (GEN_TOKENS.has(token)) return token;
+    if (token === "VR6") return "MK7";
+  }
+  return null;
+}
+
 export function matchCarName(query: string, game: GameType, limit = 5): CarMatch[] {
   const q = normalizeName(query);
   if (!q) return [];
   const qTokens = tokenSet(query);
+  const qGen = genTokenOf(qTokens);
 
   const scored = carsForGame(game).map((car) => {
     const normalized = normalizeName(car.name);
     const tokens = tokenSet(car.name);
+    const catGen = genTokenOf(tokens);
+
+    // A Mk7 VR6 / Golf R must not match an MK2 GTI — they are entirely
+    // different cars that happen to share "Volkswagen Golf" tokens. If both
+    // sides carry an explicit generation and they disagree, reject outright.
+    if (qGen && catGen && qGen !== catGen) {
+      return { code: car.code, name: car.name, score: 0 };
+    }
 
     let intersection = 0;
     for (const token of qTokens) if (tokens.has(token)) intersection += 1;

@@ -29,9 +29,12 @@ export function PasswordCell({ accountId }: { accountId: number }) {
   const revealedViaHover = useRef(false);
   const toast = useToast();
 
-  // Auto-remask: the password only stays on screen for 10 seconds.
+  // Auto-remask: the password only stays on screen for 10 seconds — but ONLY
+  // for explicit click reveals. Hover reveals hide on mouse leave instead.
   useEffect(() => {
     if (revealed === null) return;
+    // Hover reveals are not timed — they hide when the pointer leaves.
+    if (revealedViaHover.current) return;
     const timer = setInterval(() => {
       const remaining = (deadline.current ?? 0) - Date.now();
       if (remaining <= 0) {
@@ -77,7 +80,6 @@ export function PasswordCell({ accountId }: { accountId: number }) {
     deadline.current = Date.now() + REMASK_MS;
     setRevealed(result.password);
     setSecondsLeft(Math.ceil(REMASK_MS / 1000));
-    revealedViaHover.current = false; // explicit reveal is persistent, not hover-driven
     setConsentEarned(true);
     return result.password;
   }
@@ -133,6 +135,7 @@ export function PasswordCell({ accountId }: { accountId: number }) {
       return;
     }
     if (consentEarned) {
+      revealedViaHover.current = false;
       await reveal();
       return;
     }

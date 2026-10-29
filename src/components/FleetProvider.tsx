@@ -123,24 +123,19 @@ export function FleetProvider({ children }: { children: ReactNode }) {
     }, 1200);
   }, [refresh]);
 
-  /** Applies one server-confirmed account into whichever list holds it. */
+  /** Applies one server-confirmed account into whichever list holds it.
+   *  Returns true when the account already existed in either list (so callers
+   *  know whether to prepend instead of updating in place). Uses the ref
+   *  mirror because setState updaters don't run synchronously. */
   const applyAccount = useCallback((next: AccountSummary) => {
-    let placed = false;
+    const exists = accountsRef.current.some((a) => a.id === next.id);
     setAccounts((current) =>
-      current.map((account) => {
-        if (account.id !== next.id) return account;
-        placed = true;
-        return next;
-      }),
+      current.map((account) => (account.id !== next.id ? account : next)),
     );
     setArchived((current) =>
-      current.map((account) => {
-        if (account.id !== next.id) return account;
-        placed = true;
-        return next;
-      }),
+      current.map((account) => (account.id !== next.id ? account : next)),
     );
-    return placed;
+    return exists;
   }, []);
 
   /** Optimistic local patch so steppers feel instant. */
@@ -178,7 +173,9 @@ export function FleetProvider({ children }: { children: ReactNode }) {
     async (payload: unknown) => {
       try {
         const { account } = await api.create(payload);
-        setAccounts((current) => [account, ...current]);
+        setAccounts((current) =>
+          current.some((a) => a.id === account.id) ? current : [account, ...current],
+        );
         setStats((current) =>
           current ? { ...current, accounts: current.accounts + 1 } : current,
         );

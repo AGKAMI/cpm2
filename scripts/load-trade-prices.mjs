@@ -35,7 +35,7 @@ const ENTRIES = [
   [10, "coin", 10000], // FERRARI F12BERLINETTA
   [11, "coin", 1500], // NISSAN GT-R (R34 SKYLINE)
   [12, "coin", 1000], // MITSUBISHI LANCER EVOLUTION X
-  [13, "coin", 500], // HONDA CIVIC SEDAN (8TH GEN)
+  [13, "coin", 500], // HONDA CIVIC EK9
   [14, "coin", 1000], // NISSAN GT-R (R35)
   [15, "coin", 2000], // AUDI RS4 AVANT (B8)
   [17, "coin", 1500], // MERCEDES-BENZ C63 AMG (W204)

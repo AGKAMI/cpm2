@@ -246,7 +246,7 @@ export const CAR_CATALOG: CarEntry[] = [
   { code: 10, name: "FERRARI F12BERLINETTA", game: "cpm2" },
   { code: 11, name: "NISSAN GT-R (R34 SKYLINE)", game: "cpm2" },
   { code: 12, name: "MITSUBISHI LANCER EVOLUTION X", game: "cpm2" },
-  { code: 13, name: "HONDA CIVIC SEDAN (8TH GEN)", game: "cpm2" },
+  { code: 13, name: "HONDA CIVIC EK9", game: "cpm2" },
   { code: 14, name: "NISSAN GT-R (R35)", game: "cpm2" },
   { code: 15, name: "AUDI RS4 AVANT (B8)", game: "cpm2" },
   { code: 17, name: "MERCEDES-BENZ C63 AMG (W204)", game: "cpm2" },

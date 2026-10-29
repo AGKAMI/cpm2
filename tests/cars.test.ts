@@ -102,7 +102,7 @@ describe("car catalog", () => {
   it("resolves COLLIDING codes to different cars per game", () => {
     // The whole reason `game` exists: same integer, different car.
     assert.equal(carByCode(13, "cpm1")?.name, "2007 PEUGEOT 308");
-    assert.equal(carByCode(13, "cpm2")?.name, "HONDA CIVIC SEDAN (8TH GEN)");
+    assert.equal(carByCode(13, "cpm2")?.name, "HONDA CIVIC EK9");
     assert.notEqual(carByCode(13, "cpm1")?.name, carByCode(13, "cpm2")?.name);
 
     const both = carsByCode(13);
@@ -276,7 +276,7 @@ describe("garage inventory", () => {
   it("defaults new accounts to CPM2 so existing flows are unchanged", () => {
     const account = makeAccount("cpm2-default@cpm2.gg", 5, 0);
     assert.equal(account.game, "cpm2");
-    assert.equal(addGarageCar(account.id, { carCode: 13 }).carName, "HONDA CIVIC SEDAN (8TH GEN)");
+    assert.equal(addGarageCar(account.id, { carCode: 13 }).carName, "HONDA CIVIC EK9");
   });
 
   it("refuses a car from the other game", () => {

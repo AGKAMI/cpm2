@@ -105,17 +105,17 @@ export function matchCarName(query: string, game: GameType, limit = 5): CarMatch
     const exact = qContained && catalogContained;
 
     // A match must share at least one token with the query — a pure
-    // edit-distance match (e.g. "Golf R" → Golf MK2 / MK6 / Scirocco) is not
-    // plausible and must not be offered. Levenshtein only kicks in when at
-    // least two tokens overlap, so a shared prefix alone can't inflate the
-    // score for a different model. The threshold (0.6) is deliberately high:
-    // when nothing in the catalog is a genuine match, return nothing and let
-    // the user pick from the catalog search instead of confirming a wrong car.
+    // edit-distance match (e.g. "Golf R" → Scirocco) is not plausible and must
+    // not be offered. When the brand + model align (two shared tokens), that's
+    // a genuine candidate even if the generation/trim differs; levenshtein and
+    // jaccard fine-tune the score. The threshold (0.6) is high enough that
+    // unrelated cars (Scirocco, MK2 when MK7 is the read) never qualify.
     const score = Math.max(
       exact ? 1 : 0,
-      jaccard * 0.9,
       qContained ? 0.9 : 0,
       catalogContained ? 0.85 : 0,
+      intersection >= 2 ? 0.7 : 0,
+      jaccard * 0.9,
       intersection >= 2 ? levenshteinRatio(q, normalized) * 0.8 : 0,
     );
 

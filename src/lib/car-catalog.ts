@@ -313,7 +313,7 @@ export const CAR_CATALOG: CarEntry[] = [
   { code: 110, name: "RANGE ROVER SPORT SVR", game: "cpm2" },
   { code: 111, name: "ACURA / HONDA NSX (NC1)", game: "cpm2" },
   { code: 112, name: "MERCEDES-BENZ S-CLASS (W140)", game: "cpm2" },
-  { code: 113, name: "VOLKSWAGEN GOLF MK6 GTI", game: "cpm2" },
+  { code: 113, name: "VOLKSWAGEN GOLF MK7 GTI", game: "cpm2" },
   { code: 114, name: "MERCEDES-AMG E63 S (W213)", game: "cpm2" },
   { code: 115, name: "AUDI R8 V10 PERFORMANCE", game: "cpm2" },
   { code: 116, name: "FORD MUSTANG GT FASTBACK (2015)", game: "cpm2" },

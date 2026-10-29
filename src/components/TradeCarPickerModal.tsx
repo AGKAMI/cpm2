@@ -123,6 +123,27 @@ export function TradeCarPickerModal({
     onClose();
   }
 
+  /**
+   * Hand a Gemini miss off to the catalog tab. The raw read (e.g. "Volkswagen
+   * Golf VR6") often matches nothing, so the pre-filled query is shortened
+   * token by token until it actually returns catalog cars — the user then
+   * browses what the catalog really has instead of confirming a guess.
+   */
+  function searchCatalogFor(name: string) {
+    const tokens = name.trim().split(/\s+/).filter(Boolean);
+    let best = tokens.slice(0, 2).join(" ") || name.trim();
+    for (let count = tokens.length; count >= 1; count -= 1) {
+      const candidate = tokens.slice(0, count).join(" ");
+      if (searchCars(candidate, 1, "cpm2").length > 0) {
+        best = candidate;
+        break;
+      }
+    }
+    setQuery(best);
+    setDebounced(best);
+    setTab("catalog");
+  }
+
   return (
     <Modal
       open={open}
@@ -304,6 +325,19 @@ export function TradeCarPickerModal({
                   <p className="rounded-[14px] border border-oxblood/35 bg-oxblood/8 px-3 py-2 text-xs text-oxblood">
                     {error}
                   </p>
+                ) : null}
+
+                {/* Gemini read a car the catalog doesn't have — hand off to a
+                    catalog search pre-filled with its make/model so the user
+                    sees what the catalog really offers. */}
+                {!scanning && geminiName && matches.length === 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => searchCatalogFor(geminiName)}
+                    className="cursor-pointer self-start rounded-full border border-racing/40 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-racing transition hover:bg-racing/10"
+                  >
+                    Search the catalog for “{geminiName}”
+                  </button>
                 ) : null}
 
                 {matches.length > 0 ? (

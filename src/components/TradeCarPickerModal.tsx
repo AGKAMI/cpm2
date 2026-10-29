@@ -131,9 +131,13 @@ export function TradeCarPickerModal({
       subtitle="Search the CPM2 catalog, or let Gemini read a screenshot — you confirm the match either way."
       width="max-w-2xl"
       footer={
-        <Button variant="primary" onClick={handleClose} type="button">
-          Done
-        </Button>
+        scanning
+          ? null
+          : (
+              <Button variant="primary" onClick={handleClose} type="button">
+                Done
+              </Button>
+            )
       }
     >
       <div className="flex flex-col gap-4">

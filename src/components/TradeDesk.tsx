@@ -20,8 +20,10 @@ import { TradeCarPickerModal } from "@/components/TradeCarPickerModal";
 
 type SideKey = "you" | "them";
 
+type SideCar = { code: number; qty: number };
+
 type Side = {
-  cars: number[];
+  cars: SideCar[];
   cash: number;
 };
 
@@ -83,10 +85,16 @@ export function TradeDesk() {
   }, []);
 
   function addCar(side: SideKey, code: number) {
-    setSides((current) => ({
-      ...current,
-      [side]: { ...current[side], cars: [...current[side].cars, code] },
-    }));
+    setSides((current) => {
+      const cars = [...current[side].cars];
+      const existing = cars.find((entry) => entry.code === code);
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        cars.push({ code, qty: 1 });
+      }
+      return { ...current, [side]: { ...current[side], cars } };
+    });
     // No forced price entry — an unpriced car just shows as "no price on
     // record" and the verdict carries a rough-call caveat. Recording a price
     // is optional, one tap on the car row, and saved to the book forever.
@@ -95,8 +103,14 @@ export function TradeDesk() {
   function removeCar(side: SideKey, code: number) {
     setSides((current) => {
       const cars = [...current[side].cars];
-      const index = cars.indexOf(code);
-      if (index >= 0) cars.splice(index, 1);
+      const index = cars.findIndex((entry) => entry.code === code);
+      if (index >= 0) {
+        if (cars[index].qty > 1) {
+          cars[index] = { ...cars[index], qty: cars[index].qty - 1 };
+        } else {
+          cars.splice(index, 1);
+        }
+      }
       return { ...current, [side]: { ...current[side], cars } };
     });
     setPricingCode((pending) => (pending === code ? null : pending));
@@ -132,13 +146,13 @@ export function TradeDesk() {
     function evaluate(side: Side) {
       let total = cashValueRands(side.cash, rates);
       let unpriced = 0;
-      for (const code of side.cars) {
+      for (const { code, qty } of side.cars) {
         const entry = prices.get(code);
         if (!entry) {
           unpriced += 1;
           continue;
         }
-        total += carValueRands(entry.kind, entry.price, rates);
+        total += carValueRands(entry.kind, entry.price, rates) * qty;
       }
       return { total, unpriced };
     }
@@ -184,7 +198,7 @@ export function TradeDesk() {
           <p className="py-2 text-[12px] text-ink-faint">No cars on this side yet.</p>
         ) : (
           <ul className="flex flex-col gap-1.5">
-            {side.cars.map((code, index) => {
+            {side.cars.map(({ code, qty }, index) => {
               const car = carByCode(code, "cpm2");
               const entry = prices.get(code);
               const unpriced = !entry;
@@ -226,6 +240,27 @@ export function TradeDesk() {
                         <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
                       </svg>
                     </button>
+                  </div>
+
+                  <div className="mt-1 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => removeCar(key, code)}
+                      aria-label={`Remove one ${car?.name ?? `code ${code}`}`}
+                      className="shrink-0 cursor-pointer place-items-center rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink transition hover:bg-ink/5"
+                    >
+                      −
+                    </button>
+                    <span className="shrink-0 num text-[12px] text-ink">{qty}</span>
+                    <button
+                      type="button"
+                      onClick={() => addCar(key, code)}
+                      aria-label={`Add one ${car?.name ?? `code ${code}`}`}
+                      className="shrink-0 cursor-pointer place-items-center rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink transition hover:bg-ink/5"
+                    >
+                      +
+                    </button>
+                    <span className="text-[10px] text-ink-faint">qty</span>
                   </div>
 
                   {pricing && unpriced ? (

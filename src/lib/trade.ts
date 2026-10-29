@@ -100,15 +100,26 @@ export function matchCarName(query: string, game: GameType, limit = 5): CarMatch
     const longer = qTokens.size <= tokens.size ? tokens : qTokens;
     const contained = shorter.length > 0 && shorter.every((token) => longer.has(token));
 
+    // A match must share at least one token with the query — a pure
+    // edit-distance match (e.g. "Golf R" → Golf MK2 / MK6 / Scirocco) is not
+    // plausible and must not be offered. Containment and token overlap still
+    // score high; levenshtein only breaks ties between token-overlapping names.
+    const score = Math.max(
+      jaccard * 0.9,
+      contained ? 0.85 : 0,
+      intersection > 0 ? levenshteinRatio(q, normalized) : 0,
+    );
+
     return {
       code: car.code,
       name: car.name,
-      score: Math.max(jaccard * 0.9, contained ? 0.85 : 0, levenshteinRatio(q, normalized)),
+      score,
+      intersection,
     };
   });
 
   return scored
-    .filter((match) => match.score >= 0.4)
+    .filter((match) => match.intersection > 0 && match.score >= 0.5)
     .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
     .slice(0, limit);
 }

@@ -61,10 +61,10 @@ function hasCode(fn: () => unknown, code: string) {
 }
 
 describe("car catalog", () => {
-  it("holds both games' catalogs: 207 CPM1 + 209 CPM2", () => {
+  it("holds both games' catalogs: 207 CPM1 + 210 CPM2", () => {
     assert.equal(carsForGame("cpm1").length, 207);
-    assert.equal(carsForGame("cpm2").length, 209);
-    assert.equal(CAR_CATALOG.length, 416);
+    assert.equal(carsForGame("cpm2").length, 210);
+    assert.equal(CAR_CATALOG.length, 417);
   });
 
   it("keeps codes unique WITHIN each game", () => {
@@ -143,7 +143,7 @@ describe("car catalog", () => {
     // An empty scoped query returns that game's slice, not the global one.
     assert.deepEqual(searchCars("", 5, "cpm1"), carsForGame("cpm1").slice(0, 5));
     assert.equal(searchCars("", 9999, "cpm1").length, 207);
-    assert.equal(searchCars("", 9999, "cpm2").length, 209);
+    assert.equal(searchCars("", 9999, "cpm2").length, 210);
   });
 
   it("searchCars returns the catalog slice for empty queries and respects the limit", () => {

@@ -38,6 +38,7 @@ const ENTRIES = [
   [13, "coin", 500], // HONDA CIVIC EK9
   [14, "coin", 1000], // NISSAN GT-R (R35)
   [15, "coin", 2000], // AUDI RS4 AVANT (B8)
+  [16, "coin", 10000], // BMW M3 COUPE (E36)
   [17, "coin", 1500], // MERCEDES-BENZ C63 AMG (W204)
   [18, "coin", 1000], // NISSAN SILVIA S15 / SPEC-R
   [19, "coin", 1500], // MERCEDES-AMG GT S

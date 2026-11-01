@@ -151,6 +151,19 @@ class TursoHttpClient {
     this.token = token;
   }
 
+  // Convert JS values to Hrana format expected by Turso /v2/pipeline
+  private toHranaValue(v: unknown): { type: string; value: string | null } {
+    if (typeof v === "bigint") return { type: "integer", value: v.toString() };
+    if (typeof v === "number") {
+      if (Number.isInteger(v)) return { type: "integer", value: v.toString() };
+      return { type: "float", value: v.toString() };
+    }
+    if (typeof v === "string") return { type: "text", value: v };
+    if (typeof v === "boolean") return { type: "integer", value: v ? "1" : "0" };
+    if (v === null || v === undefined) return { type: "null", value: null };
+    return { type: "text", value: String(v) };
+  }
+
   async execute(
       sqlOrStmt: string | { sql: string; args: unknown[] },
       args?: unknown[],
@@ -169,6 +182,7 @@ class TursoHttpClient {
         sql = sqlOrStmt.sql;
         stmtArgs = sqlOrStmt.args || [];
       }
+      const hranaArgs = stmtArgs.map((v) => this.toHranaValue(v));
       const resp = await fetch(`${this.url}/v2/pipeline`, {
         method: "POST",
         headers: {
@@ -176,30 +190,35 @@ class TursoHttpClient {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          requests: [{ type: "execute", stmt: { sql, args: stmtArgs } }],
+          requests: [{ type: "execute", stmt: { sql, args: hranaArgs } }],
         }),
       });
-    if (!resp.ok) {
-      throw new Error(`Turso HTTP ${resp.status}: ${await resp.text()}`);
-    }
-    const data = await resp.json();
-    const result = data.results?.[0];
-    if (!result || result.type !== "ok") {
-      throw new Error(`Turso error: ${JSON.stringify(data)}`);
-    }
-    const res = result.response.result;
-    return {
-      cols: res.cols.map((c: { name: string }) => c.name),
-      rows: res.rows.map((r: { [key: string]: unknown }) =>
-        Object.fromEntries(
-          r.map((v: { value: unknown }, i: number) => [res.cols[i].name, v.value]),
+      if (!resp.ok) {
+        throw new Error(`Turso HTTP ${resp.status}: ${await resp.text()}`);
+      }
+      const data = await resp.json();
+      const result = data.results?.[0];
+      if (!result || result.type !== "ok") {
+        throw new Error(`Turso error: ${JSON.stringify(data)}`);
+      }
+      const res = result.response.result;
+      return {
+        cols: res.cols.map((c: { name: string }) => c.name),
+        rows: res.rows.map((r: { value: unknown }[]) =>
+          Object.fromEntries(
+            r.map((v: { value: unknown }, i: number) => [res.cols[i].name, v.value]),
+          ),
         ),
-      ),
-      affectedRowCount: res.affected_row_count ?? 0,
-      lastInsertRowid: res.last_insert_rowid ?? null,
-    };
+        affectedRowCount: res.affected_row_count ?? 0,
+        lastInsertRowid: res.last_insert_rowid ?? null,
+      };
   }
 
+  /**
+   * Execute multiple raw SQL statements in one batch.
+   * INTERNAL USE ONLY — applies the schema on first client creation.
+   * Do not pass user-supplied SQL; all data mutations must use parameterized execute() calls.
+   */
   async batch(sqls: string[]): Promise<void> {
       const resp = await fetch(`${this.url}/v2/pipeline`, {
         method: "POST",

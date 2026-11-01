@@ -35,10 +35,15 @@ const TURSO_TOKEN = fs.readFileSync(
 function toHranaValue(v) {
   if (typeof v === "bigint") return { type: "integer", value: v.toString() };
   if (typeof v === "number") {
-    if (Number.isInteger(v)) return { type: "integer", value: v.toString() };
-    return { type: "float", value: v.toString() };
+    if (Number.isInteger(v)) return { type: "integer", value: v };
+    return { type: "float", value: v };
   }
-  if (typeof v === "string") return { type: "text", value: v };
+  if (typeof v === "string") {
+    // Try to parse numeric strings
+    if (/^-?\d+$/.test(v)) return { type: "integer", value: v };
+    if (/^-?\d*\.\d+$/.test(v)) return { type: "float", value: v };
+    return { type: "text", value: v };
+  }
   if (typeof v === "boolean") return { type: "integer", value: v ? "1" : "0" };
   if (v === null || v === undefined) return { type: "null", value: null };
   return { type: "text", value: String(v) };

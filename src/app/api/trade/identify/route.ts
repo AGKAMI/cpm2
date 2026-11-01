@@ -1,7 +1,9 @@
+import { NextResponse } from "next/server";
 import { ApiError } from "@/lib/api";
 import { fail, ok, readJson } from "@/lib/route";
 import { matchCarName } from "@/lib/trade";
 import { tradeIdentifySchema } from "@/lib/validation";
+import { rateLimited } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +29,17 @@ type GeminiResponse = {
 
 export async function POST(request: Request) {
   try {
+    const ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+      request.headers.get("x-real-ip") ||
+      "local";
+    if (rateLimited(`trade:identify:${ip}`)) {
+      return NextResponse.json(
+        { error: { code: "AUTH_SLOW_DOWN", message: "Too many attempts — wait a minute and try again." } },
+        { status: 429 },
+      );
+    }
+
     const input = tradeIdentifySchema.parse(await readJson(request));
 
     const key = process.env.GEMINI_API_KEY?.trim();

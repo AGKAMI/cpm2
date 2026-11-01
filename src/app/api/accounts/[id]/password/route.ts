@@ -1,4 +1,4 @@
-import { revealPassword } from "@/lib/service";
+import { revealPassword } from "@/lib/service-turso";
 import { fail, ok, parseId } from "@/lib/route";
 import { REVEAL_CONSENT_COOKIE, readRequestCookie, verifyRevealConsentToken } from "@/lib/auth";
 
@@ -22,7 +22,7 @@ export async function GET(request: Request, context: RouteContext) {
     }
 
     const { id } = await context.params;
-    return ok(revealPassword(parseId(id)));
+    return ok(await revealPassword(parseId(id)));
   } catch (err) {
     return fail(err);
   }

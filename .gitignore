@@ -48,3 +48,8 @@ next-env.d.ts
 *.cpm2-export.csv
 *.cpm2-export.json
 .firecrawl/
+.vercel
+
+# secrets / credentials (never commit tokens)
+production
+scripts/test-arg-format.py

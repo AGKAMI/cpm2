@@ -2,6 +2,7 @@
 
 import { PageHeading } from "@/components/PageHeading";
 import { TradeDesk } from "@/components/TradeDesk";
+import Link from "next/link";
 
 /**
  * The trade desk. CPM2 only for now — CPM1's plate is a promise, not a lie:
@@ -10,7 +11,16 @@ import { TradeDesk } from "@/components/TradeDesk";
 export default function TradePage() {
   return (
     <>
-      <PageHeading folio="T-01" title="Trade Desk" meta="CPM2 · value every deal in Rands" />
+      <div className="flex items-center justify-between gap-3 border-b border-ink/12 pb-4 mb-6">
+        <div className="flex items-center gap-2">
+          <PageHeading folio="T-01" title="Trade Desk" meta="CPM2 · value every deal in Rands" />
+        </div>
+        <Link href="/trade/guest" passHref>
+          <a className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-faint hover:text-ink underline-offset-4 hover:underline">
+            Open public calculator →
+          </a>
+        </Link>
+      </div>
       <div className="mb-4 flex gap-2" role="tablist" aria-label="Game">
         <button
           type="button"

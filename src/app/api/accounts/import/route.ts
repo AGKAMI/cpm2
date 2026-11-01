@@ -1,4 +1,4 @@
-import { importAccounts } from "@/lib/service";
+import { importAccounts } from "@/lib/service-turso";
 import { fail, ok, readJson } from "@/lib/route";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const report = importAccounts(payload, format);
+    const report = await importAccounts(payload, format);
     return ok({ import: report }, report.created > 0 ? 201 : 200);
   } catch (err) {
     return fail(err);

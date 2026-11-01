@@ -6,7 +6,7 @@ import {
   rateLimited,
   revealCookieOptions,
 } from "@/lib/auth";
-import { logEvent } from "@/lib/service";
+import { logEvent } from "@/lib/service-turso";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
       );
     }
 
-    logEvent(null, "(console)", "password_revealed", "Console password re-entered to earn reveal consent");
+    await logEvent(null, "(console)", "password_revealed", "Console password re-entered to earn reveal consent");
 
     const response = NextResponse.json({ ok: true });
     response.cookies.set(

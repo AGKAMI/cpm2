@@ -1,4 +1,4 @@
-import { carOwners } from "@/lib/service";
+import { carOwners } from "@/lib/service-turso";
 import { fail, ok } from "@/lib/route";
 import { GAMES, isGameType, type GameType } from "@/lib/constants";
 import { parseCarCode } from "@/lib/http";
@@ -34,7 +34,7 @@ export async function GET(
   }
 
   try {
-    return ok({ owners: carOwners(game as GameType, carCode) });
+    return ok({ owners: await carOwners(game as GameType, carCode) });
   } catch (err) {
     return fail(err);
   }

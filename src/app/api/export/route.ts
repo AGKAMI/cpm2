@@ -1,4 +1,4 @@
-import { exportFleet } from "@/lib/service";
+import { exportFleet } from "@/lib/service-turso";
 import { fail } from "@/lib/route";
 import { REVEAL_CONSENT_COOKIE, readRequestCookie, verifyRevealConsentToken } from "@/lib/auth";
 
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     const format = raw === "csv" ? "csv" : "json";
     const confirmed = url.searchParams.get("confirm") === "true";
 
-    const { body, contentType } = exportFleet(format, { confirmed });
+    const { body, contentType } = await exportFleet(format, { confirmed });
     const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
 
     return new Response(body, {

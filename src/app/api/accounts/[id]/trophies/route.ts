@@ -1,4 +1,4 @@
-import { listTrophies, setTrophies, trophySummary } from "@/lib/service";
+import { listTrophies, setTrophies, trophySummary } from "@/lib/service-turso";
 import { fail, ok, parseId, readJson } from "@/lib/route";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +10,7 @@ export async function GET(_request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
     const accountId = parseId(id);
-    return ok({ trophies: listTrophies(accountId), summary: trophySummary(accountId) });
+    return ok({ trophies: await listTrophies(accountId), summary: await trophySummary(accountId) });
   } catch (err) {
     return fail(err);
   }
@@ -20,8 +20,9 @@ export async function GET(_request: Request, context: RouteContext) {
 export async function PUT(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
-    const trophy = setTrophies(parseId(id), await readJson(request));
-    return ok({ trophy, summary: trophySummary(parseId(id)) });
+    const accountId = parseId(id);
+    const trophy = await setTrophies(accountId, await readJson(request));
+    return ok({ trophy, summary: await trophySummary(accountId) });
   } catch (err) {
     return fail(err);
   }

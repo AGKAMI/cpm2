@@ -2,7 +2,7 @@ import { isGameType } from "@/lib/constants";
 import { ApiError } from "@/lib/api";
 import { parseCarCode } from "@/lib/http";
 import { fail, ok, readJson } from "@/lib/route";
-import { deleteTradePrice, listTradePrices, setTradePrice } from "@/lib/trade-store";
+import { deleteTradePrice, listTradePrices, setTradePrice } from "@/lib/trade-store-turso";
 import { tradePriceSetSchema } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     if (!isGameType(game)) {
       throw new ApiError(400, "INVALID_GAME", "Game must be cpm1 or cpm2.");
     }
-    return ok({ prices: listTradePrices(game) });
+    return ok({ prices: await listTradePrices(game) });
   } catch (err) {
     return fail(err);
   }
@@ -24,7 +24,7 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
   try {
     const input = tradePriceSetSchema.parse(await readJson(request));
-    return ok({ price: setTradePrice(input.game, input.code, input.kind, input.price) });
+    return ok({ price: await setTradePrice(input.game, input.code, input.kind, input.price) });
   } catch (err) {
     return fail(err);
   }
@@ -39,7 +39,7 @@ export async function DELETE(request: Request) {
       throw new ApiError(400, "INVALID_GAME", "Game must be cpm1 or cpm2.");
     }
     const code = parseCarCode(params.get("code") ?? "");
-    return ok({ deleted: deleteTradePrice(game, code) });
+    return ok({ deleted: await deleteTradePrice(game, code) });
   } catch (err) {
     return fail(err);
   }

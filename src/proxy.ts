@@ -13,11 +13,29 @@ import { errorPayload } from "@/lib/api";
  *    to the owner's Telegram user id, so a stranger who finds the bot and
  *    opens the mini app gets nothing but a locked screen.
  *
- * Everything else is refused: API calls get a JSON 401/403, page navigations
- * are redirected to /login. /login itself, the /api/auth routes and static
- * assets stay public so the lock screen can do its job.
+ * Read-only trade calculator is public: anyone can check prices and rates
+ * without logging in. Everything else (writes, fleet data, settings) stays
+ * behind auth.
+ *
+ * /login itself, the /api/auth routes and static assets stay public so the
+ * lock screen can do its job.
  */
 export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // --- Public read-only trade calculator (no login needed) ---
+  if (pathname.startsWith("/api/trade/prices") && request.method === "GET") {
+    return NextResponse.next();
+  }
+  if (pathname.startsWith("/api/trade/rates") && request.method === "GET") {
+    return NextResponse.next();
+  }
+  // Public guest page
+  if (pathname === "/trade/guest") {
+    return NextResponse.next();
+  }
+
+  // --- Owner-only gate ---
   if (verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value)) {
     return NextResponse.next();
   }
@@ -32,7 +50,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (request.nextUrl.pathname.startsWith("/api/")) {
+  if (pathname.startsWith("/api/")) {
     return NextResponse.json(
       { error: { code: "AUTH_REQUIRED", message: "Sign in to use the console." } },
       { status: 401 },

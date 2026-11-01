@@ -12,6 +12,7 @@ import { GaragePanel } from "@/components/GaragePanel";
 import { TrophyCabinet } from "@/components/TrophyCabinet";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/Toaster";
 import { LIMITS, GARAGE_RULES, formatNumber } from "@/lib/constants";
 
 const STEPS = { cash: 1_000_000, coins: 1_000, cars: 1 } as const;
@@ -20,6 +21,7 @@ export default function AccountPage() {
   const params = useParams<{ id: string }>();
   const fleet = useFleet();
   const shell = useShell();
+  const toast = useToast();
 
   const id = Number(params.id);
   const account = useMemo(
@@ -69,10 +71,25 @@ export default function AccountPage() {
           <Link href="/fleet" className="num text-[10px] text-ink-faint hover:text-racing">
             ← fleet
           </Link>
-          <div className="mt-2 flex items-center gap-3">
+          <div className="mt-2 flex items-center gap-2">
             <span className="plate">
               <span className="plate-text num text-[13px]">{account.email}</span>
             </span>
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(account.email);
+                toast.success("Email copied", "It is on your clipboard — paste it wherever you need it.");
+              }}
+              title="Copy email"
+              aria-label="Copy email"
+              className="square-btn h-7 w-7"
+            >
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+                <rect x="9" y="9" width="11" height="11" rx="2.5" />
+                <path d="M15 5.5A2.5 2.5 0 0012.5 3h-7A2.5 2.5 0 005.5 15" strokeLinecap="round" />
+              </svg>
+            </button>
             {archived ? (
               <span className="rounded-full border border-oxblood/40 px-1.5 py-0.5 font-sans text-[9px] font-semibold uppercase tracking-[0.14em] text-oxblood">
                 Archived

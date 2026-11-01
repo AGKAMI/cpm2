@@ -16,12 +16,14 @@ export const dynamic = "force-dynamic";
 const GEMINI_ENDPOINT =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
-const PROMPT = `This is a screenshot from the mobile game Car Parking Multiplayer 2.
-Identify the car the screenshot is about (the highlighted/centred car in a shop,
-garage or trade screen — not background traffic or UI icons).
-Reply with JSON only: {"carName": "<the car's displayed name>"}.
-Use the name as shown in the game where possible, otherwise the best
-make-and-model guess. If several cars are visible, pick the most prominent one.`;
+const PROMPT = `This is a screenshot from Car Parking Multiplayer 2 (CPM2), a mobile car game.
+Identify the highlighted/centred car — not background traffic or UI icons.
+Reply with JSON only: {"carName": "<the car's exact displayed name>"}.
+Rules:
+- Use the name exactly as it appears in CPM2 (make + model + generation, e.g. "VOLKSWAGEN GOLF MK7 GTI", not "MK2" or "MK6").
+- Do not invent generations or trims not shown.
+- CPM2 has a Golf MK7 GTI (code 157), not MK2/MK6 — do not guess those.
+- If several cars are visible, pick the most prominent one.`;
 
 type GeminiResponse = {
   candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;

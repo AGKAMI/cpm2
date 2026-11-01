@@ -47,7 +47,7 @@ export async function listTradePrices(game: GameType): Promise<TradePrice[]> {
 
   const prices: TradePrice[] = [];
   for (const row of rows) {
-    const car = carByCode(row.code, game);
+    const car = carByCode(Number(row.code), game);
     if (!car) continue;
     prices.push({
       game,

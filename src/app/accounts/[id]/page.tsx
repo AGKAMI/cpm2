@@ -35,6 +35,15 @@ export default function AccountPage() {
   );
 
   if (!account) {
+    // FleetProvider loads accounts asynchronously — while it's still
+    // fetching, show a loading plate instead of "Account not found".
+    if (fleet.loading) {
+      return (
+        <div className="panel rounded-[20px] px-6 py-16 text-center">
+          <p className="num text-[11px] uppercase tracking-[0.2em] text-ink-faint">loading accountâ€¦</p>
+        </div>
+      );
+    }
     return (
       <div className="panel rounded-[20px] px-6 py-16 text-center">
         <p className="font-sans text-[13px] font-semibold tracking-[-0.01em] text-ink">

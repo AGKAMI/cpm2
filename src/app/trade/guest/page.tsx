@@ -6,6 +6,7 @@ import { api } from "@/lib/client";
 import { carByCode } from "@/lib/car-catalog";
 import { formatNumber } from "@/lib/constants";
 import { carValueRands, cashValueRands, tradeVerdict } from "@/lib/trade";
+import { TradeCarPickerModal } from "@/components/TradeCarPickerModal";
 import type { TradePrice, TradePriceKind, TradeRates } from "@/lib/types";
 
 /**
@@ -42,6 +43,7 @@ export default function GuestTradeDesk() {
     you: { cars: [], cash: 0 },
     them: { cars: [], cash: 0 },
   });
+  const [pickerSide, setPickerSide] = useState<SideKey | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -130,14 +132,23 @@ export default function GuestTradeDesk() {
       <div className="panel-tight flex flex-col gap-3 rounded-[18px] px-4 py-4">
         <div className="flex items-baseline justify-between gap-2">
           <span className="label-caps">{title}</span>
-          <button
-            type="button"
-            onClick={() => clearSide(key)}
-            disabled={side.cars.length === 0 && side.cash === 0}
-            className="cursor-pointer text-[10px] text-ink-faint underline-offset-2 transition hover:text-oxblood hover:underline disabled:cursor-default disabled:opacity-0"
-          >
-            clear
-          </button>
+          <span className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPickerSide(key)}
+              className="cursor-pointer rounded-full border border-racing/40 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-racing transition hover:bg-racing/10"
+            >
+              + Car
+            </button>
+            <button
+              type="button"
+              onClick={() => clearSide(key)}
+              disabled={side.cars.length === 0 && side.cash === 0}
+              className="cursor-pointer text-[10px] text-ink-faint underline-offset-2 transition hover:text-oxblood hover:underline disabled:cursor-default disabled:opacity-0"
+            >
+              clear
+            </button>
+          </span>
         </div>
 
         {side.cars.length === 0 ? (
@@ -304,6 +315,14 @@ export default function GuestTradeDesk() {
           </p>
         </>
       )}
+      <TradeCarPickerModal
+        open={pickerSide !== null}
+        onClose={() => setPickerSide(null)}
+        onPick={(code) => {
+          if (pickerSide) addCar(pickerSide, code);
+        }}
+        prices={prices}
+      />
     </div>
   );
 }

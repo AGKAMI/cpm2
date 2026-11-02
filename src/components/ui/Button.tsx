@@ -6,20 +6,17 @@ type Variant = "primary" | "outline" | "ghost" | "danger" | "subtle";
 type Size = "sm" | "md" | "icon";
 
 const VARIANTS: Record<Variant, string> = {
-  primary:
-    "glass-accent text-paper border border-racing/40 hover:brightness-110 active:scale-[0.98]",
-  outline:
-    "glass-control text-ink hover:border-racing/45 hover:text-racing active:scale-[0.98]",
-  ghost: "border border-transparent text-ink-soft hover:bg-ink/6 hover:text-ink",
-  danger:
-    "border border-oxblood/35 bg-transparent text-oxblood hover:border-oxblood hover:bg-oxblood hover:text-paper active:scale-[0.98]",
-  subtle: "glass-control text-ink hover:border-ink/20 active:scale-[0.98]",
+  primary: "aether-btn aether-btn-primary",
+  outline: "aether-btn",
+  ghost: "aether-btn border-transparent hover:bg-mix(in srgb, var(--aether-text) 8%, transparent) hover:text-aether-text",
+  danger: "aether-btn border-mix(in srgb, var(--aether-accent) 20%, transparent) hover:border-mix(in srgb, var(--aether-accent) 50%, transparent) hover:bg-mix(in srgb, var(--aether-accent) 15%, transparent) hover:text-aether-accent",
+  subtle: "aether-btn border-transparent hover:bg-mix(in srgb, var(--aether-text) 6%, transparent)",
 };
 
 const SIZES: Record<Size, string> = {
-  sm: "h-9 px-4 text-[11px]",
-  md: "h-11 px-5 text-[12.5px]",
-  icon: "h-10 w-10 justify-center",
+  sm: "aether-btn-sm",
+  md: "aether-btn-md",
+  icon: "aether-btn-icon",
 };
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -38,7 +35,7 @@ export function Button({
   return (
     <button
       {...props}
-      className={`inline-flex cursor-pointer items-center gap-2 rounded-full font-sans font-semibold transition-[background-color,border-color,color,transform,filter] duration-150 disabled:cursor-not-allowed disabled:opacity-40 ${VARIANTS[variant]} ${SIZES[size]} ${className}`}
+      className={`inline-flex cursor-pointer items-center gap-2 rounded-full font-sans font-semibold ${VARIANTS[variant]} ${SIZES[size]} ${className}`}
     >
       {children}
     </button>

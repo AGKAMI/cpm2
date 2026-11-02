@@ -1,21 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { assertTelegramAuth } from "@/lib/telegram";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
-import { errorPayload } from "@/lib/api";
 
 /**
  * The single gate in front of the whole console.
  *
- * Two keys open it:
- * 1. a valid signed session cookie (desktop login, or a Telegram session the
- *    login screen established), or
- * 2. the Telegram initData header — verified against the bot token AND bound
- *    to the owner's Telegram user id, so a stranger who finds the bot and
- *    opens the mini app gets nothing but a locked screen.
- *
+ * One key opens it: a valid signed session cookie bound to a specific user.
  * Read-only trade calculator is public: anyone can check prices and rates
  * without logging in. Everything else (writes, fleet data, settings) stays
- * behind auth.
+ * behind per-user auth.
  *
  * /login itself, the /api/auth routes and static assets stay public so the
  * lock screen can do its job.
@@ -35,18 +27,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // --- Owner-only gate ---
-  if (verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value)) {
-    return NextResponse.next();
-  }
-
-  try {
-    await assertTelegramAuth(request);
-  } catch (err) {
-    const { status, body } = errorPayload(err);
-    return NextResponse.json(body, { status });
-  }
-  if (request.headers.get("X-Telegram-Init-Data")) {
+  // --- Per-user gate ---
+  const userId = verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value);
+  if (userId) {
     return NextResponse.next();
   }
 

@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { fail, readJson } from "@/lib/route";
+import { getUserByEmail } from "@/lib/service-turso";
 import {
   SESSION_COOKIE,
   createSessionToken,
-  passwordMatches,
   rateLimited,
+  scryptCompare,
   sessionCookieOptions,
 } from "@/lib/auth";
 
@@ -27,16 +28,21 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = (await readJson(request)) as { password?: unknown };
-    if (!passwordMatches(body.password)) {
+    const body = (await readJson(request)) as { email?: unknown; password?: unknown };
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const password = typeof body.password === "string" ? body.password : "";
+
+    const user = await getUserByEmail(email);
+    if (!user || !(await scryptCompare(password, user.password_hash))) {
+      // Same response whether the user exists or not — no enumeration.
       return NextResponse.json(
-        { error: { code: "AUTH_INVALID", message: "Wrong password." } },
+        { error: { code: "AUTH_INVALID", message: "Wrong email or password." } },
         { status: 401 },
       );
     }
 
-    const response = NextResponse.json({ ok: true });
-    response.cookies.set(SESSION_COOKIE, createSessionToken(), sessionCookieOptions(request));
+    const response = NextResponse.json({ ok: true, user: { id: user.id, email: user.email } });
+    response.cookies.set(SESSION_COOKIE, createSessionToken(user.id), sessionCookieOptions(request));
     return response;
   } catch (err) {
     return fail(err);

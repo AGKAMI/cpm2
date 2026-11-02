@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { fail } from "@/lib/route";
-import { SESSION_COOKIE, telegramOwnerId, verifySessionToken } from "@/lib/auth";
+import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -17,13 +17,14 @@ export async function GET(request: Request) {
       .map((part) => part.trim())
       .find((part) => part.startsWith(`${SESSION_COOKIE}=`))
       ?.slice(SESSION_COOKIE.length + 1);
-    if (!verifySessionToken(cookie ? decodeURIComponent(cookie) : undefined)) {
+    const userId = verifySessionToken(cookie ? decodeURIComponent(cookie) : undefined);
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "AUTH_REQUIRED", message: "Sign in to use the console." } },
         { status: 401 },
       );
     }
-    return NextResponse.json({ owner: { userId: telegramOwnerId() } });
+    return NextResponse.json({ user: { id: userId } });
   } catch (err) {
     return fail(err);
   }

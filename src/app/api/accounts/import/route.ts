@@ -1,5 +1,6 @@
 import { importAccounts } from "@/lib/service-turso";
 import { fail, ok, readJson } from "@/lib/route";
+import { currentUserId } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,7 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(request: Request) {
   try {
+    const userId = currentUserId(request);
     const url = new URL(request.url);
     const requested = (url.searchParams.get("format") ?? "json").toLowerCase();
     const format = requested === "csv" ? "csv" : "json";
@@ -29,7 +31,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const report = await importAccounts(payload, format);
+    const report = await importAccounts(payload, format, userId);
     return ok({ import: report }, report.created > 0 ? 201 : 200);
   } catch (err) {
     return fail(err);

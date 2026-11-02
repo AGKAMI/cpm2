@@ -15,7 +15,6 @@ const {
   TELEGRAM_INIT_DATA_HEADER,
   TELEGRAM_INIT_DATA_MAX_AGE_SECONDS,
 } = await import("../src/lib/telegram.ts");
-const { bindTelegramOwner } = await import("../src/lib/auth.ts");
 const { ApiError } = await import("../src/lib/api.ts");
 
 const TOKEN = "100200300:TELEGRAM-FAKE-TOKEN";
@@ -131,60 +130,36 @@ describe("telegram mini app · request guard", () => {
 
   it("lets a request without the header through (desktop / LAN context)", async () => {
     process.env.TELEGRAM_BOT_TOKEN = TOKEN;
-    await assertTelegramAuth(request(undefined)); // resolves silently
+    const result = await assertTelegramAuth(request(undefined));
+    assert.equal(result, null);
   });
 
-  it("skips verification entirely when no bot token is configured", async () => {
+  it("401s when no bot token is configured", async () => {
     const saved = process.env.TELEGRAM_BOT_TOKEN;
     delete process.env.TELEGRAM_BOT_TOKEN;
     try {
-      await assertTelegramAuth(request("garbage")); // even garbage passes
+      await assert.rejects(
+        () => assertTelegramAuth(request(signInitData(baseFields(), TOKEN))),
+        (err) => {
+          assert.ok(err instanceof ApiError);
+          assert.equal(err.status, 401);
+          assert.equal(err.code, "TELEGRAM_AUTH_INVALID");
+          return true;
+        },
+      );
     } finally {
       if (saved) process.env.TELEGRAM_BOT_TOKEN = saved;
     }
   });
 
-  it("accepts a request carrying a real signature from the BOUND owner", async () => {
+  it("returns the Telegram user id from a valid signature", async () => {
     process.env.TELEGRAM_BOT_TOKEN = TOKEN;
-    bindTelegramOwner(777000); // baseFields() signs as user 777000
-    await assertTelegramAuth(request(signInitData(baseFields(), TOKEN)));
+    const userId = await assertTelegramAuth(request(signInitData(baseFields(), TOKEN)));
+    assert.equal(userId, 777000);
   });
 
-  it("403s a valid signature from a DIFFERENT Telegram account once an owner is bound", async () => {
+  it("401s a forged header", async () => {
     process.env.TELEGRAM_BOT_TOKEN = TOKEN;
-    bindTelegramOwner(777000);
-    const stranger = signInitData(
-      baseFields({ user: JSON.stringify({ id: 666, first_name: "Stranger" }) }),
-      TOKEN,
-    );
-    await assert.rejects(
-      () => assertTelegramAuth(request(stranger)),
-      (err) => {
-        assert.ok(err instanceof ApiError);
-        assert.equal(err.status, 403);
-        assert.equal(err.code, "TELEGRAM_NOT_OWNER");
-        return true;
-      },
-    );
-  });
-
-  it("401s even a VALID signature while nobody has claimed the console", async () => {
-    process.env.TELEGRAM_BOT_TOKEN = TOKEN;
-    fs.rmSync(process.env.CPM2_OWNER_PATH!, { force: true });
-    await assert.rejects(
-      () => assertTelegramAuth(request(signInitData(baseFields(), TOKEN))),
-      (err) => {
-        assert.ok(err instanceof ApiError);
-        assert.equal(err.status, 401);
-        assert.equal(err.code, "AUTH_REQUIRED");
-        return true;
-      },
-    );
-  });
-
-  it("401s a forged header before any business logic would run", async () => {
-    process.env.TELEGRAM_BOT_TOKEN = TOKEN;
-    bindTelegramOwner(777000);
     await assert.rejects(
       () => assertTelegramAuth(request(signInitData(baseFields(), OTHER_TOKEN))),
       (err) => {

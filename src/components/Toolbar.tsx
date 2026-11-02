@@ -37,13 +37,13 @@ export function FleetToolbar({
   searchRef,
 }: FleetToolbarProps) {
   return (
-    <div className="flex flex-wrap items-end gap-x-5 gap-y-3">
+      <div className="flex flex-wrap items-end gap-x-5 gap-y-3">
       <div className="min-w-[200px] flex-1">
         <span className="label-caps">Search register</span>
         <div className="relative mt-1">
           <svg
             viewBox="0 0 24 24"
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-aether-text-faint"
             fill="none"
             stroke="currentColor"
             strokeWidth="1.8" aria-hidden="true"
@@ -72,10 +72,10 @@ export function FleetToolbar({
             name="filter"
             value={filter}
             onChange={(event) => onFilter(event.target.value as FleetFilter)}
-            className="glass-control mt-1 block h-10 cursor-pointer rounded-[12px] px-3 font-sans text-[12px] font-medium text-ink-soft hover:border-ink/20 focus:border-racing"
+            className="glass-control mt-1 block h-10 cursor-pointer rounded-[12px] px-3 font-sans text-[12px] font-medium text-aether-text-soft hover:border-aether-text/20 focus:border-aether-accent"
           >
           {FILTERS.map((item) => (
-            <option key={item.key} value={item.key} className="bg-paper-raised text-ink">
+            <option key={item.key} value={item.key} className="bg-aether-glass text-aether-text">
               {item.label}
             </option>
           ))}

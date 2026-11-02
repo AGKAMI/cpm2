@@ -238,6 +238,41 @@ export const tradePriceSetSchema = z.object({
 
 export type TradePriceSetInput = z.infer<typeof tradePriceSetSchema>;
 
+// ----------------------------------------------------------------- user auth
+
+/** New player registration. */
+export const userRegisterSchema = z
+  .object({
+    email: emailSchema,
+    password: passwordSchema,
+    confirmPassword: z.string(),
+    telegramUserId: z.coerce.number().int().positive().optional(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Passwords do not match.",
+  });
+
+export type UserRegisterInput = z.infer<typeof userRegisterSchema>;
+
+/** Player login. */
+export const userLoginSchema = z.object({
+  email: emailSchema,
+  password: z.string({ error: "Password is required." }).min(1, {
+    error: "Password is required.",
+  }),
+});
+
+export type UserLoginInput = z.infer<typeof userLoginSchema>;
+
+/** Telegram binding payload. */
+export const userTelegramBindSchema = z.object({
+  telegramUserId: z.coerce.number().int().positive(),
+  initData: z.string(),
+});
+
+export type UserTelegramBindInput = z.infer<typeof userTelegramBindSchema>;
+
 /** A screenshot handed to Gemini for car identification (≤ ~5MB binary). */
 export const tradeIdentifySchema = z.object({
   imageBase64: z

@@ -3,27 +3,24 @@ import { fail, readJson } from "@/lib/route";
 import { ApiError } from "@/lib/api";
 import {
   SESSION_COOKIE,
-  bindTelegramOwner,
   createSessionToken,
-  passwordMatches,
   rateLimited,
   sessionCookieOptions,
-  telegramOwnerId,
 } from "@/lib/auth";
 import { initDataUserId, telegramBotToken, verifyTelegramInitData } from "@/lib/telegram";
+import { getUserByTelegramId } from "@/lib/service-turso";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Telegram login: POST {initData, password?}.
+ * Telegram login: POST {initData}.
  *
- * - First ever login: the correct password CLAIMS the console — the Telegram
- *   user in the signed initData becomes the permanent owner and gets a
- *   session. A wrong (or missing) password claims nothing.
- * - Every later login: the initData's user id must BE the owner; no password
- *   needed, the signed initData is enough.
- * - A different Telegram account is locked out even with the right password —
- *   the console belongs to one person.
+ * - Verifies the Telegram signature. Returns the Telegram user id inside it.
+ * - Looks up a local player bound to that Telegram id.
+ * - If bound: creates a session for that player (no password needed).
+ * - If not bound: 401 telling them to register or log in first.
+ * - A stranger who finds the bot and opens the mini app gets nothing unless
+ *   their Telegram id is bound to a registered player.
  */
 export async function POST(request: Request) {
   try {
@@ -38,7 +35,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = (await readJson(request)) as { initData?: unknown; password?: unknown };
+    const body = (await readJson(request)) as { initData?: unknown };
     const initData = typeof body.initData === "string" ? body.initData.trim() : "";
     const token = telegramBotToken();
     if (!initData || !token || !(await verifyTelegramInitData(initData, token))) {
@@ -49,35 +46,26 @@ export async function POST(request: Request) {
       );
     }
 
-    const userId = initDataUserId(initData);
-    if (userId === null) {
+    const telegramUserId = initDataUserId(initData);
+    if (telegramUserId === null) {
       throw new ApiError(401, "TELEGRAM_AUTH_INVALID", "The initData carries no usable user id.");
     }
 
-    const owner = telegramOwnerId();
-    if (owner === null) {
-      // Unclaimed: the password is what separates the owner from everyone else.
-      if (!passwordMatches(body.password)) {
-        return NextResponse.json(
-          {
-            error: {
-              code: "AUTH_CLAIM_REQUIRED",
-              message: "Enter the console password once to claim this console for your Telegram account.",
-            },
-          },
-          { status: 401 },
-        );
-      }
-      bindTelegramOwner(userId);
-    } else if (userId !== owner) {
+    const user = await getUserByTelegramId(telegramUserId);
+    if (!user) {
       return NextResponse.json(
-        { error: { code: "TELEGRAM_NOT_OWNER", message: "This console belongs to another Telegram account." } },
-        { status: 403 },
+        {
+          error: {
+            code: "TELEGRAM_NOT_BOUND",
+            message: "This Telegram account is not linked to a player account. Register first.",
+          },
+        },
+        { status: 401 },
       );
     }
 
-    const response = NextResponse.json({ ok: true });
-    response.cookies.set(SESSION_COOKIE, createSessionToken(), sessionCookieOptions(request));
+    const response = NextResponse.json({ ok: true, user: { id: user.id, email: user.email } });
+    response.cookies.set(SESSION_COOKIE, createSessionToken(user.id), sessionCookieOptions(request));
     return response;
   } catch (err) {
     return fail(err);

@@ -67,7 +67,7 @@ export default function SettingsPage() {
           <Row label="CPM2 21st slot" value={`${LIMITS.SLOT_COST_COINS} coins (one per account)`} />
           <Row label="CPM2 new garage" value={`${LIMITS.NEW_GARAGE_PRICE} · +${LIMITS.NEW_GARAGE_SLOTS} slots`} />
         </dl>
-        <p className="mt-4 text-[11px] leading-snug text-ink-faint">
+        <p className="mt-4 text-[11px] leading-snug text-aether-text-faint">
           CPM1 has no slots at all: every model in the game can be owned, but only one of each. CPM2 is
           slot-based — {LIMITS.BASE_CAR_SLOTS} free slots, the 21st bought for {LIMITS.SLOT_COST_COINS}{" "}
           coins, and {LIMITS.NEW_GARAGE_SLOTS} more slots with the {LIMITS.NEW_GARAGE_PRICE} garage.
@@ -145,10 +145,10 @@ export default function SettingsPage() {
           {SHORTCUTS.map((item) => (
             <div
               key={item.keys}
-              className="flex items-baseline justify-between gap-4 border-b border-ink/8 py-2 last:border-0"
+              className="flex items-baseline justify-between gap-4 border-b border-mix(in srgb, var(--aether-text) 8%, transparent) py-2 last:border-0"
             >
-              <dt className="text-[12px] text-ink-soft">{item.action}</dt>
-              <dd className="num rounded-full border border-ink/15 bg-ink/[0.05] px-1.5 py-0.5 text-[11px] text-ink backdrop-blur-md">
+              <dt className="text-[12px] text-aether-text-soft">{item.action}</dt>
+              <dd className="num rounded-full border border-mix(in srgb, var(--aether-text) 15%, transparent) bg-mix(in srgb, var(--aether-text) 5%, transparent) px-1.5 py-0.5 text-[11px] text-aether-text backdrop-blur-md">
                 {item.keys}
               </dd>
             </div>

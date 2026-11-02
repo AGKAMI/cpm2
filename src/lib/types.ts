@@ -1,7 +1,16 @@
 import type { GameType } from "./constants.ts";
 
+export type User = {
+  id: number;
+  email: string;
+  createdAt: string;
+  telegramBound: boolean;
+};
+
 export type AccountSummary = {
   id: number;
+  /** The player who owns this account. Null for legacy pre-migration accounts. */
+  userId: number | null;
   email: string;
   /** Which title this account belongs to. Drives which catalog its garage uses. */
   game: GameType;

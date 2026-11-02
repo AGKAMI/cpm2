@@ -8,7 +8,6 @@ import path from "node:path";
 // Isolated key + owner file so the real data/ is never touched.
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cpm2-auth-"));
 process.env.CPM2_KEY_PATH = path.join(tmp, ".secret-key");
-process.env.CPM2_OWNER_PATH = path.join(tmp, "telegram-owner.json");
 process.env.APP_PASSWORD = "test-passphrase-1234";
 
 const {
@@ -16,10 +15,6 @@ const {
   SESSION_MAX_AGE_SECONDS,
   createSessionToken,
   verifySessionToken,
-  passwordMatches,
-  appPassword,
-  telegramOwnerId,
-  bindTelegramOwner,
   rateLimited,
   sessionCookieOptions,
   REVEAL_CONSENT_MAX_AGE_SECONDS,
@@ -28,91 +23,72 @@ const {
   revealCookieOptions,
   readRequestCookie,
 } = await import("../src/lib/auth.ts");
+import { scryptHash, scryptCompare } from "../src/lib/auth.ts";
 const { resetKeyCache } = await import("../src/lib/crypto.ts");
 
 describe("auth · session tokens", () => {
   it("round-trips a fresh token", () => {
-    assert.equal(verifySessionToken(createSessionToken()), true);
+    assert.equal(verifySessionToken(createSessionToken(1)), 1);
   });
 
   it("refuses an expired token", () => {
-    const stale = createSessionToken(Date.now() - (SESSION_MAX_AGE_SECONDS + 60) * 1000);
-    assert.equal(verifySessionToken(stale), false);
+    const stale = createSessionToken(1, Date.now() - (SESSION_MAX_AGE_SECONDS + 60) * 1000);
+    assert.equal(verifySessionToken(stale), null);
   });
 
   it("refuses a tampered expiry — the signature no longer matches", () => {
-    const token = createSessionToken();
-    const [expiresAt] = token.split(".");
-    const forged = `${Number(expiresAt) + 86_400}.${token.split(".")[1]}`;
-    assert.equal(verifySessionToken(forged), false);
+    const token = createSessionToken(1);
+    const parts = token.split(".");
+    const forged = `${parts[0]}.${Number(parts[1]) + 86_400}.${parts[2]}`;
+    assert.equal(verifySessionToken(forged), null);
   });
 
   it("refuses garbage, empty and missing tokens", () => {
-    assert.equal(verifySessionToken(undefined), false);
-    assert.equal(verifySessionToken(""), false);
-    assert.equal(verifySessionToken("garbage"), false);
-    assert.equal(verifySessionToken("123456789.not-a-signature"), false);
+    assert.equal(verifySessionToken(undefined), null);
+    assert.equal(verifySessionToken(""), null);
+    assert.equal(verifySessionToken("garbage"), null);
+    assert.equal(verifySessionToken("123456789.not-a-signature"), null);
   });
 
   it("is not re-issuable without the key: a token signed by another key fails", () => {
-    const real = createSessionToken();
+    const real = createSessionToken(1);
 
-    // Sign a fresh-looking token under a DIFFERENT key, then restore the real one.
     const savedEnv = process.env.CPM2_ENCRYPTION_KEY;
     process.env.CPM2_ENCRYPTION_KEY = Buffer.from(crypto.randomBytes(32)).toString("base64");
     resetKeyCache();
-    const forged = createSessionToken();
+    const forged = createSessionToken(1);
     if (savedEnv) process.env.CPM2_ENCRYPTION_KEY = savedEnv;
     else delete process.env.CPM2_ENCRYPTION_KEY;
     resetKeyCache();
 
-    assert.equal(verifySessionToken(forged), false, "a foreign-key token must not open the console");
-    assert.equal(verifySessionToken(real), true, "the real token still verifies");
+    assert.equal(verifySessionToken(forged), null, "a foreign-key token must not open the console");
+    assert.equal(verifySessionToken(real), 1, "the real token still verifies");
   });
 });
 
-describe("auth · password", () => {
-  it("accepts the configured password", () => {
-    assert.equal(passwordMatches("test-passphrase-1234"), true);
+describe("auth · password hashing", () => {
+  it("scryptCompare verifies a hash made by scryptHash", () => {
+    const hash = scryptHash("test-passphrase-1234");
+    assert.equal(scryptCompare("test-passphrase-1234", hash), true);
   });
 
-  it("refuses wrong, empty and non-string input", () => {
-    assert.equal(passwordMatches("wrong"), false);
-    assert.equal(passwordMatches(""), false);
-    assert.equal(passwordMatches(undefined), false);
-    assert.equal(passwordMatches(1234), false);
+  it("scryptCompare refuses wrong password", () => {
+    const hash = scryptHash("test-passphrase-1234");
+    assert.equal(scryptCompare("wrong", hash), false);
   });
 
-  it("a missing configured password locks everything out", () => {
-    const saved = process.env.APP_PASSWORD;
-    delete process.env.APP_PASSWORD;
-    try {
-      assert.equal(appPassword(), undefined);
-      assert.equal(passwordMatches("anything"), false);
-    } finally {
-      process.env.APP_PASSWORD = saved;
-    }
+  it("scryptCompare refuses garbage hash", () => {
+    assert.equal(scryptCompare("anything", "not-a-hash"), false);
+  });
+
+  it("scryptCompare refuses malformed hash", () => {
+    assert.equal(scryptCompare("anything", "$scrypt$v1$bad"), false);
   });
 });
 
 describe("auth · telegram owner binding", () => {
-  it("starts unclaimed", () => {
-    fs.rmSync(process.env.CPM2_OWNER_PATH!, { force: true });
-    assert.equal(telegramOwnerId(), null);
-  });
-
-  it("binds exactly one owner and reads it back", () => {
-    bindTelegramOwner(777000);
-    assert.equal(telegramOwnerId(), 777000);
-    bindTelegramOwner(888000); // a later claim overwrites (only reachable with the password)
-    assert.equal(telegramOwnerId(), 888000);
-  });
-
-  it("refuses malformed owner files instead of trusting them", () => {
-    fs.writeFileSync(process.env.CPM2_OWNER_PATH!, "not json at all", "utf8");
-    assert.equal(telegramOwnerId(), null);
-  });
 });
+
 
 describe("auth · brute-force damper", () => {
   it("lets the first attempts through, then backs off, then resets", () => {

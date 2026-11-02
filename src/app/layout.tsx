@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Archivo, IBM_Plex_Mono, Playfair_Display } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { FleetProvider } from "@/components/FleetProvider";
 import { AppShell } from "@/components/AppShell";
@@ -8,23 +8,16 @@ import { TelegramBridge } from "@/components/TelegramBridge";
 import { ToastProvider } from "@/components/ui/Toaster";
 import { DEFAULT_PALETTE, PALETTE_IDS } from "@/lib/themes";
 
-const body = Archivo({
+const body = Inter({
   subsets: ["latin"],
-  variable: "--font-archivo",
+  variable: "--font-inter",
   display: "swap",
 });
 
-const mono = IBM_Plex_Mono({
+const mono = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
-  variable: "--font-plex-mono",
-  display: "swap",
-});
-
-const display = Playfair_Display({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-playfair",
+  variable: "--font-jetbrains-mono",
   display: "swap",
 });
 
@@ -53,13 +46,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${body.variable} ${mono.variable} ${display.variable}`}
+      className={`${body.variable} ${mono.variable}`}
       suppressHydrationWarning
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="min-h-screen antialiased">
+      <body className={`min-h-screen antialiased ${body.variable} ${mono.variable}`}>
+        <div className="aether-aurora-field" aria-hidden="true" />
         <Script
           src="https://telegram.org/js/telegram-web-app.js"
           strategy="beforeInteractive"

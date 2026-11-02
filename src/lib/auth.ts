@@ -33,29 +33,88 @@ export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
 export const REVEAL_CONSENT_COOKIE = "cpm2_reveal_pw";
 export const REVEAL_CONSENT_MAX_AGE_SECONDS = 5 * 60; // 5 minutes
 
+// ---------------------------------------------------------------- password hashing
+
+function hashRounds(): number {
+  const rounds = Number(process.env.CPM2_BCRYPT_ROUNDS ?? "12");
+  return Number.isFinite(rounds) && rounds > 0 ? rounds : 12;
+}
+
+function scryptHash(password: string): string {
+  const salt = crypto.randomBytes(16);
+  const derived = crypto.scryptSync(
+    Buffer.from(password.normalize("NFKC"), "utf8"),
+    salt,
+    64,
+    { N: 2 ** hashRounds(), r: 8, p: 1, maxmem: 64 * 1024 * 1024 },
+  );
+  return `$scrypt$v1$${salt.toString("base64url")}$${derived.toString("base64url")}`;
+}
+
+function scryptCompare(password: string, stored: string): boolean {
+  const parts = stored.split("$");
+  if (parts.length !== 5 || parts[0] !== "" || parts[1] !== "scrypt" || parts[2] !== "v1") {
+    return false;
+  }
+  let salt: Buffer;
+  try {
+    salt = Buffer.from(parts[3], "base64url");
+  } catch {
+    return false;
+  }
+  let expected: Buffer;
+  try {
+    expected = Buffer.from(parts[4], "base64url");
+  } catch {
+    return false;
+  }
+  const given = crypto.scryptSync(
+    Buffer.from(password.normalize("NFKC"), "utf8"),
+    salt,
+    expected.length,
+    { N: 2 ** hashRounds(), r: 8, p: 1, maxmem: 64 * 1024 * 1024 },
+  );
+  return timingSafeEqualBuffers(given, expected);
+}
+
+function timingSafeEqualBuffers(a: Buffer, b: Buffer): boolean {
+  if (a.length !== b.length) {
+    crypto.timingSafeEqual(a, a);
+    return false;
+  }
+  return crypto.timingSafeEqual(a, b);
+}
+
 // ---------------------------------------------------------------- sessions
 
 /**
- * Issues a stateless session token: `<expiry-epoch>.<hmac>` — the expiry is
- * signed with the SAME 32-byte key that encrypts account passwords, so there
- * is no session table and nothing to clean up. Tampering with the expiry
- * breaks the HMAC; extending it means re-signing, which requires the key.
+ * Issues a stateless session token: `<user-id>.<expiry-epoch>.<hmac>`.
+ * The HMAC binds the user id and expiry to the signing key, so tampering with
+ * either breaks the signature. No session table, nothing to clean up.
  */
-export function createSessionToken(now: number = Date.now()): string {
+export function createSessionToken(userId: number, now: number = Date.now()): string {
   const expiresAt = Math.floor(now / 1000) + SESSION_MAX_AGE_SECONDS;
-  return `${expiresAt}.${sessionMac(expiresAt)}`;
+  const payload = `${userId}.${expiresAt}`;
+  return `${payload}.${sessionMac(payload)}`;
 }
 
-/** True when the token's signature is valid AND it has not expired. */
-export function verifySessionToken(token: string | undefined): boolean {
-  if (!token) return false;
-  const dot = token.indexOf(".");
-  if (dot <= 0) return false;
-  const expiresPart = token.slice(0, dot);
-  const mac = token.slice(dot + 1);
+/**
+ * Parses a session token and returns the user id when valid AND not expired.
+ * Returns null otherwise.
+ */
+export function verifySessionToken(token: string | undefined): number | null {
+  if (!token) return null;
+  const first = token.indexOf(".");
+  const last = token.lastIndexOf(".");
+  if (first <= 0 || last <= first || first === last) return null;
+  const userIdPart = token.slice(0, first);
+  const expiresPart = token.slice(first + 1, last);
+  const mac = token.slice(last + 1);
+  const userId = Number(userIdPart);
   const expiresAt = Number(expiresPart);
-  if (!Number.isInteger(expiresAt) || expiresAt * 1000 <= Date.now()) return false;
-  return timingSafeEqualStrings(sessionMac(expiresAt), mac);
+  if (!Number.isInteger(userId) || userId <= 0) return null;
+  if (!Number.isInteger(expiresAt) || expiresAt * 1000 <= Date.now()) return null;
+  return timingSafeEqualStrings(sessionMac(`${userId}.${expiresAt}`), mac) ? userId : null;
 }
 
 /**
@@ -67,8 +126,8 @@ function sessionKey(): Buffer {
   return crypto.createHash("sha256").update(getKey()).update("cpm2-session-v1").digest();
 }
 
-function sessionMac(expiresAt: number): string {
-  return crypto.createHmac("sha256", sessionKey()).update(String(expiresAt)).digest("base64url");
+function sessionMac(payload: string): string {
+  return crypto.createHmac("sha256", sessionKey()).update(payload).digest("base64url");
 }
 
 /** A short-lived consent token (expiry.hmac) proving the console password was
@@ -134,69 +193,12 @@ export function readRequestCookie(request: Request, name: string): string | unde
   return pair.slice(pair.indexOf("=") + 1);
 }
 
-// --------------------------------------------------------------- password
-
-/** The console password, without printing it. Empty/absent means locked out. */
-export function appPassword(): string | undefined {
-  const password = process.env.APP_PASSWORD?.trim();
-  return password ? password : undefined;
-}
-
-/** Constant-time comparison against the configured password. */
-export function passwordMatches(input: unknown): boolean {
-  const expected = appPassword();
-  if (!expected || typeof input !== "string") return false;
-  const given = Buffer.from(input.normalize("NFKC"));
-  const wanted = Buffer.from(expected.normalize("NFKC"));
-  if (given.length !== wanted.length) {
-    // Burn a comparison anyway so wrong-length guesses cost the same time.
-    crypto.timingSafeEqual(wanted, wanted);
-    return false;
-  }
-  return crypto.timingSafeEqual(given, wanted);
-}
-
-// ------------------------------------------------------- telegram owner binding
-
-function ownerFilePath(): string {
-  const override = process.env.CPM2_OWNER_PATH;
-  if (override && override.trim()) return path.resolve(override.trim());
-  return path.join(process.cwd(), "data", "telegram-owner.json");
-}
-
-/** The bound owner's Telegram user id, or null while nobody has claimed it. */
-export function telegramOwnerId(): number | null {
-  try {
-    const raw = JSON.parse(fs.readFileSync(/* turbopackIgnore: true */ ownerFilePath(), "utf8")) as {
-      userId?: unknown;
-    };
-    return typeof raw.userId === "number" && Number.isInteger(raw.userId) ? raw.userId : null;
-  } catch {
-    return null;
-  }
-}
-
-/** Records WHICH Telegram user claimed the console (first correct password wins). */
-export function bindTelegramOwner(userId: number): void {
-  const file = ownerFilePath();
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(
-    /* turbopackIgnore: true */ file,
-    `${JSON.stringify({ userId, boundAt: new Date().toISOString() }, null, 2)}\n`,
-    { encoding: "utf8", mode: 0o600 },
-  );
-}
-
-// ------------------------------------------------------------ rate limiting
+// --------------------------------------------------------------- rate limiting
 
 const WINDOW_MS = 60_000;
 const MAX_ATTEMPTS_PER_WINDOW = 10;
 const attempts = new Map<string, { count: number; resetAt: number }>();
 
-/**
- * Sliding-window brute-force damper for the password routes. True when this
- * key (usually an IP) must back off. Entries age out on their own.
- */
 export function rateLimited(key: string): boolean {
   const now = Date.now();
   const entry = attempts.get(key);
@@ -206,4 +208,12 @@ export function rateLimited(key: string): boolean {
   }
   entry.count += 1;
   return entry.count > MAX_ATTEMPTS_PER_WINDOW;
+}
+
+export { scryptHash, scryptCompare };
+
+/** Returns the logged-in user's id from the session cookie, or null. */
+export function currentUserId(request: Request): number | undefined {
+  const token = readRequestCookie(request, SESSION_COOKIE);
+  return verifySessionToken(token) ?? undefined;
 }

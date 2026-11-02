@@ -1,20 +1,21 @@
 import { NextResponse } from "next/server";
 import { fail, readJson } from "@/lib/route";
 import {
+  SESSION_COOKIE,
   createRevealConsentToken,
-  passwordMatches,
   rateLimited,
   revealCookieOptions,
+  verifySessionToken,
 } from "@/lib/auth";
-import { logEvent } from "@/lib/service-turso";
+import { verifyUserCredentials } from "@/lib/service-turso";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Earn a short-lived consent to view plaintext passwords. Verifies the console
- * password (brute-forced per IP) and sets an HttpOnly cookie valid five minutes.
- * The reveal and export routes require this cookie — an active session alone
- * is not enough to dump credentials. Every successful consent is audited.
+ * Earn a short-lived consent to view plaintext passwords. Verifies the logged-in
+ * player's own password (brute-forced per IP) and sets an HttpOnly cookie valid
+ * five minutes. The reveal and export routes require this cookie — an active
+ * session alone is not enough to dump credentials. Every successful consent is audited.
  */
 export async function POST(request: Request) {
   try {
@@ -29,15 +30,31 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = (await readJson(request)) as { password?: unknown };
-    if (!passwordMatches(body.password)) {
+    const cookie = request.headers
+      .get("cookie")
+      ?.split(";")
+      .map((part) => part.trim())
+      .find((part) => part.startsWith(`${SESSION_COOKIE}=`))
+      ?.slice(SESSION_COOKIE.length + 1);
+    const userId = verifySessionToken(cookie ? decodeURIComponent(cookie) : undefined);
+    if (!userId) {
       return NextResponse.json(
-        { error: { code: "AUTH_INVALID", message: "Wrong console password." } },
+        { error: { code: "AUTH_REQUIRED", message: "Sign in to use the console." } },
         { status: 401 },
       );
     }
 
-    await logEvent(null, "(console)", "password_revealed", "Console password re-entered to earn reveal consent");
+    const body = (await readJson(request)) as { email?: unknown; password?: unknown };
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const password = typeof body.password === "string" ? body.password : "";
+
+    const user = await verifyUserCredentials(email, password);
+    if (!user) {
+      return NextResponse.json(
+        { error: { code: "AUTH_INVALID", message: "Wrong email or password." } },
+        { status: 401 },
+      );
+    }
 
     const response = NextResponse.json({ ok: true });
     response.cookies.set(

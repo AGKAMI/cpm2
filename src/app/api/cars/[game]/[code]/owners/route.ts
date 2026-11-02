@@ -3,6 +3,7 @@ import { fail, ok } from "@/lib/route";
 import { GAMES, isGameType, type GameType } from "@/lib/constants";
 import { parseCarCode } from "@/lib/http";
 import { ApiError } from "@/lib/api";
+import { currentUserId } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,7 @@ export const dynamic = "force-dynamic";
  * owning two different cars as if they were one.
  */
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ game: string; code: string }> },
 ) {
   const { game, code } = await params;
@@ -33,8 +34,9 @@ export async function GET(
     return fail(err);
   }
 
+  const userId = currentUserId(request);
   try {
-    return ok({ owners: await carOwners(game as GameType, carCode) });
+    return ok({ owners: await carOwners(game as GameType, carCode, userId) });
   } catch (err) {
     return fail(err);
   }

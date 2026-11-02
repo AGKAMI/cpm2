@@ -1,7 +1,17 @@
 import { LIMITS, MAX_CARS, type GameType } from "./constants.ts";
 
+export type UserRow = {
+  id: number;
+  email: string;
+  password_hash: string;
+  telegram_user_id: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type AccountRow = {
   id: number;
+  user_id: number | null;
   email: string;
   password_enc: string;
   cash: number;
@@ -32,6 +42,7 @@ export type EventRow = {
 
 const ACCOUNT_COLUMNS = `
   id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id      INTEGER REFERENCES users(id) ON DELETE CASCADE,
   email        TEXT    NOT NULL,
   password_enc TEXT    NOT NULL,
   cash         INTEGER NOT NULL DEFAULT 0,
@@ -73,10 +84,29 @@ const CAR_TABLE_COLUMNS = `
 `;
 
 const SCHEMA = `
+CREATE TABLE IF NOT EXISTS users (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  email        TEXT    NOT NULL,
+  password_hash TEXT   NOT NULL,
+  telegram_user_id INTEGER,
+  created_at   TEXT    NOT NULL,
+  updated_at   TEXT    NOT NULL,
+  CHECK (length(email) > 2 AND length(email) <= 254)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email
+  ON users (email COLLATE NOCASE);
+
 CREATE TABLE IF NOT EXISTS accounts (${ACCOUNT_COLUMNS});
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_email
-  ON accounts (email COLLATE NOCASE);
+CREATE INDEX IF NOT EXISTS idx_accounts_user_id
+  ON accounts (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_accounts_email_user
+  ON accounts (user_id, email COLLATE NOCASE);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_email_user_unique
+  ON accounts (user_id, email COLLATE NOCASE) WHERE user_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS account_events (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -258,6 +288,27 @@ export async function createTursoClient(): Promise<TursoHttpClient> {
   await _http.batch(
     SCHEMA.trim().split(";").filter((s) => s.trim()).map((s) => s.trim() + ";"),
   );
+
+  // Migration: existing databases created before the multi-user change have no
+  // `user_id` column on accounts. Add it if missing (SQLite ALTER TABLE is
+  // additive only — we add nullable, then service layer backfills on first use).
+  try {
+    const probe = await _http.execute({
+      sql: `PRAGMA table_info(accounts)`,
+      args: [],
+    });
+    const columns = probe.rows.map((r) => r.name);
+    if (!columns.includes("user_id")) {
+      await _http.execute({
+        sql: `ALTER TABLE accounts ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE CASCADE`,
+        args: [],
+      });
+    }
+  } catch {
+    // Probe failure means the table didn't exist yet — SCHEMA above created it
+    // with user_id included, so nothing to migrate.
+  }
+
   return _http;
 }
 

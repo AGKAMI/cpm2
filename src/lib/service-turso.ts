@@ -13,7 +13,8 @@ import { allowsDuplicateModels, garageCapacity } from "./garage.ts";
 import { carByCode } from "./car-catalog.ts";
 import { csvToRecords, escapeCsvValue, normalizeImportRow } from "./csv.ts";
 import { decryptSecret, encryptSecret } from "./crypto.ts";
-import { getTursoDb, type AccountRow, type EventRow } from "./db-turso.ts";
+import { scryptHash, scryptCompare } from "./auth.ts";
+import { getTursoDb, type AccountRow, type EventRow, type UserRow } from "./db-turso.ts";
 import { computeFleetStats } from "./stats.ts";
 import type {
   AccountSummary,
@@ -58,6 +59,7 @@ const TRACKED_FIELDS = [
 function toSummary(row: AccountRow): AccountSummary {
   return {
     id: row.id,
+    userId: row.user_id ?? null,
     email: row.email,
     game: row.game,
     cash: Number(row.cash),
@@ -154,27 +156,40 @@ async function assertEmailFree(email: string, game: GameType, exceptId?: number)
 
 export type ArchiveFilter = "exclude" | "only" | "include";
 
-export async function listAccounts(options: { archived?: ArchiveFilter } = {}): Promise<AccountSummary[]> {
+export async function listAccounts(
+  options: { archived?: ArchiveFilter; userId?: number } = {},
+): Promise<AccountSummary[]> {
   const mode = options.archived ?? "exclude";
+  const userId = options.userId;
   const db = await getTursoDb();
   let sql = "";
   if (mode === "include") {
-    sql = `SELECT * FROM accounts ORDER BY datetime(created_at) DESC, id DESC`;
+    sql = userId !== undefined
+      ? `SELECT * FROM accounts WHERE user_id = ? ORDER BY datetime(created_at) DESC, id DESC`
+      : `SELECT * FROM accounts ORDER BY datetime(created_at) DESC, id DESC`;
   } else if (mode === "only") {
-    sql = `SELECT * FROM accounts WHERE archived = 1 ORDER BY datetime(created_at) DESC, id DESC`;
+    sql = userId !== undefined
+      ? `SELECT * FROM accounts WHERE archived = 1 AND user_id = ? ORDER BY datetime(created_at) DESC, id DESC`
+      : `SELECT * FROM accounts WHERE archived = 1 ORDER BY datetime(created_at) DESC, id DESC`;
   } else {
-    sql = `SELECT * FROM accounts WHERE archived = 0 ORDER BY datetime(created_at) DESC, id DESC`;
+    sql = userId !== undefined
+      ? `SELECT * FROM accounts WHERE archived = 0 AND user_id = ? ORDER BY datetime(created_at) DESC, id DESC`
+      : `SELECT * FROM accounts WHERE archived = 0 ORDER BY datetime(created_at) DESC, id DESC`;
   }
-  const rows = (await db.execute(sql)).rows as unknown as AccountRow[];
+  const args = userId !== undefined ? [userId] : [];
+  const rows = (await db.execute({ sql, args })).rows as unknown as AccountRow[];
   return rows.map(toSummary);
 }
 
-export async function getAccount(id: number): Promise<AccountSummary> {
+export async function getAccount(id: number, userId?: number): Promise<AccountSummary> {
   const account = await requireAccount(id);
+  if (userId !== undefined && account.user_id !== null && account.user_id !== userId) {
+    throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
+  }
   return toSummary(account);
 }
 
-export async function createAccount(payload: unknown): Promise<AccountSummary> {
+export async function createAccount(payload: unknown, userId?: number): Promise<AccountSummary> {
   const input: AccountCreateInput = accountCreateSchema.parse(payload);
   await assertEmailFree(input.email, input.game);
 
@@ -184,10 +199,11 @@ export async function createAccount(payload: unknown): Promise<AccountSummary> {
 
   const result = await db.execute({
     sql: `INSERT INTO accounts
-       (email, password_enc, game, cash, coins, cars, base_slots, slots, new_garage, notes,
+       (user_id, email, password_enc, game, cash, coins, cars, base_slots, slots, new_garage, notes,
         coins_spent_on_cars, archived, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
     args: [
+      userId ?? null,
       input.email,
       encryptSecret(input.password),
       input.game,
@@ -212,12 +228,15 @@ export async function createAccount(payload: unknown): Promise<AccountSummary> {
     slots: { from: 0, to: shape.slots },
   });
 
-  return getAccount(id);
+  return getAccount(id, userId);
 }
 
-export async function updateAccount(id: number, payload: unknown): Promise<AccountSummary> {
+export async function updateAccount(id: number, payload: unknown, userId?: number): Promise<AccountSummary> {
   const patch: AccountPatchInput = accountPatchSchema.parse(payload);
   const existing = await requireAccount(id);
+  if (userId !== undefined && existing.user_id !== null && existing.user_id !== userId) {
+    throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
+  }
 
   if (patch.slots !== undefined && patch.slots > existing.slots) {
     if (existing.game === "cpm1") {
@@ -341,8 +360,11 @@ export async function updateAccount(id: number, payload: unknown): Promise<Accou
   return getAccount(id);
 }
 
-export async function archiveAccount(id: number): Promise<{ id: number; email: string }> {
+export async function archiveAccount(id: number, userId?: number): Promise<{ id: number; email: string }> {
   const existing = await requireAccount(id, { includeArchived: true });
+  if (userId !== undefined && existing.user_id !== null && existing.user_id !== userId) {
+    throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
+  }
   if (existing.archived) return { id, email: existing.email };
 
   const db = await getTursoDb();
@@ -359,8 +381,11 @@ export async function archiveAccount(id: number): Promise<{ id: number; email: s
   return { id, email: existing.email };
 }
 
-export async function restoreAccount(id: number): Promise<AccountSummary> {
+export async function restoreAccount(id: number, userId?: number): Promise<AccountSummary> {
   const existing = await requireAccount(id, { includeArchived: true });
+  if (userId !== undefined && existing.user_id !== null && existing.user_id !== userId) {
+    throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
+  }
   if (!existing.archived) return toSummary(existing);
 
   const db = await getTursoDb();
@@ -375,9 +400,12 @@ export async function restoreAccount(id: number): Promise<AccountSummary> {
   return getAccount(id);
 }
 
-export async function purchaseSlots(id: number, payload: unknown): Promise<AccountSummary> {
+export async function purchaseSlots(id: number, payload: unknown, userId?: number): Promise<AccountSummary> {
   const { count } = slotPurchaseSchema.parse(payload ?? { count: 1 });
   const existing = await requireAccount(id);
+  if (userId !== undefined && existing.user_id !== null && existing.user_id !== userId) {
+    throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
+  }
 
   if (existing.game === "cpm1") {
     throw new ApiError(
@@ -417,8 +445,11 @@ export async function purchaseSlots(id: number, payload: unknown): Promise<Accou
   return getAccount(id);
 }
 
-export async function revealPassword(id: number): Promise<{ id: number; email: string; password: string }> {
+export async function revealPassword(id: number, userId?: number): Promise<{ id: number; email: string; password: string }> {
   const existing = await requireAccount(id);
+  if (userId !== undefined && existing.user_id !== null && existing.user_id !== userId) {
+    throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
+  }
   try {
     const password = decryptSecret(existing.password_enc);
     await logEvent(id, existing.email, "password_revealed", "Password revealed for viewing");
@@ -455,8 +486,14 @@ function toTrophyRecord(row: TrophyRow): TrophyRecord {
   };
 }
 
-export async function listTrophies(accountId: number): Promise<TrophyRecord[]> {
+export async function listTrophies(accountId: number, userId?: number): Promise<TrophyRecord[]> {
   await requireAccount(accountId, { includeArchived: true });
+  if (userId !== undefined) {
+    const account = await requireAccount(accountId, { includeArchived: true });
+    if (account.user_id !== null && account.user_id !== userId) {
+      throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
+    }
+  }
   const db = await getTursoDb();
   const rows = (await db.execute({
     sql: `SELECT * FROM account_trophies WHERE account_id = ?`,
@@ -477,8 +514,11 @@ export async function listTrophies(accountId: number): Promise<TrophyRecord[]> {
   );
 }
 
-export async function trophySummary(accountId: number): Promise<TrophySummary> {
+export async function trophySummary(accountId: number, userId?: number): Promise<TrophySummary> {
   const account = await requireAccount(accountId, { includeArchived: true });
+  if (userId !== undefined && account.user_id !== null && account.user_id !== userId) {
+    throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
+  }
   const byClass = await listTrophies(accountId);
   const gold = byClass.reduce((sum, item) => sum + item.gold, 0);
   const silver = byClass.reduce((sum, item) => sum + item.silver, 0);
@@ -494,8 +534,8 @@ export async function trophySummary(accountId: number): Promise<TrophySummary> {
   };
 }
 
-export async function fleetTrophySummary(): Promise<TrophySummary[]> {
-  const accounts = await listAccounts({ archived: "include" });
+export async function fleetTrophySummary(userId?: number): Promise<TrophySummary[]> {
+  const accounts = await listAccounts({ archived: "include", userId });
   return Promise.all(
     accounts.map(async (account) => {
       const byClass = await listTrophies(account.id);
@@ -515,8 +555,11 @@ export async function fleetTrophySummary(): Promise<TrophySummary[]> {
   );
 }
 
-export async function setTrophies(accountId: number, payload: unknown): Promise<TrophyRecord> {
+export async function setTrophies(accountId: number, payload: unknown, userId?: number): Promise<TrophyRecord> {
   const account = await requireAccount(accountId);
+  if (userId !== undefined && account.user_id !== null && account.user_id !== userId) {
+    throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
+  }
   const parsed = trophyUpdateSchema.parse(payload);
   const klass = parsed.class as TrophyClass;
 
@@ -575,8 +618,11 @@ function carNameFor(code: number, game: GameType): string {
   return carByCode(code, game)?.name ?? `UNKNOWN CODE ${code}`;
 }
 
-export async function listGarage(accountId: number): Promise<GarageSummary> {
+export async function listGarage(accountId: number, userId?: number): Promise<GarageSummary> {
   const account = await requireAccount(accountId, { includeArchived: true });
+  if (userId !== undefined && account.user_id !== null && account.user_id !== userId) {
+    throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
+  }
   const db = await getTursoDb();
   const rows = (await db.execute({
     sql: `SELECT * FROM account_cars WHERE account_id = ? ORDER BY id DESC`,
@@ -607,12 +653,12 @@ export async function listGarage(accountId: number): Promise<GarageSummary> {
   };
 }
 
-export async function fleetGarages(): Promise<GarageSummary[]> {
-  const accounts = await listAccounts({ archived: "include" });
-  return Promise.all(accounts.map((account) => listGarage(account.id)));
+export async function fleetGarages(userId?: number): Promise<GarageSummary[]> {
+  const accounts = await listAccounts({ archived: "include", userId });
+  return Promise.all(accounts.map((account) => listGarage(account.id, userId)));
 }
 
-export async function carOwners(game: GameType, carCode: number): Promise<CarOwners> {
+export async function carOwners(game: GameType, carCode: number, userId?: number): Promise<CarOwners> {
   const entry = carByCode(carCode, game);
   if (!entry) {
     throw new ApiError(404, "car_unknown", `No ${GAME_LABELS[game]} car has code #${carCode}.`);
@@ -643,8 +689,11 @@ export async function carOwners(game: GameType, carCode: number): Promise<CarOwn
   };
 }
 
-export async function addGarageCar(accountId: number, payload: unknown): Promise<CarRecord> {
+export async function addGarageCar(accountId: number, payload: unknown, userId?: number): Promise<CarRecord> {
   const account = await requireAccount(accountId);
+  if (userId !== undefined && account.user_id !== null && account.user_id !== userId) {
+    throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
+  }
   const parsed = carAssignSchema.parse(payload);
   const game = parsed.game ?? account.game;
 
@@ -728,8 +777,11 @@ export async function addGarageCar(accountId: number, payload: unknown): Promise
   };
 }
 
-export async function removeGarageCar(accountId: number, carId: number): Promise<{ removed: number; carName: string }> {
+export async function removeGarageCar(accountId: number, carId: number, userId?: number): Promise<{ removed: number; carName: string }> {
   const account = await requireAccount(accountId);
+  if (userId !== undefined && account.user_id !== null && account.user_id !== userId) {
+    throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
+  }
   const db = await getTursoDb();
   const row = (await db.execute({
     sql: `SELECT * FROM account_cars WHERE id = ? AND account_id = ?`,
@@ -756,7 +808,7 @@ export async function removeGarageCar(accountId: number, carId: number): Promise
   return { removed: carId, carName };
 }
 
-export async function listEvents(limit = 100): Promise<FleetEvent[]> {
+export async function listEvents(userId?: number, limit = 100): Promise<FleetEvent[]> {
   const db = await getTursoDb();
   const rows = (await db.execute({
     sql: `SELECT * FROM account_events ORDER BY id DESC LIMIT ?`,
@@ -782,16 +834,16 @@ export async function listEvents(limit = 100): Promise<FleetEvent[]> {
   });
 }
 
-export async function fleetStats(): Promise<FleetStats> {
-  const accounts = await listAccounts();
+export async function fleetStats(userId?: number): Promise<FleetStats> {
+  const accounts = await listAccounts({ userId });
   return computeFleetStats(accounts);
 }
 
 export async function exportFleet(
   format: "csv" | "json",
-  options: { confirmed?: boolean } = {},
+  options: { confirmed?: boolean; userId?: number } = {},
 ): Promise<{ body: string; contentType: string; count: number }> {
-  const accounts = await listAccounts();
+  const accounts = await listAccounts({ userId: options.userId });
 
   if (!options.confirmed) {
     throw new ApiError(
@@ -868,7 +920,7 @@ export async function exportFleet(
   };
 }
 
-export async function importAccounts(payload: unknown, format: "csv" | "json"): Promise<ImportReport> {
+export async function importAccounts(payload: unknown, format: "csv" | "json", userId?: number): Promise<ImportReport> {
   let rawRows: unknown[];
 
   if (format === "csv") {
@@ -950,4 +1002,63 @@ export async function importAccounts(payload: unknown, format: "csv" | "json"): 
     failed: results.filter((row) => row.status === "failed").length,
     results,
   };
+}
+
+// ---------------------------------------------------------------- users
+
+export async function getUserByTelegramId(telegramUserId: number) {
+  const db = await getTursoDb();
+  const row = await db.execute({
+    sql: `SELECT * FROM users WHERE telegram_user_id = ? LIMIT 1`,
+    args: [telegramUserId],
+  });
+  return (row.rows[0] as unknown as UserRow | undefined) ?? null;
+}
+
+export async function getUserByEmail(email: string) {
+  const db = await getTursoDb();
+  const row = await db.execute({
+    sql: `SELECT * FROM users WHERE email = ? COLLATE NOCASE LIMIT 1`,
+    args: [email],
+  });
+  return (row.rows[0] as unknown as UserRow | undefined) ?? null;
+}
+
+export async function createUser(email: string, password: string) {
+  const existing = await getUserByEmail(email);
+  if (existing) {
+    throw new ApiError(409, "EMAIL_TAKEN", "That email is already registered.");
+  }
+
+  const db = await getTursoDb();
+  const stamp = new Date().toISOString();
+  const password_hash = scryptHash(password);
+  const result = await db.execute({
+    sql: `INSERT INTO users (email, password_hash, created_at, updated_at) VALUES (?, ?, ?, ?)`,
+    args: [email.toLowerCase(), password_hash, stamp, stamp],
+  });
+  const id = Number(result.lastInsertRowid);
+  return { id, email: email.toLowerCase(), password_hash, createdAt: stamp, updatedAt: stamp };
+}
+
+export async function verifyUserCredentials(email: string, password: string) {
+  const user = await getUserByEmail(email);
+  if (!user) return null;
+  if (!(await scryptCompare(password, user.password_hash))) return null;
+  return user;
+}
+
+export async function bindUserTelegram(userId: number, telegramUserId: number) {
+  const db = await getTursoDb();
+  const row = await db.execute({
+    sql: `SELECT id FROM users WHERE id = ?`,
+    args: [userId],
+  });
+  if (!row.rows[0]) {
+    throw new ApiError(404, "USER_NOT_FOUND", "That user does not exist.");
+  }
+  await db.execute({
+    sql: `UPDATE users SET telegram_user_id = ?, updated_at = ? WHERE id = ?`,
+    args: [telegramUserId, new Date().toISOString(), userId],
+  });
 }

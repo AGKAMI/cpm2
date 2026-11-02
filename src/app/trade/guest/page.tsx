@@ -136,7 +136,7 @@ export default function GuestTradeDesk() {
             <button
               type="button"
               onClick={() => setPickerSide(key)}
-              className="cursor-pointer rounded-full border border-racing/40 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-racing transition hover:bg-racing/10"
+              className="cursor-pointer rounded-full border border-aether-accent/40 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-aether-accent transition hover:bg-aether-accent/10"
             >
               + Car
             </button>
@@ -144,7 +144,7 @@ export default function GuestTradeDesk() {
               type="button"
               onClick={() => clearSide(key)}
               disabled={side.cars.length === 0 && side.cash === 0}
-              className="cursor-pointer text-[10px] text-ink-faint underline-offset-2 transition hover:text-oxblood hover:underline disabled:cursor-default disabled:opacity-0"
+              className="cursor-pointer text-[10px] text-aether-text-faint underline-offset-2 transition hover:text-aether-accent hover:underline disabled:cursor-default disabled:opacity-0"
             >
               clear
             </button>
@@ -152,7 +152,7 @@ export default function GuestTradeDesk() {
         </div>
 
         {side.cars.length === 0 ? (
-          <p className="py-2 text-[12px] text-ink-faint">No cars on this side yet.</p>
+          <p className="py-2 text-[12px] text-aether-text-faint">No cars on this side yet.</p>
         ) : (
           <ul className="flex flex-col gap-1.5">
             {side.cars.map(({ code, qty }) => {
@@ -160,31 +160,31 @@ export default function GuestTradeDesk() {
               const entry = prices.get(code);
               const unpriced = !entry;
               return (
-                <li key={code} className="rounded-[12px] border border-ink/10 px-3 py-2">
+                <li key={code} className="rounded-[12px] border border-mix(in srgb, var(--aether-text) 10%, transparent) px-3 py-2">
                   <div className="flex items-center gap-2">
-                    <span className="num w-9 shrink-0 text-[11px] text-ink-faint">#{code}</span>
-                    <span className="min-w-0 flex-1 truncate text-[12.5px] text-ink">
+                    <span className="num w-9 shrink-0 text-[11px] text-aether-text-faint">#{code}</span>
+                    <span className="min-w-0 flex-1 truncate text-[12.5px] text-aether-text">
                       {car?.name ?? `Code ${code}`}
                     </span>
                     {entry ? (
                       <>
-                        <span className="shrink-0 rounded-full border border-ink/12 px-2 py-0.5 font-sans text-[9px] font-semibold uppercase tracking-[0.1em] text-ink-faint">
+                        <span className="shrink-0 rounded-full border border-mix(in srgb, var(--aether-text) 12%, transparent) px-2 py-0.5 font-sans text-[9px] font-semibold uppercase tracking-[0.1em] text-aether-text-faint">
                           {KIND_LABELS[entry.kind]}
                         </span>
-                        <span className="num shrink-0 text-[11px] text-ink-faint">
+                        <span className="num shrink-0 text-[11px] text-aether-text-faint">
                           {entry.kind === "paid"
                             ? formatRands(entry.price)
                             : `${formatNumber(entry.price)} ${entry.kind === "coin" ? "coins" : "cash"}`}
                         </span>
                       </>
                     ) : (
-                      <span className="text-[10px] text-ink-faint">no price on record</span>
+                      <span className="text-[10px] text-aether-text-faint">no price on record</span>
                     )}
                     <button
                       type="button"
                       onClick={() => removeCar(key, code)}
                       aria-label={`Remove ${car?.name ?? `code ${code}`} from this side`}
-                      className="grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-full text-ink-faint transition hover:bg-oxblood/10 hover:text-oxblood"
+                      className="grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-full text-aether-text-faint transition hover:bg-aether-accent/10 hover:text-aether-accent"
                     >
                       <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
                         <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
@@ -197,24 +197,24 @@ export default function GuestTradeDesk() {
                       type="button"
                       onClick={() => removeCar(key, code)}
                       aria-label={`Remove one ${car?.name ?? `code ${code}`}`}
-                      className="shrink-0 cursor-pointer place-items-center rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink transition hover:bg-ink/5"
+                      className="shrink-0 cursor-pointer place-items-center rounded-full border border-mix(in srgb, var(--aether-text) 10%, transparent) px-2 py-0.5 text-[10px] text-aether-text transition hover:bg-aether-text/5"
                     >
                       −
                     </button>
-                    <span className="shrink-0 num text-[12px] text-ink">{qty}</span>
+                    <span className="shrink-0 num text-[12px] text-aether-text">{qty}</span>
                     <button
                       type="button"
                       onClick={() => addCar(key, code)}
                       aria-label={`Add one ${car?.name ?? `code ${code}`}`}
-                      className="shrink-0 cursor-pointer place-items-center rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink transition hover:bg-ink/5"
+                      className="shrink-0 cursor-pointer place-items-center rounded-full border border-mix(in srgb, var(--aether-text) 10%, transparent) px-2 py-0.5 text-[10px] text-aether-text transition hover:bg-aether-text/5"
                     >
                       +
                     </button>
-                    <span className="text-[10px] text-ink-faint">qty</span>
+                    <span className="text-[10px] text-aether-text-faint">qty</span>
                   </div>
 
                   {unpriced && (
-                    <p className="mt-1 text-[10px] text-oxblood">No price — not counted yet.</p>
+                    <p className="mt-1 text-[10px] text-aether-accent">No price — not counted yet.</p>
                   )}
                 </li>
               );
@@ -222,8 +222,8 @@ export default function GuestTradeDesk() {
           </ul>
         )}
 
-        <div className="flex items-center gap-2 border-t border-ink/8 pt-3">
-          <label htmlFor={`${key}-cash`} className="shrink-0 text-[11px] text-ink-soft">
+        <div className="flex items-center gap-2 border-t border-mix(in srgb, var(--aether-text) 8%, transparent) pt-3">
+          <label htmlFor={`${key}-cash`} className="shrink-0 text-[11px] text-aether-text-soft">
             {key === "you" ? "Cash you add" : "Cash they add"}
           </label>
           <input
@@ -242,7 +242,7 @@ export default function GuestTradeDesk() {
         </div>
 
         {value.unpriced > 0 && (
-          <p className="text-[10.5px] text-oxblood">
+          <p className="text-[10.5px] text-aether-accent">
             {value.unpriced} unpriced car{value.unpriced === 1 ? "" : "s"} — not counted yet.
           </p>
         )}
@@ -252,19 +252,19 @@ export default function GuestTradeDesk() {
 
   return (
     <div className="flex flex-col gap-5 max-w-[700px] mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex items-center justify-between gap-3 border-b border-ink/12 pb-4 mb-6">
+      <div className="flex items-center justify-between gap-3 border-b border-mix(in srgb, var(--aether-text) 12%, transparent) pb-4 mb-6">
         <div className="flex items-center gap-3">
-          <svg viewBox="0 0 24 24" className="h-8 w-8 text-racing" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+          <svg viewBox="0 0 24 24" className="h-8 w-8 text-aether-accent" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
             <circle cx="12" cy="12" r="9" />
             <path d="M5 12h14M12 5v14" />
           </svg>
           <span className="label-caps text-[14px] font-bold tracking-wider">CPM2 · Trade Calculator</span>
         </div>
-        <span className="num text-xs text-ink-faint">Read-only · no login</span>
+        <span className="num text-xs text-aether-text-faint">Read-only · no login</span>
       </div>
 
       {loading ? (
-        <p className="text-center py-8 text-[12px] text-ink-faint">Loading the price book…</p>
+        <p className="text-center py-8 text-[12px] text-aether-text-faint">Loading the price book…</p>
       ) : (
         <>
           <div className="grid gap-4 lg:grid-cols-2">
@@ -275,32 +275,32 @@ export default function GuestTradeDesk() {
           <section
             className={`rounded-[18px] border px-5 py-5 text-center ${
               incomplete
-                ? "border-ink/15 bg-ink/[0.03]"
+                ? "border-mix(in srgb, var(--aether-text) 15%, transparent) bg-mix(in srgb, var(--aether-text) 3%, transparent)"
                 : verdict.status === "gain"
-                  ? "border-racing/40 bg-racing/8"
+                  ? "border-aether-accent/40 bg-aether-accent/8"
                   : verdict.status === "loss"
-                    ? "border-oxblood/40 bg-oxblood/8"
-                    : "border-ink/15 bg-ink/[0.03]"}
-            `}
+                    ? "border-aether-accent/40 bg-aether-accent/8"
+                    : "border-mix(in srgb, var(--aether-text) 15%, transparent) bg-mix(in srgb, var(--aether-text) 3%, transparent)"}
+          `}
           >
-            <p className="num text-[11px] uppercase tracking-[0.18em] text-ink-faint">
+            <p className="num text-[11px] uppercase tracking-[0.18em] text-aether-text-faint">
               {incomplete ? "Rough call" : "The verdict"}
             </p>
             <p
               className={`display-title mt-1 text-[28px] leading-none sm:text-[34px] ${
-                verdict.status === "loss" ? "text-oxblood/70" : verdict.status === "gain" ? "text-racing/70" : "text-ink/60"
-              }`}
+                verdict.status === "loss" ? "text-aether-accent/70" : verdict.status === "gain" ? "text-aether-accent/70" : "text-aether-text/60"}
+              `}
             >
               {verdict.status === "gain" ? "Worth it" : verdict.status === "loss" ? "Not worth it" : "Fair trade"}
             </p>
             {incomplete ? (
-              <p className="mt-2 text-[12px] text-ink-soft">
+              <p className="mt-2 text-[12px] text-aether-text-soft">
                 {unpricedCount === 1
                   ? "1 car has no price on record — not counted yet."
                   : `${unpricedCount} cars have no price on record — not counted yet.`}
               </p>
             ) : (
-              <p className="mt-2 text-[12px] text-ink-soft">
+              <p className="mt-2 text-[12px] text-aether-text-soft">
                 {verdict.status === "gain"
                   ? `Roughly ${leanPct}% in your favour — take the deal.`
                   : verdict.status === "loss"
@@ -310,7 +310,7 @@ export default function GuestTradeDesk() {
             )}
           </section>
 
-          <p className="text-center text-[11px] text-ink-faint py-4">
+          <p className="text-center text-[11px] text-aether-text-faint py-4">
             Prices and rates come from the owner&apos;s trade desk. Changes there show up here automatically.
           </p>
         </>

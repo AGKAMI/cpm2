@@ -1,0 +1,116 @@
+id: agent-handoff-protocol
+name: Agent Handoff Protocol
+version: 1.0.0
+description: >
+  Strict handoff and validation protocol for multi-agent coding projects.
+  Enforces delegated judge validation, model error-cost ranking, strict edit
+  sequencing, and comprehensive activity logging so agents never make
+  un-reviewed changes and model quality is continuously measured.
+triggers:
+  - "handoff"
+  - "agent protocol"
+  - "delegate judge"
+  - "model ranking"
+  - "edit protocol"
+  - "strict edit"
+applies_to: ["any coding project"]
+author: system
+---
+
+# Agent Handoff Protocol — Reusable Skill
+
+## Overview
+
+This skill installs a **strict, auditable handoff system** into any coding project. It forces agents to:
+
+1. **Read context first** — never edit blind.
+2. **Delegate judge agents** — no change is final until 2+ sub-agents review it.
+3. **Log every edit** — who (model), what, where, why, errors introduced/fixed.
+4. **Track model cost** — a ranking table shows which models introduce vs. fix the most errors.
+5. **Gate before commit** — tsc, lint, tests, build must all pass.
+6. **Summarize and validate** — agents must provide summarized explanations validated by delegated judges.
+
+---
+
+## Skill Files
+
+| File | Purpose |
+|------|---------|
+| `AGENTS_HANDOFF.md` | Project-specific handoff doc (copy into target repo) |
+| `templates/agent-entry.md` | Template for each agent log entry |
+| `templates/judge-prompt.md` | Prompt template for delegated judge agents |
+| `templates/model-ranking.md` | Template for the model cost ranking table |
+
+---
+
+## Installation (target project)
+
+1. Copy `AGENTS_HANDOFF.md` → `<repo-root>/docs/AGENTS_HANDOFF.md`
+2. Copy `templates/` → `<repo-root>/docs/handoff-templates/`
+3. Read the file before making any edits.
+4. Append to the Agent Activity Log after every work session.
+
+---
+
+## The Protocol (7 Steps)
+
+### Step 1 — Read Context
+- Read `AGENTS.md` (repo root) and `docs/AGENTS_HANDOFF.md`.
+- Read the target file fully before editing.
+
+### Step 2 — Delegate Judges
+Spawn 2+ subagents (type: `reviewer` or `tester`) with:
+- Full file context
+- The exact planned change (diff or description)
+- Acceptance criteria (gate green, no regressions, no security holes)
+
+Use the judge prompt template from `templates/judge-prompt.md`.
+
+### Step 3 — Incorporate Judge Feedback
+Revise your plan based on judge reports. If any judge fails, fix and re-judge.
+
+### Step 4 — Make the Edit
+Use targeted edits. Keep files under 500 lines. Follow existing conventions.
+
+### Step 5 — Run the Gate
+```
+npx tsc --noEmit
+npm run lint
+npm test
+npm run build
+```
+All must pass (0 errors).
+
+### Step 6 — Log the Edit
+Append to `docs/AGENTS_HANDOFF.md` Section 4 using `templates/agent-entry.md`.
+
+### Step 7 — Commit
+Only after gate is green and judge verdict is recorded.
+
+---
+
+## Model Error-Cost Ranking
+
+Tracked in `docs/AGENTS_HANDOFF.md` Section 5.
+
+| Column | Meaning |
+|--------|---------|
+| Errors Introduced | Bugs/issues this model's code created that another agent fixed |
+| Errors Fixed | Bugs/issues from other models that this model resolved |
+| Net Cost | Introduced − Fixed (higher = more costly) |
+
+When Agent B fixes an error from Agent A:
+- Increment "Errors Introduced" for Agent A's model
+- Increment "Errors Fixed" for Agent B's model
+- Re-sort by Net Cost descending
+
+---
+
+## Red Lines
+
+- Never commit secrets (`.env*`, tokens, keys)
+- Never skip the gate before committing
+- Never skip delegated judge review
+- Never use `&&` in PowerShell (use `;` or `if` chains)
+- Never add navigation tabs beyond what exists
+- Never hardcode credentials

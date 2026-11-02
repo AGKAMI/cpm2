@@ -499,9 +499,9 @@ export async function fleetTrophySummary(): Promise<TrophySummary[]> {
   return Promise.all(
     accounts.map(async (account) => {
       const byClass = await listTrophies(account.id);
-      const gold = byClass.reduce((sum, item) => sum + item.gold, 0);
-      const silver = byClass.reduce((sum, item) => sum + item.silver, 0);
-      const bronze = byClass.reduce((sum, item) => sum + item.bronze, 0);
+      const gold = byClass.reduce((sum, item) => sum + Number(item.gold), 0);
+      const silver = byClass.reduce((sum, item) => sum + Number(item.silver), 0);
+      const bronze = byClass.reduce((sum, item) => sum + Number(item.bronze), 0);
       return {
         accountId: account.id,
         email: account.email,
@@ -557,7 +557,7 @@ export async function setTrophies(accountId: number, payload: unknown): Promise<
     gold: parsed.gold,
     silver: parsed.silver,
     bronze: parsed.bronze,
-    total: parsed.gold + parsed.silver + parsed.bronze,
+    total: Number(parsed.gold) + Number(parsed.silver) + Number(parsed.bronze),
     updatedAt: stamp,
   };
 }

@@ -134,11 +134,11 @@ async function requireAccount(id: number, options: { includeArchived?: boolean }
   return account;
 }
 
-async function assertEmailFree(email: string, exceptId?: number): Promise<void> {
+async function assertEmailFree(email: string, game: GameType, exceptId?: number): Promise<void> {
   const db = await getTursoDb();
   const row = await db.execute({
-    sql: `SELECT id, archived FROM accounts WHERE email = ? COLLATE NOCASE AND id IS NOT ?`,
-    args: [email, exceptId ?? -1],
+    sql: `SELECT id, archived FROM accounts WHERE email = ? COLLATE NOCASE AND game = ? AND id IS NOT ?`,
+    args: [email, game, exceptId ?? -1],
   });
   const existing = row.rows[0] as unknown as { id: number; archived: number } | undefined;
   if (existing) {
@@ -176,7 +176,7 @@ export async function getAccount(id: number): Promise<AccountSummary> {
 
 export async function createAccount(payload: unknown): Promise<AccountSummary> {
   const input: AccountCreateInput = accountCreateSchema.parse(payload);
-  await assertEmailFree(input.email);
+  await assertEmailFree(input.email, input.game);
 
   const db = await getTursoDb();
   const stamp = now();
@@ -280,7 +280,7 @@ export async function updateAccount(id: number, payload: unknown): Promise<Accou
   }
 
   if (next.email.toLowerCase() !== existing.email.toLowerCase()) {
-    await assertEmailFree(next.email, id);
+    await assertEmailFree(next.email, next.game, id);
   }
 
   const changes: Record<string, { from: unknown; to: unknown }> = {};

@@ -1,0 +1,51 @@
+id: agent-handoff
+name: Agent Handoff Protocol
+version: 1.0.0
+description: >
+  Creates a project handoff doc (docs/AGENTS_HANDOFF.md) that every agent
+  reads before editing. If the doc already exists, the agent uses it directly
+  instead of re-running the skill.
+triggers:
+  - "agent handoff"
+  - "handoff"
+  - "create handoff doc"
+applies_to: ["any coding project"]
+author: system
+---
+
+# Agent Handoff Protocol — Project Handoff Doc Creator
+
+## What this skill does
+
+Checks if `docs/AGENTS_HANDOFF.md` exists in the project:
+
+- **If it exists**: Tells the agent to read it and continue from there (no re-creation).
+- **If it doesn't exist**: Creates it with a simple, project-agnostic template covering project context, current state, edit protocol, activity log, and model error-cost ranking.
+
+## Why
+
+Every agent working in a project should know:
+- What the project is and where it lives
+- What state it's in (gate green? prod live? committed?)
+- What the edit protocol is (delegate judges, run gate, log changes, commit)
+- Which models introduce vs. fix errors (error-cost ranking)
+
+Once the doc exists, agents read it directly — no need to re-run this skill.
+
+## Usage
+
+In OpenCode, invoke this skill. It will either create `docs/AGENTS_HANDOFF.md` or tell you it already exists.
+
+## Template
+
+The created `docs/AGENTS_HANDOFF.md` contains:
+
+1. **Project context** — name, path, tech stack, ports, secrets, gate command, test count
+2. **Current state** — what's done, what's in progress
+3. **Strict Edit Protocol** — 7-step workflow (read → delegate judges → edit → gate → log → commit)
+4. **Agent Activity Log** — template for every agent to log who/what/where/why
+5. **Model Error-Cost Ranking** — tracks which models introduce vs. fix errors
+6. **Delegated Judge System** — 2+ judge agents review every change before finalizing
+7. **Commit & Gate Requirements** — all must pass before committing
+8. **Onboarding for new agents**
+9. **Red Lines** — never commit secrets, never skip gate/judge, etc.

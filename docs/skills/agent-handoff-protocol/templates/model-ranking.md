@@ -1,6 +1,7 @@
 # Model Error-Cost Ranking Template
 
-Copy this table into `docs/AGENTS_HANDOFF.md` Section 5. Update it whenever an agent fixes another agent's error.
+Copy this table into `docs/AGENTS_HANDOFF.md` Section 5. Update it whenever an
+agent fixes another agent's error.
 
 | Rank | Model ID | Errors Introduced | Errors Fixed | Net Cost | Last Error Type | Last Fixed Type |
 |------|----------|-------------------|--------------|----------|-----------------|-----------------|
@@ -20,7 +21,9 @@ When Agent B fixes an error introduced by Agent A:
 
 ### Example Update
 
-Agent A (model-a) introduced a UI bug where the guest trade desk had no "+ Car" button. Agent B (model-b) fixed it by adding the `TradeCarPickerModal`.
+Agent A (model-a) introduced a UI bug where the guest trade desk had no
+"+ Car" button. Agent B (model-b) fixed it by adding the
+`TradeCarPickerModal`.
 
 | Rank | Model ID | Errors Introduced | Errors Fixed | Net Cost |
 |------|----------|-------------------|--------------|----------|
@@ -29,6 +32,8 @@ Agent A (model-a) introduced a UI bug where the guest trade desk had no "+ Car" 
 
 ### Interpretation
 
-- **High Net Cost** = model introduces more errors than it fixes → needs more judge scrutiny or simpler prompts
-- **Negative Net Cost** = model fixes more than it introduces → good refactoring/cleanup agent
+- **High Net Cost** = model introduces more errors than it fixes → needs
+  more judge scrutiny or simpler prompts
+- **Negative Net Cost** = model fixes more than it introduces → good
+  refactoring/cleanup agent
 - **Zero** = balanced or new model with no tracked history

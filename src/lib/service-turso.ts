@@ -442,12 +442,15 @@ type TrophyRow = {
 };
 
 function toTrophyRecord(row: TrophyRow): TrophyRecord {
+  const gold = Number(row.gold);
+  const silver = Number(row.silver);
+  const bronze = Number(row.bronze);
   return {
     class: row.class,
-    gold: row.gold,
-    silver: row.silver,
-    bronze: row.bronze,
-    total: row.gold + row.silver + row.bronze,
+    gold,
+    silver,
+    bronze,
+    total: gold + silver + bronze,
     updatedAt: row.updated_at,
   };
 }

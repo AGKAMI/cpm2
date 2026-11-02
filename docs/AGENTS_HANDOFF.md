@@ -7,18 +7,20 @@ Read it before making any edits. Append to the **Agent Activity Log** after comp
 
 | Item | Value |
 |------|-------|
-| Project | <PROJECT_NAME> |
-| Location | <REPO_PATH> |
-| Tech stack | <TECH_STACK> |
-| Gate command | <GATE_COMMAND> |
-| Tests | <TEST_COUNT> (must all pass) |
+| Project | cpm2 — CPM Fleet Ledger |
+| Location | C:\Users\ojuni\Documents\GAMES\cpm2 |
+| Tech stack | Next.js 16.4.2, React 19.3, Tailwind 4, TypeScript 5, @libsql/client (Turso), Zod |
+| Gate command | `npx tsc --noEmit && npm run lint && npm run test && npm run build` |
+| Tests | 10 test files in tests/ (auth, carOwners, cars, domain, import, ledger, review, search, telegram, themes) |
 
 ## Current State
 
 | Area | Status |
 |------|--------|
-| <AREA_1> | <STATUS_1> |
-| <AREA_2> | <STATUS_2> |
+| Fleet UI | Trophies render as readable G/S/B tallies (not encoded 0111100G) |
+| Account scoping | assertEmailFree scopes email uniqueness by game (CPM1 + CPM2 can share email) |
+| Deployment | Live on cpm2-bay.vercel.app, Vercel edge cache purged Nov 2 |
+| Login | Console-password gated at /login (password field: login-password) |
 
 ## Strict Edit Protocol (MANDATORY)
 

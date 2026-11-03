@@ -51,7 +51,12 @@ export function GuestGate({ children }: { children: React.ReactNode }) {
             garages, trophies and export stay behind a sign in.
           </p>
           <div className="flex flex-col gap-2">
-            <Button variant="primary" size="md" className="w-full justify-center" onClick={() => router.push("/auth")}>
+            <Button
+              variant="primary"
+              size="md"
+              className="w-full justify-center"
+              onClick={() => router.push(`/auth?from=${encodeURIComponent(window.location.pathname)}`)}
+            >
               Sign in or create account →
             </Button>
           </div>

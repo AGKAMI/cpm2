@@ -58,9 +58,10 @@ export default function AuthPage() {
           return;
         }
       }
-      // Session cookie is set by the server — reload so the shell picks it up.
-      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-      window.location.assign("/");
+      // Session cookie is set by the server — go back to the fleet page you came from,
+      // or home if there's no referrer.
+      const from = new URLSearchParams(window.location.search).get("from") || "/";
+      window.location.assign(from);
     } catch {
       setError("Cannot reach the server. Is it still running?");
     } finally {

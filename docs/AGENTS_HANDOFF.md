@@ -69,6 +69,14 @@ Read it before making any edits. Append to the **Agent Activity Log** after comp
 **Judge verdict:** PASS — confirmed prices rendering on live trade desk
 **Summarized explanation:** Wrapped `entry.code` with `Number()` when building the prices Map in both TradeDesk.tsx and the guest trade page, so Map keys are numbers matching the lookup type. Same pattern as the three previous Turso string-to-number fixes (toTrophyRecord, trophySummary, fleetTrophySummary).
 
+### 2026-11-03 — OpenCode Agent "Nemotron" (nemotron-3.5-super-vl-120b-a12b)
+**What:** Hide verdict block until there's a trade to evaluate
+**Where:** src/app/trade/guest/page.tsx (guest trade desk verdict section)
+**Why:** Guest trade desk showed "FAIR TRADE / Too close to call — nobody is getting robbed" even when no cars were on either side — misleading on an empty desk. Now the verdict block is hidden until at least one car or cash amount is on either side, matching the main TradeDesk.tsx behavior. Empty desk shows a hint instead: "Put cars on both sides — the desk prices the deal in Rands and tells you straight if it robs you."
+**Errors introduced:** 0 | **Errors fixed:** 0
+**Gate:** npx tsc --noEmit && npm run lint && npm test && npm run build — pass (tsc 0, lint 0 errors, 42/42, build 0); verified in browser: empty desk shows hint, populated desk shows "WORTH IT — Roughly 25% in your favour"
+**Judge verdict:** PASS — confirmed verdict block only renders when cars are present
+**Summarized explanation:** Wrapped the verdict section in a conditional: when both sides are empty (no cars, no cash), show a hint paragraph instead of the verdict block. Matches TradeDesk.tsx's existing guard pattern.
 
 ### 2026-11-03 — OpenCode Agent "Nemotron" (nemotron-3.5-super-vl-120b-a12b)
 **What:** Fixed trophy numbers showing leading zeros (string concatenation bug)

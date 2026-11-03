@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { Field } from "@/components/ui/Field";
-import { AetherInput } from "@/components/ui/AetherInput";
+import { Field, TextInput } from "@/components/ui/Field";
 
 type Mode = "signin" | "register";
 
@@ -89,7 +88,7 @@ export default function AuthPage() {
         <div className="panel rounded-[28px] p-8 sm:p-10">
           <form onSubmit={submit} className="flex flex-col gap-5">
             <Field label="Email" htmlFor="auth-email" error={error && mode === "signin" ? undefined : undefined}>
-              <AetherInput
+              <TextInput
                 id="auth-email"
                 type="email"
                 autoComplete={mode === "signin" ? "email" : "new-email"}
@@ -102,7 +101,7 @@ export default function AuthPage() {
             </Field>
 
             <Field label="Password" htmlFor="auth-password">
-              <AetherInput
+              <TextInput
                 id="auth-password"
                 type="password"
                 autoComplete={mode === "signin" ? "current-password" : "new-password"}
@@ -115,7 +114,7 @@ export default function AuthPage() {
 
             {mode === "register" && (
               <Field label="Confirm password" htmlFor="auth-confirm">
-                <AetherInput
+                <TextInput
                   id="auth-confirm"
                   type="password"
                   autoComplete="new-password"

@@ -15,6 +15,7 @@ import { CarBackdrop } from "@/components/CarBackdrop";
 import { ImportModal } from "@/components/ImportModal";
 import { useFleet } from "@/components/FleetProvider";
 import { ThemeMenu } from "@/components/ThemeMenu";
+import { cn } from "@/lib/utils";
 
 export type ConfirmOptions = {
   title: string;
@@ -47,6 +48,27 @@ const NAV = [
   { href: "/trade", label: "Trade", hint: "T" },
   { href: "/settings", label: "Settings", hint: "S" },
 ];
+
+/** Shaped pill nav item with hover lift + active glow — used by both desktop header and mobile dock. */
+function NavItem({ item, active }: { item: (typeof NAV)[number]; active: boolean }) {
+  const Icon = NAV_ICONS[item.href];
+  return (
+    <Link
+      key={item.href}
+      href={item.href}
+      className={cn(
+        "relative flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-medium transition-all duration-200",
+        active
+          ? "bg-primary/20 border border-primary/40 text-primary shadow-[0_0_14px_rgba(219,226,234,0.25)] hover:bg-primary/30"
+          : "bg-background/50 border border-transparent text-muted-foreground hover:bg-accent/40 hover:text-foreground hover:border-accent/40",
+      )}
+      aria-current={active ? "page" : undefined}
+    >
+      {Icon}
+      <span>{item.label}</span>
+    </Link>
+  );
+}
 
 /**
  * Fleet nav icon for one game — the car glyph. The registers sit side by side
@@ -109,7 +131,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [confirmState, setConfirmState] = useState<ConfirmOptions | null>(null);
   const [confirmResolver, setConfirmResolver] = useState<((value: boolean) => void) | null>(null);
   const toast = useToast();
-  /** Whether an export download is awaiting the console-password consent entry. */
   const [awaitingExportConsent, setAwaitingExportConsent] = useState(false);
   const [exportConsentPassword, setExportConsentPassword] = useState("");
   const [exportConsentBusy, setExportConsentBusy] = useState(false);
@@ -166,7 +187,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         pendingG = false;
         window.clearTimeout(timer);
         const key = event.key.toLowerCase();
-        // 1 and 2 pick a game register; "f" (legacy) opens the game picker.
         if (key === "1") router.push("/fleet/cpm1");
         if (key === "2") router.push("/fleet/cpm2");
         if (key === "f") router.push("/fleet");
@@ -214,7 +234,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     };
   }, [router]);
 
-  /** Trigger the actual download once reveal consent has been earned. */
   function triggerExport() {
     const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
     const link = document.createElement("a");
@@ -228,8 +247,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     setExportConsentPassword("");
   }
 
-  /** Re-enter the console password to earn a fresh reveal-consent cookie, then
-   *  download the export. The export route refuses plaintext passwords without it. */
   async function confirmExportConsent() {
     if (!exportConsentPassword.trim()) return;
     setExportConsentBusy(true);
@@ -267,21 +284,17 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <ShellContext.Provider value={shell}>
-      <div className="relative min-h-screen">
+      <div className="relative min-h-screen bg-background">
         <CarBackdrop />
         <a
           href="#main"
-          className="sr-only left-4 top-4 z-50 rounded-full border-mix(in srgb, var(--color-ink) 30%, transparent) bg-paper-raised px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink focus:not-sr-only focus:absolute"
+          className="sr-only left-4 top-4 z-50 rounded-md bg-secondary px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-secondary-foreground focus:not-sr-only focus:absolute"
         >
           Skip to content
         </a>
-        <header className="glass-header sticky top-0 z-30 overflow-hidden pt-[env(safe-area-inset-top)]">
-          <div className="dial-sweep" aria-hidden />
-          <div className="relative mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-6 gap-y-3 px-4 pb-3 pt-4 sm:px-6">
+        <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-md pt-[env(safe-area-inset-top)]">
+          <div className="relative mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-4 gap-y-2 px-4 pb-3 pt-3 sm:px-6">
             <Link href="/fleet/cpm2" className="flex items-center gap-3">
-              {/* KAMI's CPM badge (src/app/icon.svg) — replaces the old car
-                  glyph roundel. The badge carries its own metallic rim, so it
-                  stands alone instead of sitting inside another ring. */}
               <img
                 src="/icon.svg"
                 alt=""
@@ -291,85 +304,60 @@ export function AppShell({ children }: { children: ReactNode }) {
                 className="h-10 w-10 shrink-0"
               />
               <span>
-                <span className="wordmark block text-[22px] leading-none text-ink" translate="no">
-                  Fleet <span className="text-racing">Ledger</span>
+                <span className="block text-[20px] leading-none text-foreground" translate="no">
+                  Fleet <span className="text-primary">Ledger</span>
                 </span>
               </span>
             </Link>
 
-            <nav className="ml-auto hidden items-center gap-1 sm:flex">
+            <nav className="ml-auto hidden items-center gap-2 sm:flex">
               {NAV.map((item) => {
                 const active =
                   item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`nav-tab ${active ? "nav-tab-active" : ""}`}
-                    aria-current={active ? "page" : undefined}
-                  >
-                    {item.label}
-                  </Link>
-                );
+                return <NavItem key={item.href} item={item} active={active} />;
               })}
             </nav>
 
             <div className="ml-auto flex flex-wrap items-center gap-2 sm:ml-0">
-              <span className="glass-control hidden items-center gap-2 rounded-full px-3 py-1.5 sm:flex">
+              <span className="flex items-center gap-2 rounded-md bg-muted px-3 py-1">
                 <span
-                  className={`h-1.5 w-1.5 rounded-full ${
-                    fleet.error ? "bg-racing" : fleet.loading ? "bg-blueprint animate-blink" : "bg-ink"
+                  className={`h-2 w-2 rounded-full ${
+                    fleet.error ? "bg-destructive" : fleet.loading ? "bg-primary animate-blink" : "bg-foreground"
                   }`}
                 />
-                <span className="num text-[9px] uppercase tracking-[0.16em] text-ink-faint">
+                <span className="text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
                   {fleet.error ? "offline" : fleet.loading ? "syncing" : "live"}
                 </span>
               </span>
 
               <ThemeMenu />
 
-              {/* Adding an account only makes sense inside a register —
-                  the button lives there, not in every corner of the app. */}
               {pathname.startsWith("/fleet") ? (
-                <Button variant="primary" size="sm" onClick={openNewAccount}>
+                <Button size="sm" onClick={openNewAccount}>
                   + Add account
                 </Button>
               ) : null}
             </div>
           </div>
-          <div className="rule-double mx-auto max-w-[1440px]" />
         </header>
 
         <main
           id="main"
-          className="relative mx-auto max-w-[1440px] scroll-mt-24 px-4 py-6 sm:px-6 sm:py-8"
+          className="relative mx-auto max-w-[1440px] scroll-mt-20 px-4 py-6 sm:px-6 sm:py-8"
         >
           {children}
         </main>
 
-        <footer className="relative mx-auto max-w-[1440px] px-4 pb-28 pt-4 sm:px-6 sm:pb-10">
-          <div className="rule-double mb-3" />
+        <footer className="relative mx-auto max-w-[1440px] px-4 pb-12 pt-4 sm:px-6 sm:pb-16">
+          <div className="border-t border-border mb-4" />
         </footer>
 
-        <nav
-          aria-label="Primary"
-          className="mobile-dock sm:hidden"
-        >
-          <div className="mx-auto flex max-w-md items-stretch justify-around">
+        <nav aria-label="Primary" className="mobile-dock sm:hidden">
+          <div className="mx-auto flex max-w-md items-stretch justify-around gap-1">
             {NAV.map((item) => {
               const active =
                 item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  aria-current={active ? "page" : undefined}
-                  className={`flex flex-1 flex-col items-center gap-1 rounded-full py-2.5 text-[10px] font-semibold transition-all duration-200 ease-out ${ active ? "bg-racing/15 text-racing border border-racing/25 shadow-[0_0_14px_color-mix(in_srgb,_var(--color-racing)_35%_,transparent)]" : "text-ink-faint hover:text-ink-soft hover:bg-ink/5" }`}
-                >
-                  {NAV_ICONS[item.href]}
-                  {item.label}
-                </Link>
-              );
+              return <NavItem key={item.href} item={item} active={active} />;
             })}
           </div>
         </nav>
@@ -397,8 +385,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           open={slotAccount !== null}
           account={slotAccount}
           onClose={() => {
-            // While the purchase confirmation sits on top, Escape belongs to it first —
-            // one press unwinds one layer, not the whole flow.
             if (pendingSlot === null) setSlotAccount(null);
           }}
           onReview={(count) => {
@@ -414,9 +400,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           onConfirm={() => {
             if (pendingSlot) void fleet.buySlots(pendingSlot.account, pendingSlot.count);
             setPendingSlot(null);
-            // The buy dialog shows the pre-purchase balances — close it too,
-            // so the refreshed account page is the next thing on screen.
-            setSlotAccount(null);
           }}
         />
 
@@ -428,10 +411,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         />
 
         {awaitingExportConsent && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-mix(in srgb, var(--color-paper-raised) 80%, transparent) px-4 backdrop-blur-xl">
-            <div className="panel w-full max-w-[340px] rounded-[20px] p-6 text-center">
-              <h2 className="font-display text-[18px] text-ink mb-2">Confirm the export</h2>
-              <p className="text-[11.5px] text-ink-soft mb-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-xl px-4">
+            <div className="relative w-full max-w-[340px] rounded-lg border border-border bg-background p-6 text-center shadow-lg">
+              <h2 className="text-lg font-medium text-foreground mb-2">Confirm the export</h2>
+              <p className="text-sm text-muted-foreground mb-4">
                 Export exposes every stored password. Re-enter the console password to continue.
               </p>
               <input
@@ -443,10 +426,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                   if (event.key === "Enter") void confirmExportConsent();
                 }}
                 autoComplete="current-password"
-                className="field-rule num w-full mb-3 px-3 py-1.5 text-[12px]"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               />
               <div className="flex gap-2 justify-center">
-                <Button variant="ghost" onClick={() => setAwaitingExportConsent(false)} type="button">
+                <Button variant="outline" onClick={() => setAwaitingExportConsent(false)} type="button">
                   Cancel
                 </Button>
                 <Button
@@ -471,16 +454,16 @@ export function AppShell({ children }: { children: ReactNode }) {
           width="max-w-md"
           footer={
             <>
-              <Button variant="ghost" onClick={() => closeConfirm(false)} type="button">
+              <Button variant="outline" onClick={() => closeConfirm(false)} type="button">
                 Keep it
               </Button>
-              <Button variant="danger" onClick={() => closeConfirm(true)} type="button">
+              <Button variant="destructive" onClick={() => closeConfirm(true)} type="button">
                 {confirmState?.confirmLabel ?? "Confirm"}
               </Button>
             </>
           }
         >
-          <p className="text-sm leading-relaxed text-ink-soft">{confirmState?.message ?? ""}</p>
+          <p className="text-sm leading-relaxed text-muted-foreground">{confirmState?.message ?? ""}</p>
         </Modal>
 
         <Modal
@@ -494,10 +477,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             {SHORTCUTS.map((item) => (
               <div
                 key={item.keys}
-                className="flex items-baseline justify-between gap-4 border-b border-mix(in srgb, var(--color-ink) 8%, transparent) py-2 last:border-0"
+                className="flex items-baseline justify-between gap-4 border-b border-border py-2 last:border-0"
               >
-                <dt className="num text-[12px] text-ink">{item.action}</dt>
-                <dd className="num rounded-full border border-mix(in srgb, var(--color-ink) 15%, transparent) bg-mix(in srgb, var(--color-ink) 5%, transparent) px-1.5 py-0.5 text-[11px] text-ink-soft backdrop-blur-md">
+                <dt className="text-sm font-medium text-foreground">{item.action}</dt>
+                <dd className="rounded-full border border-input bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
                   {item.keys}
                 </dd>
               </div>

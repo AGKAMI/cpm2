@@ -33,7 +33,7 @@ Read it before making any edits. Append to the **Agent Activity Log** after comp
 
 ## Agent Activity Log
 
-### 2026-11-02 — Hermes Agent "Kermes" (nemotron-3.5-super-vl-120b-a12b)
+### 2026-11-03 — OpenCode Agent "Nemotron" (nemotron-3.5-super-vl-120b-a12b)
 **What:** Fixed trophy numbers showing leading zeros (string concatenation bug)
 **Where:** src/lib/service-turso.ts (toTrophyRecord, trophySummary, fleetTrophySummary)
 **Why:** Turso/Hrana returns INTEGER values as strings; row.gold + row.silver + row.bronze did string concat instead of numeric addition. Fixed toTrophyRecord first, then added Number() wrappers to trophySummary and fleetTrophySummary as belt-and-suspenders.
@@ -44,7 +44,7 @@ Read it before making any edits. Append to the **Agent Activity Log** after comp
 
 ### 2026-11-02 — Hermes Agent "Kermes" (nemotron-3.5-super-vl-120b-a12b)
 **What:** Multi-user fleet: per-user accounts, registration, sign-in UI, Turso isolation
-**Where:** src/lib/db-turso.ts (users table + user_id on accounts + migration), src/lib/auth.ts (scrypt hash/compare, signed sessions, currentUserId), src/lib/service-turso.ts (all account ops accept userId + enforce isolation), src/lib/client.ts (skip /auth redirect), src/proxy.ts (/auth public), src/app/api/auth/register/route.ts (NEW), src/app/api/auth/login/route.ts (now {email,password}), src/app/api/auth/telegram/route.ts (user lookup), src/app/api/auth/owner/route.ts (current user), src/app/api/auth/reveal-consent/route.ts (own password), all 12 account routes wired to pass userId, src/app/auth/page.tsx (NEW sign-in/register UI), src/app/login/page.tsx (sign-in link from lock screen)
+**Where:** src/lib/db-turso.ts (users table + user_id on accounts + migration), src/lib/auth.ts (scrypt hash/compare, signed sessions, currentUserId), src/lib/service-turso.ts (all account ops accept userId + enforce isolation), src/lib/client.ts (skip /auth redirect), src/app/api/auth/register/route.ts (NEW), src/app/api/auth/login/route.ts (now {email,password}), src/app/api/auth/telegram/route.ts (user lookup), src/app/api/auth/owner/route.ts (current user), src/app/api/auth/reveal-consent/route.ts (own password), all 12 account routes wired to pass userId, src/app/auth/page.tsx (NEW sign-in/register UI), src/app/login/page.tsx (sign-in link from lock screen)
 **Why:** Regular CPM players need self-serve accounts instead of only KAMI having console access via password.
 **Errors introduced:** 0 | **Errors fixed:** 0
 **Gate:** npx tsc --noEmit && npm run lint && npm test && npm run build — pass

@@ -163,8 +163,11 @@ export default function LoginPage() {
         </div>
 
         <Button type="submit" variant="primary" size="md" className="mt-5 w-full justify-center" disabled={busy || !password}>
-          {busy ? "Unlockingâ€¦" : "Unlock"}
+          {busy ? "Unlocking…" : "Unlock"}
         </Button>
+        <p className="mt-4 text-[11px] text-center text-aether-text-soft">
+          Not KAMI? <a href="/auth" className="underline underline-offset-4 hover:text-aether-accent transition-colors">Player sign in →</a>
+        </p>
       </form>
     </Overlay>
   );

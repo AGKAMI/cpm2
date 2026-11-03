@@ -69,7 +69,7 @@ export function TradeDesk() {
         ]);
         if (cancelled) return;
         setRates(rateResult.rates);
-        setPrices(new Map(priceResult.prices.map((entry) => [entry.code, entry])));
+        setPrices(new Map(priceResult.prices.map((entry) => [Number(entry.code), entry])));
       } catch (err) {
         if (!cancelled) {
           toast.error("Could not load the trade desk", err instanceof ApiRequestError ? err.message : "Try again.");

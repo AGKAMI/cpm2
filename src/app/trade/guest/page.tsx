@@ -55,7 +55,7 @@ export default function GuestTradeDesk() {
         ]);
         if (cancelled) return;
         setRates(rateResult.rates);
-        setPrices(new Map(priceResult.prices.map((entry) => [entry.code, entry])));
+        setPrices(new Map(priceResult.prices.map((entry) => [Number(entry.code), entry])));
       } catch {
         if (!cancelled) {
           toast.error("Could not load the price book", "Try again.");

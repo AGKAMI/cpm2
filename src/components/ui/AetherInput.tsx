@@ -1,6 +1,7 @@
 "use client";
 
 import type { InputHTMLAttributes, ReactNode } from "react";
+import { useId } from "react";
 
 type AetherInputProps = InputHTMLAttributes<HTMLInputElement> & {
   label?: string;
@@ -21,7 +22,7 @@ export function AetherInput({
   className = "",
   ...props
 }: AetherInputProps) {
-  const generatedId = `aether-input-${Math.random().toString(36).slice(2)}`;
+  const generatedId = `aether-input-${useId().slice(2)}`;
 
   return (
     <div className="flex flex-col gap-2">

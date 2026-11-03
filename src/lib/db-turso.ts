@@ -59,7 +59,7 @@ const ACCOUNT_COLUMNS = `
   updated_at   TEXT    NOT NULL,
   CHECK (length(email) > 2 AND length(email) <= 254),
   CHECK (cash >= 0 AND cash <= 50000000),
-  CHECK (coins >= 0 AND coins <= 30000),
+  CHECK (coins >= 0 AND coins <= 500000),
   CHECK (base_slots >= 0 AND base_slots <= 999),
   CHECK (cars >= 0 AND cars <= CASE WHEN game = 'cpm1'
       THEN ${MAX_CARS}

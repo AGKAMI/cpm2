@@ -65,7 +65,7 @@ export const LIMITS = {
   /** Maximum in-game cash a single account can hold. */
   MAX_CASH: 50_000_000,
   /** Maximum in-game coins a single account can hold. */
-  MAX_COINS: 30_000,
+  MAX_COINS: 500_000,
   /** Free car slots in a CPM2 garage (editable per account). CPM1 has none. */
   BASE_CAR_SLOTS: GARAGE_RULES.cpm2.freeSlots,
   /** Upper bound for the per-account base garage size. */

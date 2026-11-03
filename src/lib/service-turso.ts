@@ -144,10 +144,11 @@ async function assertEmailFree(email: string, game: GameType, exceptId?: number)
   });
   const existing = row.rows[0] as unknown as { id: number; archived: number } | undefined;
   if (existing) {
+    const isArchived = Number(existing.archived) === 1;
     throw new ApiError(
       409,
       "EMAIL_TAKEN",
-      existing.archived
+      isArchived
         ? `${email} is tracked but archived — restore it instead of adding it again.`
         : `${email} is already tracked.`,
     );

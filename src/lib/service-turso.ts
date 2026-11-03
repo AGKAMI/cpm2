@@ -184,7 +184,7 @@ export async function listAccounts(
 
 export async function getAccount(id: number, userId?: number): Promise<AccountSummary> {
   const account = await requireAccount(id);
-  if (userId !== undefined && account.user_id !== null && account.user_id !== userId) {
+  if (userId !== undefined && account.user_id !== null && Number(account.user_id) !== userId) {
     throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
   }
   return toSummary(account);
@@ -299,7 +299,7 @@ async function restoreAndOverwrite(
 export async function updateAccount(id: number, payload: unknown, userId?: number): Promise<AccountSummary> {
   const patch: AccountPatchInput = accountPatchSchema.parse(payload);
   const existing = await requireAccount(id);
-  if (userId !== undefined && existing.user_id !== null && existing.user_id !== userId) {
+  if (userId !== undefined && Number(existing.user_id) !== userId) {
     throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
   }
 
@@ -427,7 +427,7 @@ export async function updateAccount(id: number, payload: unknown, userId?: numbe
 
 export async function archiveAccount(id: number, userId?: number): Promise<{ id: number; email: string }> {
   const existing = await requireAccount(id, { includeArchived: true });
-  if (userId !== undefined && existing.user_id !== null && existing.user_id !== userId) {
+  if (userId !== undefined && Number(existing.user_id) !== userId) {
     throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
   }
   if (existing.archived) return { id, email: existing.email };
@@ -448,7 +448,7 @@ export async function archiveAccount(id: number, userId?: number): Promise<{ id:
 
 export async function restoreAccount(id: number, userId?: number): Promise<AccountSummary> {
   const existing = await requireAccount(id, { includeArchived: true });
-  if (userId !== undefined && existing.user_id !== null && existing.user_id !== userId) {
+  if (userId !== undefined && Number(existing.user_id) !== userId) {
     throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
   }
   if (!existing.archived) return toSummary(existing);
@@ -468,7 +468,7 @@ export async function restoreAccount(id: number, userId?: number): Promise<Accou
 export async function purchaseSlots(id: number, payload: unknown, userId?: number): Promise<AccountSummary> {
   const { count } = slotPurchaseSchema.parse(payload ?? { count: 1 });
   const existing = await requireAccount(id);
-  if (userId !== undefined && existing.user_id !== null && existing.user_id !== userId) {
+  if (userId !== undefined && Number(existing.user_id) !== userId) {
     throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
   }
 
@@ -512,7 +512,7 @@ export async function purchaseSlots(id: number, payload: unknown, userId?: numbe
 
 export async function revealPassword(id: number, userId?: number): Promise<{ id: number; email: string; password: string }> {
   const existing = await requireAccount(id);
-  if (userId !== undefined && existing.user_id !== null && existing.user_id !== userId) {
+  if (userId !== undefined && Number(existing.user_id) !== userId) {
     throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
   }
   try {
@@ -555,7 +555,7 @@ export async function listTrophies(accountId: number, userId?: number): Promise<
   await requireAccount(accountId, { includeArchived: true });
   if (userId !== undefined) {
     const account = await requireAccount(accountId, { includeArchived: true });
-    if (account.user_id !== null && account.user_id !== userId) {
+    if (Number(account.user_id) !== userId) {
       throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
     }
   }
@@ -581,7 +581,7 @@ export async function listTrophies(accountId: number, userId?: number): Promise<
 
 export async function trophySummary(accountId: number, userId?: number): Promise<TrophySummary> {
   const account = await requireAccount(accountId, { includeArchived: true });
-  if (userId !== undefined && account.user_id !== null && account.user_id !== userId) {
+  if (userId !== undefined && Number(account.user_id) !== userId) {
     throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
   }
   const byClass = await listTrophies(accountId);
@@ -622,7 +622,7 @@ export async function fleetTrophySummary(userId?: number): Promise<TrophySummary
 
 export async function setTrophies(accountId: number, payload: unknown, userId?: number): Promise<TrophyRecord> {
   const account = await requireAccount(accountId);
-  if (userId !== undefined && account.user_id !== null && account.user_id !== userId) {
+  if (userId !== undefined && Number(account.user_id) !== userId) {
     throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
   }
   const parsed = trophyUpdateSchema.parse(payload);
@@ -685,7 +685,7 @@ function carNameFor(code: number, game: GameType): string {
 
 export async function listGarage(accountId: number, userId?: number): Promise<GarageSummary> {
   const account = await requireAccount(accountId, { includeArchived: true });
-  if (userId !== undefined && account.user_id !== null && account.user_id !== userId) {
+  if (userId !== undefined && Number(account.user_id) !== userId) {
     throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
   }
   const db = await getTursoDb();
@@ -756,7 +756,7 @@ export async function carOwners(game: GameType, carCode: number, userId?: number
 
 export async function addGarageCar(accountId: number, payload: unknown, userId?: number): Promise<CarRecord> {
   const account = await requireAccount(accountId);
-  if (userId !== undefined && account.user_id !== null && account.user_id !== userId) {
+  if (userId !== undefined && Number(account.user_id) !== userId) {
     throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
   }
   const parsed = carAssignSchema.parse(payload);
@@ -844,7 +844,7 @@ export async function addGarageCar(accountId: number, payload: unknown, userId?:
 
 export async function removeGarageCar(accountId: number, carId: number, userId?: number): Promise<{ removed: number; carName: string }> {
   const account = await requireAccount(accountId);
-  if (userId !== undefined && account.user_id !== null && account.user_id !== userId) {
+  if (userId !== undefined && Number(account.user_id) !== userId) {
     throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
   }
   const db = await getTursoDb();

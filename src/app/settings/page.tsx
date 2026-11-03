@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useFleet } from "@/components/FleetProvider";
+import { GuestGate } from "@/components/GuestGate";
 import { useShell } from "@/components/AppShell";
 import { PageHeading } from "@/components/PageHeading";
 import { ThemeGallery } from "@/components/ThemeGallery";
@@ -53,7 +54,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <GuestGate>
+      <div className="flex flex-col gap-4">
       <PageHeading folio="F-04" title="Settings" meta="limits · backup · appearance" />
       <div className="grid gap-4 lg:grid-cols-2">
       <section className="panel rounded-[20px] p-5">
@@ -157,6 +159,7 @@ export default function SettingsPage() {
       </section>
       </div>
     </div>
+    </GuestGate>
   );
 }
 

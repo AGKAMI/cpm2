@@ -65,19 +65,6 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   if (!response.ok) {
     const body = payload as ApiErrorBody | null;
     const code = body?.error?.code ?? "UNKNOWN_ERROR";
-    // A dead session mid-use (cookie expired, owner re-locked) → back to the
-    // lock screen. The login page talks to /api/auth with raw fetch, so this
-    // never loops.
-    if (
-      typeof window !== "undefined" &&
-      !["/login", "/auth"].includes(window.location.pathname) &&
-      (code === "AUTH_REQUIRED" || code === "TELEGRAM_NOT_OWNER" || code === "TELEGRAM_AUTH_INVALID")
-    ) {
-      // A full reload on purpose: it drops every in-memory fleet state so the
-      // shell cannot keep rendering stale data from a dead session.
-      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-      window.location.assign("/login");
-    }
     throw new ApiRequestError(
       body?.error?.message ?? `Request failed with status ${response.status}.`,
       response.status,

@@ -29,17 +29,20 @@ export async function proxy(request: NextRequest) {
 
   // --- Per-user gate ---
   const userId = verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value);
-  if (userId) {
-    return NextResponse.next();
-  }
 
+  // API routes always require auth (401 JSON). Page routes load for everyone —
+  // GuestGate blurs them client-side when there's no session, so guests can
+  // see what they're missing and tap straight into sign in.
   if (pathname.startsWith("/api/")) {
+    if (userId) return NextResponse.next();
     return NextResponse.json(
       { error: { code: "AUTH_REQUIRED", message: "Sign in to use the console." } },
       { status: 401 },
     );
   }
-  return NextResponse.redirect(new URL("/login", request.url));
+
+  // Pages are public; the client decides whether to blur.
+  return NextResponse.next();
 }
 
 export const config = {

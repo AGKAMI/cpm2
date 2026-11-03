@@ -2,6 +2,7 @@
 
 import { PageHeading } from "@/components/PageHeading";
 import { TradeDesk } from "@/components/TradeDesk";
+import { GuestGate } from "@/components/GuestGate";
 import Link from "next/link";
 
 /**
@@ -10,17 +11,18 @@ import Link from "next/link";
  */
 export default function TradePage() {
   return (
-    <>
-      <div className="flex items-center justify-between gap-3 border-b border-mix(in srgb, var(--aether-text) 12%, transparent) pb-4 mb-6">
-        <div className="flex items-center gap-2">
-          <PageHeading folio="T-01" title="Trade Desk" meta="CPM2 · value every deal in Rands" />
+    <GuestGate>
+      <>
+        <div className="flex items-center justify-between gap-3 border-b border-mix(in srgb, var(--aether-text) 12%, transparent) pb-4 mb-6">
+          <div className="flex items-center gap-2">
+            <PageHeading folio="T-01" title="Trade Desk" meta="CPM2 · value every deal in Rands" />
+          </div>
+          <Link href="/trade/guest" passHref>
+            <a className="text-[11px] font-semibold uppercase tracking-[0.08em] text-aether-text-faint hover:text-aether-text underline-offset-4 hover:underline">
+              Open public calculator →
+            </a>
+          </Link>
         </div>
-        <Link href="/trade/guest" passHref>
-          <a className="text-[11px] font-semibold uppercase tracking-[0.08em] text-aether-text-faint hover:text-aether-text underline-offset-4 hover:underline">
-            Open public calculator →
-          </a>
-        </Link>
-      </div>
       <div className="mb-4 flex gap-2" role="tablist" aria-label="Game">
         <button
           type="button"
@@ -43,5 +45,6 @@ export default function TradePage() {
       </div>
       <TradeDesk />
     </>
+    </GuestGate>
   );
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PageHeading } from "@/components/PageHeading";
+import { GuestGate } from "@/components/GuestGate";
 import { GAMES, GAME_LABELS, formatNumber } from "@/lib/constants";
 import { carsForGame } from "@/lib/car-catalog";
 
@@ -13,7 +14,8 @@ import { carsForGame } from "@/lib/car-catalog";
  */
 export default function FleetIndexPage() {
   return (
-    <div className="flex flex-col gap-5">
+    <GuestGate>
+      <div className="flex flex-col gap-5">
       <PageHeading
         folio="F-10"
         title="Fleet"
@@ -58,5 +60,6 @@ export default function FleetIndexPage() {
         CPM2 — so each register only ever shows its own game&rsquo;s cars
       </p>
     </div>
+    </GuestGate>
   );
 }

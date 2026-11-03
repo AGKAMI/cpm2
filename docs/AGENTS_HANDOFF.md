@@ -79,6 +79,15 @@ Read it before making any edits. Append to the **Agent Activity Log** after comp
 **Summarized explanation:** Wrapped the verdict section in a conditional: when both sides are empty (no cars, no cash), show a hint paragraph instead of the verdict block. Matches TradeDesk.tsx's existing guard pattern.
 
 ### 2026-11-03 — OpenCode Agent "Nemotron" (nemotron-3.5-super-vl-120b-a12b)
+**What:** Strip decorative UI from trade desk and settings
+**Where:** src/app/trade/guest/page.tsx (removed "Prices and rates" line, "Read-only · no login" chip, made cash fields optional, added red→yellow→green verdict spectrum), src/components/TradeDesk.tsx (same cash optional + verdict spectrum), src/components/AppShell.tsx (removed "CPM · CPM1 + CPM2 account register" header subtitle), src/app/settings/page.tsx (removed CPM1 slots paragraph, removed "Where the data lives" section, hid keyboard shortcuts on mobile)
+**Why:** KAMI reviewed the app on mobile and flagged decorative/landing-page UI that doesn't belong in an internal tool. Removed footer boilerplate, made cash inputs opt-in, and gave the verdict a colour spectrum (green = your favour, red = against you).
+**Errors introduced:** 0 | **Errors fixed:** 0
+**Gate:** npx tsc --noEmit && npm run lint && npm test && npm run build — pass (tsc 0, lint 0 errors, 42/42, build 0); verified in browser: empty desk shows hint, populated desk shows coloured "WORTH IT — Roughly 25% in your favour", cash fields opt-in
+**Judge verdict:** PASS — verified trade desk and settings pages in live browser
+**Summarized explanation:** Removed decorative lines that clutter an internal app, made cash entry optional, added a red→yellow→green spectrum to the verdict text based on lean percentage, and hid keyboard shortcuts from mobile view.
+
+### 2026-11-03 — OpenCode Agent "Nemotron" (nemotron-3.5-super-vl-120b-a12b)
 **What:** Fixed trophy numbers showing leading zeros (string concatenation bug)
 **Where:** src/lib/service-turso.ts (toTrophyRecord, trophySummary, fleetTrophySummary)
 **Why:** Turso/Hrana returns INTEGER values as strings; row.gold + row.silver + row.bronze did string concat instead of numeric addition. Fixed toTrophyRecord first, then added Number() wrappers to trophySummary and fleetTrophySummary as belt-and-suspenders.

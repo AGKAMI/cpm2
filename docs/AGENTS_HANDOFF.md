@@ -46,9 +46,7 @@ Read it before making any edits. Append to the **Agent Activity Log** after comp
 **What:** Multi-user fleet: per-user accounts, registration, sign-in UI, Turso isolation
 **Where:** src/lib/db-turso.ts (users table + user_id on accounts + migration), src/lib/auth.ts (scrypt hash/compare, signed sessions, currentUserId), src/lib/service-turso.ts (all account ops accept userId + enforce isolation), src/lib/client.ts (skip /auth redirect), src/app/api/auth/register/route.ts (NEW), src/app/api/auth/login/route.ts (now {email,password}), src/app/api/auth/telegram/route.ts (user lookup), src/app/api/auth/owner/route.ts (current user), src/app/api/auth/reveal-consent/route.ts (own password), all 12 account routes wired to pass userId, src/app/auth/page.tsx (NEW sign-in/register UI), src/app/login/page.tsx (sign-in link from lock screen)
 **Why:** Regular CPM players need self-serve accounts instead of only KAMI having console access via password.
-**Errors introduced:** 0 | **Errors fixed:** 0
-**Gate:** npx tsc --noEmit && npm run lint && npm test && npm run build — pass
-**Judge verdict:** PASS — verified end-to-end: tsc clean, 42/42 tests, build green, /auth returns 200 on production
+\*\*Errors\ introduced:\*\*\ 1\ \|\ \*\*Errors\ fixed:\*\*\ 0\n\*\*Gate:\*\*\ npx\ tsc\ --noEmit\ &&\ npm\ run\ lint\ &&\ npm\ test\ &&\ npm\ run\ build\ —\ FAIL\ \(lint\ error:\ AetherInput\.tsx\ Math\.random\(\)\ in\ render\ body\)\n\*\*Judge\ verdict:\*\*\ FAIL\ —\ React\ purity\ violation\ in\ AetherInput\.tsx,\ fixed\ by\ Nemotron\n\*\*Summarized\ explanation:\*\*\ Built\ multi-user\ auth\ layer\ on\ Turso\ but\ introduced\ Math\.random\(\)\ in\ AetherInput\.tsx\ render\ body,\ causing\ lint\ failure\.\ Fixed\ by\ Nemotron\ with\ useId\(\)\.
 **Summarized explanation:** Built full multi-user auth layer on Turso: users table, per-user account isolation, player registration/login, sign-in UI linked from the console lock screen, deployed to https://cpm2-bay.vercel.app
 
 ### 2026-11-03 — OpenCode Agent "Nemotron" (nemotron-3.5-super-vl-120b-a12b)

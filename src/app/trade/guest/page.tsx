@@ -272,47 +272,56 @@ export default function GuestTradeDesk() {
             {renderSide("them")}
           </div>
 
-          <section
-            className={`rounded-[18px] border px-5 py-5 text-center ${
-              incomplete
-                ? "border-mix(in srgb, var(--aether-text) 15%, transparent) bg-mix(in srgb, var(--aether-text) 3%, transparent)"
-                : verdict.status === "gain"
-                  ? "border-aether-accent/40 bg-aether-accent/8"
-                  : verdict.status === "loss"
-                    ? "border-aether-accent/40 bg-aether-accent/8"
-                    : "border-mix(in srgb, var(--aether-text) 15%, transparent) bg-mix(in srgb, var(--aether-text) 3%, transparent)"}
-          `}
-          >
-            <p className="num text-[11px] uppercase tracking-[0.18em] text-aether-text-faint">
-              {incomplete ? "Rough call" : "The verdict"}
+          {/* Verdict — hidden until there's something on at least one side */}
+          {sides.you.cars.length + sides.them.cars.length === 0 && sides.you.cash === 0 && sides.them.cash === 0 ? (
+            <p className="text-center text-[12px] text-aether-text-faint py-4">
+              Put cars on both sides — the desk prices the deal in Rands and tells you straight if it robs you.
             </p>
-            <p
-              className={`display-title mt-1 text-[28px] leading-none sm:text-[34px] ${
-                verdict.status === "loss" ? "text-aether-accent/70" : verdict.status === "gain" ? "text-aether-accent/70" : "text-aether-text/60"}
+          ) : (
+            <>
+              <section
+                className={`rounded-[18px] border px-5 py-5 text-center ${
+                  incomplete
+                    ? "border-mix(in srgb, var(--aether-text) 15%, transparent) bg-mix(in srgb, var(--aether-text) 3%, transparent)"
+                    : verdict.status === "gain"
+                      ? "border-aether-accent/40 bg-aether-accent/8"
+                      : verdict.status === "loss"
+                        ? "border-aether-accent/40 bg-aether-accent/8"
+                        : "border-mix(in srgb, var(--aether-text) 15%, transparent) bg-mix(in srgb, var(--aether-text) 3%, transparent)"}
               `}
-            >
-              {verdict.status === "gain" ? "Worth it" : verdict.status === "loss" ? "Not worth it" : "Fair trade"}
-            </p>
-            {incomplete ? (
-              <p className="mt-2 text-[12px] text-aether-text-soft">
-                {unpricedCount === 1
-                  ? "1 car has no price on record — not counted yet."
-                  : `${unpricedCount} cars have no price on record — not counted yet.`}
-              </p>
-            ) : (
-              <p className="mt-2 text-[12px] text-aether-text-soft">
-                {verdict.status === "gain"
-                  ? `Roughly ${leanPct}% in your favour — take the deal.`
-                  : verdict.status === "loss"
-                    ? `Roughly ${leanPct}% against you — you'd be robbing yourself.`
-                    : "Too close to call — nobody is getting robbed."}
-              </p>
-            )}
-          </section>
+              >
+                <p className="num text-[11px] uppercase tracking-[0.18em] text-aether-text-faint">
+                  {incomplete ? "Rough call" : "The verdict"}
+                </p>
+                <p
+                  className={`display-title mt-1 text-[28px] leading-none sm:text-[34px] ${
+                    verdict.status === "loss" ? "text-aether-accent/70" : verdict.status === "gain" ? "text-aether-accent/70" : "text-aether-text/60"}
+                  `}
+                >
+                  {verdict.status === "gain" ? "Worth it" : verdict.status === "loss" ? "Not worth it" : "Fair trade"}
+                </p>
+                {incomplete ? (
+                  <p className="mt-2 text-[12px] text-aether-text-soft">
+                    {unpricedCount === 1
+                      ? "1 car has no price on record — not counted yet."
+                      : `${unpricedCount} cars have no price on record — not counted yet.`}
+                  </p>
+                ) : (
+                  <p className="mt-2 text-[12px] text-aether-text-soft">
+                    {verdict.status === "gain"
+                      ? `Roughly ${leanPct}% in your favour — take the deal.`
+                      : verdict.status === "loss"
+                        ? `Roughly ${leanPct}% against you — you'd be robbing yourself.`
+                        : "Too close to call — nobody is getting robbed."}
+                  </p>
+                )}
+              </section>
 
-          <p className="text-center text-[11px] text-aether-text-faint py-4">
-            Prices and rates come from the owner&apos;s trade desk. Changes there show up here automatically.
-          </p>
+              <p className="text-center text-[11px] text-aether-text-faint py-4">
+                Prices and rates come from the owner&apos;s trade desk. Changes there show up here automatically.
+              </p>
+            </>
+          )}
         </>
       )}
       <TradeCarPickerModal

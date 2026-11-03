@@ -315,7 +315,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
           {slotless ? (
             <div className="flex flex-col gap-1.5">
               <span className="label-caps">Car slots</span>
-              <p className="rounded-[14px] border border-mix(in srgb, var(--color-ink) 10%, transparent) bg-mix(in srgb, var(--color-ink) 3%, transparent) px-4 py-3 text-[11px] leading-snug text-ink-faint">
+              <p className="rounded-[14px] border border-ink/10 bg-ink/[0.03] px-4 py-3 text-[11px] leading-snug text-ink-faint">
                 CPM1 has no car slots. Every model in the game can be owned — but only one of each.
               </p>
             </div>
@@ -372,10 +372,10 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
                 type="button"
                 onClick={() => setNewGarage((value) => !value)}
                 aria-pressed={newGarage}
-                className={`flex cursor-pointer items-center justify-between gap-3 rounded-[14px] border px-4 py-3 text-left transition-colors ${
+                className={`flex cursor-pointer items-center justify-between gap-3 rounded-[14px] border px-4 py-3 text-left transition-all duration-200 ease-out ${
                   newGarage
                     ? "border-racing/50 bg-racing/10"
-                    : "border-mix(in srgb, var(--color-ink) 10%, transparent) bg-mix(in srgb, var(--color-ink) 3%, transparent) hover:border-ink/25"
+                    : "border-ink/10 bg-ink/[0.03] hover:border-ink/25"
                 }`}
               >
                 <span>

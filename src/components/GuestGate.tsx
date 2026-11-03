@@ -52,9 +52,6 @@ export function GuestGate({ children }: { children: React.ReactNode }) {
             <Button variant="primary" size="md" className="w-full justify-center" onClick={() => (window.location.href = "/auth")}>
               Sign in or create account →
             </Button>
-            <Button variant="outline" size="md" className="w-full justify-center" onClick={() => (window.location.href = "/trade/guest")}>
-              Open guest calculator instead →
-            </Button>
           </div>
           <p className="mt-5 text-[11px] text-aether-text-faint">
             Already signed in? Refresh the page.

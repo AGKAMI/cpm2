@@ -352,8 +352,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="border-t border-border mb-4" />
         </footer>
 
-        <nav aria-label="Primary" className="mobile-dock sm:hidden">
-          <div className="mx-auto flex max-w-md items-stretch justify-around gap-1">
+        <nav
+          aria-label="Primary"
+          className="mobile-dock fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-sm sm:max-w-md px-4 pb-4 sm:pb-3 sm:px-6"
+        >
+          <div className="mx-auto flex max-w-[320px] items-stretch justify-around gap-2 bg-background/90 border-t border-border rounded-2xl-xl px-3 py-2 shadow-xl backdrop-blur-md">
             {NAV.map((item) => {
               const active =
                 item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);

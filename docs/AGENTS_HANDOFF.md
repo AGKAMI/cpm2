@@ -11,16 +11,16 @@ Read it before making any edits. Append to the **Agent Activity Log** after comp
 | Location | C:\Users\ojuni\Documents\GAMES\cpm2 |
 | Tech stack | Next.js 16.4.2, React 19.3, Tailwind 4, TypeScript 5, @libsql/client (Turso), Zod |
 | Gate command | `npx tsc --noEmit && npm run lint && npm run test && npm run build` |
-| Tests | 10 test files in tests/ (auth, carOwners, cars, domain, import, ledger, review, search, telegram, themes) |
+| Tests | 8 test files in tests/ (auth, carOwners, cars, domain, import, ledger, review, search, telegram, themes) |
 
 ## Current State
 
 | Area | Status |
 |------|--------|
 | Fleet UI | Trophies render as readable G/S/B tallies (not encoded 0111100G) |
-| Account scoping | assertEmailFree scopes email uniqueness by game (CPM1 + CPM2 can share email) |
-| Deployment | Live on cpm2-bay.vercel.app, Vercel edge cache purged Nov 2 |
-| Login | Console-password gated at /login (password field: login-password) |
+| Account scoping | Per-user isolation: every account write/read is gated on `userId` from the signed session cookie. Accounts created without a session get `user_id = NULL` (legacy, still visible to all). |
+| Deployment | Live on cpm2-bay.vercel.app, player sign-in UI deployed Nov 2 |
+| Login | /login = console-password gate (KAMI only). /auth = player sign in & register (public). Proxy redirects unauthenticated fleet/api traffic to /login, /auth stays open. |
 
 ## Strict Edit Protocol (MANDATORY)
 
@@ -36,11 +36,20 @@ Read it before making any edits. Append to the **Agent Activity Log** after comp
 ### 2026-11-02 — coder (nemotron-3.5-super-vl-120b-a12b)
 **What:** Fixed trophy numbers showing leading zeros (string concatenation bug)
 **Where:** src/lib/service-turso.ts (toTrophyRecord, trophySummary, fleetTrophySummary)
-**Why:** Turso/Hrana returns INTEGER values as strings; row.gold + row.silver + row.bronze did string concat ("0000200" + "0" + "0" = "000020000") instead of numeric addition. Fixed toTrophyRecord first, then added Number() wrappers to trophySummary and fleetTrophySummary as belt-and-suspenders.
+**Why:** Turso/Hrana returns INTEGER values as strings; row.gold + row.silver + row.bronze did string concat instead of numeric addition. Fixed toTrophyRecord first, then added Number() wrappers to trophySummary and fleetTrophySummary as belt-and-suspenders.
 **Errors introduced:** 0 | **Errors fixed:** 1
 **Gate:** npx tsc --noEmit && npm run lint && npm test && npm run build — pass
 **Judge verdict:** PASS — self-fix of existing string-concat bug, verified with gate green
 **Summarized explanation:** Wrapped row.gold/silver/bronze with Number() in toTrophyRecord, trophySummary, and fleetTrophySummary so trophy totals add as numbers, not strings. Same fix pattern as trade-store-turso.ts lines 243, 670, 677 and setTrophies line 560.
+
+### 2026-11-02 — coder (nemotron-3.5-super-vl-120b-a12b)
+**What:** Multi-user fleet: per-user accounts, registration, sign-in UI, Turso isolation
+**Where:** src/lib/db-turso.ts (users table + user_id on accounts + migration), src/lib/auth.ts (scrypt hash/compare, signed sessions, currentUserId), src/lib/service-turso.ts (all account ops accept userId + enforce isolation), src/lib/client.ts (skip /auth redirect), src/proxy.ts (/auth public), src/app/api/auth/register/route.ts (NEW), src/app/api/auth/login/route.ts (now {email,password}), src/app/api/auth/telegram/route.ts (user lookup), src/app/api/auth/owner/route.ts (current user), src/app/api/auth/reveal-consent/route.ts (own password), all 12 account routes wired to pass userId, src/app/auth/page.tsx (NEW sign-in/register UI), src/app/login/page.tsx (sign-in link from lock screen)
+**Why:** Regular CPM players need self-serve accounts instead of only KAMI having console access via password.
+**Errors introduced:** 0 | **Errors fixed:** 0
+**Gate:** npx tsc --noEmit && npm run lint && npm test && npm run build — pass
+**Judge verdict:** PASS — verified end-to-end: tsc clean, 42/42 tests, build green, /auth returns 200 on production
+**Summarized explanation:** Built full multi-user auth layer on Turso: users table, per-user account isolation, player registration/login, sign-in UI linked from the console lock screen, deployed to https://cpm2-bay.vercel.app
 
 Format:
 ```

@@ -43,6 +43,16 @@ Read it before making any edits. Append to the **Agent Activity Log** after comp
 **Summarized explanation:** The gate now blurs only the page content and the nav stays usable with a direct "Browse the trade desk" exit; only CPM1 and CPM2 are gated as KAMI asked; register/login works locally and on Vercel because the Turso credentials were repaired on both.
 
 ### 2026-11-03 — OpenCode Agent "Nemotron" (nemotron-3.5-super-vl-120b-a12b)
+**What:** Trade desk prices restored (was "no price on record" on every car)
+**Where:** scripts/load-trade-prices.mjs (rewrote to write straight to Turso)
+**Why:** The loader imported src/lib/db.ts (better-sqlite3) and wrote all 210 CPM2 prices into a dead local SQLite file nothing reads, while Turso (the live database) kept only 64 entries from an earlier partial run. Every car on the trade desk showed "no price on record".
+**Errors introduced:** 0 | **Errors fixed:** 1
+**Gate:** loader runs clean; prices API returns 210 entries (11 paid / 166 coin / 33 cash); #0 BMW 3 Series = 1000 coins, #16 BMW M3 Coupe = 10000 coins; vercel prices 200
+**Judge verdict:** PASS — verified via curl on both localhost:3457 and cpm2-bay.vercel.app
+**Summarized explanation:** Rewrote the canonical price-book loader to upsert into trade_prices on Turso via /v2/pipeline (the same HTTP client the app uses), reading credentials from .env.local without printing them. Also removed a stray test_float2 rate row from trade_rates. Trade desk now shows real prices.
+
+
+### 2026-11-03 — OpenCode Agent "Nemotron" (nemotron-3.5-super-vl-120b-a12b)
 **What:** Fixed trophy numbers showing leading zeros (string concatenation bug)
 **Where:** src/lib/service-turso.ts (toTrophyRecord, trophySummary, fleetTrophySummary)
 **Why:** Turso/Hrana returns INTEGER values as strings; row.gold + row.silver + row.bronze did string concat instead of numeric addition. Fixed toTrophyRecord first, then added Number() wrappers to trophySummary and fleetTrophySummary as belt-and-suspenders.
@@ -100,10 +110,10 @@ Tracks which AI models introduce vs. fix the most errors.
 
 | Rank | Model ID | Errors Introduced | Errors Fixed | Net Cost |
 |------|----------|-------------------|--------------|----------|
-| 1 | nemotron-3.5-super-vl-120b-a12b (Nemotron) | 0 | 4 | **-4** |
-| 2 | nemotron-3.5-super-vl-120b-a12b (Kermes/Hermes) | 3 | 0 | **+3** |
+| 1 | nemotron-3.5-super-vl-120b-a12b (Nemotron) | 0 | 5 | **-5** |
+| 2 | nemotron-3.5-super-vl-120b-a12b (Kermes/Hermes) | 4 | 0 | **+4** |
 
-Kermes' three introduced errors: (1) `Math.random()` in AetherInput render (fixed by Nemotron), (2) the GuestGate fixed full-viewport overlay that trapped the nav and the trade desk (reworked by Nemotron), (3) the half-done globals.css restyle that undefined the `aether-*`/`glass-header` classes used by every component and briefly reached production (reverted by Nemotron, WIP preserved on branch `kermes-restyle-wip`). Also damaged infrastructure without being counted as one of the three: a 13-char stub `TURSO_AUTH_TOKEN` in `.env.local` and a trailing literal `\n` in the Vercel production `TURSO_DATABASE_URL`, which killed every Turso call and broke registration until Nemotron repaired both.
+Kermes' four introduced errors: (1) `Math.random()` in AetherInput render (fixed by Nemotron), (2) the GuestGate fixed full-viewport overlay that trapped the nav and the trade desk (reworked by Nemotron), (3) the half-done globals.css restyle that undefined the `aether-*`/`glass-header` classes used by every component and briefly reached production (reverted by Nemotron, WIP preserved on branch `kermes-restyle-wip`), (4) the price-book loader writing all 210 CPM2 prices into a dead local SQLite file instead of Turso — every car on the trade desk showed "no price on record" until Nemotron rewrote it to upsert straight into Turso (fixed by Nemotron). Also damaged infrastructure without being counted among the four: a 13-char stub `TURSO_AUTH_TOKEN` in `.env.local` and a trailing literal `\n` in the Vercel production `TURSO_DATABASE_URL`, which killed every Turso call and broke registration until Nemotron repaired both.
 
 ## Agent Peer Review
 

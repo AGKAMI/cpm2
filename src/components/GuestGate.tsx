@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 
 /**
@@ -15,6 +16,7 @@ import { Button } from "@/components/ui/Button";
  * they can see what they're missing and tap straight into sign in.
  */
 export function GuestGate({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [authed, setAuthed] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -49,7 +51,7 @@ export function GuestGate({ children }: { children: React.ReactNode }) {
             garages, trophies and export stay behind a sign in.
           </p>
           <div className="flex flex-col gap-2">
-            <Button variant="primary" size="md" className="w-full justify-center" onClick={() => (window.location.href = "/auth")}>
+            <Button variant="primary" size="md" className="w-full justify-center" onClick={() => router.push("/auth")}>
               Sign in or create account →
             </Button>
           </div>

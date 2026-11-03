@@ -305,7 +305,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`tab ${active ? "tab-active" : ""}`}
+                    className={`nav-tab ${active ? "nav-tab-active" : ""}`}
                     aria-current={active ? "page" : undefined}
                   >
                     {item.label}
@@ -364,11 +364,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   key={item.href}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
-                  className={`flex flex-1 flex-col items-center gap-1 rounded-full py-2.5 text-[10px] font-semibold transition-colors ${
-                    active
-                      ? "bg-racing/12 text-racing border border-racing/20"
-                      : "text-ink-faint hover:text-ink-soft"
-                  }`}
+                  className={`flex flex-1 flex-col items-center gap-1 rounded-full py-2.5 text-[10px] font-semibold transition-all duration-200 ease-out ${ active ? "bg-racing/15 text-racing border border-racing/25 shadow-[0_0_14px_color-mix(in_srgb,_var(--color-racing)_35%_,transparent)]" : "text-ink-faint hover:text-ink-soft hover:bg-ink/5" }`}
                 >
                   {NAV_ICONS[item.href]}
                   {item.label}

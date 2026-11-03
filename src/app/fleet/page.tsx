@@ -25,22 +25,22 @@ export default function FleetIndexPage() {
           <Link
             key={game}
             href={`/fleet/${game}`}
-            className="panel animate-rise group rounded-[20px] p-5 transition-transform hover:-translate-y-0.5"
+            className="panel animate-rise group rounded-[24px] p-6 sm:p-8 hover:bg-ink/5 hover:border-racing/30 transition-all duration-300 ease-out border border-mix(in srgb, var(--color-ink) 10%, transparent)"
           >
             <div className="flex items-baseline justify-between gap-3">
-              <span className="panel-title">{GAME_LABELS[game]}</span>
+              <span className="panel-title text-ink">{GAME_LABELS[game]}</span>
               <span className="num text-[10px] text-ink-faint">
                 {formatNumber(carsForGame(game).length)} cars
               </span>
             </div>
-            <p className="num mt-1 text-[10px] text-ink-faint">
+            <p className="num mt-3 text-[10px] text-ink-soft">
               Car Parking Multiplayer {game === "cpm1" ? "1" : "2"} · own catalog, own garage
             </p>
-            <p className="num mt-4 flex items-center gap-1.5 text-[11px] text-racing">
+            <p className="num mt-6 flex items-center gap-1.5 text-[11px] text-racing font-semibold">
               open the register
               <svg
                 viewBox="0 0 24 24"
-                className="h-3 w-3"
+                className="h-3 w-3 shrink-0 transition-transform duration-200 group-hover:translate-x-1"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
@@ -49,6 +49,12 @@ export default function FleetIndexPage() {
                 <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </p>
+            <div className="mt-5 flex items-center gap-2">
+              <span className="rounded-full border border-racing/30 bg-racing/10 px-3 py-1 text-[9px] uppercase tracking-[0.2em] text-racing">
+                {game === "cpm1" ? "G1" : "G2"}
+              </span>
+              <span className="flex-1 h-px bg-ink/5" />
+            </div>
           </Link>
         ))}
       </div>

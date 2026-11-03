@@ -56,7 +56,7 @@ export default function SettingsPage() {
     <div className="flex flex-col gap-4">
       <PageHeading folio="F-04" title="Settings" meta="limits · backup · appearance" />
       <div className="grid gap-4 lg:grid-cols-2">
-      <section className="panel rounded-[20px] p-5">
+      <section className="panel rounded-[24px] p-6 sm:p-8">
         <h2 className="panel-title mb-4">Game limits</h2>
         <dl className="flex flex-col">
           <Row label="Cash per account" value={formatNumber(LIMITS.MAX_CASH)} />
@@ -69,18 +69,18 @@ export default function SettingsPage() {
         </dl>
       </section>
 
-      <section className="panel rounded-[20px] p-5 lg:col-span-2">
+      <section className="panel rounded-[24px] p-6 sm:p-8 lg:col-span-2">
         <h2 className="panel-title mb-4">Appearance</h2>
         <ThemeGallery />
       </section>
 
-      <section className="panel rounded-[20px] p-5">
+      <section className="panel rounded-[24px] p-6 sm:p-8">
         <h2 className="panel-title mb-4">Access</h2>
         <dl className="flex flex-col">
           <Row label="Console lock" value="password + owner-bound Telegram" />
           <Row label="Telegram owner" value={ownerLabel} mono={ownerLabel !== "not claimed yet"} />
         </dl>
-        <div className="mt-4 border-t border-ink/10 pt-4">
+        <div className="mt-6 border-t border-ink/10 pt-6">
           <p className="text-[12px] leading-relaxed text-ink-soft">
             Only your Telegram account can open the console from the bot — anyone else who finds it sees
             a locked screen. The browser asks for the console password instead.
@@ -88,7 +88,7 @@ export default function SettingsPage() {
           <Button
             variant="danger"
             size="sm"
-            className="mt-3"
+            className="mt-4"
             onClick={lockConsole}
           >
             <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -100,7 +100,7 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      <section className="panel rounded-[20px] p-5 hidden sm:block">
+      <section className="panel rounded-[24px] p-6 sm:p-8 hidden sm:block">
         <h2 className="panel-title mb-4">Keyboard</h2>
         <dl className="flex flex-col">
           {SHORTCUTS.map((item) => (

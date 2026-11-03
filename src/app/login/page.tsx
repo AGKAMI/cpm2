@@ -122,7 +122,7 @@ export default function LoginPage() {
   if (phase === "locked") {
     return (
       <Overlay>
-        <div className="panel w-full max-w-[380px] rounded-[24px] p-7 text-center">
+        <div className="panel w-full max-w-[380px] rounded-[28px] p-8 sm:p-10 text-center">
           <ShieldIcon />
           <h1 className="mt-4 font-display text-[22px] text-ink">Locked</h1>
           <p className="mt-2 text-[12.5px] leading-relaxed text-ink-soft">{message}</p>
@@ -136,7 +136,7 @@ export default function LoginPage() {
 
   return (
     <Overlay>
-      <form onSubmit={submit} className="panel w-full max-w-[380px] rounded-[24px] p-7">
+      <form onSubmit={submit} className="panel w-full max-w-[380px] rounded-[28px] p-8 sm:p-10">
         <ShieldIcon />
         <h1 className="mt-4 font-display text-[22px] text-ink">CPM Fleet</h1>
         <p className="mt-1 text-[12.5px] leading-relaxed text-ink-soft">
@@ -162,7 +162,7 @@ export default function LoginPage() {
           </Field>
         </div>
 
-        <Button type="submit" variant="primary" size="md" className="mt-5 w-full justify-center" disabled={busy || !password}>
+        <Button type="submit" variant="primary" size="md" className="mt-6 w-full justify-center" disabled={busy || !password}>
           {busy ? "Unlocking…" : "Unlock"}
         </Button>
         <p className="mt-4 text-[11px] text-center text-ink-soft">

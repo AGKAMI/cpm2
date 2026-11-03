@@ -72,11 +72,11 @@ export default function AuthPage() {
   return (
     <div className="flex min-h-[calc(100vh-env(safe-area-inset-bottom))] items-center justify-center bg-paper px-4 pb-6">
       <div className="w-full max-w-[360px]">
-        <div className="flex flex-col items-center gap-3 mb-6">
+        <div className="flex flex-col items-center gap-3 mb-8">
           <span className="racing text-[10px] uppercase tracking-[0.25em] font-semibold">
             cpm fleet
           </span>
-          <h1 className="font-display text-[26px] leading-none text-ink">
+          <h1 className="font-display text-[30px] leading-none text-ink">
             {mode === "signin" ? "Sign in" : "Create account"}
           </h1>
           <p className="text-[12px] leading-relaxed text-ink-soft text-center">
@@ -86,8 +86,8 @@ export default function AuthPage() {
           </p>
         </div>
 
-        <div className="panel rounded-[24px] p-6">
-          <form onSubmit={submit} className="flex flex-col gap-4">
+        <div className="panel rounded-[28px] p-8 sm:p-10">
+          <form onSubmit={submit} className="flex flex-col gap-5">
             <Field label="Email" htmlFor="auth-email" error={error && mode === "signin" ? undefined : undefined}>
               <AetherInput
                 id="auth-email"
@@ -148,7 +148,7 @@ export default function AuthPage() {
               type="submit"
               variant="primary"
               size="md"
-              className="mt-2 w-full justify-center"
+              className="w-full justify-center mt-1"
               disabled={busy || !email || !password || (mode === "register" && !confirmPassword)}
             >
               {busy ? (mode === "signin" ? "Signing in…" : "Creating…") : mode === "signin" ? "Sign in" : "Create account"}

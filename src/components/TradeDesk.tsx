@@ -173,14 +173,14 @@ export function TradeDesk() {
     const value = valued[key];
     const title = key === "you" ? "You give" : "You get";
     return (
-      <div className="panel-tight flex flex-col gap-3 rounded-[18px] px-4 py-4">
+      <div className="panel-tight flex flex-col gap-3 rounded-[20px] p-5 border border-ink/10 transition-all duration-200 ease-out group hover:border-racing/30">
         <div className="flex items-baseline justify-between gap-2">
           <span className="label-caps">{title}</span>
           <span className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setPickerSide(key)}
-              className="cursor-pointer rounded-full border border-racing/40 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-racing transition hover:bg-racing/10"
+              className="cursor-pointer rounded-full border border-racing/30 bg-racing/8 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-racing transition hover:bg-racing/16 hover:border-racing/50"
             >
               + Car
             </button>
@@ -205,7 +205,7 @@ export function TradeDesk() {
               const unpriced = !entry;
               const pricing = pricingCode === code;
               return (
-                <li key={`${code}-${index}`} className="rounded-[12px] border border-ink/10 px-3 py-2">
+                <li key={`${code}-${index}`} className="rounded-[12px] border border-ink/8 px-3 py-2 transition-all duration-150 ease-out group-hover:bg-ink/3">
                   <div className="flex items-center gap-2">
                     <span className="num w-9 shrink-0 text-[11px] text-ink-faint">#{code}</span>
                     <span className="min-w-0 flex-1 truncate text-[12.5px] text-ink">
@@ -226,7 +226,7 @@ export function TradeDesk() {
                           setPriceKind("paid");
                           setPriceAmount("");
                         }}
-                        className="shrink-0 cursor-pointer rounded-full border border-racing/40 px-2.5 py-0.5 text-[10px] font-semibold text-racing transition hover:bg-racing/10"
+                        className="shrink-0 cursor-pointer rounded-full border border-racing/30 bg-racing/8 px-2.5 py-0.5 font-semibold text-racing transition hover:bg-racing/16 hover:border-racing/50"
                       >
                         Set price
                       </button>
@@ -235,7 +235,7 @@ export function TradeDesk() {
                       type="button"
                       onClick={() => removeCar(key, code)}
                       aria-label={`Remove ${car?.name ?? `code ${code}`} from this side`}
-                      className="grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-full text-ink-faint transition hover:bg-oxblood/10 hover:text-oxblood"
+                      className="grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-full border border-ink/10 text-ink-faint transition-all duration-150 hover:bg-oxblood/10 hover:text-oxblood hover:border-oxblood/30 active:scale-95"
                     >
                       <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
                         <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
@@ -342,7 +342,7 @@ export function TradeDesk() {
           <button
             type="button"
             onClick={() => setShowCash((c) => ({ ...c, [key]: true }))}
-            className="text-[10px] text-ink-faint underline-offset-2 hover:text-ink hover:underline"
+            className="text-[10px] text-ink-faint underline-offset-2 hover:text-ink hover:underline transition"
           >
             + Add cash
           </button>
@@ -366,7 +366,7 @@ export function TradeDesk() {
 
       {/* Verdict */}
       <section
-        className={`rounded-[18px] border px-5 py-5 text-center ${
+        className={`rounded-[20px] border px-6 py-6 text-center transition-all duration-200 ease-out ${
           incomplete
             ? "border-ink/15 bg-ink/[0.03]"
             : verdict.status === "gain"

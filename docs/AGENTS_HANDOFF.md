@@ -33,7 +33,7 @@ Read it before making any edits. Append to the **Agent Activity Log** after comp
 
 ## Agent Activity Log
 
-### 2026-11-02 — coder (nemotron-3.5-super-vl-120b-a12b)
+### 2026-11-02 — Hermes Agent "Kermes" (nemotron-3.5-super-vl-120b-a12b)
 **What:** Fixed trophy numbers showing leading zeros (string concatenation bug)
 **Where:** src/lib/service-turso.ts (toTrophyRecord, trophySummary, fleetTrophySummary)
 **Why:** Turso/Hrana returns INTEGER values as strings; row.gold + row.silver + row.bronze did string concat instead of numeric addition. Fixed toTrophyRecord first, then added Number() wrappers to trophySummary and fleetTrophySummary as belt-and-suspenders.
@@ -42,7 +42,7 @@ Read it before making any edits. Append to the **Agent Activity Log** after comp
 **Judge verdict:** PASS — self-fix of existing string-concat bug, verified with gate green
 **Summarized explanation:** Wrapped row.gold/silver/bronze with Number() in toTrophyRecord, trophySummary, and fleetTrophySummary so trophy totals add as numbers, not strings. Same fix pattern as trade-store-turso.ts lines 243, 670, 677 and setTrophies line 560.
 
-### 2026-11-02 — coder (nemotron-3.5-super-vl-120b-a12b)
+### 2026-11-02 — Hermes Agent "Kermes" (nemotron-3.5-super-vl-120b-a12b)
 **What:** Multi-user fleet: per-user accounts, registration, sign-in UI, Turso isolation
 **Where:** src/lib/db-turso.ts (users table + user_id on accounts + migration), src/lib/auth.ts (scrypt hash/compare, signed sessions, currentUserId), src/lib/service-turso.ts (all account ops accept userId + enforce isolation), src/lib/client.ts (skip /auth redirect), src/proxy.ts (/auth public), src/app/api/auth/register/route.ts (NEW), src/app/api/auth/login/route.ts (now {email,password}), src/app/api/auth/telegram/route.ts (user lookup), src/app/api/auth/owner/route.ts (current user), src/app/api/auth/reveal-consent/route.ts (own password), all 12 account routes wired to pass userId, src/app/auth/page.tsx (NEW sign-in/register UI), src/app/login/page.tsx (sign-in link from lock screen)
 **Why:** Regular CPM players need self-serve accounts instead of only KAMI having console access via password.
@@ -53,14 +53,19 @@ Read it before making any edits. Append to the **Agent Activity Log** after comp
 
 Format:
 ```
-### <date> — <agent-type> (<model-id>)
+### <date> — <agent-type> "<agent-name>" (<model-id>)
 **What:** <change>
 **Where:** <files>
 **Why:** <reason>
 **Errors introduced:** <N> | **Errors fixed:** <N>
 **Gate:** <command> — pass / fail
 **Judge verdict:** <PASS/FAIL> — <summary>
+**Summarized explanation:** <2-3 sentence plain-language summary>
 ```
+
+- **agent-type**: e.g. `Hermes Agent`, `OpenCode Agent`, `coder`, `reviewer`, `tester`
+- **agent-name**: e.g. `Kermes` — if the agent has a name, otherwise use `-`
+- **model-id**: the full model identifier, e.g. `nemotron-3.5-super-vl-120b-a12b`
 
 ## Model Error-Cost Ranking
 

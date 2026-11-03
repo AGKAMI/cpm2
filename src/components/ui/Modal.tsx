@@ -101,7 +101,7 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`panel glass-sheet animate-pop relative z-10 my-auto flex max-h-[92vh] w-full flex-col overflow-hidden rounded-[26px] ${width}`}
+        className={`panel glass-sheet animate-pop relative z-10 my-auto flex max-h-[92vh] w-full flex-col overflow-hidden rounded-[26px] border border-racing/20 ${width}`}
       >
         <header className="flex items-start gap-4 border-b border-ink/10 px-5 py-4 sm:px-6">
           <div className="min-w-0 flex-1">
@@ -112,7 +112,7 @@ export function Modal({
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="square-btn h-8 w-8"
+            className="square-btn h-8 w-8 hover:border-racing/40 hover:text-racing transition-colors"
           >
             <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
               <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
@@ -123,7 +123,7 @@ export function Modal({
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">{children}</div>
 
         {footer ? (
-          <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-ink/10 bg-ink/[0.03] px-5 py-4 backdrop-blur-md sm:px-6">
+          <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-ink/10 bg-ink/[0.02] px-5 py-4 backdrop-blur-md sm:px-6">
             {footer}
           </footer>
         ) : null}

@@ -130,7 +130,7 @@ async function requireAccount(id: number, options: { includeArchived?: boolean }
   });
   const account = row.rows[0] as unknown as AccountRow | undefined;
   if (!account) throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
-  if (!options.includeArchived && account.archived) {
+  if (!options.includeArchived && Number(account.archived) === 1) {
     throw new ApiError(404, "NOT_FOUND", "That account is archived. Restore it before making changes.");
   }
   return account;

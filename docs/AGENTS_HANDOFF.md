@@ -51,7 +51,7 @@ Read it before making any edits. Append to the **Agent Activity Log** after comp
 **Judge verdict:** PASS — verified end-to-end: tsc clean, 42/42 tests, build green, /auth returns 200 on production
 **Summarized explanation:** Built full multi-user auth layer on Turso: users table, per-user account isolation, player registration/login, sign-in UI linked from the console lock screen, deployed to https://cpm2-bay.vercel.app
 
-### 2026-11-03 — coder (nemotron-3.5-super-vl-120b-a12b)
+### 2026-11-03 — OpenCode Agent "Nemotron" (nemotron-3.5-super-vl-120b-a12b)
 **What:** Guest gate + lock screen guest button + Telegram bind fix
 **Where:** src/components/GuestGate.tsx (NEW), src/app/fleet/page.tsx, src/app/fleet/cpm1/page.tsx, src/app/fleet/cpm2/page.tsx, src/app/trade/page.tsx, src/app/settings/page.tsx, src/app/login/page.tsx (guest button), src/lib/client.ts (removed AUTH_REQUIRED redirect), src/proxy.ts (401 JSON for /api/ without session, pages stay open), src/app/api/auth/telegram/route.ts (binds unbound accounts with verified email+password)
 **Why:** Guests landing on protected pages should see a blurred "sign in to manage your fleet" panel with a sign-in button — not get bounced to /login. Telegram first-time users bind via email+password instead of looping. Lock screen gets a guest calculator button.

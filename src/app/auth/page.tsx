@@ -70,16 +70,16 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-env(safe-area-inset-bottom))] items-center justify-center bg-aether-paper px-4 pb-6">
+    <div className="flex min-h-[calc(100vh-env(safe-area-inset-bottom))] items-center justify-center bg-paper px-4 pb-6">
       <div className="w-full max-w-[360px]">
         <div className="flex flex-col items-center gap-3 mb-6">
-          <span className="aether-accent text-[10px] uppercase tracking-[0.25em] font-semibold">
+          <span className="racing text-[10px] uppercase tracking-[0.25em] font-semibold">
             cpm fleet
           </span>
-          <h1 className="font-display text-[26px] leading-none text-aether-text">
+          <h1 className="font-display text-[26px] leading-none text-ink">
             {mode === "signin" ? "Sign in" : "Create account"}
           </h1>
-          <p className="text-[12px] leading-relaxed text-aether-text-soft text-center">
+          <p className="text-[12px] leading-relaxed text-ink-soft text-center">
             {mode === "signin"
               ? "Enter your email and password to open your ledger."
               : "New to the fleet? Register your email and set a password."}
@@ -97,7 +97,7 @@ export default function AuthPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoFocus
-                className={Boolean(error) ? "border-aether-accent/50 focus:border-aether-accent" : ""}
+                className={Boolean(error) ? "border-racing/50 focus:border-racing" : ""}
               />
             </Field>
 
@@ -109,7 +109,7 @@ export default function AuthPage() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className={Boolean(error) ? "border-aether-accent/50 focus:border-aether-accent" : ""}
+                className={Boolean(error) ? "border-racing/50 focus:border-racing" : ""}
               />
             </Field>
 
@@ -122,13 +122,13 @@ export default function AuthPage() {
                   placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={Boolean(error) ? "border-aether-accent/50 focus:border-aether-accent" : ""}
+                  className={Boolean(error) ? "border-racing/50 focus:border-racing" : ""}
                 />
               </Field>
             )}
 
             {error && (
-              <p className="flex items-start gap-1.5 text-[11px] leading-snug text-aether-accent">
+              <p className="flex items-start gap-1.5 text-[11px] leading-snug text-racing">
                 <svg
                   viewBox="0 0 24 24"
                   className="mt-px h-3.5 w-3.5 shrink-0"
@@ -160,7 +160,7 @@ export default function AuthPage() {
           <button
             type="button"
             onClick={() => setMode(mode === "signin" ? "register" : "signin")}
-            className="num text-[12px] underline underline-offset-4 hover:text-aether-accent transition-colors"
+            className="num text-[12px] underline underline-offset-4 hover:text-racing transition-colors"
           >
             {mode === "signin" ? "Don't have an account? Create one" : "Already have an account? Sign in"}
           </button>
@@ -169,7 +169,7 @@ export default function AuthPage() {
         <div className="mt-6 flex items-center justify-center gap-3">
           <a
             href="/login"
-            className="num text-[11px] text-aether-text-faint hover:text-aether-text transition-colors underline underline-offset-4"
+            className="num text-[11px] text-ink-faint hover:text-ink transition-colors underline underline-offset-4"
           >
             Console lock screen
           </a>

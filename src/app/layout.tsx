@@ -53,7 +53,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className={`min-h-screen antialiased ${body.variable} ${mono.variable}`}>
-        <div className="aether-aurora-field" aria-hidden="true" />
+        <div className="glass-aurora-field" aria-hidden="true" />
         <Script
           src="https://telegram.org/js/telegram-web-app.js"
           strategy="beforeInteractive"

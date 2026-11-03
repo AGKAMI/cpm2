@@ -19,9 +19,9 @@ export function AetherLoader({
 }: AetherLoaderProps) {
   return (
     <div className="flex flex-col items-center justify-center gap-3">
-      <span className={`aether-loader ${SIZES[size]}`} aria-hidden="true" />
+      <span className={`glass-loader ${SIZES[size]}`} aria-hidden="true" />
       {label ? (
-        <span className="aether-loader-text">{label}</span>
+        <span className="glass-loader-text">{label}</span>
       ) : null}
     </div>
   );

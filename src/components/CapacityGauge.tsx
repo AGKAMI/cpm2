@@ -92,11 +92,11 @@ export function CapacityGauge({
       ) : null}
 
       <div className="min-w-0 leading-tight">
-        <span className={`num whitespace-nowrap text-[12px] ${atCapacity ? "text-aether-accent" : "text-aether-text"}`}>
+        <span className={`num whitespace-nowrap text-[12px] ${atCapacity ? "text-racing" : "text-ink"}`}>
           {cars}/{capacity}
-          {slots > 0 ? <span className="text-aether-accent"> +{slots}</span> : null}
+          {slots > 0 ? <span className="text-racing"> +{slots}</span> : null}
         </span>
-        <span className={`num whitespace-nowrap text-[10px] text-aether-text-faint`}>
+        <span className={`num whitespace-nowrap text-[10px] text-ink-faint`}>
           {slotless
             ? atCapacity
               ? "every model owned"
@@ -108,7 +108,7 @@ export function CapacityGauge({
       </div>
 
       {atCapacity ? (
-        <span className="shrink-0 rounded-full border border-aether-accent/40 px-2 py-0.5 font-sans text-[9px] font-semibold uppercase tracking-[0.14em] text-aether-accent">
+        <span className="shrink-0 rounded-full border border-racing/40 px-2 py-0.5 font-sans text-[9px] font-semibold uppercase tracking-[0.14em] text-racing">
           Full
         </span>
       ) : null}

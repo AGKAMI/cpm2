@@ -49,13 +49,13 @@ export function GuestGate({ children }: { children: React.ReactNode }) {
         </div>
         <div className="absolute inset-x-0 top-0 flex items-start justify-center px-4 pt-8">
           <div className="panel w-full max-w-[380px] rounded-[24px] p-7 text-center">
-            <span className="aether-accent text-[11px] uppercase tracking-[0.25em] font-semibold block mb-3">
+            <span className="racing text-[11px] uppercase tracking-[0.25em] font-semibold block mb-3">
               accounts only
             </span>
-            <h1 className="font-display text-[24px] leading-none text-aether-text mb-2">
+            <h1 className="font-display text-[24px] leading-none text-ink mb-2">
               Sign in to manage your fleet
             </h1>
-            <p className="mt-2 text-[12.5px] leading-relaxed text-aether-text-soft mb-6">
+            <p className="mt-2 text-[12.5px] leading-relaxed text-ink-soft mb-6">
               The trade calculator is open to anyone, but the account register,
               garages, trophies and export stay behind a sign in.
             </p>
@@ -77,7 +77,7 @@ export function GuestGate({ children }: { children: React.ReactNode }) {
                 Browse the trade desk instead
               </Button>
             </div>
-            <p className="mt-5 text-[11px] text-aether-text-faint">
+            <p className="mt-5 text-[11px] text-ink-faint">
               Already signed in? Refresh the page.
             </p>
           </div>

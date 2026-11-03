@@ -106,10 +106,10 @@ export default function SettingsPage() {
           {SHORTCUTS.map((item) => (
             <div
               key={item.keys}
-              className="flex items-baseline justify-between gap-4 border-b border-mix(in srgb, var(--aether-text) 8%, transparent) py-2 last:border-0"
+              className="flex items-baseline justify-between gap-4 border-b border-mix(in srgb, var(--color-ink) 8%, transparent) py-2 last:border-0"
             >
-              <dt className="text-[12px] text-aether-text-soft">{item.action}</dt>
-              <dd className="num rounded-full border border-mix(in srgb, var(--aether-text) 15%, transparent) bg-mix(in srgb, var(--aether-text) 5%, transparent) px-1.5 py-0.5 text-[11px] text-aether-text backdrop-blur-md">
+              <dt className="text-[12px] text-ink-soft">{item.action}</dt>
+              <dd className="num rounded-full border border-mix(in srgb, var(--color-ink) 15%, transparent) bg-mix(in srgb, var(--color-ink) 5%, transparent) px-1.5 py-0.5 text-[11px] text-ink backdrop-blur-md">
                 {item.keys}
               </dd>
             </div>

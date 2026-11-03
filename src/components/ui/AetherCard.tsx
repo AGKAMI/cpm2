@@ -26,7 +26,7 @@ export function AetherCard({
 }: AetherCardProps) {
   return (
     <div
-      className={`aether-card ${hover ? "" : "hover:none transition-none"} ${float ? "aether-card-float" : ""} ${PADDING[padding]} ${className}`}
+      className={`glass-card ${hover ? "" : "hover:none transition-none"} ${float ? "glass-card-float" : ""} ${PADDING[padding]} ${className}`}
     >
       {children}
     </div>
@@ -46,7 +46,7 @@ export function AetherCardHeader({
     <div className={`mb-4 ${className}`}>
       <span className="label-caps block mb-1">{title}</span>
       {subtitle ? (
-        <p className="text-[13px] leading-relaxed text-aether-text-soft">{subtitle}</p>
+        <p className="text-[13px] leading-relaxed text-ink-soft">{subtitle}</p>
       ) : null}
     </div>
   );

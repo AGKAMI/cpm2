@@ -271,7 +271,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <CarBackdrop />
         <a
           href="#main"
-          className="sr-only left-4 top-4 z-50 rounded-full border-mix(in srgb, var(--aether-text) 30%, transparent) bg-aether-glass px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-aether-text focus:not-sr-only focus:absolute"
+          className="sr-only left-4 top-4 z-50 rounded-full border-mix(in srgb, var(--color-ink) 30%, transparent) bg-paper-raised px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink focus:not-sr-only focus:absolute"
         >
           Skip to content
         </a>
@@ -291,8 +291,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                 className="h-10 w-10 shrink-0"
               />
               <span>
-                <span className="wordmark block text-[22px] leading-none text-aether-text" translate="no">
-                  Fleet <span className="text-aether-accent">Ledger</span>
+                <span className="wordmark block text-[22px] leading-none text-ink" translate="no">
+                  Fleet <span className="text-racing">Ledger</span>
                 </span>
               </span>
             </Link>
@@ -318,10 +318,10 @@ export function AppShell({ children }: { children: ReactNode }) {
               <span className="glass-control hidden items-center gap-2 rounded-full px-3 py-1.5 sm:flex">
                 <span
                   className={`h-1.5 w-1.5 rounded-full ${
-                    fleet.error ? "bg-aether-accent" : fleet.loading ? "bg-aether-aurora animate-blink" : "bg-aether-text"
+                    fleet.error ? "bg-racing" : fleet.loading ? "bg-blueprint animate-blink" : "bg-ink"
                   }`}
                 />
-                <span className="num text-[9px] uppercase tracking-[0.16em] text-aether-text-faint">
+                <span className="num text-[9px] uppercase tracking-[0.16em] text-ink-faint">
                   {fleet.error ? "offline" : fleet.loading ? "syncing" : "live"}
                 </span>
               </span>
@@ -366,8 +366,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                   aria-current={active ? "page" : undefined}
                   className={`flex flex-1 flex-col items-center gap-1 rounded-full py-2.5 text-[10px] font-semibold transition-colors ${
                     active
-                      ? "bg-aether-accent/12 text-aether-accent border border-aether-accent/20"
-                      : "text-aether-text-faint hover:text-aether-text-soft"
+                      ? "bg-racing/12 text-racing border border-racing/20"
+                      : "text-ink-faint hover:text-ink-soft"
                   }`}
                 >
                   {NAV_ICONS[item.href]}
@@ -432,10 +432,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         />
 
         {awaitingExportConsent && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-mix(in srgb, var(--aether-glass) 80%, transparent) px-4 backdrop-blur-xl">
-            <div className="aether-card w-full max-w-[340px] rounded-[20px] p-6 text-center">
-              <h2 className="font-display text-[18px] text-aether-text mb-2">Confirm the export</h2>
-              <p className="text-[11.5px] text-aether-text-soft mb-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-mix(in srgb, var(--color-paper-raised) 80%, transparent) px-4 backdrop-blur-xl">
+            <div className="panel w-full max-w-[340px] rounded-[20px] p-6 text-center">
+              <h2 className="font-display text-[18px] text-ink mb-2">Confirm the export</h2>
+              <p className="text-[11.5px] text-ink-soft mb-4">
                 Export exposes every stored password. Re-enter the console password to continue.
               </p>
               <input
@@ -447,7 +447,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   if (event.key === "Enter") void confirmExportConsent();
                 }}
                 autoComplete="current-password"
-                className="aether-input num w-full mb-3 px-3 py-1.5 text-[12px]"
+                className="field-rule num w-full mb-3 px-3 py-1.5 text-[12px]"
               />
               <div className="flex gap-2 justify-center">
                 <Button variant="ghost" onClick={() => setAwaitingExportConsent(false)} type="button">
@@ -484,7 +484,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </>
           }
         >
-          <p className="text-sm leading-relaxed text-aether-text-soft">{confirmState?.message ?? ""}</p>
+          <p className="text-sm leading-relaxed text-ink-soft">{confirmState?.message ?? ""}</p>
         </Modal>
 
         <Modal
@@ -498,10 +498,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             {SHORTCUTS.map((item) => (
               <div
                 key={item.keys}
-                className="flex items-baseline justify-between gap-4 border-b border-mix(in srgb, var(--aether-text) 8%, transparent) py-2 last:border-0"
+                className="flex items-baseline justify-between gap-4 border-b border-mix(in srgb, var(--color-ink) 8%, transparent) py-2 last:border-0"
               >
-                <dt className="num text-[12px] text-aether-text">{item.action}</dt>
-                <dd className="num rounded-full border border-mix(in srgb, var(--aether-text) 15%, transparent) bg-mix(in srgb, var(--aether-text) 5%, transparent) px-1.5 py-0.5 text-[11px] text-aether-text-soft backdrop-blur-md">
+                <dt className="num text-[12px] text-ink">{item.action}</dt>
+                <dd className="num rounded-full border border-mix(in srgb, var(--color-ink) 15%, transparent) bg-mix(in srgb, var(--color-ink) 5%, transparent) px-1.5 py-0.5 text-[11px] text-ink-soft backdrop-blur-md">
                   {item.keys}
                 </dd>
               </div>

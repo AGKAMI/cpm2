@@ -66,7 +66,7 @@ export function AccountTable({
                       checked={allSelected}
                       onChange={() => onToggleAll?.()}
                       aria-label="Select every account"
-                      className="h-3.5 w-3.5 accent-aether-accent"
+                      className="h-3.5 w-3.5 accent-racing"
                     />
                   </label>
                 </th>
@@ -94,7 +94,7 @@ export function AccountTable({
             {accounts.map((account, index) => (
               <tr
                 key={account.id}
-                className={`group border-b border-mix(in srgb, var(--aether-text) 10%, transparent) transition-colors hover:bg-mix(in srgb, var(--aether-text) 6%, transparent) ${
+                className={`group border-b border-mix(in srgb, var(--color-ink) 10%, transparent) transition-colors hover:bg-mix(in srgb, var(--color-ink) 6%, transparent) ${
                   busyId === account.id ? "opacity-60" : ""
                 }`}
               >
@@ -106,12 +106,12 @@ export function AccountTable({
                         checked={selectedIds.includes(account.id)}
                         onChange={() => onToggleSelect?.(account.id)}
                         aria-label={`Select ${account.email}`}
-                        className="h-3.5 w-3.5 accent-aether-accent"
+                        className="h-3.5 w-3.5 accent-racing"
                       />
                     </label>
                   </td>
                 ) : null}
-                <td className="num px-2.5 py-3 text-[11px] text-aether-text-faint">
+                <td className="num px-2.5 py-3 text-[11px] text-ink-faint">
                   {String(index + 1).padStart(2, "0")}
                 </td>
                 <td className="px-2.5 py-3">
@@ -121,7 +121,7 @@ export function AccountTable({
                     </span>
                   </Link>
                   {account.notes ? (
-                    <p className="mt-0.5 max-w-[240px] truncate text-[11px] text-aether-text-faint">{account.notes}</p>
+                    <p className="mt-0.5 max-w-[240px] truncate text-[11px] text-ink-faint">{account.notes}</p>
                   ) : null}
                 </td>
                 <td className="px-2.5 py-3">
@@ -130,7 +130,7 @@ export function AccountTable({
                 <td className="px-2.5 py-3">
                   <Stepper
                     value={account.cash}
-                    tone="text-aether-text"
+                    tone="text-ink"
                     step={STEPS.cash}
                     disabled={busyId === account.id || archived}
                     onMinus={() => onAdjust(account, "cash", -STEPS.cash)}
@@ -140,7 +140,7 @@ export function AccountTable({
                 <td className="px-2.5 py-3">
                   <Stepper
                     value={account.coins}
-                    tone="text-aether-accent"
+                    tone="text-racing"
                     step={STEPS.coins}
                     disabled={busyId === account.id || archived}
                     onMinus={() => onAdjust(account, "coins", -STEPS.coins)}
@@ -158,7 +158,7 @@ export function AccountTable({
                     <button
                       type="button"
                       onClick={() => onBuySlot(account)}
-                      className="mt-1.5 inline-flex min-h-[24px] cursor-pointer items-center font-sans text-[11px] font-medium text-aether-text-faint transition hover:text-aether-accent"
+                      className="mt-1.5 inline-flex min-h-[24px] cursor-pointer items-center font-sans text-[11px] font-medium text-ink-faint transition hover:text-racing"
                     >
                       + unlock 21st slot (100c)
                     </button>
@@ -167,7 +167,7 @@ export function AccountTable({
                 <td className="px-2.5 py-3">
                   <TrophyTally summary={trophies[account.id]} />
                 </td>
-                <td className="px-2.5 py-3 text-[11px] text-aether-text-faint">{relativeTime(account.updatedAt)}</td>
+                <td className="px-2.5 py-3 text-[11px] text-ink-faint">{relativeTime(account.updatedAt)}</td>
                 <td className="px-2.5 py-3">
                   <div className="flex items-center justify-end gap-2.5">
                     {archived ? (
@@ -227,7 +227,7 @@ export function AccountTable({
                   </span>
                 </Link>
                 {account.notes ? (
-                  <p className="mt-0.5 truncate text-[12px] text-aether-text-faint">{account.notes}</p>
+                  <p className="mt-0.5 truncate text-[12px] text-ink-faint">{account.notes}</p>
                 ) : null}
               </div>
               <div className="flex shrink-0 gap-2.5">
@@ -275,11 +275,11 @@ export function AccountTable({
             <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-2">
               <div>
                 <dt className="label-caps">Cash</dt>
-                <dd className="num mt-1 text-[13px] text-aether-text">{formatNumber(account.cash)}</dd>
+                <dd className="num mt-1 text-[13px] text-ink">{formatNumber(account.cash)}</dd>
               </div>
               <div>
                 <dt className="label-caps">Coins</dt>
-                <dd className="num mt-1 text-[13px] text-aether-text">{formatNumber(account.coins)}</dd>
+                <dd className="num mt-1 text-[13px] text-ink">{formatNumber(account.coins)}</dd>
               </div>
               <div>
                 <dt className="label-caps">Trophies</dt>
@@ -289,7 +289,7 @@ export function AccountTable({
               </div>
               <div>
                 <dt className="label-caps">Updated</dt>
-                <dd className="mt-1 text-[12px] text-aether-text-faint">{relativeTime(account.updatedAt)}</dd>
+                <dd className="mt-1 text-[12px] text-ink-faint">{relativeTime(account.updatedAt)}</dd>
               </div>
             </dl>
 
@@ -306,7 +306,7 @@ export function AccountTable({
               <button
                 type="button"
                 onClick={() => onBuySlot(account)}
-                className="mt-3 w-full cursor-pointer rounded-full border border-aether-accent/35 py-2 font-sans text-[11px] font-semibold text-aether-accent transition-colors hover:bg-aether-accent hover:text-aether-glass"
+                className="mt-3 w-full cursor-pointer rounded-full border border-racing/35 py-2 font-sans text-[11px] font-semibold text-racing transition-colors hover:bg-racing hover:text-paper-raised"
               >
                 + Unlock the 21st slot · 100 coins
               </button>
@@ -335,7 +335,7 @@ function SortButton({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex min-h-[24px] cursor-pointer items-center gap-1 transition align-center ${align === "right" ? "flex-row-reverse" : ""} ${active ? "text-aether-accent" : "text-aether-text-soft"}`}
+      className={`inline-flex min-h-[24px] cursor-pointer items-center gap-1 transition align-center ${align === "right" ? "flex-row-reverse" : ""} ${active ? "text-racing" : "text-ink-soft"}`}
     >
       {label}
       <span
@@ -402,7 +402,7 @@ function StepButton({
       disabled={disabled}
       title={label}
       aria-label={label}
-      className="grid h-6 w-6 cursor-pointer place-items-center rounded-full border border-mix(in srgb, var(--aether-text) 12%, transparent) text-[13px] leading-none text-aether-text-faint transition-colors hover:border-aether-accent/50 hover:bg-mix(in srgb, var(--aether-text) 10%, transparent) hover:text-aether-accent active:scale-95 disabled:opacity-30"
+      className="grid h-6 w-6 cursor-pointer place-items-center rounded-full border border-mix(in srgb, var(--color-ink) 12%, transparent) text-[13px] leading-none text-ink-faint transition-colors hover:border-racing/50 hover:bg-mix(in srgb, var(--color-ink) 10%, transparent) hover:text-racing active:scale-95 disabled:opacity-30"
     >
       {children}
     </button>
@@ -428,8 +428,8 @@ function IconAction({
       aria-label={label}
       className={`grid h-8 w-8 cursor-pointer place-items-center rounded-full border border-transparent transition-colors ${
         danger
-          ? "text-aether-text-faint hover:border-aether-accent/40 hover:bg-aether-accent/10 hover:text-aether-accent"
-          : "text-aether-text-faint hover:border-aether-text/20 hover:bg-aether-text/5 hover:text-aether-accent"
+          ? "text-ink-faint hover:border-racing/40 hover:bg-racing/10 hover:text-racing"
+          : "text-ink-faint hover:border-ink/20 hover:bg-ink/5 hover:text-racing"
       }`}
     >
       {icon}
@@ -440,13 +440,13 @@ function IconAction({
 /** Compact G/S/B tally for the fleet table. */
 function TrophyTally({ summary }: { summary?: TrophySummary }) {
   if (!summary || summary.total === 0) {
-    return <span className={`num text-[11px] text-aether-text-faint`}>—</span>;
+    return <span className="num text-[11px] text-ink-faint">-</span>;
   }
   return (
     <span className="num flex items-center gap-2 text-[11px]">
-      {summary.gold > 0 ? <span className="text-aether-accent">{summary.gold}G</span> : null}
-      {summary.silver > 0 ? <span className="text-aether-text-soft">{summary.silver}S</span> : null}
-      {summary.bronze > 0 ? <span className="text-aether-text-faint">{summary.bronze}B</span> : null}
+      {summary.gold > 0 ? <span className="text-racing">{summary.gold}G</span> : null}
+      {summary.silver > 0 ? <span className="text-ink-soft">{summary.silver}S</span> : null}
+      {summary.bronze > 0 ? <span className="text-ink-faint">{summary.bronze}B</span> : null}
     </span>
   );
 }

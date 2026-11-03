@@ -114,7 +114,7 @@ export default function LoginPage() {
   if (phase === "checking") {
     return (
       <Overlay>
-        <p className="num text-[11px] uppercase tracking-[0.2em] text-aether-text-faint">checking the keyâ€¦</p>
+        <p className="num text-[11px] uppercase tracking-[0.2em] text-ink-faint">checking the key…</p>
       </Overlay>
     );
   }
@@ -124,10 +124,10 @@ export default function LoginPage() {
       <Overlay>
         <div className="panel w-full max-w-[380px] rounded-[24px] p-7 text-center">
           <ShieldIcon />
-          <h1 className="mt-4 font-display text-[22px] text-aether-text">Locked</h1>
-          <p className="mt-2 text-[12.5px] leading-relaxed text-aether-text-soft">{message}</p>
-          <p className="num mt-4 text-[10px] uppercase tracking-[0.18em] text-aether-text-faint">
-            cpm fleet Â· single-owner console
+          <h1 className="mt-4 font-display text-[22px] text-ink">Locked</h1>
+          <p className="mt-2 text-[12.5px] leading-relaxed text-ink-soft">{message}</p>
+          <p className="num mt-4 text-[10px] uppercase tracking-[0.18em] text-ink-faint">
+            cpm fleet · single-owner console
           </p>
         </div>
       </Overlay>
@@ -138,8 +138,8 @@ export default function LoginPage() {
     <Overlay>
       <form onSubmit={submit} className="panel w-full max-w-[380px] rounded-[24px] p-7">
         <ShieldIcon />
-        <h1 className="mt-4 font-display text-[22px] text-aether-text">CPM Fleet</h1>
-        <p className="mt-1 text-[12.5px] leading-relaxed text-aether-text-soft">
+        <h1 className="mt-4 font-display text-[22px] text-ink">CPM Fleet</h1>
+        <p className="mt-1 text-[12.5px] leading-relaxed text-ink-soft">
           {window.Telegram?.WebApp?.initData
             ? "Enter the console password once to claim this console for your Telegram account."
             : "Enter the console password to open the ledger."}
@@ -165,12 +165,12 @@ export default function LoginPage() {
         <Button type="submit" variant="primary" size="md" className="mt-5 w-full justify-center" disabled={busy || !password}>
           {busy ? "Unlocking…" : "Unlock"}
         </Button>
-        <p className="mt-4 text-[11px] text-center text-aether-text-soft">
-          Not KAMI? <a href="/auth" className="underline underline-offset-4 hover:text-aether-accent transition-colors">Player sign in →</a>
+        <p className="mt-4 text-[11px] text-center text-ink-soft">
+          Not KAMI? <a href="/auth" className="underline underline-offset-4 hover:text-racing transition-colors">Player sign in →</a>
         </p>
         <a
           href="/trade/guest"
-          className="mt-3 block w-full text-center text-[11px] font-semibold uppercase tracking-[0.08em] text-aether-text-faint underline underline-offset-4 hover:text-aether-accent hover:underline transition-colors border border-mix(in srgb, var(--aether-text) 12%, transparent) rounded-full px-4 py-2.5"
+          className="mt-3 block w-full text-center text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-faint underline underline-offset-4 hover:text-racing hover:underline transition-colors border border-mix(in srgb, var(--color-ink) 12%, transparent) rounded-full px-4 py-2.5"
         >
           Open guest calculator →
         </a>
@@ -185,7 +185,7 @@ function enter() {
 
 function Overlay({ children }: { children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-mix(in srgb, var(--aether-glass) 80%, transparent) px-4 backdrop-blur-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-mix(in srgb, var(--color-paper-raised) 80%, transparent) px-4 backdrop-blur-xl">
       {children}
     </div>
   );
@@ -193,7 +193,7 @@ function Overlay({ children }: { children: React.ReactNode }) {
 
 function ShieldIcon() {
   return (
-    <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-aether-accent/30 bg-aether-accent/10 text-aether-accent">
+    <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-racing/30 bg-racing/10 text-racing">
       <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
         <rect x="5" y="10.5" width="14" height="9.5" rx="2.5" />
         <path d="M8 10.5V8a4 4 0 1 1 8 0v2.5" strokeLinecap="round" />

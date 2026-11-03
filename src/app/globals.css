@@ -749,292 +749,204 @@
       color-mix(in srgb, var(--color-racing) 17%, transparent);
   }
 
-  /* ========================================================================
-   AETHER DESIGN SYSTEM — calm optical material language
-   Pearl / Glass / Graphite / Accent / Aurora
-   ======================================================================== */
 
-  :root {
-    /* Aether palette — OKLCH */
-    --aether-pearl: oklch(0.97 0.004 260);
-    --aether-glass: oklch(0.13 0.01 260);
-    --aether-graphite: oklch(0.09 0.008 260);
-    --aether-accent: oklch(0.68 0.19 280);
-    --aether-aurora: oklch(0.58 0.22 310);
-    --aether-aurora-soft: oklch(0.58 0.22 310 / 0.35);
-    --aether-text: oklch(0.96 0.005 260);
-    --aether-text-soft: oklch(0.7 0.01 260);
-    --aether-text-faint: oklch(0.5 0.01 260);
 
-    /* Easing */
-    --aether-ease: cubic-bezier(0.23, 1, 0.32, 1);
-    --aether-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
-
-    /* Durations */
-    --aether-dur-fast: 140ms;
-    --aether-dur-ui: 220ms;
-    --aether-dur-modal: 320ms;
-  }
-
-  /* Base colors applied to html */
-  html {
-    background-color: var(--aether-glass);
-    color: var(--aether-text);
-  }
-
-  /* --- Aurora background field --- */
-  .aether-aurora-field {
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background:
-      radial-gradient(1400px 800px at 50% -10%, color-mix(in srgb, var(--aether-accent) 18%, transparent), transparent 55%),
-      radial-gradient(1200px 700px at 90% 10%, color-mix(in srgb, var(--aether-aurora) 14%, transparent), transparent 60%),
-      radial-gradient(1000px 700px at 5% 95%, color-mix(in srgb, var(--aether-accent) 10%, transparent), transparent 62%);
-    background-attachment: fixed;
-    animation: aether-drift 28s ease-in-out infinite alternate;
-  }
-
-  @keyframes aether-drift {
-    from { transform: translate3d(-2%, -1%, 0) scale(1); }
-    to   { transform: translate3d(2%, 1.5%, 0) scale(1.05); }
-  }
-
-  /* --- Aurora loader ring --- */
-  .aether-loader {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    border: 3px solid color-mix(in srgb, var(--aether-border) 60%, transparent);
-    border-top-color: var(--aether-accent);
-    border-right-color: var(--aether-aurora);
-    animation: aether-spin 1.2s linear infinite;
-  }
-
-  @keyframes aether-spin {
-    to { transform: rotate(360deg); }
-  }
-
-  .aether-loader-text {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--aether-text-soft);
-    letter-spacing: 0.05em;
-  }
-
-  /* --- Pill buttons (shaped, refracted bevel) --- */
-  .aether-btn {
+  /* --- racing buttons (pill switches, one accent) --- */
+  .racing-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
     border-radius: 9999px;
-    border: 1px solid color-mix(in srgb, var(--aether-text) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-ink) 12%, transparent);
     background:
       linear-gradient(180deg,
-        color-mix(in srgb, var(--aether-text) 14%, transparent) 0%,
-        color-mix(in srgb, var(--aether-text) 6%, transparent) 100%);
-    color: var(--aether-text);
+        color-mix(in srgb, var(--color-ink) 14%, transparent) 0%,
+        color-mix(in srgb, var(--color-ink) 6%, transparent) 100%);
+    color: var(--color-ink);
     font-family: var(--font-sans);
     font-weight: 600;
     font-size: 12px;
     letter-spacing: -0.005em;
     transition:
-      transform var(--aether-dur-fast) var(--aether-ease),
-      border-color var(--aether-dur-ui) var(--aether-ease),
-      box-shadow var(--aether-dur-ui) var(--aether-ease),
-      background-color var(--aether-dur-ui) var(--aether-ease);
+      transform 140ms cubic-bezier(0.23, 1, 0.32, 1),
+      border-color 220ms cubic-bezier(0.23, 1, 0.32, 1),
+      box-shadow 220ms cubic-bezier(0.23, 1, 0.32, 1),
+      background-color 220ms cubic-bezier(0.23, 1, 0.32, 1);
     cursor: pointer;
     position: relative;
     overflow: hidden;
   }
 
-  .aether-btn::before {
+  .racing-btn::before {
     content: "";
     position: absolute;
     inset: 0;
     border-radius: inherit;
     padding: 1px;
-    background: linear-gradient(135deg, var(--aether-accent), var(--aether-aurora));
+    background: linear-gradient(135deg, var(--color-racing), var(--color-blueprint));
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: destination-out;
     mask-composite: exclude;
     opacity: 0;
-    transition: opacity var(--aether-dur-ui) var(--aether-ease);
+    transition: opacity 220ms cubic-bezier(0.23, 1, 0.32, 1);
     pointer-events: none;
   }
 
-  .aether-btn:hover:not(:disabled) {
-    border-color: color-mix(in srgb, var(--aether-accent) 45%, transparent);
+  .racing-btn:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--color-racing) 45%, transparent);
     box-shadow:
-      0 0 0 1px color-mix(in srgb, var(--aether-accent) 30%, transparent),
-      0 12px 28px -12px color-mix(in srgb, var(--aether-accent) 50%, transparent);
+      0 0 0 1px color-mix(in srgb, var(--color-racing) 30%, transparent),
+      0 12px 28px -12px color-mix(in srgb, var(--color-racing) 50%, transparent);
   }
 
-  .aether-btn:active:not(:disabled) {
+  .racing-btn:active:not(:disabled) {
     transform: scale(0.96);
   }
 
-  .aether-btn:active::before {
+  .racing-btn:active::before {
     opacity: 1;
   }
 
-  .aether-btn:disabled {
+  .racing-btn:disabled {
     opacity: 0.45;
     cursor: not-allowed;
   }
 
-  .aether-btn-primary {
-    background: linear-gradient(180deg, var(--aether-accent) 0%, var(--aether-aurora) 100%);
-    color: var(--aether-glass);
-    border: 1px solid color-mix(in srgb, var(--aether-accent) 50%, transparent);
+  .racing-btn-primary {
+    background: linear-gradient(180deg, var(--color-racing) 0%, var(--color-blueprint) 100%);
+    color: var(--color-paper-raised);
+    border: 1px solid color-mix(in srgb, var(--color-racing) 50%, transparent);
     box-shadow:
-      inset 0 1px 0 color-mix(in srgb, var(--aether-text) 30%, transparent),
-      0 10px 24px -10px color-mix(in srgb, var(--aether-accent) 45%, transparent);
+      inset 0 1px 0 color-mix(in srgb, var(--color-ink) 30%, transparent),
+      0 10px 24px -10px color-mix(in srgb, var(--color-racing) 45%, transparent);
   }
 
-  .aether-btn-primary:hover:not(:disabled) {
+  .racing-btn-primary:hover:not(:disabled) {
     box-shadow:
-      inset 0 1px 0 color-mix(in srgb, var(--aether-text) 40%, transparent),
-      0 14px 30px -12px color-mix(in srgb, var(--aether-accent) 55%, transparent);
+      inset 0 1px 0 color-mix(in srgb, var(--color-ink) 40%, transparent),
+      0 14px 30px -12px color-mix(in srgb, var(--color-racing) 55%, transparent);
   }
 
-  .aether-btn-sm {
+  .racing-btn-sm {
     padding: 7px 14px;
     font-size: 11px;
   }
 
-  .aether-btn-md {
+  .racing-btn-md {
     padding: 10px 20px;
     font-size: 12.5px;
   }
 
-  .aether-btn-icon {
+  .racing-btn-icon {
     width: 40px;
     height: 40px;
     padding: 0;
   }
 
-  /* --- Layered glass cards --- */
-  .aether-card {
+  /* --- glass input --- */
+  .field-rule {
+    width: 100%;
+    min-height: 44px;
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--color-ink) 2%, transparent), transparent 55%),
+      color-mix(in srgb, var(--color-paper-sunken) 38%, transparent);
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    backdrop-filter: blur(14px) saturate(150%);
+    border: 1px solid var(--glass-border-soft);
+    border-radius: 12px;
+    padding: 9px 12px;
+    color: var(--color-ink);
+    caret-color: var(--color-racing);
+    box-shadow:
+      inset 0 1px 2px color-mix(in srgb, var(--color-void) 24%, transparent),
+      inset 0 -1px 0 color-mix(in srgb, var(--color-edge) 5%, transparent);
+    transition:
+      border-color 0.15s ease,
+      background-color 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+
+  .field-rule::placeholder {
+    color: var(--color-ink-faint);
+  }
+
+  .field-rule:hover {
+    border-color: color-mix(in srgb, var(--color-ink) 20%, transparent);
+  }
+
+  .field-rule:focus-visible {
+    outline: none;
+    border-color: var(--color-racing);
+    background: color-mix(in srgb, var(--color-racing) 5%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-racing) 18%, transparent);
+  }
+
+  textarea.field-rule {
+    padding: 10px 12px;
+  }
+
+  /* --- glass card --- */
+  .glass-card {
     position: relative;
     background:
       linear-gradient(180deg,
-        color-mix(in srgb, var(--aether-text) 8%, transparent) 0%,
+        color-mix(in srgb, var(--color-ink) 8%, transparent) 0%,
         transparent 45%),
-      repeating-linear-gradient(94deg, color-mix(in srgb, var(--aether-text) 2%, transparent) 0 1px, transparent 1px 8px),
-      color-mix(in srgb, var(--aether-glass) 88%, transparent);
-    border: 1px solid color-mix(in srgb, var(--aether-text) 10%, transparent);
+      repeating-linear-gradient(94deg, color-mix(in srgb, var(--color-ink) 2%, transparent) 0 1px, transparent 1px 8px),
+      color-mix(in srgb, var(--color-paper-raised) 88%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-ink) 10%, transparent);
     border-radius: 24px;
     box-shadow:
-      inset 0 1px 0 color-mix(in srgb, var(--aether-text) 15%, transparent),
-      inset 0 -1px 0 color-mix(in srgb, var(--aether-text) 4%, transparent),
-      0 30px 80px -30px color-mix(in srgb, var(--aether-graphite) 90%, transparent);
+      inset 0 1px 0 color-mix(in srgb, var(--color-ink) 15%, transparent),
+      inset 0 -1px 0 color-mix(in srgb, var(--color-ink) 4%, transparent),
+      0 30px 80px -30px color-mix(in srgb, var(--color-void) 90%, transparent);
     -webkit-backdrop-filter: blur(28px) saturate(150%);
     backdrop-filter: blur(28px) saturate(150%);
     transition:
-      border-color var(--aether-dur-ui) var(--aether-ease),
-      box-shadow var(--aether-dur-ui) var(--aether-ease),
-      transform var(--aether-dur-ui) var(--aether-ease);
+      border-color 220ms cubic-bezier(0.23, 1, 0.32, 1),
+      box-shadow 220ms cubic-bezier(0.23, 1, 0.32, 1),
+      transform 220ms cubic-bezier(0.23, 1, 0.32, 1);
   }
 
-  .aether-card:hover {
-    border-color: color-mix(in srgb, var(--aether-accent) 25%, transparent);
+  .glass-card:hover {
+    border-color: color-mix(in srgb, var(--color-racing) 25%, transparent);
     box-shadow:
-      inset 0 1px 0 color-mix(in srgb, var(--aether-text) 20%, transparent),
-      inset 0 -1px 0 color-mix(in srgb, var(--aether-text) 6%, transparent),
-      0 40px 100px -35px color-mix(in srgb, var(--aether-accent) 25%, transparent);
+      inset 0 1px 0 color-mix(in srgb, var(--color-ink) 20%, transparent),
+      inset 0 -1px 0 color-mix(in srgb, var(--color-ink) 6%, transparent),
+      0 40px 100px -35px color-mix(in srgb, var(--color-racing) 25%, transparent);
   }
 
-  .aether-card-float {
-    animation: aether-float 6s ease-in-out infinite;
+  .glass-card-float {
+    animation: glass-float 6s ease-in-out infinite;
   }
 
-  @keyframes aether-float {
+  .glass-loader {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 3px solid color-mix(in srgb, var(--color-ink) 60%, transparent);
+    border-top-color: var(--color-racing);
+    border-right-color: var(--color-blueprint);
+    animation: aether-spin 1.2s linear infinite;
+  }
+
+  .glass-loader-text {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-ink-soft);
+    letter-spacing: 0.05em;
+  }
+
+  /* --- glass loader keyframes --- */
+  @keyframes aether-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes glass-float {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-8px); }
   }
-
-  /* --- Ambient float wrapper --- */
-  .aether-float-wrap {
-    animation: aether-ambient 8s ease-in-out infinite alternate;
-  }
-
-  @keyframes aether-ambient {
-    from { transform: translate3d(0, 0, 0); }
-    to   { transform: translate3d(4px, -4px, 0); }
-  }
-
-  /* --- Hairline input --- */
-  .aether-input {
-    width: 100%;
-    min-height: 44px;
-    background: color-mix(in srgb, var(--aether-text) 6%, transparent);
-    border: 1px solid color-mix(in srgb, var(--aether-text) 10%, transparent);
-    border-radius: 16px;
-    padding: 10px 14px;
-    color: var(--aether-text);
-    font-family: inherit;
-    font-size: 14px;
-    transition:
-      border-color var(--aether-dur-ui) var(--aether-ease),
-      box-shadow var(--aether-dur-ui) var(--aether-ease);
-  }
-
-  .aether-input::placeholder {
-    color: color-mix(in srgb, var(--aether-text) 35%, transparent);
-  }
-
-  .aether-input:focus-visible {
-    outline: none;
-    border-color: var(--aether-accent);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--aether-accent) 25%, transparent);
-  }
-
-  /* --- Refracted bevel accent strip --- */
-  .aether-bevel {
-    position: relative;
-    overflow: hidden;
-  }
-
-  .aether-bevel::after {
-    content: "";
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(135deg, var(--aether-accent), var(--aether-aurora));
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity var(--aether-dur-ui) var(--aether-ease);
-  }
-
-  .aether-bevel.active::after {
-    opacity: 1;
-  }
-
-  /* --- Reduced motion --- */
-  @media (prefers-reduced-motion: reduce) {
-    .aether-aurora-field,
-    .aether-card-float,
-    .aether-float-wrap {
-      animation: none;
-    }
-    .aether-loader {
-      animation: none;
-    }
-    .aether-btn {
-      transition: none;
-    }
-    .aether-card {
-      transition: none;
-    }
-  }
-
-  /* --- liquid glass chrome -------------------------------------------- */
 
   .glass-header {
     background:

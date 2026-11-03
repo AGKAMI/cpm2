@@ -7,16 +7,16 @@ type Size = "sm" | "md" | "icon";
 
 const VARIANTS: Record<Variant, string> = {
   primary:
-    "aether-btn aether-btn-primary",
-  outline: "aether-btn",
+    "racing-btn racing-btn-primary",
+  outline: "racing-btn",
   ghost:
-    "aether-btn border-transparent hover:bg-mix(in srgb, var(--aether-text) 8%, transparent) hover:text-aether-text",
+    "racing-btn border-transparent hover:bg-mix(in srgb, var(--color-ink) 8%, transparent) hover:text-ink",
 };
 
 const SIZES: Record<Size, string> = {
-  sm: "aether-btn-sm",
-  md: "aether-btn-md",
-  icon: "aether-btn-icon",
+  sm: "racing-btn-sm",
+  md: "racing-btn-md",
+  icon: "racing-btn-icon",
 };
 
 type AetherButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -43,7 +43,7 @@ export function AetherButton({
     >
       {loading ? (
         <>
-          <span className="aether-loader" style={{ width: 14, height: 14, borderWidth: 2 }} />
+          <span className="glass-loader" style={{ width: 14, height: 14, borderWidth: 2 }} />
           <span className="sr-only">Loading...</span>
         </>
       ) : (

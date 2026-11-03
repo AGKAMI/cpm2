@@ -6,17 +6,17 @@ type Variant = "primary" | "outline" | "ghost" | "danger" | "subtle";
 type Size = "sm" | "md" | "icon";
 
 const VARIANTS: Record<Variant, string> = {
-  primary: "aether-btn aether-btn-primary",
-  outline: "aether-btn",
-  ghost: "aether-btn border-transparent hover:bg-mix(in srgb, var(--aether-text) 8%, transparent) hover:text-aether-text",
-  danger: "aether-btn border-mix(in srgb, var(--aether-accent) 20%, transparent) hover:border-mix(in srgb, var(--aether-accent) 50%, transparent) hover:bg-mix(in srgb, var(--aether-accent) 15%, transparent) hover:text-aether-accent",
-  subtle: "aether-btn border-transparent hover:bg-mix(in srgb, var(--aether-text) 6%, transparent)",
+  primary: "racing-btn racing-btn-primary",
+  outline: "racing-btn",
+  ghost: "racing-btn border-transparent hover:bg-mix(in srgb, var(--color-ink) 8%, transparent) hover:text-ink",
+  danger: "racing-btn border-mix(in srgb, var(--color-racing) 20%, transparent) hover:border-mix(in srgb, var(--color-racing) 50%, transparent) hover:bg-mix(in srgb, var(--color-racing) 15%, transparent) hover:text-racing",
+  subtle: "racing-btn border-transparent hover:bg-mix(in srgb, var(--color-ink) 6%, transparent)",
 };
 
 const SIZES: Record<Size, string> = {
-  sm: "aether-btn-sm",
-  md: "aether-btn-md",
-  icon: "aether-btn-icon",
+  sm: "racing-btn-sm",
+  md: "racing-btn-md",
+  icon: "racing-btn-icon",
 };
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {

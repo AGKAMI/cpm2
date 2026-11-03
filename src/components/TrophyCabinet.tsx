@@ -6,9 +6,9 @@ import { TROPHY_CLASSES, TROPHY_CLASS_LABELS, type TrophyClass } from "@/lib/con
 import type { TrophyRecord } from "@/lib/types";
 
 const METALS = [
-  { key: "gold", label: "Gold", text: "text-aether-accent", dot: "bg-aether-accent" },
-  { key: "silver", label: "Silver", text: "text-aether-text-soft", dot: "bg-aether-text-soft" },
-  { key: "bronze", label: "Bronze", text: "text-aether-text-faint", dot: "bg-aether-text-faint" },
+  { key: "gold", label: "Gold", text: "text-racing", dot: "bg-racing" },
+  { key: "silver", label: "Silver", text: "text-ink-soft", dot: "bg-ink-soft" },
+  { key: "bronze", label: "Bronze", text: "text-ink-faint", dot: "bg-ink-faint" },
 ] as const;
 
 type MetalKey = (typeof METALS)[number]["key"];

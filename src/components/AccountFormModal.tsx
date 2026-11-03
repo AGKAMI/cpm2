@@ -208,7 +208,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
               onClick={() => setShowPassword((value) => !value)}
               aria-pressed={showPassword}
               aria-label={showPassword ? "Hide password" : "Show password"}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-1.5 inline-flex min-h-[24px] items-center font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-aether-text-faint transition hover:text-aether-accent"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-1.5 inline-flex min-h-[24px] items-center font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint transition hover:text-racing"
             >
               {showPassword ? "Hide" : "Show"}
             </button>
@@ -218,7 +218,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
         <div className="flex flex-col gap-1.5">
           <p className="label-caps flex items-baseline justify-between gap-3">
             <span>Game</span>
-            <span className="num tracking-normal normal-case text-aether-text-faint">
+            <span className="num tracking-normal normal-case text-ink-faint">
               {slotless ? "no car slots · one of each model" : "21 slots · 21st for 100 coins"}
             </span>
           </p>
@@ -232,21 +232,21 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
                 aria-pressed={game === option}
                 className={`flex-1 cursor-pointer rounded-[14px] border px-3 py-2.5 text-left transition-colors ${
                   game === option
-                    ? "border-aether-accent/50 bg-aether-accent/10"
-                    : "border-mix(in srgb, var(--aether-text) 10%, transparent) bg-mix(in srgb, var(--aether-text) 3%, transparent) hover:border-aether-text/25"
+                    ? "border-racing/50 bg-racing/10"
+                    : "border-mix(in srgb, var(--color-ink) 10%, transparent) bg-mix(in srgb, var(--color-ink) 3%, transparent) hover:border-ink/25"
                 }`}
               >
-                <span className="block font-sans text-[12px] font-semibold text-aether-text">
+                <span className="block font-sans text-[12px] font-semibold text-ink">
                   {GAME_LABELS[option]}
                 </span>
-                <span className="num mt-0.5 block text-[10px] text-aether-text-faint">
+                <span className="num mt-0.5 block text-[10px] text-ink-faint">
                   {option === "cpm1" ? "every model, once each" : "20 free + 21st + new garage"}
                 </span>
               </button>
             ))}
           </div>
           {errors.game ? (
-            <p className="flex items-start gap-1.5 text-[11px] leading-snug text-aether-accent">
+            <p className="flex items-start gap-1.5 text-[11px] leading-snug text-racing">
               <svg viewBox="0 0 24 24" className="mt-px h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <circle cx="12" cy="12" r="9" />
                 <path d="M12 7.5v5.5M12 16.2v.1" strokeLinecap="round" />
@@ -315,7 +315,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
           {slotless ? (
             <div className="flex flex-col gap-1.5">
               <span className="label-caps">Car slots</span>
-              <p className="rounded-[14px] border border-mix(in srgb, var(--aether-text) 10%, transparent) bg-mix(in srgb, var(--aether-text) 3%, transparent) px-4 py-3 text-[11px] leading-snug text-aether-text-faint">
+              <p className="rounded-[14px] border border-mix(in srgb, var(--color-ink) 10%, transparent) bg-mix(in srgb, var(--color-ink) 3%, transparent) px-4 py-3 text-[11px] leading-snug text-ink-faint">
                 CPM1 has no car slots. Every model in the game can be owned — but only one of each.
               </p>
             </div>
@@ -363,7 +363,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
             <div className="flex flex-col gap-1.5">
               <span className="label-caps flex items-baseline justify-between gap-3">
                 <span>New garage</span>
-                <span className="num tracking-normal normal-case text-aether-text-faint">
+                <span className="num tracking-normal normal-case text-ink-faint">
                   +{LIMITS.NEW_GARAGE_SLOTS} slots
                 </span>
               </span>
@@ -374,20 +374,20 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
                 aria-pressed={newGarage}
                 className={`flex cursor-pointer items-center justify-between gap-3 rounded-[14px] border px-4 py-3 text-left transition-colors ${
                   newGarage
-                    ? "border-aether-accent/50 bg-aether-accent/10"
-                    : "border-mix(in srgb, var(--aether-text) 10%, transparent) bg-mix(in srgb, var(--aether-text) 3%, transparent) hover:border-aether-text/25"
+                    ? "border-racing/50 bg-racing/10"
+                    : "border-mix(in srgb, var(--color-ink) 10%, transparent) bg-mix(in srgb, var(--color-ink) 3%, transparent) hover:border-ink/25"
                 }`}
               >
                 <span>
-                  <span className="block font-sans text-[12px] font-semibold text-aether-text">
+                  <span className="block font-sans text-[12px] font-semibold text-ink">
                     {newGarage ? "Owned" : "Not owned"}
                   </span>
-                  <span className="num mt-0.5 block text-[10px] text-aether-text-faint">
+                  <span className="num mt-0.5 block text-[10px] text-ink-faint">
                     {LIMITS.NEW_GARAGE_PRICE} · {LIMITS.NEW_GARAGE_SLOTS} extra slots
                   </span>
                 </span>
                 <span
-                  className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border ${newGarage ? "border-aether-accent/50 text-aether-accent" : "border-mix(in srgb, var(--aether-text) 15%, transparent) text-aether-text-faint"}`}
+                  className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border ${newGarage ? "border-racing/50 text-racing" : "border-mix(in srgb, var(--color-ink) 15%, transparent) text-ink-faint"}`}
                   aria-hidden="true"
                 >
                   <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2">
@@ -429,7 +429,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
         </Field>
 
         {errors.form ? (
-          <p className="rounded-[14px] border border-aether-accent/35 bg-aether-accent/8 px-3 py-2 text-xs text-aether-accent">
+          <p className="rounded-[14px] border border-racing/35 bg-racing/8 px-3 py-2 text-xs text-racing">
             {errors.form}
           </p>
         ) : null}

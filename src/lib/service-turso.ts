@@ -193,10 +193,10 @@ export async function getAccount(id: number, userId?: number): Promise<AccountSu
 export async function createAccount(payload: unknown, userId?: number): Promise<AccountSummary> {
   const input: AccountCreateInput = accountCreateSchema.parse(payload);
 
-  // If an archived account already exists for this email+game, restore it
-  // instead of creating a duplicate. Passwords, balances and game are
-  // overwritten from the import payload.
-  const existing = await findArchivedByEmailGame(input.email, input.game);
+  // If an account already exists for this email+game (archived or not),
+  // restore/overwrite it instead of failing. Passwords, balances and game
+  // are overwritten from the import payload.
+  const existing = await findAccountByEmailGame(input.email, input.game);
   if (existing) {
     return restoreAndOverwrite(existing.id, input, userId);
   }
@@ -241,10 +241,10 @@ export async function createAccount(payload: unknown, userId?: number): Promise<
   return getAccount(id, userId);
 }
 
-async function findArchivedByEmailGame(email: string, game: GameType): Promise<AccountRow | null> {
+async function findAccountByEmailGame(email: string, game: GameType): Promise<AccountRow | null> {
   const db = await getTursoDb();
   const row = await db.execute({
-    sql: `SELECT * FROM accounts WHERE email = ? COLLATE NOCASE AND game = ? AND archived = 1 LIMIT 1`,
+    sql: `SELECT * FROM accounts WHERE email = ? COLLATE NOCASE AND game = ? LIMIT 1`,
     args: [email, game],
   });
   return (row.rows[0] as unknown as AccountRow | undefined) ?? null;

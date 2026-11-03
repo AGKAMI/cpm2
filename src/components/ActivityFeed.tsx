@@ -32,7 +32,7 @@ export function ActivityFeed({ events }: { events: FleetEvent[] }) {
   }
 
   return (
-    <ol className="panel overflow-hidden rounded-[20px]">
+    <ol className="panel overflow-hidden rounded-[20px] border border-ink/8">
       {events.map((event, index) => {
         const meta = TYPES[event.type] ?? TYPES.updated;
         return (

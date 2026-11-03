@@ -158,7 +158,7 @@ export function AccountTable({
                     <button
                       type="button"
                       onClick={() => onBuySlot(account)}
-                      className="mt-1.5 inline-flex min-h-[24px] cursor-pointer items-center font-sans text-[11px] font-medium text-ink-faint transition hover:text-racing"
+                      className="mt-1.5 inline-flex min-h-[24px] cursor-pointer items-center rounded-full font-sans text-[11px] font-medium text-racing border border-racing/30 bg-racing/8 px-3 py-1 transition hover:bg-racing/16 hover:border-racing/50"
                     >
                       + unlock 21st slot (100c)
                     </button>
@@ -217,7 +217,7 @@ export function AccountTable({
         {accounts.map((account) => (
           <article
             key={account.id}
-            className={`panel-tight rounded-[18px] p-4 ${busyId === account.id ? "opacity-60" : ""}`}
+            className={`panel-tight rounded-[20px] p-4 border border-ink/8 transition-all duration-150 group ${busyId === account.id ? "opacity-60" : ""}`}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -335,7 +335,7 @@ function SortButton({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex min-h-[24px] cursor-pointer items-center gap-1 transition align-center ${align === "right" ? "flex-row-reverse" : ""} ${active ? "text-racing" : "text-ink-soft"}`}
+      className={`inline-flex min-h-[24px] cursor-pointer items-center gap-1 rounded-full transition align-center ${align === "right" ? "flex-row-reverse" : ""} ${active ? "text-racing border-racing/30 bg-racing/8 px-2 py-0.5" : "text-ink-soft border-ink/10 px-2 py-0.5"}`}
     >
       {label}
       <span

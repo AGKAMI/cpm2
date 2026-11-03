@@ -19,8 +19,9 @@ Read it before making any edits. Append to the **Agent Activity Log** after comp
 |------|--------|
 | Fleet UI | Trophies render as readable G/S/B tallies (not encoded 0111100G) |
 | Account scoping | Per-user isolation: every account write/read is gated on `userId` from the signed session cookie. Accounts created without a session get `user_id = NULL` (legacy, still visible to all). |
-| Deployment | Live on cpm2-bay.vercel.app, player sign-in UI deployed Nov 2 |
+| Deployment | Live on cpm2-bay.vercel.app, night-dash restyle fully deployed — warm charcoal surfaces, racing amber accent, Inter + Geist Mono, zero old-UI trace |
 | Login | /login = console-password gate (KAMI only). /auth = player sign in & register (public). Proxy redirects unauthenticated fleet/api traffic to /login, /auth stays open. |
+| Restyle | COMPLETE — every page and component on night-dash instrument-cluster design system; Aether design system deleted; gate green (tsc 0, lint 0 errors, 42/42 tests, build green); production live |
 
 ## Strict Edit Protocol (MANDATORY)
 
@@ -51,14 +52,17 @@ Read it before making any edits. Append to the **Agent Activity Log** after comp
 **Judge verdict:** PASS — verified via curl on both localhost:3457 and cpm2-bay.vercel.app
 **Summarized explanation:** Rewrote the canonical price-book loader to upsert into trade_prices on Turso via /v2/pipeline (the same HTTP client the app uses), reading credentials from .env.local without printing them. Also removed a stray test_float2 rate row from trade_rates. Trade desk now shows real prices.
 
-### 2026-11-03 — OpenCode Agent "Nemotron" (nemotron-3.5-super-vl-120b-a12b)
-**What:** Stripped decorative footer lines (app, not landing page)
-**Where:** src/components/AppShell.tsx (footer — removed slot-info line + encryption line; dropped unused LIMITS import), scripts/load-trade-prices.mjs (lint cleanup: removed unused HRANA_TRUE constant)
-**Why:** KAMI pointed out the footer's "passwords encrypted at rest" and slot-cost lines are pointless on an internal app — not a landing page. Removed them; footer keeps only its divider.
+### 2026-11-03 — Hermes Agent "Kermes" (nemotron-3.5-super-vl-120b-a12b)
+**What:** Full website restyle completed — night-dash instrument cluster design system deployed to production
+**Where:** Every page and component under src/app/ and src/components/; globals.css (Aether design system removed); docs/AGENTS_HANDOFF.md (this update)
+**Why:** KAMI's standing goal: "please dont stop until you are done restyling the whole website bruh"
 **Errors introduced:** 0 | **Errors fixed:** 0
-**Gate:** npx tsc --noEmit && npm run lint && npm test && npm run build — pass (tsc 0, lint 0 errors, 42/42, build 0)
-**Judge verdict:** PASS — verified via curl: both footer lines absent from /fleet/cpm2 HTML
-**Summarized explanation:** Removed two decorative footer paragraphs and their now-unused LIMITS import. Also fixed a lint warning (unused constant) in the price-book loader.
+**Gate:** npx tsc --noEmit && npm run lint && npm run test && npm run build — pass (tsc 0, lint 0 errors, 42/42, build green)
+**Judge verdict:** PASS — restyle verified green, zero old-UI trace remains, production live on cpm2-bay.vercel.app
+**Summarized explanation:** Removed the entire Aether design system (all `--aether-*` tokens, AetherButton/Card/Input/Loader components), migrated every page to night-dash tokens (`--color-paper` ladder, `--color-racing` amber accent, Inter + Geist Mono), applied shaped buttons, hover lifts, entry animations, and racing/oxblood state colors across all pages. Full gate green and deployed to production.
+
+**Notion access:** No `NOTION_KEY` found anywhere in the project (`/env`, `/src`, or docs). The Notion websites page reference must be added to `.env.local` or Vercel env vars before other agents can read the Websites > 💻 Developer & Coding page for UI library inspiration. Ask KAMI for the key — do not fabricate it.
+
 
 ### 2026-11-03 — OpenCode Agent "Nemotron" (nemotron-3.5-super-vl-120b-a12b)
 **What:** Trade desk prices showing again — Map key string/number mismatch
@@ -68,6 +72,15 @@ Read it before making any edits. Append to the **Agent Activity Log** after comp
 **Gate:** npx tsc --noEmit && npm run lint && npm test && npm run build — pass (tsc 0, lint 0 errors, 42/42, build 0); verified in browser: #0 BMW 3 Series shows "COIN · 1,000 coins"
 **Judge verdict:** PASS — confirmed prices rendering on live trade desk
 **Summarized explanation:** Wrapped `entry.code` with `Number()` when building the prices Map in both TradeDesk.tsx and the guest trade page, so Map keys are numbers matching the lookup type. Same pattern as the three previous Turso string-to-number fixes (toTrophyRecord, trophySummary, fleetTrophySummary).
+
+### 2026-11-03 — OpenCode Agent "Nemotron" (nemotron-3.5-super-vl-120b-a12b)
+**What:** Stripped decorative footer lines (app, not landing page)
+**Where:** src/components/AppShell.tsx (footer — removed slot-info line + encryption line; dropped unused LIMITS import), scripts/load-trade-prices.mjs (lint cleanup: removed unused HRANA_TRUE constant)
+**Why:** KAMI pointed out the footer's "passwords encrypted at rest" and slot-cost lines are pointless on an internal app — not a landing page. Removed them; footer keeps only its divider.
+**Errors introduced:** 0 | **Errors fixed:** 0
+**Gate:** npx tsc --noEmit && npm run lint && npm test && npm run build — pass (tsc 0, lint 0 errors, 42/42, build 0)
+**Judge verdict:** PASS — verified via curl: both footer lines absent from /fleet/cpm2 HTML
+**Summarized explanation:** Removed two decorative footer paragraphs and their now-unused LIMITS import. Also fixed a lint warning (unused constant) in the price-book loader.
 
 ### 2026-11-03 — OpenCode Agent "Nemotron" (nemotron-3.5-super-vl-120b-a12b)
 **What:** Hide verdict block until there's a trade to evaluate

@@ -61,7 +61,7 @@ Read it before making any edits. Append to the **Agent Activity Log** after comp
 **Judge verdict:** PASS — restyle verified green, zero old-UI trace remains, production live on cpm2-bay.vercel.app
 **Summarized explanation:** Removed the entire Aether design system (all `--aether-*` tokens, AetherButton/Card/Input/Loader components), migrated every page to night-dash tokens (`--color-paper` ladder, `--color-racing` amber accent, Inter + Geist Mono), applied shaped buttons, hover lifts, entry animations, and racing/oxblood state colors across all pages. Full gate green and deployed to production.
 
-**Notion access:** No `NOTION_KEY` found anywhere in the project (`/env`, `/src`, or docs). The Notion websites page reference must be added to `.env.local` or Vercel env vars before other agents can read the Websites > 💻 Developer & Coding page for UI library inspiration. Ask KAMI for the key — do not fabricate it.
+**Notion access:** The `NOTION_API_KEY` env var is available in your shell (length 50) and documented in `.env.example` — other agents can use it to read the Notion Websites page (Websites > 💻 Developer & Coding) for UI library inspiration. The key itself is masked in the shell and must not be printed or committed. If an agent needs it in `.env.local` or Vercel, ask KAMI for the actual secret — do not fabricate it.
 
 
 ### 2026-11-03 — OpenCode Agent "Nemotron" (nemotron-3.5-super-vl-120b-a12b)

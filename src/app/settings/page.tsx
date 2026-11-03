@@ -67,45 +67,6 @@ export default function SettingsPage() {
           <Row label="CPM2 21st slot" value={`${LIMITS.SLOT_COST_COINS} coins (one per account)`} />
           <Row label="CPM2 new garage" value={`${LIMITS.NEW_GARAGE_PRICE} · +${LIMITS.NEW_GARAGE_SLOTS} slots`} />
         </dl>
-        <p className="mt-4 text-[11px] leading-snug text-aether-text-faint">
-          CPM1 has no slots at all: every model in the game can be owned, but only one of each. CPM2 is
-          slot-based — {LIMITS.BASE_CAR_SLOTS} free slots, the 21st bought for {LIMITS.SLOT_COST_COINS}{" "}
-          coins, and {LIMITS.NEW_GARAGE_SLOTS} more slots with the {LIMITS.NEW_GARAGE_PRICE} garage.
-        </p>
-      </section>
-
-      <section className="panel rounded-[20px] p-5">
-        <h2 className="panel-title mb-4">Where the data lives</h2>
-        <dl className="flex flex-col">
-          <Row label="Database" value="data/cpm2.db" mono />
-          <Row label="Encryption key" value="data/.secret-key" mono />
-          <Row label="Accounts" value={String(fleet.accounts.length)} />
-          <Row label="Archived" value={String(fleet.archived.length)} />
-          <Row label="Log entries" value={String(fleet.events.length)} />
-        </dl>
-        <div className="mt-4 border-t border-ink/10 pt-4">
-          <p className="text-[12px] leading-relaxed text-ink-soft">
-            The <span className="num">data/</span> folder is the whole ledger — the database and the key that
-            decrypts the passwords. Copy the folder to back it up. Losing the key means losing every stored
-            password.
-          </p>
-          <div className="mt-3 flex gap-2">
-            <Button variant="outline" size="sm" onClick={shell.openExport}>
-              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <path d="M12 4v10M12 4l-3.5 3.5M12 4l3.5 3.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M5 19h14" strokeLinecap="round" />
-              </svg>
-              Export
-            </Button>
-            <Button variant="outline" size="sm" onClick={shell.openImport}>
-              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <path d="M12 14V4M12 14l-3.5-3.5M12 14l3.5-3.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M5 19h14" strokeLinecap="round" />
-              </svg>
-              Import
-            </Button>
-          </div>
-        </div>
       </section>
 
       <section className="panel rounded-[20px] p-5 lg:col-span-2">
@@ -139,7 +100,7 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      <section className="panel rounded-[20px] p-5">
+      <section className="panel rounded-[20px] p-5 hidden sm:block">
         <h2 className="panel-title mb-4">Keyboard</h2>
         <dl className="flex flex-col">
           {SHORTCUTS.map((item) => (

@@ -44,6 +44,7 @@ export default function GuestTradeDesk() {
     them: { cars: [], cash: 0 },
   });
   const [pickerSide, setPickerSide] = useState<SideKey | null>(null);
+  const [showCash, setShowCash] = useState<Record<SideKey, boolean>>({ you: false, them: false });
 
   useEffect(() => {
     let cancelled = false;
@@ -222,24 +223,34 @@ export default function GuestTradeDesk() {
           </ul>
         )}
 
-        <div className="flex items-center gap-2 border-t border-mix(in srgb, var(--aether-text) 8%, transparent) pt-3">
-          <label htmlFor={`${key}-cash`} className="shrink-0 text-[11px] text-aether-text-soft">
-            {key === "you" ? "Cash you add" : "Cash they add"}
-          </label>
-          <input
-            id={`${key}-cash`}
-            type="number"
-            min={0}
-            step="any"
-            value={side.cash === 0 ? "" : side.cash}
-            onChange={(event) => {
-              const amount = Math.max(0, Math.floor(Number(event.target.value) || 0));
-              setSides((current) => ({ ...current, [key]: { ...current[key], cash: amount } }));
-            }}
-            placeholder="0"
-            className="field-rule num min-w-0 flex-1 px-3 py-1.5 text-[12px]"
-          />
-        </div>
+        {side.cash > 0 ? (
+          <div className="flex items-center gap-2 border-t border-mix(in srgb, var(--aether-text) 8%, transparent) pt-3">
+            <label htmlFor={`${key}-cash`} className="shrink-0 text-[11px] text-aether-text-soft">
+              {key === "you" ? "Cash you add" : "Cash they add"}
+            </label>
+            <input
+              id={`${key}-cash`}
+              type="number"
+              min={0}
+              step="any"
+              value={side.cash === 0 ? "" : side.cash}
+              onChange={(event) => {
+                const amount = Math.max(0, Math.floor(Number(event.target.value) || 0));
+                setSides((current) => ({ ...current, [key]: { ...current[key], cash: amount } }));
+              }}
+              placeholder="0"
+              className="field-rule num min-w-0 flex-1 px-3 py-1.5 text-[12px]"
+            />
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowCash((c) => ({ ...c, [key]: true }))}
+            className="text-[10px] text-aether-text-faint underline-offset-2 hover:text-aether-accent hover:underline"
+          >
+            + Add cash
+          </button>
+        )}
 
         {value.unpriced > 0 && (
           <p className="text-[10.5px] text-aether-accent">
@@ -260,7 +271,6 @@ export default function GuestTradeDesk() {
           </svg>
           <span className="label-caps text-[14px] font-bold tracking-wider">CPM2 · Trade Calculator</span>
         </div>
-        <span className="num text-xs text-aether-text-faint">Read-only · no login</span>
       </div>
 
       {loading ? (
@@ -294,9 +304,10 @@ export default function GuestTradeDesk() {
                   {incomplete ? "Rough call" : "The verdict"}
                 </p>
                 <p
-                  className={`display-title mt-1 text-[28px] leading-none sm:text-[34px] ${
-                    verdict.status === "loss" ? "text-aether-accent/70" : verdict.status === "gain" ? "text-aether-accent/70" : "text-aether-text/60"}
-                  `}
+                  className="display-title mt-1 text-[28px] leading-none sm:text-[34px] font-bold"
+                  style={{
+                    color: `hsl(${verdict.delta >= 0 ? Math.min(120, 60 + Math.min(leanPct, 60)) : Math.max(0, 60 - Math.min(leanPct, 60))}, 75%, 45%)`,
+                  }}
                 >
                   {verdict.status === "gain" ? "Worth it" : verdict.status === "loss" ? "Not worth it" : "Fair trade"}
                 </p>
@@ -316,10 +327,6 @@ export default function GuestTradeDesk() {
                   </p>
                 )}
               </section>
-
-              <p className="text-center text-[11px] text-aether-text-faint py-4">
-                Prices and rates come from the owner&apos;s trade desk. Changes there show up here automatically.
-              </p>
             </>
           )}
         </>

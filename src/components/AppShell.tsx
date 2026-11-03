@@ -294,9 +294,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <span className="wordmark block text-[22px] leading-none text-aether-text" translate="no">
                   Fleet <span className="text-aether-accent">Ledger</span>
                 </span>
-                <span className="label-caps mt-1.5 block">
-                  CPM · CPM1 + CPM2 account register
-                </span>
               </span>
             </Link>
 

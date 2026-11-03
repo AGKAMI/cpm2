@@ -58,6 +58,7 @@ export function TradeDesk() {
   const [priceKind, setPriceKind] = useState<TradePriceKind>("paid");
   const [priceAmount, setPriceAmount] = useState("");
   const [savingPrice, setSavingPrice] = useState(false);
+  const [showCash, setShowCash] = useState<Record<SideKey, boolean>>({ you: false, them: false });
 
   useEffect(() => {
     let cancelled = false;
@@ -306,36 +307,46 @@ export function TradeDesk() {
           </ul>
         )}
 
-        <div className="flex items-center gap-2 border-t border-ink/8 pt-3">
-          <svg
-            viewBox="0 0 24 24"
-            className="h-4 w-4 shrink-0 text-ink-faint"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.7"
-            aria-hidden="true"
+        {side.cash > 0 ? (
+          <div className="flex items-center gap-2 border-t border-ink/8 pt-3">
+            <svg
+              viewBox="0 0 24 24"
+              className="h-4 w-4 shrink-0 text-ink-faint"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              aria-hidden="true"
+            >
+              <path d="M12 3v18M12 3l-3.5 3.5M12 3l3.5 3.5" strokeLinecap="round" strokeLinejoin="round" opacity="0" />
+              <rect x="3.5" y="7.5" width="17" height="9" rx="2" />
+              <path d="M7 12h.01M17 12h.01" strokeLinecap="round" />
+            </svg>
+            <label htmlFor={`${key}-cash`} className="shrink-0 text-[11px] text-ink-soft">
+              {key === "you" ? "Cash you add" : "Cash they add"}
+            </label>
+            <input
+              id={`${key}-cash`}
+              type="number"
+              min={0}
+              step="any"
+              value={side.cash === 0 ? "" : side.cash}
+              onChange={(event) => {
+                const amount = Math.max(0, Math.floor(Number(event.target.value) || 0));
+                setSides((current) => ({ ...current, [key]: { ...current[key], cash: amount } }));
+              }}
+              placeholder="0"
+              className="field-rule num min-w-0 flex-1 px-3 py-1.5 text-[12px]"
+            />
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowCash((c) => ({ ...c, [key]: true }))}
+            className="text-[10px] text-ink-faint underline-offset-2 hover:text-ink hover:underline"
           >
-            <path d="M12 3v18M12 3l-3.5 3.5M12 3l3.5 3.5" strokeLinecap="round" strokeLinejoin="round" opacity="0" />
-            <rect x="3.5" y="7.5" width="17" height="9" rx="2" />
-            <path d="M7 12h.01M17 12h.01" strokeLinecap="round" />
-          </svg>
-          <label htmlFor={`${key}-cash`} className="shrink-0 text-[11px] text-ink-soft">
-            {key === "you" ? "Cash you add" : "Cash they add"}
-          </label>
-          <input
-            id={`${key}-cash`}
-            type="number"
-            min={0}
-            step="any"
-            value={side.cash === 0 ? "" : side.cash}
-            onChange={(event) => {
-              const amount = Math.max(0, Math.floor(Number(event.target.value) || 0));
-              setSides((current) => ({ ...current, [key]: { ...current[key], cash: amount } }));
-            }}
-            placeholder="0"
-            className="field-rule num min-w-0 flex-1 px-3 py-1.5 text-[12px]"
-          />
-        </div>
+            + Add cash
+          </button>
+        )}
 
         {value.unpriced > 0 ? (
           <p className="text-[10.5px] text-oxblood">
@@ -377,9 +388,10 @@ export function TradeDesk() {
               Rough call · {unpricedCount} unpriced
             </p>
             <p
-              className={`display-title mt-1 text-[28px] leading-none sm:text-[34px] ${
-                verdict.status === "loss" ? "text-oxblood/70" : verdict.status === "gain" ? "text-racing/70" : "text-ink/60"
-              }`}
+              className="display-title mt-1 text-[28px] leading-none sm:text-[34px] font-bold"
+              style={{
+                color: `hsl(${verdict.delta >= 0 ? Math.min(120, 60 + Math.min(leanPct, 60)) : Math.max(0, 60 - Math.min(leanPct, 60))}, 75%, 45%)`,
+              }}
             >
               {verdict.status === "gain" ? "Worth it" : verdict.status === "loss" ? "Not worth it" : "Fair trade"}
             </p>
@@ -393,9 +405,10 @@ export function TradeDesk() {
           <>
             <p className="num text-[11px] uppercase tracking-[0.18em] text-ink-faint">The verdict</p>
             <p
-              className={`display-title mt-1 text-[28px] leading-none sm:text-[34px] ${
-                verdict.status === "loss" ? "text-oxblood" : verdict.status === "gain" ? "text-racing" : "text-ink"
-              }`}
+              className="display-title mt-1 text-[28px] leading-none sm:text-[34px] font-bold"
+              style={{
+                color: `hsl(${verdict.delta >= 0 ? Math.min(120, 60 + Math.min(leanPct, 60)) : Math.max(0, 60 - Math.min(leanPct, 60))}, 75%, 45%)`,
+              }}
             >
               {verdict.status === "gain" ? "Worth it" : verdict.status === "loss" ? "Not worth it" : "Fair trade"}
             </p>

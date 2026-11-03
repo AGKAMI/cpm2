@@ -168,6 +168,12 @@ export default function LoginPage() {
         <p className="mt-4 text-[11px] text-center text-aether-text-soft">
           Not KAMI? <a href="/auth" className="underline underline-offset-4 hover:text-aether-accent transition-colors">Player sign in →</a>
         </p>
+        <a
+          href="/trade/guest"
+          className="mt-3 block w-full text-center text-[11px] font-semibold uppercase tracking-[0.08em] text-aether-text-faint underline underline-offset-4 hover:text-aether-accent hover:underline transition-colors border border-mix(in srgb, var(--aether-text) 12%, transparent) rounded-full px-4 py-2.5"
+        >
+          Open guest calculator →
+        </a>
       </form>
     </Overlay>
   );

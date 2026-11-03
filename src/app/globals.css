@@ -921,7 +921,7 @@
     border: 3px solid color-mix(in srgb, var(--color-ink) 60%, transparent);
     border-top-color: var(--color-racing);
     border-right-color: var(--color-blueprint);
-    animation: aether-spin 1.2s linear infinite;
+    animation: glass-spin 1.2s linear infinite;
   }
 
   .glass-loader-text {
@@ -932,7 +932,7 @@
   }
 
   /* --- glass loader keyframes --- */
-  @keyframes aether-spin {
+  @keyframes glass-spin {
     to { transform: rotate(360deg); }
   }
 

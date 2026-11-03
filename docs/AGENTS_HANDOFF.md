@@ -60,6 +60,15 @@ Read it before making any edits. Append to the **Agent Activity Log** after comp
 **Judge verdict:** PASS — verified via curl: both footer lines absent from /fleet/cpm2 HTML
 **Summarized explanation:** Removed two decorative footer paragraphs and their now-unused LIMITS import. Also fixed a lint warning (unused constant) in the price-book loader.
 
+### 2026-11-03 — OpenCode Agent "Nemotron" (nemotron-3.5-super-vl-120b-a12b)
+**What:** Trade desk prices showing again — Map key string/number mismatch
+**Where:** src/components/TradeDesk.tsx (main logged-in desk), src/app/trade/guest/page.tsx (guest desk)
+**Why:** Trade desk showed "no price on record" for every car even though the API returned 210 prices. Turso/Hrana returns INTEGER database values as strings, so the API returns `"code":"0"` (string). The client built the prices Map with string keys (`entry.code`), but looked up with `prices.get(code)` where `code` is a number — `Map.get(0)` never matches `Map.get("0")`, so every car appeared unpriced.
+**Errors introduced:** 0 | **Errors fixed:** 1
+**Gate:** npx tsc --noEmit && npm run lint && npm test && npm run build — pass (tsc 0, lint 0 errors, 42/42, build 0); verified in browser: #0 BMW 3 Series shows "COIN · 1,000 coins"
+**Judge verdict:** PASS — confirmed prices rendering on live trade desk
+**Summarized explanation:** Wrapped `entry.code` with `Number()` when building the prices Map in both TradeDesk.tsx and the guest trade page, so Map keys are numbers matching the lookup type. Same pattern as the three previous Turso string-to-number fixes (toTrophyRecord, trophySummary, fleetTrophySummary).
+
 
 ### 2026-11-03 — OpenCode Agent "Nemotron" (nemotron-3.5-super-vl-120b-a12b)
 **What:** Fixed trophy numbers showing leading zeros (string concatenation bug)
@@ -119,10 +128,10 @@ Tracks which AI models introduce vs. fix the most errors.
 
 | Rank | Model ID | Errors Introduced | Errors Fixed | Net Cost |
 |------|----------|-------------------|--------------|----------|
-| 1 | nemotron-3.5-super-vl-120b-a12b (Nemotron) | 0 | 5 | **-5** |
-| 2 | nemotron-3.5-super-vl-120b-a12b (Kermes/Hermes) | 4 | 0 | **+4** |
+| 1 | nemotron-3.5-super-vl-120b-a12b (Nemotron) | 0 | 6 | **-6** |
+| 2 | nemotron-3.5-super-vl-120b-a12b (Kermes/Hermes) | 5 | 0 | **+5** |
 
-Kermes' four introduced errors: (1) `Math.random()` in AetherInput render (fixed by Nemotron), (2) the GuestGate fixed full-viewport overlay that trapped the nav and the trade desk (reworked by Nemotron), (3) the half-done globals.css restyle that undefined the `aether-*`/`glass-header` classes used by every component and briefly reached production (reverted by Nemotron, WIP preserved on branch `kermes-restyle-wip`), (4) the price-book loader writing all 210 CPM2 prices into a dead local SQLite file instead of Turso — every car on the trade desk showed "no price on record" until Nemotron rewrote it to upsert straight into Turso (fixed by Nemotron). Also damaged infrastructure without being counted among the four: a 13-char stub `TURSO_AUTH_TOKEN` in `.env.local` and a trailing literal `\n` in the Vercel production `TURSO_DATABASE_URL`, which killed every Turso call and broke registration until Nemotron repaired both.
+Kermes' five introduced errors: (1) `Math.random()` in AetherInput render (fixed by Nemotron), (2) the GuestGate fixed full-viewport overlay that trapped the nav and the trade desk (reworked by Nemotron), (3) the half-done globals.css restyle that undefined the `aether-*`/`glass-header` classes used by every component and briefly reached production (reverted by Nemotron, WIP preserved on branch `kermes-restyle-wip`), (4) the price-book loader writing all 210 CPM2 prices into a dead local SQLite file instead of Turso — every car on the trade desk showed "no price on record" until Nemotron rewrote it to upsert straight into Turso (fixed by Nemotron), (5) the trade desk prices Map built with string keys (`entry.code` from Turso's string INTEGERs) but looked up with number keys (`prices.get(code)`) — every car showed "no price on record" until Nemotron added `Number()` wrapping (fixed by Nemotron). Also damaged infrastructure without being counted among the five: a 13-char stub `TURSO_AUTH_TOKEN` in `.env.local` and a trailing literal `\n` in the Vercel production `TURSO_DATABASE_URL`, which killed every Turso call and broke registration until Nemotron repaired both.
 
 ## Agent Peer Review
 

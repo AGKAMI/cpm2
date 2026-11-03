@@ -48,11 +48,11 @@ export function GuestGate({ children }: { children: React.ReactNode }) {
           {children}
         </div>
         <div className="absolute inset-x-0 top-0 flex items-start justify-center px-4 pt-8">
-          <div className="panel w-full max-w-[380px] rounded-[24px] p-7 text-center">
+          <div className="panel w-full max-w-[380px] rounded-[28px] p-8 sm:p-10 text-center border border-racing/25">
             <span className="racing text-[11px] uppercase tracking-[0.25em] font-semibold block mb-3">
               accounts only
             </span>
-            <h1 className="font-display text-[24px] leading-none text-ink mb-2">
+            <h1 className="font-display text-[26px] leading-none text-ink mb-2">
               Sign in to manage your fleet
             </h1>
             <p className="mt-2 text-[12.5px] leading-relaxed text-ink-soft mb-6">
@@ -63,7 +63,7 @@ export function GuestGate({ children }: { children: React.ReactNode }) {
               <Button
                 variant="primary"
                 size="md"
-                className="w-full justify-center"
+                className="w-full justify-center mt-1"
                 onClick={() => router.push(`/auth?from=${encodeURIComponent(path())}`)}
               >
                 Sign in or create account
@@ -71,13 +71,13 @@ export function GuestGate({ children }: { children: React.ReactNode }) {
               <Button
                 variant="ghost"
                 size="md"
-                className="w-full justify-center"
+                className="w-full justify-center mt-1"
                 onClick={() => router.push("/trade")}
               >
                 Browse the trade desk instead
               </Button>
             </div>
-            <p className="mt-5 text-[11px] text-ink-faint">
+            <p className="mt-6 text-[11px] text-ink-faint">
               Already signed in? Refresh the page.
             </p>
           </div>

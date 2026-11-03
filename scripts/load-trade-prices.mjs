@@ -15,10 +15,67 @@
  * plus #165/#172/#253/#230, owner-quoted separately and preserved below
  * (#230 LAND ROVER DEFENDER 110 (2020+) = R246.99 paid).
  */
-import Database from "better-sqlite3";
-import { resolveDbPath } from "../src/lib/db.ts";
+import { readFileSync } from "node:fs";
 
+// --- Turso connection (the live database) ---
+// Reads TURSO_DATABASE_URL / TURSO_AUTH_TOKEN from .env.local. Values are used,
+// never printed.
+function tursoCreds() {
+  const env = {};
+  const text = readFileSync(new URL("../.env.local", import.meta.url), "utf8");
+  for (const line of text.split(/\r?\n/)) {
+    const m = line.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
+    if (m) env[m[1]] = m[2];
+  }
+  const url = (env.TURSO_DATABASE_URL || "").replace(/^libsql:\/\//, "https://").trim();
+  const token = (env.TURSO_AUTH_TOKEN || "").trim();
+  if (!url || !token) {
+    throw new Error("TURSO_DATABASE_URL / TURSO_AUTH_TOKEN missing from .env.local");
+  }
+  return { url, token };
+}
+
+const { url, token } = tursoCreds();
+const now = new Date().toISOString();
 const RATES = { rand_per_coin: 328.99 / 10_000, rand_per_cash: 114.99 / 500_000 };
+
+const HRANA_TRUE = { type: "integer", value: "1" };
+const hranaText = (v) => ({ type: "text", value: String(v) });
+const hranaNum = (v) =>
+  Number.isInteger(v) ? { type: "integer", value: String(v) } : { type: "float", value: v };
+
+async function pipeline(requests) {
+  const resp = await fetch(`${url}/v2/pipeline`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ requests }),
+  });
+  if (!resp.ok) throw new Error(`Turso HTTP ${resp.status}: ${await resp.text()}`);
+  const data = await resp.json();
+  const bad = data.results?.find((r) => r.type !== "ok");
+  if (bad) throw new Error(`Turso error: ${JSON.stringify(bad)}`);
+  return data.results;
+}
+
+const UPSERT_RATE = `
+  INSERT INTO trade_rates (key, value) VALUES (?, ?)
+  ON CONFLICT(key) DO UPDATE SET value = excluded.value
+`;
+const UPSERT_PRICE = `
+  INSERT INTO trade_prices (game, code, kind, price, updated_at)
+  VALUES ('cpm2', ?, ?, ?, ?)
+  ON CONFLICT(game, code) DO UPDATE SET
+    kind = excluded.kind, price = excluded.price, updated_at = excluded.updated_at
+`;
+
+const rateReq = (key, value) => ({
+  type: "execute",
+  stmt: { sql: UPSERT_RATE, args: [hranaText(key), hranaNum(value)] },
+});
+const priceReq = (code, kind, price) => ({
+  type: "execute",
+  stmt: { sql: UPSERT_PRICE, args: [hranaNum(code), hranaText(kind), hranaNum(price), hranaText(now)] },
+});
 
 /** [code, kind, price] — kind: paid | coin | cash. Names in comments. */
 const ENTRIES = [
@@ -234,35 +291,41 @@ const ENTRIES = [
   // Owner-verified separately (landed after the master table was compiled):
   [230, "paid", 246.99], // LAND ROVER DEFENDER 110 (2020+)
 ];
+// Upsert in chunks — the pipeline endpoint dislikes very large bodies.
+const CHUNK = 50;
+await pipeline([rateReq("rand_per_coin", RATES.rand_per_coin), rateReq("rand_per_cash", RATES.rand_per_cash)]);
+for (let i = 0; i < ENTRIES.length; i += CHUNK) {
+  await pipeline(ENTRIES.slice(i, i + CHUNK).map(([code, kind, price]) => priceReq(code, kind, price)));
+}
 
-const db = new Database(resolveDbPath());
-db.pragma("journal_mode = WAL");
-db.pragma("busy_timeout = 5000");
-
-const upsertRate = db.prepare(`
-  INSERT INTO trade_rates (key, value) VALUES (?, ?)
-  ON CONFLICT(key) DO UPDATE SET value = excluded.value
-`);
-const upsertPrice = db.prepare(`
-  INSERT INTO trade_prices (game, code, kind, price, updated_at)
-  VALUES ('cpm2', ?, ?, ?, ?)
-  ON CONFLICT(game, code) DO UPDATE SET
-    kind = excluded.kind, price = excluded.price, updated_at = excluded.updated_at
-`);
-
-const now = new Date().toISOString();
-const load = db.transaction(() => {
-  upsertRate.run("rand_per_coin", RATES.rand_per_coin);
-  upsertRate.run("rand_per_cash", RATES.rand_per_cash);
-  for (const [code, kind, price] of ENTRIES) upsertPrice.run(code, kind, price, now);
-});
-load();
-
-const counts = db
-  .prepare(`SELECT kind, COUNT(*) AS n FROM trade_prices WHERE game = 'cpm2' GROUP BY kind`)
-  .all();
-const rates = db.prepare(`SELECT key, value FROM trade_rates`).all();
+// Report what actually landed.
+const countResults = await pipeline([
+  {
+    type: "execute",
+    stmt: {
+      sql: "SELECT kind, COUNT(*) AS n FROM trade_prices WHERE game = 'cpm2' GROUP BY kind ORDER BY kind",
+      args: [],
+    },
+  },
+  {
+    type: "execute",
+    stmt: {
+      sql: "SELECT COUNT(*) AS n FROM trade_prices WHERE game = 'cpm2'",
+      args: [],
+    },
+  },
+  {
+    type: "execute",
+    stmt: { sql: "SELECT key, value FROM trade_rates", args: [] },
+  },
+]);
+const rowsOf = (r) => r.response?.result?.rows ?? [];
 console.log("loaded", ENTRIES.length, "entries");
-console.log("by kind:", JSON.stringify(counts));
-console.log("rates:", JSON.stringify(rates));
-db.close();
+for (const row of rowsOf(countResults[0])) {
+  console.log("cpm2", row[0]?.value, ":", row[1]?.value);
+}
+const total = rowsOf(countResults[1])[0]?.[0]?.value;
+console.log("cpm2 total rows in db:", total);
+for (const row of rowsOf(countResults[2])) {
+  console.log("rate", row[0]?.value, "=", row[1]?.value);
+}

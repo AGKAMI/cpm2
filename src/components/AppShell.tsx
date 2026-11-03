@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { AccountSummary } from "@/lib/types";
-import { LIMITS } from "@/lib/constants";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toaster";
 import { Modal } from "@/components/ui/Modal";
@@ -353,14 +352,6 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <footer className="relative mx-auto max-w-[1440px] px-4 pb-28 pt-4 sm:px-6 sm:pb-10">
           <div className="rule-double mb-3" />
-          <div className="flex flex-wrap items-baseline justify-between gap-3">
-            <p className="num text-[10px] text-ink-faint">
-              Fleet Ledger · Car Parking Multiplayer 2 · CPM1 has no car slots (one of each model) · CPM2:{" "}
-              {LIMITS.BASE_CAR_SLOTS} free + the 21st for {LIMITS.SLOT_COST_COINS} coins +{" "}
-              {LIMITS.NEW_GARAGE_SLOTS} with the {LIMITS.NEW_GARAGE_PRICE} garage
-            </p>
-            <p className="num text-[10px] text-aether-text-faint">passwords encrypted at rest · AES-256-GCM</p>
-          </div>
         </footer>
 
         <nav

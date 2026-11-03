@@ -39,7 +39,6 @@ const { url, token } = tursoCreds();
 const now = new Date().toISOString();
 const RATES = { rand_per_coin: 328.99 / 10_000, rand_per_cash: 114.99 / 500_000 };
 
-const HRANA_TRUE = { type: "integer", value: "1" };
 const hranaText = (v) => ({ type: "text", value: String(v) });
 const hranaNum = (v) =>
   Number.isInteger(v) ? { type: "integer", value: String(v) } : { type: "float", value: v };

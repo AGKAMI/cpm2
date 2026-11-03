@@ -44,10 +44,10 @@ export async function POST(request: Request) {
           { status: 401 },
         );
       }
-      const owner = await getUserByTelegramId(7036681178);
+      const owner = await getUserByEmail("ojuniormaluleke@gmail.com");
       if (!owner) {
         return NextResponse.json(
-          { error: { code: "OWNER_NOT_FOUND", message: "Console owner not registered. Register first, then link Telegram." } },
+          { error: { code: "OWNER_NOT_FOUND", message: "Console owner account not found. Register first." } },
           { status: 401 },
         );
       }

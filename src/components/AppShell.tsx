@@ -57,7 +57,7 @@ function NavItem({ item, active }: { item: (typeof NAV)[number]; active: boolean
       key={item.href}
       href={item.href}
       className={cn(
-        "relative flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-medium transition-all duration-200",
+        "relative flex flex-col items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-medium transition-all duration-200 whitespace-nowrap",
         active
           ? "bg-primary/20 border border-primary/40 text-primary shadow-[0_0_14px_rgba(219,226,234,0.25)] hover:bg-primary/30"
           : "bg-background/50 border border-transparent text-muted-foreground hover:bg-accent/40 hover:text-foreground hover:border-accent/40",
@@ -343,7 +343,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <main
           id="main"
-          className="relative mx-auto max-w-[1440px] scroll-mt-20 px-4 py-6 sm:px-6 sm:py-8"
+          className="relative mx-auto max-w-[1440px] scroll-mt-20 px-4 py-6 sm:px-6 sm:py-8 bg-background"
         >
           {children}
         </main>
@@ -354,9 +354,11 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <nav
           aria-label="Primary"
-          className="mobile-dock fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-sm sm:max-w-md px-4 pb-4 sm:pb-3 sm:px-6"
+          className="mobile-dock fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-md px-4 pb-4 sm:pb-3 sm:px-6"
         >
-          <div className="mx-auto flex max-w-[320px] items-stretch justify-around gap-2 bg-background/90 border-t border-border rounded-2xl-xl px-3 py-2 shadow-xl backdrop-blur-md">
+          <div
+            className="mx-auto flex max-w-[340px] items-center justify-center gap-2 overflow-x-auto whitespace-nowrap bg-background/90 border-t border-border rounded-full px-3 py-2 shadow-xl backdrop-blur-md"
+          >
             {NAV.map((item) => {
               const active =
                 item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);

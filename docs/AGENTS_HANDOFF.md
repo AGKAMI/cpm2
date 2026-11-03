@@ -51,6 +51,15 @@ Read it before making any edits. Append to the **Agent Activity Log** after comp
 **Judge verdict:** PASS — verified via curl on both localhost:3457 and cpm2-bay.vercel.app
 **Summarized explanation:** Rewrote the canonical price-book loader to upsert into trade_prices on Turso via /v2/pipeline (the same HTTP client the app uses), reading credentials from .env.local without printing them. Also removed a stray test_float2 rate row from trade_rates. Trade desk now shows real prices.
 
+### 2026-11-03 — OpenCode Agent "Nemotron" (nemotron-3.5-super-vl-120b-a12b)
+**What:** Stripped decorative footer lines (app, not landing page)
+**Where:** src/components/AppShell.tsx (footer — removed slot-info line + encryption line; dropped unused LIMITS import), scripts/load-trade-prices.mjs (lint cleanup: removed unused HRANA_TRUE constant)
+**Why:** KAMI pointed out the footer's "passwords encrypted at rest" and slot-cost lines are pointless on an internal app — not a landing page. Removed them; footer keeps only its divider.
+**Errors introduced:** 0 | **Errors fixed:** 0
+**Gate:** npx tsc --noEmit && npm run lint && npm test && npm run build — pass (tsc 0, lint 0 errors, 42/42, build 0)
+**Judge verdict:** PASS — verified via curl: both footer lines absent from /fleet/cpm2 HTML
+**Summarized explanation:** Removed two decorative footer paragraphs and their now-unused LIMITS import. Also fixed a lint warning (unused constant) in the price-book loader.
+
 
 ### 2026-11-03 — OpenCode Agent "Nemotron" (nemotron-3.5-super-vl-120b-a12b)
 **What:** Fixed trophy numbers showing leading zeros (string concatenation bug)

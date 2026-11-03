@@ -70,7 +70,7 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
     // never loops.
     if (
       typeof window !== "undefined" &&
-      window.location.pathname !== "/login" &&
+      !["/login", "/auth"].includes(window.location.pathname) &&
       (code === "AUTH_REQUIRED" || code === "TELEGRAM_NOT_OWNER" || code === "TELEGRAM_AUTH_INVALID")
     ) {
       // A full reload on purpose: it drops every in-memory fleet state so the

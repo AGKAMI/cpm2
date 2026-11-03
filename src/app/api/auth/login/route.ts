@@ -36,7 +36,9 @@ export async function POST(request: Request) {
     // --- Console lock screen: APP_PASSWORD only, no email ---
     if (!email) {
       const appPassword = process.env.APP_PASSWORD;
-      if (!appPassword || password !== appPassword) {
+      const given = password.trim();
+      const expected = appPassword ? appPassword.trim() : "";
+      if (!appPassword || given !== expected) {
         return NextResponse.json(
           { error: { code: "AUTH_INVALID", message: "Wrong console password." } },
           { status: 401 },

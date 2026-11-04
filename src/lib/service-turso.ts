@@ -342,7 +342,7 @@ export async function updateAccount(id: number, payload: unknown, userId?: numbe
     cars: patch.cars ?? existing.cars,
     baseSlots: patch.baseSlots ?? existing.base_slots,
     slots: patch.slots ?? existing.slots,
-    newGarage: patch.newGarage ?? Boolean(existing.new_garage),
+    newGarage: patch.newGarage ?? Number(existing.new_garage) === 1,
     coinsSpentOnCars: patch.coinsSpentOnCars ?? existing.coins_spent_on_cars,
     notes: patch.notes ?? existing.notes,
   };
@@ -383,7 +383,7 @@ export async function updateAccount(id: number, payload: unknown, userId?: numbe
 
   const removedSlots = existing.slots - next.slots;
   const baseChanged = existing.base_slots !== next.baseSlots;
-  const garageChanged = Boolean(existing.new_garage) !== next.newGarage;
+  const garageChanged = Number(existing.new_garage) !== Number(next.newGarage ? 1 : 0);
   const eventType: FleetEvent["type"] = garageChanged
     ? "garage_upgraded"
     : removedSlots > 0
@@ -713,7 +713,7 @@ export async function listGarage(accountId: number, userId?: number): Promise<Ga
     capacity: garageCapacity(account.game, {
       baseSlots: account.base_slots,
       slots: account.slots,
-      newGarage: Boolean(account.new_garage),
+      newGarage: Number(account.new_garage) === 1,
     }),
   };
 }
@@ -804,7 +804,7 @@ export async function addGarageCar(accountId: number, payload: unknown, userId?:
   const capacity = garageCapacity(account.game, {
     baseSlots: account.base_slots,
     slots: account.slots,
-    newGarage: Boolean(account.new_garage),
+    newGarage: Number(account.new_garage) === 1,
   });
   if (ownedCount >= capacity) {
     throw new ApiError(

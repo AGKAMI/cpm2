@@ -58,7 +58,7 @@ const TRACKED_FIELDS = [
 
 function toSummary(row: AccountRow): AccountSummary {
   return {
-    id: row.id,
+    id: Number(row.id),
     userId: row.user_id ?? null,
     email: row.email,
     game: row.game,
@@ -695,9 +695,9 @@ export async function listGarage(accountId: number, userId?: number): Promise<Ga
   })).rows as unknown as CarRow[];
 
   const cars: CarRecord[] = rows.map((row) => ({
-    id: row.id,
-    accountId: row.account_id,
-    carCode: row.car_code,
+    id: Number(row.id),
+    accountId: Number(row.account_id),
+    carCode: Number(row.car_code),
     carName: carNameFor(row.car_code, row.game),
     game: row.game,
     notes: row.notes,
@@ -746,10 +746,10 @@ export async function carOwners(game: GameType, carCode: number, userId?: number
     carName: entry.name,
     game,
     owners: rows.map((row) => ({
-      accountId: row.account_id,
+      accountId: Number(row.account_id),
       email: row.email,
       game,
-      count: row.hits,
+      count: Number(row.hits),
     })),
   };
 }
@@ -888,8 +888,8 @@ export async function listEvents(userId?: number, limit = 100): Promise<FleetEve
       changes = {};
     }
     return {
-      id: row.id,
-      accountId: row.account_id,
+      id: Number(row.id),
+      accountId: Number(row.account_id),
       email: row.account_email,
       type: row.type as FleetEvent["type"],
       summary: row.summary,

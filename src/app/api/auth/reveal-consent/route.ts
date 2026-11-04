@@ -7,15 +7,15 @@ import {
   revealCookieOptions,
   verifySessionToken,
 } from "@/lib/auth";
-import { verifyUserCredentials } from "@/lib/service-turso";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Earn a short-lived consent to view plaintext passwords. Verifies the logged-in
- * player's own password (brute-forced per IP) and sets an HttpOnly cookie valid
- * five minutes. The reveal and export routes require this cookie — an active
- * session alone is not enough to dump credentials. Every successful consent is audited.
+ * Earn a short-lived consent to view plaintext passwords. Requires a valid
+ * console session (already proves you passed the APP_PASSWORD gate), then
+ * verifies the console password again. Sets an HttpOnly cookie valid five
+ * minutes. The reveal and export routes require this cookie — an active
+ * session alone is not enough to dump credentials.
  */
 export async function POST(request: Request) {
   try {
@@ -44,14 +44,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = (await readJson(request)) as { email?: unknown; password?: unknown };
-    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const body = (await readJson(request)) as { password?: unknown };
     const password = typeof body.password === "string" ? body.password : "";
 
-    const user = await verifyUserCredentials(email, password);
-    if (!user) {
+    const appPassword = process.env.APP_PASSWORD;
+    const given = password.trim();
+    const expected = appPassword ? appPassword.trim() : "";
+    if (!appPassword || given !== expected) {
       return NextResponse.json(
-        { error: { code: "AUTH_INVALID", message: "Wrong email or password." } },
+        { error: { code: "AUTH_INVALID", message: "Wrong console password." } },
         { status: 401 },
       );
     }

@@ -373,16 +373,16 @@ export async function updateAccount(id: number, payload: unknown, userId?: numbe
       field === "coinsSpentOnCars"
         ? existing.coins_spent_on_cars
         : field === "baseSlots"
-          ? existing.base_slots
+          ? Number(existing.base_slots)
           : field === "newGarage"
-            ? Boolean(existing.new_garage)
+            ? Number(existing.new_garage) === 1
             : (existing as Record<string, unknown>)[field];
     const after = next[field];
     if (before !== after) changes[field] = { from: before, to: after };
   }
 
-  const removedSlots = existing.slots - next.slots;
-  const baseChanged = existing.base_slots !== next.baseSlots;
+  const removedSlots = Number(existing.slots) - next.slots;
+  const baseChanged = Number(existing.base_slots) !== next.baseSlots;
   const garageChanged = Number(existing.new_garage) !== Number(next.newGarage ? 1 : 0);
   const eventType: FleetEvent["type"] = garageChanged
     ? "garage_upgraded"

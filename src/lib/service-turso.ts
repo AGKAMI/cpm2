@@ -620,7 +620,7 @@ export async function fleetTrophySummary(userId?: number): Promise<TrophySummary
   );
 }
 
-export async function setTrophies(accountId: number, payload: unknown, userId?: number): Promise<TrophyRecord> {
+export async function setTrophies(accountId: number, payload: unknown): Promise<TrophyRecord> {
   const account = await requireAccount(accountId);
   if (userId !== undefined && Number(account.user_id) !== userId) {
     throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toaster";
 import { api, ApiRequestError } from "@/lib/client";
 import { carByCode } from "@/lib/car-catalog";
@@ -10,22 +9,9 @@ import { carValueRands, cashValueRands, tradeVerdict } from "@/lib/trade";
 import type { TradePrice, TradePriceKind, TradeRates } from "@/lib/types";
 import { TradeCarPickerModal } from "@/components/TradeCarPickerModal";
 
-/**
- * The CPM2 trade desk. Both sides of a deal are totaled in Rands using the
- * owner's own price book and conversion rates, so he can see at a glance
- * whether a trade robs him. Cars are valued by how they are bought (paid /
- * coin / cash-shop), in-game cash can sweeten either side, and coins are
- * deliberately NOT a trade currency — they are personal money.
- */
-
 type SideKey = "you" | "them";
-
 type SideCar = { code: number; qty: number };
-
-type Side = {
-  cars: SideCar[];
-  cash: number;
-};
+type Side = { cars: SideCar[]; cash: number };
 
 const KIND_LABELS: Record<TradePriceKind, string> = {
   paid: "Paid",
@@ -91,14 +77,11 @@ export function TradeDesk() {
       const existing = cars.find((entry) => entry.code === code);
       if (existing) {
         existing.qty += 1;
-      } else {
+      } else if (cars.length === 0) {
         cars.push({ code, qty: 1 });
       }
       return { ...current, [side]: { ...current[side], cars } };
     });
-    // No forced price entry — an unpriced car just shows as "no price on
-    // record" and the verdict carries a rough-call caveat. Recording a price
-    // is optional, one tap on the car row, and saved to the book forever.
   }
 
   function removeCar(side: SideKey, code: number) {
@@ -161,8 +144,6 @@ export function TradeDesk() {
   }, [sides, prices, rates]);
 
   const verdict = tradeVerdict(valued.you.total, valued.them.total);
-  // Percentage lean instead of Rand figures — the owner wants the call, not
-  // the accounting. The Rands stay under the hood.
   const leanBase = Math.max(valued.you.total, valued.them.total);
   const leanPct = leanBase > 0 ? Math.round((Math.abs(verdict.delta) / leanBase) * 100) : 0;
   const incomplete = valued.you.unpriced + valued.them.unpriced > 0;
@@ -173,14 +154,14 @@ export function TradeDesk() {
     const value = valued[key];
     const title = key === "you" ? "You give" : "You get";
     return (
-      <div className="panel-tight flex flex-col gap-3 rounded-[20px] p-5 border border-ink/10 transition-all duration-200 ease-out group hover:border-racing/30">
+      <div className="panel-tight flex flex-col gap-3 rounded-[18px] px-4 py-4">
         <div className="flex items-baseline justify-between gap-2">
           <span className="label-caps">{title}</span>
           <span className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setPickerSide(key)}
-              className="cursor-pointer rounded-full border border-racing/30 bg-racing/8 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-racing transition hover:bg-racing/16 hover:border-racing/50"
+              className="cursor-pointer rounded-full border border-racing/40 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-racing transition hover:bg-racing/16 hover:border-racing/50"
             >
               + Car
             </button>
@@ -226,7 +207,7 @@ export function TradeDesk() {
                           setPriceKind("paid");
                           setPriceAmount("");
                         }}
-                        className="shrink-0 cursor-pointer rounded-full border border-racing/30 bg-racing/8 px-2.5 py-0.5 font-semibold text-racing transition hover:bg-racing/16 hover:border-racing/50"
+                        className="shrink-0 cursor-pointer rounded-full border border-racing/40 px-2.5 py-0.5 font-semibold text-racing transition hover:bg-racing/16 hover:border-racing/50"
                       >
                         Set price
                       </button>
@@ -264,43 +245,9 @@ export function TradeDesk() {
                     <span className="text-[10px] text-ink-faint">qty</span>
                   </div>
 
-                  {pricing && unpriced ? (
-                    <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-ink/8 pt-2">
-                      <div className="flex gap-1" role="radiogroup" aria-label="How this car is bought">
-                        {(["paid", "coin", "cash"] as const).map((kind) => (
-                          <button
-                            key={kind}
-                            type="button"
-                            role="radio"
-                            aria-checked={priceKind === kind}
-                            onClick={() => setPriceKind(kind)}
-                            className={`cursor-pointer rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] transition ${
-                              priceKind === kind
-                                ? "border-racing/45 bg-racing/10 text-racing"
-                                : "border-ink/12 text-ink-faint hover:text-ink"
-                            }`}
-                          >
-                            {KIND_LABELS[kind]}
-                          </button>
-                        ))}
-                      </div>
-                      <input
-                        type="number"
-                        min={0}
-                        step="any"
-                        value={priceAmount}
-                        onChange={(event) => setPriceAmount(event.target.value)}
-                        placeholder={
-                          priceKind === "paid" ? "Price in Rands" : priceKind === "coin" ? "Price in coins" : "Price in cash"
-                        }
-                        aria-label="Car price"
-                        className="field-rule num w-36 px-3 py-1.5 text-[12px]"
-                      />
-                      <Button variant="primary" size="sm" onClick={() => void savePrice(code)} disabled={savingPrice}>
-                        Save
-                      </Button>
-                    </div>
-                  ) : null}
+                  {unpriced && (
+                    <p className="mt-1 text-[10px] text-racing">No price — not counted yet.</p>
+                  )}
                 </li>
               );
             })}
@@ -308,7 +255,7 @@ export function TradeDesk() {
         )}
 
         {side.cash > 0 ? (
-          <div className="flex items-center gap-2 border-t border-ink/8 pt-3">
+          <div className="flex items-center gap-2 border-t border-mix(in srgb, var(--color-ink) 8%, transparent) pt-3">
             <svg
               viewBox="0 0 24 24"
               className="h-4 w-4 shrink-0 text-ink-faint"
@@ -342,87 +289,92 @@ export function TradeDesk() {
           <button
             type="button"
             onClick={() => setShowCash((c) => ({ ...c, [key]: true }))}
-            className="text-[10px] text-ink-faint underline-offset-2 hover:text-ink hover:underline transition"
+            className="text-[10px] text-ink-faint underline-offset-2 hover:text-ink hover:underline"
           >
             + Add cash
           </button>
         )}
 
-        {value.unpriced > 0 ? (
-          <p className="text-[10.5px] text-oxblood">
+        {value.unpriced > 0 && (
+          <p className="text-[10.5px] text-racing">
             {value.unpriced} unpriced car{value.unpriced === 1 ? "" : "s"} — not counted yet.
           </p>
-        ) : null}
+        )}
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="grid gap-4 lg:grid-cols-2">
-        {renderSide("you")}
-        {renderSide("them")}
+    <div className="flex flex-col gap-5 max-w-[700px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="flex items-center justify-between gap-3 border-b border-mix(in srgb, var(--color-ink) 12%, transparent) pb-4 mb-6">
+        <div className="flex items-center gap-3">
+          <svg viewBox="0 0 24 24" className="h-8 w-8 text-racing" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M5 12h14M12 5v14" />
+          </svg>
+          <span className="label-caps text-[14px] font-bold tracking-wider">CPM2 · Trade Calculator</span>
+        </div>
       </div>
 
-      {/* Verdict */}
-      <section
-        className={`rounded-[20px] border px-6 py-6 text-center transition-all duration-200 ease-out ${
-          incomplete
-            ? "border-ink/15 bg-ink/[0.03]"
-            : verdict.status === "gain"
-              ? "border-racing/40 bg-racing/8"
-              : verdict.status === "loss"
-                ? "border-oxblood/40 bg-oxblood/8"
-                : "border-ink/15 bg-ink/[0.03]"
-        }`}
-      >
-        {loading ? (
-          <p className="num text-[12px] text-ink-faint">Loading the price book…</p>
-        ) : sides.you.cars.length + sides.them.cars.length === 0 && sides.you.cash === 0 && sides.them.cash === 0 ? (
-          <p className="text-[13px] text-ink-faint">
-            Put cars on both sides — the desk prices the deal in Rands and tells you straight if it robs you.
-          </p>
-        ) : incomplete ? (
-          <>
-            <p className="num text-[11px] uppercase tracking-[0.18em] text-ink-faint">
-              Rough call · {unpricedCount} unpriced
-            </p>
-            <p
-              className="display-title mt-1 text-[28px] leading-none sm:text-[34px] font-bold"
-              style={{
-                color: `hsl(${verdict.delta >= 0 ? Math.min(120, 60 + Math.min(leanPct, 60)) : Math.max(0, 60 - Math.min(leanPct, 60))}, 75%, 45%)`,
-              }}
-            >
-              {verdict.status === "gain" ? "Worth it" : verdict.status === "loss" ? "Not worth it" : "Fair trade"}
-            </p>
-            <p className="mt-2 text-[12px] text-ink-soft">
-              {unpricedCount === 1
-                ? "1 car has no price on record — record it once (tap it) and this becomes a final verdict."
-                : `${unpricedCount} cars have no price on record — record them once (tap each) and this becomes final.`}
-            </p>
-          </>
-        ) : (
-          <>
-            <p className="num text-[11px] uppercase tracking-[0.18em] text-ink-faint">The verdict</p>
-            <p
-              className="display-title mt-1 text-[28px] leading-none sm:text-[34px] font-bold"
-              style={{
-                color: `hsl(${verdict.delta >= 0 ? Math.min(120, 60 + Math.min(leanPct, 60)) : Math.max(0, 60 - Math.min(leanPct, 60))}, 75%, 45%)`,
-              }}
-            >
-              {verdict.status === "gain" ? "Worth it" : verdict.status === "loss" ? "Not worth it" : "Fair trade"}
-            </p>
-            <p className="mt-2 text-[12px] text-ink-soft">
-              {verdict.status === "gain"
-                ? `Roughly ${leanPct}% in your favour — take the deal.`
-                : verdict.status === "loss"
-                  ? `Roughly ${leanPct}% against you — you'd be robbing yourself.`
-                  : "Too close to call — nobody is getting robbed."}
-            </p>
-          </>
-        )}
-      </section>
+      {loading ? (
+        <p className="text-center py-8 text-[12px] text-ink-faint">Loading the price book…</p>
+      ) : (
+        <>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {renderSide("you")}
+            {renderSide("them")}
+          </div>
 
+          {/* Verdict — only shown once both sides have at least one car or cash */}
+          {(sides.you.cars.length === 0 && sides.you.cash === 0) ||
+          (sides.them.cars.length === 0 && sides.them.cash === 0) ? (
+            <p className="text-center text-[12px] text-aether-text-faint py-4">
+              Put cars on both sides — the desk prices the deal in Rands and tells you straight if it robs you.
+            </p>
+          ) : (
+            <>
+              <section
+                className={`rounded-[18px] border px-5 py-5 text-center ${
+                  incomplete
+                    ? "border-mix(in srgb, var(--color-ink) 15%, transparent) bg-mix(in srgb, var(--color-ink) 3%, transparent)"
+                    : verdict.status === "gain"
+                    ? "border-aether-accent/40 bg-aether-accent/8"
+                    : verdict.status === "loss"
+                    ? "border-aether-accent/40 bg-aether-accent/8"
+                    : "border-mix(in srgb, var(--color-ink) 15%, transparent) bg-mix(in srgb, var(--color-ink) 3%, transparent)"}
+                `}
+              >
+                <p className="num text-[11px] uppercase tracking-[0.18em] text-aether-text-faint">
+                  {incomplete ? "Rough call" : "The verdict"}
+                </p>
+                <p
+                  className={`display-title mt-1 text-[28px] leading-none sm:text-[34px] font-bold`}
+                  style={{
+                    color: `hsl(${verdict.delta >= 0 ? Math.min(120, 60 + Math.min(leanPct, 60)) : Math.max(0, 60 - Math.min(leanPct, 60))}, 75%, 45%)`,
+                  }}
+                >
+                  {verdict.status === "gain" ? "Worth it" : verdict.status === "loss" ? "Not worth it" : "Fair trade"}
+                </p>
+                {incomplete ? (
+                  <p className="mt-2 text-[12px] text-aether-text-soft">
+                    {unpricedCount === 1
+                      ? "1 car has no price on record — not counted yet."
+                      : `${unpricedCount} cars have no price on record — not counted yet.`}
+                  </p>
+                ) : (
+                  <p className="mt-2 text-[12px] text-aether-text-soft">
+                    {verdict.status === "gain"
+                      ? `Roughly ${leanPct}% in your favour — take the deal.`
+                      : verdict.status === "loss"
+                        ? `Roughly ${leanPct}% against you — you'd be robbing yourself.`
+                        : "Too close to call — nobody is getting robbed."}
+                  </p>
+                )}
+              </section>
+            </>
+          )}
+        </>
+      )}
       <TradeCarPickerModal
         open={pickerSide !== null}
         onClose={() => setPickerSide(null)}

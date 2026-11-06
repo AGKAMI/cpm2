@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     // One-off CommonJS script from a parallel session; its prices live in
     // scripts/load-trade-prices.mjs now.
     "scripts/apply-prices.cjs",
+    // Root-level CommonJS debug / utility scripts (not part of the app).
+    "*.cjs",
   ]),
 ]);
 

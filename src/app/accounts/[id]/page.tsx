@@ -130,7 +130,7 @@ export default function AccountPage() {
                 </Button>
               ) : null}
               <Button
-                variant="danger"
+                variant="destructive"
                 size="sm"
                 onClick={() => {
                   void shell

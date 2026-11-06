@@ -62,7 +62,7 @@ export function GuestGate({ children }: { children: React.ReactNode }) {
             <div className="flex flex-col gap-2">
               <Button
                 variant="primary"
-                size="md"
+                
                 className="w-full justify-center mt-1"
                 onClick={() => router.push(`/auth?from=${encodeURIComponent(path())}`)}
               >
@@ -70,7 +70,7 @@ export function GuestGate({ children }: { children: React.ReactNode }) {
               </Button>
               <Button
                 variant="ghost"
-                size="md"
+                
                 className="w-full justify-center mt-1"
                 onClick={() => router.push("/trade")}
               >

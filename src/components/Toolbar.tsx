@@ -86,14 +86,14 @@ export function FleetToolbar({
         <span className="label-caps">View</span>
         <div className="mt-1 flex items-center gap-1">
           <Button
-            variant={showArchived ? "subtle" : "primary"}
+            variant={showArchived ? "outline" : "primary"}
             size="sm"
             onClick={() => onShowArchived(false)}
           >
             Active
           </Button>
           <Button
-            variant={showArchived ? "primary" : "subtle"}
+            variant={showArchived ? "primary" : "outline"}
             size="sm"
             onClick={() => onShowArchived(true)}
           >

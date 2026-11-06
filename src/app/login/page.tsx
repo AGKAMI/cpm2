@@ -162,7 +162,7 @@ export default function LoginPage() {
           </Field>
         </div>
 
-        <Button type="submit" variant="primary" size="md" className="mt-6 w-full justify-center" disabled={busy || !password}>
+        <Button type="submit" variant="primary"  className="mt-6 w-full justify-center" disabled={busy || !password}>
           {busy ? "Unlocking…" : "Unlock"}
         </Button>
         <p className="mt-4 text-[11px] text-center text-ink-soft">

@@ -26,6 +26,10 @@ export async function proxy(request: NextRequest) {
   if (pathname === "/trade/guest") {
     return NextResponse.next();
   }
+  // Public background image for trade desk (no login needed)
+  if (pathname.startsWith("/api/bg")) {
+    return NextResponse.next();
+  }
 
   // --- Per-user gate ---
   const userId = verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value);

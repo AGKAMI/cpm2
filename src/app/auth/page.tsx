@@ -146,7 +146,7 @@ export default function AuthPage() {
             <Button
               type="submit"
               variant="primary"
-              size="md"
+              
               className="w-full justify-center mt-1"
               disabled={busy || !email || !password || (mode === "register" && !confirmPassword)}
             >

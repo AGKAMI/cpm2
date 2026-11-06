@@ -289,6 +289,7 @@ const ENTRIES = [
   [274, "paid", 164.49], // POLARIS RZR PRO XP BUGGY
   // Owner-verified separately (landed after the master table was compiled):
   [230, "paid", 246.99], // LAND ROVER DEFENDER 110 (2020+)
+  [409, "paid", 410.99], // FERRARI F40
 ];
 // Upsert in chunks — the pipeline endpoint dislikes very large bodies.
 const CHUNK = 50;

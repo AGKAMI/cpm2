@@ -15,14 +15,14 @@ type FieldProps = {
 export function Field({ label, hint, error, children, htmlFor, meter }: FieldProps) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={htmlFor} className="label-caps flex items-baseline justify-between gap-3">
-        <span>{label}</span>
-        {hint ? <span className="num tracking-normal normal-case text-ink-faint">{hint}</span> : null}
+      <label htmlFor={htmlFor} className="text-xs font-medium leading-none text-muted-foreground">
+        {label}
+        {hint ? <span className="ml-2 text-xs font-normal text-muted-foreground/70">{hint}</span> : null}
       </label>
       {children}
       {meter ? <Meter value={meter.value} max={meter.max} tone={meter.tone ?? "racing"} /> : null}
       {error ? (
-        <p className="flex items-start gap-1.5 text-[11px] leading-snug text-oxblood">
+        <p className="flex items-start gap-1.5 text-xs leading-snug text-destructive">
           <svg viewBox="0 0 24 24" className="mt-px h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
             <circle cx="12" cy="12" r="9" />
             <path d="M12 7.5v5.5M12 16.2v.1" strokeLinecap="round" />
@@ -36,16 +36,11 @@ export function Field({ label, hint, error, children, htmlFor, meter }: FieldPro
 
 function Meter({ value, max, tone }: { value: number; max: number; tone: "brass" | "racing" | "blueprint" }) {
   const ratio = max > 0 ? Math.min(1, Math.max(0, value / max)) : 0;
-  const colors: Record<string, string> = {
-    brass: "bg-brass",
-    racing: "bg-racing",
-    blueprint: "bg-blueprint",
-  };
   const near = ratio >= 0.8;
   return (
-    <div className="h-[3px] w-full overflow-hidden rounded-full bg-ink/10">
+    <div className="h-[3px] w-full overflow-hidden rounded-full bg-muted">
       <div
-        className={`h-full transition-[width] duration-500 ${near ? "bg-oxblood" : colors[tone]}`}
+        className={`h-full transition-[width] duration-500 ${near ? "bg-destructive" : tone}`}
         style={{ width: `${ratio * 100}%` }}
       />
     </div>
@@ -61,7 +56,7 @@ export function TextInput({ invalid, mono, className = "", ...props }: TextInput
   return (
     <input
       {...props}
-      className={`field-rule ${mono ? "num" : ""} ${invalid ? "border-oxblood" : ""} ${className}`}
+      className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${mono ? "font-mono" : ""} ${invalid ? "border-destructive" : ""} ${className}`}
     />
   );
 }
@@ -85,7 +80,6 @@ export function NumericInput({
   suffix,
   placeholder,
 }: NumericInputProps) {
-  // Zero is shown as a placeholder, not real content - typing any digit replaces it.
   const shown = (v: number) => (v === 0 ? "" : formatNumber(v));
   const [draft, setDraft] = useState(() => shown(value));
   const [focused, setFocused] = useState(false);
@@ -115,14 +109,14 @@ export function NumericInput({
           const parsed = raw === "" ? 0 : Number.parseInt(raw, 10);
           onChange(Number.isFinite(parsed) ? parsed : 0);
         }}
-        className={`field-rule num pr-16 text-[15px] ${invalid ? "border-oxblood" : ""}`}
+        className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pr-16 ${invalid ? "border-destructive" : ""}`}
       />
       {max !== undefined && value >= max ? (
-        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 font-sans text-[9px] uppercase tracking-[0.18em] text-oxblood">
+        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium uppercase text-destructive">
           MAX
         </span>
       ) : suffix ? (
-        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 font-sans text-[9px] uppercase tracking-[0.18em] text-ink-faint">
+        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium uppercase text-muted-foreground">
           {suffix}
         </span>
       ) : null}
@@ -152,7 +146,7 @@ export function TextArea({
       value={value}
       placeholder={placeholder}
       onChange={(event) => onChange(event.target.value)}
-      className="field-rule resize-none leading-relaxed"
+      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none leading-relaxed"
     />
   );
 }

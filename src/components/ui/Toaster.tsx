@@ -28,8 +28,8 @@ const ToastContext = createContext<ToastApi | null>(null);
 
 const TONES: Record<ToastKind, { accent: string; bar: string; icon: ReactNode }> = {
   success: {
-    accent: "text-racing",
-    bar: "border-l-racing",
+    accent: "text-emerald-500",
+    bar: "border-emerald-500",
     icon: (
       <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
         <path d="M4 12.5l5 5L20 6.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -37,8 +37,8 @@ const TONES: Record<ToastKind, { accent: string; bar: string; icon: ReactNode }>
     ),
   },
   error: {
-    accent: "text-oxblood",
-    bar: "border-l-oxblood",
+    accent: "text-destructive",
+    bar: "border-destructive",
     icon: (
       <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
         <circle cx="12" cy="12" r="9" />
@@ -47,8 +47,8 @@ const TONES: Record<ToastKind, { accent: string; bar: string; icon: ReactNode }>
     ),
   },
   info: {
-    accent: "text-blueprint",
-    bar: "border-l-blueprint",
+    accent: "text-primary",
+    bar: "border-primary",
     icon: (
       <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
         <circle cx="12" cy="12" r="9" />
@@ -92,21 +92,19 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       <div
         aria-live="polite"
         aria-atomic="false"
-        className="pointer-events-none fixed bottom-4 right-4 z-[60] flex w-[min(92vw,380px)] flex-col gap-2"
+        className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-[min(92vw,380px)] flex-col gap-2"
       >
         {toasts.map((toast) => (
           <div
             key={toast.id}
             role="status"
-            className={`panel animate-pop pointer-events-auto flex items-start gap-3 rounded-[16px] border-l-[3px] px-4 py-3 ${TONES[toast.kind].bar}`}
+            className={`flex items-start gap-3 rounded-md border-l-[3px] bg-background p-4 shadow-lg ${TONES[toast.kind].bar}`}
           >
-            <span className={`mt-0.5 ${TONES[toast.kind].accent}`}>{TONES[toast.kind].icon}</span>
+            <span className={`mt-0.5 shrink-0 ${TONES[toast.kind].accent}`}>{TONES[toast.kind].icon}</span>
             <div className="min-w-0 flex-1">
-              <p className="font-sans text-[12px] font-semibold tracking-[-0.01em] text-ink">
-                {toast.title}
-              </p>
+              <p className="text-sm font-semibold text-foreground">{toast.title}</p>
               {toast.detail ? (
-                <p className="mt-1 break-words text-xs leading-snug text-ink-soft">{toast.detail}</p>
+                <p className="mt-1 text-xs leading-snug text-muted-foreground">{toast.detail}</p>
               ) : null}
               {toast.action ? (
                 <button
@@ -115,7 +113,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                     toast.action?.onClick();
                     remove(toast.id);
                   }}
-                  className="mt-2 cursor-pointer font-sans text-[11px] font-semibold text-racing underline underline-offset-2 hover:text-racing-deep"
+                  className="mt-2 text-xs font-semibold underline-offset-4 hover:underline text-primary"
                 >
                   {toast.action.label}
                 </button>
@@ -125,7 +123,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               type="button"
               onClick={() => remove(toast.id)}
               aria-label="Dismiss notification"
-              className="-mr-2 -mt-2 grid h-8 w-8 shrink-0 place-items-center self-start text-ink-faint transition hover:text-ink"
+              className="mr-2 -mt-2 flex h-8 w-8 shrink-0 items-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
             >
               <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />

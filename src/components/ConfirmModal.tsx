@@ -33,7 +33,7 @@ export function ConfirmModal({
           <Button variant="ghost" onClick={onCancel} type="button">
             Keep it
           </Button>
-          <Button variant="danger" onClick={onConfirm} disabled={busy} type="button">
+          <Button variant="destructive" onClick={onConfirm} disabled={busy} type="button">
             {busy ? "Working…" : confirmLabel}
           </Button>
         </>

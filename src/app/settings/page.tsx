@@ -7,7 +7,6 @@ import { PageHeading } from "@/components/PageHeading";
 import { ThemeGallery } from "@/components/ThemeGallery";
 import { Button } from "@/components/ui/Button";
 import { LIMITS, formatNumber } from "@/lib/constants";
-import { carsForGame } from "@/lib/car-catalog";
 
 const SHORTCUTS = [
   { keys: "N", action: "New account" },
@@ -25,8 +24,6 @@ export default function SettingsPage() {
   const shell = useShell();
   const [ownerLabel, setOwnerLabel] = useState("checking…");
 
-  // Whose Telegram account owns this console (read-only display; the binding
-  // itself only ever happens through the login screen's claim flow).
   useEffect(() => {
     void (async () => {
       try {
@@ -46,8 +43,6 @@ export default function SettingsPage() {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
     } finally {
-      // Full reload on purpose: the whole app must re-render unauthenticated.
-      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
       window.location.assign("/login");
     }
   }
@@ -56,66 +51,62 @@ export default function SettingsPage() {
     <div className="flex flex-col gap-4">
       <PageHeading folio="F-04" title="Settings" meta="limits · backup · appearance" />
       <div className="grid gap-4 lg:grid-cols-2">
-      <section className="panel rounded-[24px] p-6 sm:p-8">
-        <h2 className="panel-title mb-4">Game limits</h2>
-        <dl className="flex flex-col">
-          <Row label="Cash per account" value={formatNumber(LIMITS.MAX_CASH)} />
-          <Row label="Coins per account" value={formatNumber(LIMITS.MAX_COINS)} />
-          <Row label="CPM1 car slots" value="none · one of each model" />
-          <Row label="CPM1 garage size" value={`every model in the game (${carsForGame("cpm1").length})`} />
-          <Row label="CPM2 base slots" value={`${LIMITS.BASE_CAR_SLOTS} free · editable per account`} />
-          <Row label="CPM2 21st slot" value={`${LIMITS.SLOT_COST_COINS} coins (one per account)`} />
-          <Row label="CPM2 new garage" value={`${LIMITS.NEW_GARAGE_PRICE} · +${LIMITS.NEW_GARAGE_SLOTS} slots`} />
-        </dl>
-      </section>
+        <section className="panel rounded-[24px] p-6 sm:p-8">
+          <h2 className="panel-title mb-4">Game limits</h2>
+          <dl className="flex flex-col">
+            <Row label="Cash per account" value={formatNumber(LIMITS.MAX_CASH)} />
+            <Row label="Coins per account" value={formatNumber(LIMITS.MAX_COINS)} />
+            <Row label="CPM2 base slots" value={`${LIMITS.BASE_CAR_SLOTS} free · editable per account`} />
+            <Row label="CPM2 21st slot" value={`${LIMITS.SLOT_COST_COINS} coins (one per account)`} />
+            <Row label="CPM2 new garage" value={`${LIMITS.NEW_GARAGE_PRICE} · +${LIMITS.NEW_GARAGE_SLOTS} slots`} />
+          </dl>
+        </section>
 
-      <section className="panel rounded-[24px] p-6 sm:p-8 lg:col-span-2">
-        <h2 className="panel-title mb-4">Appearance</h2>
-        <ThemeGallery />
-      </section>
+        <section className="panel rounded-[24px] p-6 lg:col-span-2">
+          <h2 className="panel-title mb-4">Appearance</h2>
+          <ThemeGallery />
+        </section>
 
-      <section className="panel rounded-[24px] p-6 sm:p-8">
-        <h2 className="panel-title mb-4">Access</h2>
-        <dl className="flex flex-col">
-          <Row label="Console lock" value="password + owner-bound Telegram" />
-          <Row label="Telegram owner" value={ownerLabel} mono={ownerLabel !== "not claimed yet"} />
-        </dl>
-        <div className="mt-6 border-t border-ink/10 pt-6">
-          <p className="text-[12px] leading-relaxed text-ink-soft">
-            Only your Telegram account can open the console from the bot — anyone else who finds it sees
-            a locked screen. The browser asks for the console password instead.
-          </p>
-          <Button
-            variant="danger"
-            size="sm"
-            className="mt-4"
-            onClick={lockConsole}
-          >
-            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" strokeLinecap="round" />
-              <path d="M12 3v12" strokeLinecap="round" />
-            </svg>
-            Sign out
-          </Button>
-        </div>
-      </section>
+        <section className="panel rounded-[24px] p-6 sm:p-8">
+          <h2 className="panel-title mb-4">Access</h2>
+          <dl className="flex flex-col">
+            <Row label="Console lock" value="password + owner-bound Telegram" />
+            <Row label="Telegram owner" value={ownerLabel} mono={ownerLabel !== "not claimed yet"} />
+          </dl>
+          <div className="mt-6 border-t border-ink/10 pt-6">
+            <p className="text-[12px] leading-relaxed text-ink-soft">
+              Only your Telegram account can open the console from the bot — anyone else who finds it sees
+              a locked screen. The browser asks for the console password instead.
+            </p>
+            <Button variant="destructive" size="sm" className="mt-4" onClick={lockConsole}>
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a2 2 0 01-2-2V5a2 2 0 012-2h16a2 2 0 012 2v4" />
+                <polyline points="7 7 12 12 7 17" />
+                <line x1="12" x2="17" y1="12" y2="12" />
+              </svg>
+              Sign out
+            </Button>
+          </div>
+        </section>
 
-      <section className="panel rounded-[24px] p-6 sm:p-8 hidden sm:block">
-        <h2 className="panel-title mb-4">Keyboard</h2>
-        <dl className="flex flex-col">
-          {SHORTCUTS.map((item) => (
-            <div
-              key={item.keys}
-              className="flex items-baseline justify-between gap-4 border-b border-mix(in srgb, var(--color-ink) 8%, transparent) py-2 last:border-0"
-            >
-              <dt className="text-[12px] text-ink-soft">{item.action}</dt>
-              <dd className="num rounded-full border border-mix(in srgb, var(--color-ink) 15%, transparent) bg-mix(in srgb, var(--color-ink) 5%, transparent) px-1.5 py-0.5 text-[11px] text-ink backdrop-blur-md">
-                {item.keys}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </section>
+        <section className="panel rounded-[24px] p-6 sm:p-8">
+          <h2 className="panel-title mb-4">Accounts</h2>
+          <dl className="flex flex-col">
+            <Row label="Total accounts" value={String(fleet.accounts.length)} />
+          </dl>
+        </section>
+
+        <section className="panel rounded-[24px] p-6 sm:p-8 hidden sm:block">
+          <h2 className="panel-title mb-4">Keyboard</h2>
+          <dl className="flex flex-col">
+            {SHORTCUTS.map((item) => (
+              <div key={item.keys} className="flex items-baseline justify-between gap-4 border-b border-mix(in srgb, var(--color-ink) 8%, transparent) py-2 last:border-0">
+                <dt className="text-[12px] text-ink-soft">{item.action}</dt>
+                <dd className="num rounded-full border border-mix(in srgb, var(--color-ink) 15%, transparent) bg-mix(in srgb, var(--color-ink) 5%, transparent) px-1.5 py-0.5 text-[11px] text-ink backdrop-blur-md">{item.keys}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
       </div>
     </div>
   );

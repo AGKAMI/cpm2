@@ -26,7 +26,6 @@ export function Modal({
   const onCloseRef = useRef(onClose);
   const triggerRef = useRef<HTMLElement | null>(null);
 
-  // Keep the latest callback without re-running the focus/keyboard effect.
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
@@ -34,7 +33,6 @@ export function Modal({
   useEffect(() => {
     if (!open) return;
 
-    // Remember what was focused before the sheet took the keyboard, so it can go back on close.
     triggerRef.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
@@ -43,7 +41,6 @@ export function Modal({
         onCloseRef.current();
         return;
       }
-      // Keep the keyboard inside the sheet while it is open.
       if (event.key !== "Tab") return;
       const sheet = sheetRef.current;
       if (!sheet) return;
@@ -66,7 +63,6 @@ export function Modal({
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
-    // Put the caret in the sheet so keyboard users are not left behind it.
     const timer = window.setTimeout(() => {
       const sheet = sheetRef.current;
       if (!sheet) return;
@@ -80,7 +76,6 @@ export function Modal({
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = previousOverflow;
       window.clearTimeout(timer);
-      // Hand the keyboard back to whatever opened the sheet.
       if (triggerRef.current?.isConnected) triggerRef.current.focus();
       triggerRef.current = null;
     };
@@ -95,26 +90,26 @@ export function Modal({
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className="pointer-events-none fixed inset-0 bg-black/45 backdrop-blur-[6px] animate-fade" aria-hidden />
+      <div className="pointer-events-none fixed inset-0 bg-background/80 backdrop-blur-[6px] animate-fade" aria-hidden />
       <div
         ref={sheetRef}
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`panel glass-sheet animate-pop relative z-10 my-auto flex max-h-[92vh] w-full flex-col overflow-hidden rounded-[26px] border border-racing/20 ${width}`}
+        className={`relative z-10 my-auto flex max-h-[92vh] w-full flex-col overflow-hidden rounded-md border border-border bg-background shadow-lg ${width}`}
       >
-        <header className="flex items-start gap-4 border-b border-ink/10 px-5 py-4 sm:px-6">
+        <header className="flex items-start gap-4 border-b border-border px-5 py-4 sm:px-6">
           <div className="min-w-0 flex-1">
-            <h2 className="display-title text-[22px] leading-tight text-ink">{title}</h2>
-            {subtitle ? <p className="mt-1 text-xs text-ink-faint">{subtitle}</p> : null}
+            <h2 className="text-lg font-medium leading-tight text-foreground">{title}</h2>
+            {subtitle ? <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p> : null}
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="square-btn h-8 w-8 hover:border-racing/40 hover:text-racing transition-colors"
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
           >
-            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
               <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
             </svg>
           </button>
@@ -123,7 +118,7 @@ export function Modal({
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">{children}</div>
 
         {footer ? (
-          <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-ink/10 bg-ink/[0.02] px-5 py-4 backdrop-blur-md sm:px-6">
+          <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-border px-5 py-4 sm:px-6">
             {footer}
           </footer>
         ) : null}

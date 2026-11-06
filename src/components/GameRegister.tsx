@@ -269,7 +269,7 @@ export function GameRegister({ game }: { game: GameType }) {
       {selected.length > 0 ? (
         <div className="flex flex-wrap items-center gap-3 rounded-[16px] border border-racing/25 bg-racing/8 px-4 py-2.5">
           <span className="num text-[11px] text-racing">{selected.length} selected</span>
-          <Button variant="danger" size="sm" onClick={() => void archiveSelected()}>
+          <Button variant="destructive" size="sm" onClick={() => void archiveSelected()}>
             Archive selected
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setSelected([])}>

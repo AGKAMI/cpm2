@@ -284,7 +284,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <ShellContext.Provider value={shell}>
-      <div className="relative min-h-screen bg-background">
+      <div className="relative min-h-screen">
         <CarBackdrop />
         <a
           href="#main"
@@ -354,7 +354,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <nav
           aria-label="Primary"
-          className="mobile-dock fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-md px-4 pb-4 sm:pb-3 sm:px-6"
+          className="mobile-dock fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-md px-4 pb-4 sm:pb-3 sm:px-6 sm:hidden"
         >
           <div
             className="mx-auto flex max-w-[340px] items-center justify-center gap-2 overflow-x-auto whitespace-nowrap bg-background/90 border-t border-border rounded-full px-3 py-2 shadow-xl backdrop-blur-md"

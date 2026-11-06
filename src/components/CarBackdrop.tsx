@@ -33,7 +33,14 @@ export function CarBackdrop() {
     };
   }, []);
 
-  if (!photo) return null;
+  if (!photo) {
+    return (
+      <div className="car-backdrop">
+        <div className="car-backdrop-scrim" />
+        <div className="car-backdrop-glow" />
+      </div>
+    );
+  }
 
   return (
     <div className="car-backdrop" aria-hidden={false}>

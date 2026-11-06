@@ -160,7 +160,6 @@ export function FleetProvider({ children }: { children: ReactNode }) {
             accountsRef.current.map((item) => (item.id === saved.id ? saved : item)),
           ),
         );
-        scheduleSync();
       } catch (err) {
         patchLocal(account.id, { [field]: account[field] } as Partial<AccountSummary>);
         toast.error("Rejected", describe(err));

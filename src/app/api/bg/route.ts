@@ -69,7 +69,9 @@ export async function GET() {
     if (p.id) {
       fetch(`https://api.unsplash.com/photos/${p.id}/download`, {
         headers: { Authorization: `Client-ID ${key}`, "Accept-Version": "v1" },
-      }).catch(() => {});
+      }).catch(() => {
+        // Unsplash TOS download ping is best-effort; never fail the photo response.
+      });
     }
 
     const url = `${p.urls.regular}${p.urls.regular.includes("?") ? "&" : "?"}utm_source=CPM2+Fleet+Ledger&utm_medium=referral`;

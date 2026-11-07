@@ -18,7 +18,7 @@ export function PageHeading({
     <div className="mb-1">
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-3">
         <div className="flex min-w-0 items-baseline gap-3">
-          <span className="num shrink-0 rounded-full border border-racing/30 bg-racing/10 px-2.5 py-1 text-[9px] tracking-[0.2em] text-racing">
+          <span className="num shrink-0 rounded-full border border-racing bg-racing px-2.5 py-1 text-[9px] tracking-[0.2em] text-racing">
             {folio}
           </span>
           <h1 className="display-title min-w-0 text-[30px] leading-[0.95] text-ink sm:text-[40px]">

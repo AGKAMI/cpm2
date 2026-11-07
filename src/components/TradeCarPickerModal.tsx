@@ -177,8 +177,8 @@ export function TradeCarPickerModal({
               onClick={() => setTab(entry.id)}
               className={`cursor-pointer rounded-full border px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] transition ${
                 tab === entry.id
-                  ? "border-racing/45 bg-racing/10 text-racing"
-                  : "border-ink/12 text-ink-faint hover:border-ink/25 hover:text-ink"
+                  ? "border-racing bg-racing text-racing"
+                  : "border-ink text-ink-faint hover:border-ink hover:text-ink"
               }`}
             >
               {entry.label}
@@ -232,7 +232,7 @@ export function TradeCarPickerModal({
                       type="button"
                       onClick={() => pick(entry.code)}
                       aria-label={`Add #${entry.code} ${entry.name} to the deal`}
-                      className="flex w-full cursor-pointer items-center gap-3 rounded-[12px] border border-transparent px-3 py-2.5 text-left transition-colors hover:border-racing/30 hover:bg-racing/6"
+                      className="flex w-full cursor-pointer items-center gap-3 rounded-[12px] border border-racing px-3 py-2.5 text-left transition-colors hover:border-racing hover:bg-racing"
                     >
                       <span className="num w-11 shrink-0 text-[12px] text-ink-faint">
                         #{entry.code}
@@ -276,7 +276,7 @@ export function TradeCarPickerModal({
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
-                className="flex cursor-pointer flex-col items-center gap-3 rounded-[16px] border border-dashed border-ink/20 px-6 py-10 transition hover:border-racing/45 hover:bg-racing/5"
+                className="flex cursor-pointer flex-col items-center gap-3 rounded-[16px] border border-dashed border-ink px-6 py-10 transition hover:border-racing hover:bg-racing"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -300,7 +300,7 @@ export function TradeCarPickerModal({
                   <img
                     src={preview}
                     alt="Screenshot sent to Gemini"
-                    className="h-24 w-36 shrink-0 rounded-[12px] border border-ink/10 object-cover"
+                    className="h-24 w-36 shrink-0 rounded-[12px] border border-ink object-cover"
                   />
                   <div className="min-w-0 flex-1">
                     {scanning ? (
@@ -322,7 +322,7 @@ export function TradeCarPickerModal({
                 </div>
 
                 {error ? (
-                  <p className="rounded-[14px] border border-oxblood/35 bg-oxblood/8 px-3 py-2 text-xs text-oxblood">
+                  <p className="rounded-[14px] border border-oxblood bg-oxblood px-3 py-2 text-xs text-oxblood">
                     {error}
                   </p>
                 ) : null}
@@ -334,7 +334,7 @@ export function TradeCarPickerModal({
                   <button
                     type="button"
                     onClick={() => searchCatalogFor(geminiName)}
-                    className="cursor-pointer self-start rounded-full border border-racing/40 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-racing transition hover:bg-racing/10"
+                    className="cursor-pointer self-start rounded-full border border-racing px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-racing transition hover:bg-racing"
                   >
                     Search the catalog for “{geminiName}”
                   </button>
@@ -349,7 +349,7 @@ export function TradeCarPickerModal({
                           <button
                             type="button"
                             onClick={() => pick(match.code)}
-                            className="flex w-full cursor-pointer items-center gap-3 rounded-[12px] border border-ink/10 px-3 py-2.5 text-left transition hover:border-racing/40 hover:bg-racing/6"
+                            className="flex w-full cursor-pointer items-center gap-3 rounded-[12px] border border-ink px-3 py-2.5 text-left transition hover:border-racing hover:bg-racing"
                           >
                             <span className="num w-11 shrink-0 text-[12px] text-ink-faint">
                               #{match.code}
@@ -362,7 +362,7 @@ export function TradeCarPickerModal({
                                 {priceLabel(prices.get(match.code)!)}
                               </span>
                             ) : null}
-                            <span className="num shrink-0 rounded-full border border-ink/12 px-2 py-0.5 text-[9px] text-ink-faint">
+                            <span className="num shrink-0 rounded-full border border-ink px-2 py-0.5 text-[9px] text-ink-faint">
                               {Math.round(match.score * 100)}%
                             </span>
                           </button>

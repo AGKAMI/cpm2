@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useFleet } from "@/components/FleetProvider";
-import { useShell } from "@/components/AppShell";
 import { PageHeading } from "@/components/PageHeading";
 import { ThemeGallery } from "@/components/ThemeGallery";
 import { Button } from "@/components/ui/Button";
@@ -21,7 +20,6 @@ const SHORTCUTS = [
 
 export default function SettingsPage() {
   const fleet = useFleet();
-  const shell = useShell();
   const [ownerLabel, setOwnerLabel] = useState("checking…");
 
   useEffect(() => {
@@ -73,7 +71,7 @@ export default function SettingsPage() {
             <Row label="Console lock" value="password + owner-bound Telegram" />
             <Row label="Telegram owner" value={ownerLabel} mono={ownerLabel !== "not claimed yet"} />
           </dl>
-          <div className="mt-6 border-t border-ink/10 pt-6">
+          <div className="mt-6 border-t border-ink pt-6">
             <p className="text-[12px] leading-relaxed text-ink-soft">
               Only your Telegram account can open the console from the bot — anyone else who finds it sees
               a locked screen. The browser asks for the console password instead.
@@ -100,9 +98,9 @@ export default function SettingsPage() {
           <h2 className="panel-title mb-4">Keyboard</h2>
           <dl className="flex flex-col">
             {SHORTCUTS.map((item) => (
-              <div key={item.keys} className="flex items-baseline justify-between gap-4 border-b border-mix(in srgb, var(--color-ink) 8%, transparent) py-2 last:border-0">
+              <div key={item.keys} className="flex items-baseline justify-between gap-4 border-b border-ink py-2 last:border-0">
                 <dt className="text-[12px] text-ink-soft">{item.action}</dt>
-                <dd className="num rounded-full border border-mix(in srgb, var(--color-ink) 15%, transparent) bg-mix(in srgb, var(--color-ink) 5%, transparent) px-1.5 py-0.5 text-[11px] text-ink backdrop-blur-md">{item.keys}</dd>
+                <dd className="num rounded-full border border-ink bg-ink px-1.5 py-0.5 text-[11px] text-ink">{item.keys}</dd>
               </div>
             ))}
           </dl>
@@ -114,7 +112,7 @@ export default function SettingsPage() {
 
 function Row({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 border-b border-ink/8 py-2 last:border-0">
+    <div className="flex items-baseline justify-between gap-4 border-b border-ink py-2 last:border-0">
       <dt className="text-[12px] text-ink-soft">{label}</dt>
       <dd className={`text-[12px] text-ink ${mono ? "num" : ""}`}>{value}</dd>
     </div>

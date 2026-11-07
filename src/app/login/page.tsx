@@ -140,9 +140,7 @@ export default function LoginPage() {
         <ShieldIcon />
         <h1 className="mt-4 font-display text-[22px] text-ink">CPM Fleet</h1>
         <p className="mt-1 text-[12.5px] leading-relaxed text-ink-soft">
-          {window.Telegram?.WebApp?.initData
-            ? "Enter the console password once to claim this console for your Telegram account."
-            : "Enter the console password to open the ledger."}
+          Enter the console password to claim this console for your Telegram account.
         </p>
 
         <div className="mt-5">
@@ -153,7 +151,7 @@ export default function LoginPage() {
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                autoComplete={window.Telegram?.WebApp?.initData ? "off" : "current-password"}
+                autoComplete="off"
                 autoFocus
                 className="pr-4"
                 invalid={Boolean(message)}
@@ -170,7 +168,7 @@ export default function LoginPage() {
         </p>
         <a
           href="/trade/guest"
-          className="mt-3 block w-full text-center text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-faint underline underline-offset-4 hover:text-racing hover:underline transition-colors border border-mix(in srgb, var(--color-ink) 12%, transparent) rounded-full px-4 py-2.5"
+          className="mt-3 block w-full text-center text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-faint underline underline-offset-4 hover:text-racing hover:underline transition-colors border border-ink rounded-full px-4 py-2.5"
         >
           Open guest calculator →
         </a>
@@ -185,7 +183,7 @@ function enter() {
 
 function Overlay({ children }: { children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-mix(in srgb, var(--color-paper-raised) 80%, transparent) px-4 backdrop-blur-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background px-4">
       {children}
     </div>
   );
@@ -193,7 +191,7 @@ function Overlay({ children }: { children: React.ReactNode }) {
 
 function ShieldIcon() {
   return (
-    <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-racing/30 bg-racing/10 text-racing">
+    <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-racing bg-racing text-racing">
       <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
         <rect x="5" y="10.5" width="14" height="9.5" rx="2.5" />
         <path d="M8 10.5V8a4 4 0 1 1 8 0v2.5" strokeLinecap="round" />

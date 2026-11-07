@@ -232,8 +232,8 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
                 aria-pressed={game === option}
                 className={`flex-1 cursor-pointer rounded-[14px] border px-3 py-2.5 text-left transition-colors ${
                   game === option
-                    ? "border-racing/50 bg-racing/10"
-                    : "border-mix(in srgb, var(--color-ink) 10%, transparent) bg-mix(in srgb, var(--color-ink) 3%, transparent) hover:border-ink/25"
+                    ? "border-racing bg-racing"
+                    : "border-ink bg-ink hover:border-ink hover:bg-ink"
                 }`}
               >
                 <span className="block font-sans text-[12px] font-semibold text-ink">
@@ -315,7 +315,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
           {slotless ? (
             <div className="flex flex-col gap-1.5">
               <span className="label-caps">Car slots</span>
-              <p className="rounded-[14px] border border-ink/10 bg-ink/[0.03] px-4 py-3 text-[11px] leading-snug text-ink-faint">
+              <p className="rounded-[14px] border border-ink bg-ink px-4 py-3 text-[11px] leading-snug text-ink-faint">
                 CPM1 has no car slots. Every model in the game can be owned — but only one of each.
               </p>
             </div>
@@ -374,8 +374,8 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
                 aria-pressed={newGarage}
                 className={`flex cursor-pointer items-center justify-between gap-3 rounded-[14px] border px-4 py-3 text-left transition-all duration-200 ease-out ${
                   newGarage
-                    ? "border-racing/50 bg-racing/10"
-                    : "border-ink/10 bg-ink/[0.03] hover:border-ink/25"
+                    ? "border-racing bg-racing"
+                    : "border-ink bg-ink hover:border-ink hover:bg-ink"
                 }`}
               >
                 <span>
@@ -387,7 +387,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
                   </span>
                 </span>
                 <span
-                  className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border ${newGarage ? "border-racing/50 text-racing" : "border-mix(in srgb, var(--color-ink) 15%, transparent) text-ink-faint"}`}
+                  className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border ${newGarage ? "border-racing text-racing" : "border-ink text-ink-faint"}`}
                   aria-hidden="true"
                 >
                   <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2">
@@ -429,7 +429,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
         </Field>
 
         {errors.form ? (
-          <p className="rounded-[14px] border border-racing/35 bg-racing/8 px-3 py-2 text-xs text-racing">
+          <p className="rounded-[14px] border border-racing bg-racing px-3 py-2 text-xs text-racing">
             {errors.form}
           </p>
         ) : null}

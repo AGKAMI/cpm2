@@ -164,11 +164,11 @@ export function PasswordCell({ accountId }: { accountId: number }) {
 
   return (
     <div className="flex items-center gap-2">
-      <code className="num max-w-[150px] truncate border-b border-dashed border-ink/25 px-1 pb-0.5 text-[12px] tracking-[0.16em] text-ink">
+      <code className="num max-w-[150px] truncate border-b border-dashed border-ink px-1 pb-0.5 text-[12px] tracking-[0.16em] text-ink">
         {revealed ?? "••••••••"}
       </code>
       {revealed ? (
-        <span className="num rounded-full border border-racing/40 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.14em] text-racing">
+        <span className="num rounded-full border border-racing px-1.5 py-0.5 text-[9px] uppercase tracking-[0.14em] text-racing">
           {secondsLeft}s
         </span>
       ) : null}

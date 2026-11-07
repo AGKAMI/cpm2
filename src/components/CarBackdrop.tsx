@@ -27,7 +27,9 @@ export function CarBackdrop() {
           setPhoto({ url: data.url, author: data.author, authorUrl: data.authorUrl, query: data.query });
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        // Background photo is cosmetic — silently degrade to plain canvas.
+      });
     return () => {
       cancelled = true;
     };
@@ -57,26 +59,6 @@ export function CarBackdrop() {
       />
       <div className="car-backdrop-scrim" />
       <div className="car-backdrop-glow" />
-      <a
-        href={photo.authorUrl}
-        target="_blank"
-        rel="noreferrer"
-        className="car-backdrop-credit"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          className="mr-1 inline-block h-3 w-3 align-[-2px]"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round" aria-hidden="true"
-        >
-          <path d="M3 8.5h3l1.6-2.2h8.8L18 8.5h3v9.5H3z" />
-          <circle cx="12" cy="13" r="3.2" />
-        </svg>
-        {photo.author} · Unsplash
-      </a>
     </div>
   );
 }

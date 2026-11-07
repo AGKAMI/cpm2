@@ -6,13 +6,13 @@ import { formatNumber } from "@/lib/constants";
 
 const TYPES: Record<FleetEventType, { label: string; mark: string; text: string }> = {
   created: { label: "New", mark: "bg-racing", text: "text-racing" },
-  updated: { label: "Edit", mark: "bg-mix(in srgb, var(--color-racing) 30%, transparent)", text: "text-racing" },
-  slots_removed: { label: "Slots-", mark: "bg-racing/70", text: "text-racing" },
+  updated: { label: "Edit", mark: "bg-racing", text: "text-racing" },
+  slots_removed: { label: "Slots-", mark: "bg-racing", text: "text-racing" },
   slots_purchased: { label: "Slots", mark: "bg-racing", text: "text-racing" },
   garage_upgraded: { label: "Garage", mark: "bg-racing", text: "text-racing" },
   archived: { label: "Archived", mark: "bg-racing", text: "text-racing" },
   deleted: { label: "Gone", mark: "bg-racing", text: "text-racing" },
-  export_performed: { label: "Export", mark: "bg-mix(in srgb, var(--color-racing) 30%, transparent)", text: "text-racing" },
+  export_performed: { label: "Export", mark: "bg-racing", text: "text-racing" },
   password_revealed: { label: "Reveal", mark: "bg-racing", text: "text-racing" },
   trophies_updated: { label: "Trophy", mark: "bg-racing", text: "text-racing" },
   car_added: { label: "Garage", mark: "bg-racing", text: "text-racing" },
@@ -32,13 +32,13 @@ export function ActivityFeed({ events }: { events: FleetEvent[] }) {
   }
 
   return (
-    <ol className="panel overflow-hidden rounded-[20px] border border-ink/8">
+    <ol className="panel overflow-hidden rounded-[20px] border border-ink">
       {events.map((event, index) => {
         const meta = TYPES[event.type] ?? TYPES.updated;
         return (
           <li
             key={event.id}
-            className={`animate-rise flex gap-4 px-4 py-3.5 ${index > 0 ? "border-t border-mix(in srgb, var(--color-ink) 10%, transparent)" : ""}`}
+            className={`animate-rise flex gap-4 px-4 py-3.5 ${index > 0 ? "border-t border-ink" : ""}`}
             style={{ animationDelay: `${Math.min(index, 12) * 35}ms` }}
           >
             <span className={`log-mark mt-1.5 ${meta.mark}`} />
@@ -58,7 +58,7 @@ export function ActivityFeed({ events }: { events: FleetEvent[] }) {
                   {Object.entries(event.changes).map(([field, change]) => (
                     <span
                       key={field}
-                      className="num rounded-full border border-mix(in srgb, var(--color-ink) 12%, transparent) bg-mix(in srgb, var(--color-ink) 5%, transparent) px-1.5 py-0.5 text-[10px] text-ink-soft backdrop-blur-md"
+                      className="num rounded-full border border-ink bg-ink px-1.5 py-0.5 text-[10px] text-ink-soft"
                     >
                       <span className="text-ink-faint">{field}</span>{" "}
                       <span className="text-ink">{renderValue(change.from)}</span>{" "}

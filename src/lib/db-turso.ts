@@ -172,7 +172,7 @@ CREATE INDEX IF NOT EXISTS idx_accounts_game
  * endpoint via fetch. This avoids the @libsql/client Hrana stream quirk that
  * returns HTTP 400 on this host.
  */
-class TursoHttpClient {
+export class TursoHttpClient {
   private url: string;
   private token: string;
 

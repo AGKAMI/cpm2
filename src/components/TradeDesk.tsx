@@ -41,9 +41,6 @@ export function TradeDesk() {
   });
   const [pickerSide, setPickerSide] = useState<SideKey | null>(null);
   const [pricingCode, setPricingCode] = useState<number | null>(null);
-  const [priceKind, setPriceKind] = useState<TradePriceKind>("paid");
-  const [priceAmount, setPriceAmount] = useState("");
-  const [savingPrice, setSavingPrice] = useState(false);
   const [showCash, setShowCash] = useState<Record<SideKey, boolean>>({ you: false, them: false });
 
   useEffect(() => {
@@ -77,7 +74,7 @@ export function TradeDesk() {
       const existing = cars.find((entry) => entry.code === code);
       if (existing) {
         existing.qty += 1;
-      } else if (cars.length === 0) {
+      } else {
         cars.push({ code, qty: 1 });
       }
       return { ...current, [side]: { ...current[side], cars } };
@@ -103,27 +100,6 @@ export function TradeDesk() {
   function clearSide(side: SideKey) {
     setSides((current) => ({ ...current, [side]: { cars: [], cash: 0 } }));
     setPricingCode(null);
-  }
-
-  async function savePrice(code: number) {
-    const car = carByCode(code, "cpm2");
-    if (!car) return;
-    const amount = Number(priceAmount);
-    if (!Number.isFinite(amount) || amount < 0) {
-      toast.error("Price looks wrong", "Enter a number of zero or more.");
-      return;
-    }
-    setSavingPrice(true);
-    try {
-      const { price } = await api.setTradePrice({ game: "cpm2", code, kind: priceKind, price: amount });
-      setPrices((current) => new Map(current).set(code, price));
-      setPricingCode(null);
-      toast.success("Price saved", `#${code} ${car.name} is now priced as a ${KIND_LABELS[priceKind].toLowerCase()} car.`);
-    } catch (err) {
-      toast.error("Could not save the price", err instanceof ApiRequestError ? err.message : "Try again.");
-    } finally {
-      setSavingPrice(false);
-    }
   }
 
   const valued = useMemo(() => {
@@ -161,7 +137,7 @@ export function TradeDesk() {
             <button
               type="button"
               onClick={() => setPickerSide(key)}
-              className="cursor-pointer rounded-full border border-racing/40 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-racing transition hover:bg-racing/16 hover:border-racing/50"
+              className="cursor-pointer rounded-full border border-racing px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-racing transition hover:bg-racing hover:border-racing"
             >
               + Car
             </button>
@@ -184,9 +160,8 @@ export function TradeDesk() {
               const car = carByCode(code, "cpm2");
               const entry = prices.get(code);
               const unpriced = !entry;
-              const pricing = pricingCode === code;
               return (
-                <li key={`${code}-${index}`} className="rounded-[12px] border border-ink/8 px-3 py-2 transition-all duration-150 ease-out group-hover:bg-ink/3">
+                <li key={`${code}-${index}`} className="rounded-[12px] border border-ink px-3 py-2 transition-all duration-150 ease-out group-hover:bg-ink">
                   <div className="flex items-center gap-2">
                     <span className="num w-9 shrink-0 text-[11px] text-ink-faint">#{code}</span>
                     <span className="min-w-0 flex-1 truncate text-[12.5px] text-ink">
@@ -194,7 +169,7 @@ export function TradeDesk() {
                     </span>
                     {entry ? (
                       <>
-                        <span className="shrink-0 rounded-full border border-ink/12 px-2 py-0.5 font-sans text-[9px] font-semibold uppercase tracking-[0.1em] text-ink-faint">
+                        <span className="shrink-0 rounded-full border border-ink px-2 py-0.5 font-sans text-[9px] font-semibold uppercase tracking-[0.1em] text-ink-faint">
                           {KIND_LABELS[entry.kind]}
                         </span>
                         <span className="num shrink-0 text-[11px] text-ink-faint">{priceLabel(entry)}</span>
@@ -202,26 +177,15 @@ export function TradeDesk() {
                     ) : (
                       <button
                         type="button"
-                        onClick={() => {
-                          setPricingCode(code);
-                          setPriceKind("paid");
-                          setPriceAmount("");
-                        }}
-                        className="shrink-0 cursor-pointer rounded-full border border-racing/40 px-2.5 py-0.5 font-semibold text-racing transition hover:bg-racing/16 hover:border-racing/50"
+                        onClick={() => removeCar(key, code)}
+                        aria-label={`Remove ${car?.name ?? `code ${code}`} from this side`}
+                        className="grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-full border border-ink text-ink-faint transition-all duration-150 hover:bg-oxblood hover:text-oxblood hover:border-oxblood active:scale-95"
                       >
-                        Set price
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => removeCar(key, code)}
-                      aria-label={`Remove ${car?.name ?? `code ${code}`} from this side`}
-                      className="grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-full border border-ink/10 text-ink-faint transition-all duration-150 hover:bg-oxblood/10 hover:text-oxblood hover:border-oxblood/30 active:scale-95"
-                    >
                       <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
                         <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
                       </svg>
                     </button>
+                  )}
                   </div>
 
                   <div className="mt-1 flex items-center gap-2">
@@ -229,7 +193,7 @@ export function TradeDesk() {
                       type="button"
                       onClick={() => removeCar(key, code)}
                       aria-label={`Remove one ${car?.name ?? `code ${code}`}`}
-                      className="shrink-0 cursor-pointer place-items-center rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink transition hover:bg-ink/5"
+                      className="shrink-0 cursor-pointer place-items-center rounded-full border border-ink px-2 py-0.5 text-[10px] text-ink transition hover:bg-ink"
                     >
                       −
                     </button>
@@ -238,7 +202,7 @@ export function TradeDesk() {
                       type="button"
                       onClick={() => addCar(key, code)}
                       aria-label={`Add one ${car?.name ?? `code ${code}`}`}
-                      className="shrink-0 cursor-pointer place-items-center rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink transition hover:bg-ink/5"
+                      className="shrink-0 cursor-pointer place-items-center rounded-full border border-ink px-2 py-0.5 text-[10px] text-ink transition hover:bg-ink"
                     >
                       +
                     </button>
@@ -254,8 +218,8 @@ export function TradeDesk() {
           </ul>
         )}
 
-        {side.cash > 0 ? (
-          <div className="flex items-center gap-2 border-t border-mix(in srgb, var(--color-ink) 8%, transparent) pt-3">
+        {side.cash > 0 || showCash[key] ? (
+          <div className="flex items-center gap-2 border-t border-ink pt-3">
             <svg
               viewBox="0 0 24 24"
               className="h-4 w-4 shrink-0 text-ink-faint"
@@ -306,7 +270,7 @@ export function TradeDesk() {
 
   return (
     <div className="flex flex-col gap-5 max-w-[700px] mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex items-center justify-between gap-3 border-b border-mix(in srgb, var(--color-ink) 12%, transparent) pb-4 mb-6">
+      <div className="flex items-center justify-between gap-3 border-b border-ink pb-4 mb-6">
         <div className="flex items-center gap-3">
           <svg viewBox="0 0 24 24" className="h-8 w-8 text-racing" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
             <circle cx="12" cy="12" r="9" />
@@ -328,7 +292,7 @@ export function TradeDesk() {
           {/* Verdict — only shown once both sides have at least one car or cash */}
           {(sides.you.cars.length === 0 && sides.you.cash === 0) ||
           (sides.them.cars.length === 0 && sides.them.cash === 0) ? (
-            <p className="text-center text-[12px] text-aether-text-faint py-4">
+            <p className="text-center text-[12px] text-ink-faint py-4">
               Put cars on both sides — the desk prices the deal in Rands and tells you straight if it robs you.
             </p>
           ) : (
@@ -336,15 +300,15 @@ export function TradeDesk() {
               <section
                 className={`rounded-[18px] border px-5 py-5 text-center ${
                   incomplete
-                    ? "border-mix(in srgb, var(--color-ink) 15%, transparent) bg-mix(in srgb, var(--color-ink) 3%, transparent)"
+                    ? "border-ink bg-ink"
                     : verdict.status === "gain"
-                    ? "border-aether-accent/40 bg-aether-accent/8"
+                    ? "border-racing bg-racing"
                     : verdict.status === "loss"
-                    ? "border-aether-accent/40 bg-aether-accent/8"
-                    : "border-mix(in srgb, var(--color-ink) 15%, transparent) bg-mix(in srgb, var(--color-ink) 3%, transparent)"}
+                    ? "border-racing bg-racing"
+                    : "border-ink bg-ink"}
                 `}
               >
-                <p className="num text-[11px] uppercase tracking-[0.18em] text-aether-text-faint">
+                <p className="num text-[11px] uppercase tracking-[0.18em] text-ink-faint">
                   {incomplete ? "Rough call" : "The verdict"}
                 </p>
                 <p
@@ -356,13 +320,13 @@ export function TradeDesk() {
                   {verdict.status === "gain" ? "Worth it" : verdict.status === "loss" ? "Not worth it" : "Fair trade"}
                 </p>
                 {incomplete ? (
-                  <p className="mt-2 text-[12px] text-aether-text-soft">
+                  <p className="mt-2 text-[12px] text-ink-soft">
                     {unpricedCount === 1
                       ? "1 car has no price on record — not counted yet."
                       : `${unpricedCount} cars have no price on record — not counted yet.`}
                   </p>
                 ) : (
-                  <p className="mt-2 text-[12px] text-aether-text-soft">
+                  <p className="mt-2 text-[12px] text-ink-soft">
                     {verdict.status === "gain"
                       ? `Roughly ${leanPct}% in your favour — take the deal.`
                       : verdict.status === "loss"

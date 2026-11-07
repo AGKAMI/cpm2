@@ -137,7 +137,7 @@ export default function GuestTradeDesk() {
             <button
               type="button"
               onClick={() => setPickerSide(key)}
-              className="cursor-pointer rounded-full border border-racing/40 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-racing transition hover:bg-racing/10"
+              className="cursor-pointer rounded-full border border-racing px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-racing transition hover:bg-racing"
             >
               + Car
             </button>
@@ -161,7 +161,7 @@ export default function GuestTradeDesk() {
               const entry = prices.get(code);
               const unpriced = !entry;
               return (
-                <li key={code} className="rounded-[12px] border border-mix(in srgb, var(--color-ink) 10%, transparent) px-3 py-2">
+                <li key={code} className="rounded-[12px] border border-ink px-3 py-2">
                   <div className="flex items-center gap-2">
                     <span className="num w-9 shrink-0 text-[11px] text-ink-faint">#{code}</span>
                     <span className="min-w-0 flex-1 truncate text-[12.5px] text-ink">
@@ -169,7 +169,7 @@ export default function GuestTradeDesk() {
                     </span>
                     {entry ? (
                       <>
-                        <span className="shrink-0 rounded-full border border-mix(in srgb, var(--color-ink) 12%, transparent) px-2 py-0.5 font-sans text-[9px] font-semibold uppercase tracking-[0.1em] text-ink-faint">
+                        <span className="shrink-0 rounded-full border border-ink px-2 py-0.5 font-sans text-[9px] font-semibold uppercase tracking-[0.1em] text-ink-faint">
                           {KIND_LABELS[entry.kind]}
                         </span>
                         <span className="num shrink-0 text-[11px] text-ink-faint">
@@ -185,7 +185,7 @@ export default function GuestTradeDesk() {
                       type="button"
                       onClick={() => removeCar(key, code)}
                       aria-label={`Remove ${car?.name ?? `code ${code}`} from this side`}
-                      className="grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-full text-ink-faint transition hover:bg-racing/10 hover:text-racing"
+                      className="grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-full text-ink-faint transition hover:bg-racing hover:text-racing"
                     >
                       <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
                         <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
@@ -198,7 +198,7 @@ export default function GuestTradeDesk() {
                       type="button"
                       onClick={() => removeCar(key, code)}
                       aria-label={`Remove one ${car?.name ?? `code ${code}`}`}
-                      className="shrink-0 cursor-pointer place-items-center rounded-full border border-mix(in srgb, var(--color-ink) 10%, transparent) px-2 py-0.5 text-[10px] text-ink transition hover:bg-ink/5"
+                      className="shrink-0 cursor-pointer place-items-center rounded-full border border-ink px-2 py-0.5 text-[10px] text-ink transition hover:bg-ink"
                     >
                       −
                     </button>
@@ -207,7 +207,7 @@ export default function GuestTradeDesk() {
                       type="button"
                       onClick={() => addCar(key, code)}
                       aria-label={`Add one ${car?.name ?? `code ${code}`}`}
-                      className="shrink-0 cursor-pointer place-items-center rounded-full border border-mix(in srgb, var(--color-ink) 10%, transparent) px-2 py-0.5 text-[10px] text-ink transition hover:bg-ink/5"
+                      className="shrink-0 cursor-pointer place-items-center rounded-full border border-ink px-2 py-0.5 text-[10px] text-ink transition hover:bg-ink"
                     >
                       +
                     </button>
@@ -224,7 +224,7 @@ export default function GuestTradeDesk() {
         )}
 
         {side.cash > 0 ? (
-          <div className="flex items-center gap-2 border-t border-mix(in srgb, var(--color-ink) 8%, transparent) pt-3">
+          <div className="flex items-center gap-2 border-t border-ink pt-3">
             <label htmlFor={`${key}-cash`} className="shrink-0 text-[11px] text-ink-soft">
               {key === "you" ? "Cash you add" : "Cash they add"}
             </label>
@@ -263,7 +263,7 @@ export default function GuestTradeDesk() {
 
   return (
     <div className="flex flex-col gap-5 max-w-[700px] mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex items-center justify-between gap-3 border-b border-mix(in srgb, var(--color-ink) 12%, transparent) pb-4 mb-6">
+      <div className="flex items-center justify-between gap-3 border-b border-ink pb-4 mb-6">
         <div className="flex items-center gap-3">
           <svg viewBox="0 0 24 24" className="h-8 w-8 text-racing" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
             <circle cx="12" cy="12" r="9" />
@@ -292,12 +292,12 @@ export default function GuestTradeDesk() {
               <section
                 className={`rounded-[18px] border px-5 py-5 text-center ${
                   incomplete
-                    ? "border-mix(in srgb, var(--color-ink) 15%, transparent) bg-mix(in srgb, var(--color-ink) 3%, transparent)"
+                    ? "border-ink bg-ink"
                     : verdict.status === "gain"
-                      ? "border-racing/40 bg-racing/8"
+                      ? "border-racing bg-racing"
                       : verdict.status === "loss"
-                        ? "border-racing/40 bg-racing/8"
-                        : "border-mix(in srgb, var(--color-ink) 15%, transparent) bg-mix(in srgb, var(--color-ink) 3%, transparent)"}
+                        ? "border-racing bg-racing"
+                        : "border-ink bg-ink"}</span>
               `}
               >
                 <p className="num text-[11px] uppercase tracking-[0.18em] text-ink-faint">

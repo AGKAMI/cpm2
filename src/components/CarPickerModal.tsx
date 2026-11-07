@@ -115,7 +115,7 @@ export function CarPickerModal({
               </span>
             </span>
           </div>
-          <div className="mt-2 h-[3px] w-full overflow-hidden rounded-full bg-ink/10">
+          <div className="mt-2 h-[3px] w-full overflow-hidden rounded-full bg-ink">
             <div
               className={`h-full transition-[width] duration-500 ${full ? "bg-oxblood" : "bg-racing"}`}
               style={{ width: `${ratio * 100}%` }}
@@ -168,14 +168,14 @@ export function CarPickerModal({
         </div>
 
         {full ? (
-          <p className="rounded-[14px] border border-oxblood/35 bg-oxblood/8 px-3 py-2 text-xs text-oxblood">
+          <p className="rounded-[14px] border border-oxblood bg-oxblood px-3 py-2 text-xs text-oxblood">
             This garage is full ({garage.count}/{garage.capacity}). Free a car or buy a slot before
             adding another.
           </p>
         ) : null}
 
         {error ? (
-          <p className="rounded-[14px] border border-oxblood/35 bg-oxblood/8 px-3 py-2 text-xs text-oxblood">
+          <p className="rounded-[14px] border border-oxblood bg-oxblood px-3 py-2 text-xs text-oxblood">
             {error}
           </p>
         ) : null}
@@ -205,7 +205,7 @@ export function CarPickerModal({
                     className={`flex w-full items-center gap-3 rounded-[12px] border border-transparent px-3 py-2.5 text-left transition-colors ${
                       full || owned
                         ? "cursor-not-allowed opacity-45"
-                        : "cursor-pointer hover:border-racing/30 hover:bg-racing/6"
+                        : "cursor-pointer hover:border-racing hover:bg-racing"
                     }`}
                   >
                     <span className="num w-11 shrink-0 text-[12px] text-ink-faint">
@@ -216,11 +216,11 @@ export function CarPickerModal({
                     </span>
                     <span className="flex shrink-0 items-center gap-2">
                       {owned ? (
-                        <span className="rounded-full border border-ink/12 px-2 py-0.5 font-sans text-[9px] font-semibold uppercase tracking-[0.1em] text-ink-faint">
+                        <span className="rounded-full border border-ink px-2 py-0.5 font-sans text-[9px] font-semibold uppercase tracking-[0.1em] text-ink-faint">
                           owned
                         </span>
                       ) : parkedCount > 0 ? (
-                        <span className="num rounded-full border border-ink/12 px-2 py-0.5 text-[9px] font-semibold tracking-[0.08em] text-ink-faint">
+                        <span className="num rounded-full border border-ink px-2 py-0.5 text-[9px] font-semibold tracking-[0.08em] text-ink-faint">
                           ×{parkedCount}
                         </span>
                       ) : null}

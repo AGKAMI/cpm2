@@ -14,7 +14,7 @@ import Link from "next/link";
 export default function TradePage() {
   return (
     <>
-        <div className="flex items-center justify-between gap-3 border-b border-mix(in srgb, var(--color-ink) 12%, transparent) pb-4 mb-6">
+        <div className="flex items-center justify-between gap-3 border-b border-ink pb-4 mb-6">
           <div className="flex items-center gap-2">
             <PageHeading folio="T-01" title="Trade Desk" meta="CPM2 · value every deal in Rands" />
           </div>
@@ -29,7 +29,7 @@ export default function TradePage() {
           type="button"
           role="tab"
           aria-selected={true}
-          className="cursor-default rounded-full border border-racing/45 bg-racing/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-racing"
+          className="cursor-default rounded-full border border-racing bg-racing px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-racing"
         >
           CPM2
         </button>
@@ -39,7 +39,7 @@ export default function TradePage() {
           aria-selected={false}
           disabled
           title="Coming soon"
-          className="cursor-not-allowed rounded-full border border-mix(in srgb, var(--color-ink) 12%, transparent) px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint opacity-60"
+          className="cursor-not-allowed rounded-full border border-ink px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint opacity-60"
         >
           CPM1 · coming soon
         </button>

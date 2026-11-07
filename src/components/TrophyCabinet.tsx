@@ -6,9 +6,9 @@ import { TROPHY_CLASSES, TROPHY_CLASS_LABELS, type TrophyClass } from "@/lib/con
 import type { TrophyRecord } from "@/lib/types";
 
 const METALS = [
-  { key: "gold", label: "Gold", text: "text-racing", dot: "bg-racing/15 border border-racing/30 text-racing" },
-  { key: "silver", label: "Silver", text: "text-ink-soft", dot: "bg-ink-soft/15 border border-ink-soft/30 text-ink-soft" },
-  { key: "bronze", label: "Bronze", text: "text-ink-faint", dot: "bg-ink-faint/15 border border-ink-faint/30 text-ink-faint" },
+  { key: "gold", label: "Gold", text: "text-racing", dot: "bg-racing border border-racing text-racing" },
+  { key: "silver", label: "Silver", text: "text-ink-soft", dot: "bg-ink-soft border border-ink-soft text-ink-soft" },
+  { key: "bronze", label: "Bronze", text: "text-ink-faint", dot: "bg-ink-faint border border-ink-faint text-ink-faint" },
 ] as const;
 
 type MetalKey = (typeof METALS)[number]["key"];
@@ -116,13 +116,13 @@ export function TrophyCabinet({
               {METALS.map((metal) => {
                 const value = row ? row[metal.key] : 0;
                 return (
-                  <span key={metal.key} className={`flex w-[68px] items-center justify-center gap-0.5 sm:gap-1 rounded-full border p-1 transition-all duration-150 ${value > 0 ? `border-${metal.key}/40 bg-${metal.key}/10` : "border-ink/10 bg-ink/[0.02]"}`}>
+                  <span key={metal.key} className={`flex w-[68px] items-center justify-center gap-0.5 sm:gap-1 rounded-full border p-1 transition-all duration-150 ${value > 0 ? `border-${metal.key} bg-${metal.key}` : "border-ink bg-ink"}`}>
                     <button
                       type="button"
                       onClick={() => void bump(klass, metal.key, -1)}
                       disabled={readOnly || busy !== null || value === 0}
                       aria-label={`Remove one ${metal.label.toLowerCase()} trophy from class ${klass}`}
-                      className={`square-btn h-6 w-6 text-[12px] transition-all duration-150 ${value > 0 ? "text-racing hover:bg-racing/20 active:scale-95" : "text-ink-faint hover:bg-ink/10 active:scale-95"}`}
+                      className={`square-btn h-6 w-6 text-[12px] transition-all duration-150 ${value > 0 ? "text-racing hover:bg-racing active:scale-95" : "text-ink-faint hover:bg-ink active:scale-95"}`}
                     >
                       −
                     </button>
@@ -134,7 +134,7 @@ export function TrophyCabinet({
                       onClick={() => void bump(klass, metal.key, 1)}
                       disabled={readOnly || busy !== null}
                       aria-label={`Add one ${metal.label.toLowerCase()} trophy to class ${klass}`}
-                      className={`square-btn h-6 w-6 text-[12px] transition-all duration-150 ${value > 0 ? "text-racing hover:bg-racing/20 active:scale-95" : "text-ink-faint hover:bg-ink/10 active:scale-95"}`}
+                      className={`square-btn h-6 w-6 text-[12px] transition-all duration-150 ${value > 0 ? "text-racing hover:bg-racing active:scale-95" : "text-ink-faint hover:bg-ink active:scale-95"}`}
                     >
                       +
                     </button>

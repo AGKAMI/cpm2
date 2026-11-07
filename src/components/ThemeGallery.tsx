@@ -37,7 +37,7 @@ export function ThemeGallery() {
                 aria-pressed={active}
                 className={`cursor-pointer rounded-full px-3 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors ${
                   active
-                    ? "bg-racing/14 text-racing shadow-[inset_0_1px_0_color-mix(in_srgb,var(--color-edge)_12%,transparent)]"
+                    ? "bg-racing/14 text-racing shadow-[inset_0_1px_0_inset-shadow]"
                     : "text-ink-faint hover:text-ink"
                 }`}
               >
@@ -98,15 +98,15 @@ function PaletteCard({
       title={`${palette.name} — ${hexes}`}
       className={`group relative cursor-pointer rounded-[14px] border p-3 text-left transition-[border-color,background-color,transform] duration-150 active:scale-[0.99] ${
         active
-          ? "border-racing/50 bg-racing/8"
-          : "border-ink/10 bg-ink/[0.025] hover:border-racing/30 hover:bg-ink/[0.045]"
+          ? "border-racing bg-racing"
+          : "border-ink bg-ink hover:border-racing hover:bg-ink"
       }`}
     >
       <div className="flex items-center gap-1.5" aria-hidden="true">
         {swatches.map((color) => (
           <span
             key={color}
-            className="h-7 flex-1 rounded-[7px] border border-ink/15 shadow-[inset_0_1px_0_color-mix(in_srgb,var(--color-edge)_18%,transparent)]"
+            className="h-7 flex-1 rounded-[7px] border border-ink shadow-[inset_0_1px_0_inset-shadow]"
             style={{ backgroundColor: color }}
           />
         ))}

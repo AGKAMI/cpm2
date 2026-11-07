@@ -84,8 +84,8 @@ async function main() {
     try {
       await tursoExecute(`DELETE FROM ${table}`);
       console.log(`Cleared ${table}`);
-    } catch {
-      console.log(`${table}: clear failed (${e.message})`);
+    } catch (e) {
+      console.log(`${table}: clear failed (${e instanceof Error ? e.message : String(e)})`);
     }
   }
 

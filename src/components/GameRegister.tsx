@@ -245,20 +245,16 @@ export function GameRegister({ game }: { game: GameType }) {
           Filter by car
         </Button>
         {carFilter ? (
-          <span className="flex flex-wrap items-center gap-2 rounded-full border border-racing/25 bg-racing/8 px-3 py-1.5">
+          <span className="flex flex-wrap items-center gap-2 rounded-full border border-racing bg-racing px-3 py-1.5">
             <span className="num text-[11px] text-racing">
               #{carFilter.carCode} {carFilter.carName}
             </span>
             <span className="num text-[10px] text-ink-faint">
               {carFilter.owners.length} account{carFilter.owners.length === 1 ? "" : "s"}
             </span>
-            <button
-              type="button"
-              onClick={() => patchParams({ car: null })}
-              className="num text-[10px] text-ink-faint transition hover:text-oxblood"
-            >
+            <Button variant="ghost" size="sm" onClick={() => patchParams({ car: null })}>
               clear ✕
-            </button>
+            </Button>
           </span>
         ) : null}
         {carError ? (
@@ -267,7 +263,7 @@ export function GameRegister({ game }: { game: GameType }) {
       </div>
 
       {selected.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-3 rounded-[16px] border border-racing/25 bg-racing/8 px-4 py-2.5">
+        <div className="flex flex-wrap items-center gap-3 rounded-[16px] border border-racing bg-racing px-4 py-2.5">
           <span className="num text-[11px] text-racing">{selected.length} selected</span>
           <Button variant="destructive" size="sm" onClick={() => void archiveSelected()}>
             Archive selected
@@ -279,9 +275,9 @@ export function GameRegister({ game }: { game: GameType }) {
       ) : null}
 
       {fleet.error ? (
-        <div className="rounded-[14px] border border-oxblood/35 bg-oxblood/8 px-4 py-3 text-sm text-oxblood">
+        <p className="rounded-[14px] border border-oxblood bg-oxblood px-3 py-2 text-xs text-oxblood">
           {fleet.error}
-        </div>
+        </p>
       ) : null}
 
       {fleet.loading && source.length === 0 ? (
@@ -313,7 +309,7 @@ export function GameRegister({ game }: { game: GameType }) {
         </section>
       ) : (
         <section className="panel animate-rise overflow-hidden rounded-[20px]">
-          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-ink/10 bg-ink/[0.04] px-4 py-2.5">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-ink bg-ink px-4 py-2.5">
             <span className="flex items-baseline gap-2.5">
               <span className="panel-title">{label}</span>
               <span className="num text-[10px] text-ink-faint">

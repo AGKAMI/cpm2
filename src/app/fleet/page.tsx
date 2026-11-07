@@ -25,7 +25,7 @@ export default function FleetIndexPage() {
           <Link
             key={game}
             href={`/fleet/${game}`}
-            className="panel animate-rise group rounded-[24px] p-6 sm:p-8 hover:bg-ink/5 hover:border-racing/30 transition-all duration-300 ease-out border border-mix(in srgb, var(--color-ink) 10%, transparent)"
+            className="panel animate-rise group rounded-[24px] p-6 sm:p-8 hover:bg-ink hover:border-racing transition-all duration-300 ease-out border border-ink"
           >
             <div className="flex items-baseline justify-between gap-3">
               <span className="panel-title text-ink">{GAME_LABELS[game]}</span>
@@ -50,7 +50,7 @@ export default function FleetIndexPage() {
               </svg>
             </p>
             <div className="mt-5 flex items-center gap-2">
-              <span className="rounded-full border border-racing/30 bg-racing/10 px-3 py-1 text-[9px] uppercase tracking-[0.2em] text-racing">
+              <span className="rounded-full border border-racing bg-racing px-3 py-1 text-[9px] uppercase tracking-[0.2em] text-racing">
                 {game === "cpm1" ? "G1" : "G2"}
               </span>
               <span className="flex-1 h-px bg-ink/5" />

@@ -72,7 +72,7 @@ export function FleetToolbar({
             name="filter"
             value={filter}
             onChange={(event) => onFilter(event.target.value as FleetFilter)}
-            className="glass-control mt-1 block h-10 cursor-pointer rounded-[12px] px-3 font-sans text-[12px] font-medium text-ink-soft hover:border-ink/20 focus:border-racing"
+            className="glass-control mt-1 block h-10 cursor-pointer rounded-[12px] px-3 font-sans text-[12px] font-medium text-ink-soft hover:border-ink focus:border-racing"
           >
           {FILTERS.map((item) => (
             <option key={item.key} value={item.key} className="bg-paper-raised text-ink">

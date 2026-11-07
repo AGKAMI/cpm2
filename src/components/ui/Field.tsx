@@ -17,7 +17,7 @@ export function Field({ label, hint, error, children, htmlFor, meter }: FieldPro
     <div className="flex flex-col gap-1.5">
       <label htmlFor={htmlFor} className="text-xs font-medium leading-none text-muted-foreground">
         {label}
-        {hint ? <span className="ml-2 text-xs font-normal text-muted-foreground/70">{hint}</span> : null}
+        {hint ? <span className="ml-2 text-xs font-normal text-muted-foreground">{hint}</span> : null}
       </label>
       {children}
       {meter ? <Meter value={meter.value} max={meter.max} tone={meter.tone ?? "racing"} /> : null}

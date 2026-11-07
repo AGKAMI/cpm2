@@ -97,7 +97,7 @@ export function ImportModal({ open, busy, onClose, onImport }: ImportModalProps)
               ))}
             </ul>
             {report.results.some((row) => row.status !== "created") ? (
-              <div className="max-h-44 overflow-y-auto rounded-[14px] border border-ink/10 bg-ink/[0.04] p-2 backdrop-blur-md">
+              <div className="max-h-44 overflow-y-auto rounded-[14px] border border-ink bg-ink p-2">
                 {report.results
                   .filter((row) => row.status !== "created")
                   .map((row) => (
@@ -125,7 +125,7 @@ export function ImportModal({ open, busy, onClose, onImport }: ImportModalProps)
               {" "}CPM2 base garage + {LIMITS.MAX_COIN_SLOTS} coin slot) are enforced per row.
             </p>
             {error ? (
-              <p className="rounded-[14px] border border-oxblood/35 bg-oxblood/8 px-3 py-2 text-xs text-oxblood">
+              <p className="rounded-[14px] border border-oxblood bg-oxblood px-3 py-2 text-xs text-oxblood">
                 {error}
               </p>
             ) : null}

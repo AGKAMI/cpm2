@@ -48,7 +48,7 @@ export function GuestGate({ children }: { children: React.ReactNode }) {
           {children}
         </div>
         <div className="absolute inset-x-0 top-0 flex items-start justify-center px-4 pt-8">
-          <div className="panel w-full max-w-[380px] rounded-[28px] p-8 sm:p-10 text-center border border-racing/25">
+          <div className="panel w-full max-w-[380px] rounded-[28px] p-8 sm:p-10 text-center border border-racing">
             <span className="racing text-[11px] uppercase tracking-[0.25em] font-semibold block mb-3">
               accounts only
             </span>

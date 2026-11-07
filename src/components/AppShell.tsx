@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -32,8 +32,6 @@ type ShellContextValue = {
   confirm: (options: ConfirmOptions) => Promise<boolean>;
 };
 
-import { createContext, useContext } from "react";
-
 const ShellContext = createContext<ShellContextValue | null>(null);
 
 export function useShell(): ShellContextValue {
@@ -59,8 +57,8 @@ function NavItem({ item, active }: { item: (typeof NAV)[number]; active: boolean
       className={cn(
         "relative flex flex-col items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-medium transition-all duration-200 whitespace-nowrap",
         active
-          ? "bg-primary/20 border border-primary/40 text-primary shadow-[0_0_14px_rgba(219,226,234,0.25)] hover:bg-primary/30"
-          : "bg-background/50 border border-transparent text-muted-foreground hover:bg-accent/40 hover:text-foreground hover:border-accent/40",
+          ? "bg-primary border border-primary text-primary hover:bg-primary"
+          : "bg-background border border-border text-muted-foreground hover:bg-accent hover:text-foreground hover:border-accent",
       )}
       aria-current={active ? "page" : undefined}
     >
@@ -292,7 +290,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           Skip to content
         </a>
-        <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-md pt-[env(safe-area-inset-top)]">
+        <header className="sticky top-0 z-30 border-b border-border bg-background pt-[env(safe-area-inset-top)]">
           <div className="relative mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-4 gap-y-2 px-4 pb-3 pt-3 sm:px-6">
             <Link href="/fleet/cpm2" className="flex items-center gap-3">
               <img
@@ -357,7 +355,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           className="mobile-dock fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-md px-4 pb-4 sm:pb-3 sm:px-6 sm:hidden"
         >
           <div
-            className="mx-auto flex max-w-[340px] items-center justify-center gap-2 overflow-x-auto whitespace-nowrap bg-background/90 border-t border-border rounded-full px-3 py-2 shadow-xl backdrop-blur-md"
+            className="mx-auto flex max-w-[340px] items-center justify-center gap-2 overflow-x-auto whitespace-nowrap bg-background border-t border-border rounded-full px-3 py-2 shadow-xl"
           >
             {NAV.map((item) => {
               const active =
@@ -416,7 +414,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         />
 
         {awaitingExportConsent && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-xl px-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-background px-4">
             <div className="relative w-full max-w-[340px] rounded-lg border border-border bg-background p-6 text-center shadow-lg">
               <h2 className="text-lg font-medium text-foreground mb-2">Confirm the export</h2>
               <p className="text-sm text-muted-foreground mb-4">

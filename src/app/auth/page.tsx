@@ -96,7 +96,7 @@ export default function AuthPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoFocus
-                className={Boolean(error) ? "border-racing/50 focus:border-racing" : ""}
+                className={Boolean(error) ? "border-racing focus:border-racing" : ""}
               />
             </Field>
 
@@ -108,7 +108,7 @@ export default function AuthPage() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className={Boolean(error) ? "border-racing/50 focus:border-racing" : ""}
+                className={Boolean(error) ? "border-racing focus:border-racing" : ""}
               />
             </Field>
 
@@ -121,7 +121,7 @@ export default function AuthPage() {
                   placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={Boolean(error) ? "border-racing/50 focus:border-racing" : ""}
+                  className={Boolean(error) ? "border-racing focus:border-racing" : ""}
                 />
               </Field>
             )}

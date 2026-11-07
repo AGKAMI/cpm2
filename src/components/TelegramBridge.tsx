@@ -65,17 +65,20 @@ export function TelegramBridge() {
     };
 
     void (async () => {
-      // Wait (max ~3s) for the SDK; a plain browser never gets it and exits
-      // on the first tick.
-      for (let waited = 0; waited < 30; waited += 1) {
+      // Poll up to ~30s — outside-chat opens inject the SDK late.
+      for (let waited = 0; waited < 600; waited += 1) {
         const webApp = window.Telegram?.WebApp;
         if (webApp) {
           if (!cancelled) attach(webApp);
           return;
         }
-        await new Promise((resolve) => window.setTimeout(resolve, 100));
+        await new Promise((resolve) => window.setTimeout(resolve, 50));
         if (cancelled) return;
       }
+
+      // SDK never arrived — leave the page unlocked so it renders as a
+      // normal website instead of stuck raw HTML. We only lock scroll/zoom
+      // when WebApp is confirmed and ready()/expand() have fired.
     })();
 
     return () => {

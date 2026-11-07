@@ -157,8 +157,8 @@ export function CarFilterModal({ open, game, onClose, onSelect }: CarFilterModal
                     }}
                     className={`flex w-full items-center gap-3 rounded-[12px] border border-transparent px-3 py-2.5 text-left transition-colors ${
                       none
-                        ? "cursor-pointer opacity-60 hover:border-ink/15 hover:bg-ink/[0.03]"
-                        : "cursor-pointer hover:border-racing/30 hover:bg-racing/6"
+                        ? "cursor-pointer opacity-60 hover:border-ink hover:bg-ink"
+                        : "cursor-pointer hover:border-racing hover:bg-racing"
                     }`}
                   >
                     <span className="num w-11 shrink-0 text-[12px] text-ink-faint">
@@ -173,7 +173,7 @@ export function CarFilterModal({ open, game, onClose, onSelect }: CarFilterModal
                       ) : count === 0 ? (
                         <span className="num text-[10px] text-ink-faint">no accounts</span>
                       ) : (
-                        <span className="num rounded-full border border-racing/30 bg-racing/10 px-2 py-0.5 text-[10px] font-semibold text-racing">
+                        <span className="num rounded-full border border-racing bg-racing px-2 py-0.5 text-[10px] font-semibold text-racing">
                           {count} account{count === 1 ? "" : "s"}
                         </span>
                       )}

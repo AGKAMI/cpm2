@@ -90,7 +90,7 @@ export function Modal({
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className="pointer-events-none fixed inset-0 bg-background/80 backdrop-blur-[6px] animate-fade" aria-hidden />
+      <div className="pointer-events-none fixed inset-0 bg-background animate-fade" aria-hidden />
       <div
         ref={sheetRef}
         role="dialog"

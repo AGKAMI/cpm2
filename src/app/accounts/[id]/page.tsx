@@ -100,7 +100,7 @@ export default function AccountPage() {
               </svg>
             </button>
             {archived ? (
-              <span className="rounded-full border border-oxblood/40 px-1.5 py-0.5 font-sans text-[9px] font-semibold uppercase tracking-[0.14em] text-oxblood">
+              <span className="rounded-full border border-oxblood px-1.5 py-0.5 font-sans text-[9px] font-semibold uppercase tracking-[0.14em] text-oxblood">
                 Archived
               </span>
             ) : null}
@@ -188,7 +188,7 @@ export default function AccountPage() {
             />
           </div>
 
-          <div className="mt-6 border-t border-ink/10 pt-4">
+          <div className="mt-6 border-t border-ink pt-6">
             <h3 className="panel-title">Garage capacity</h3>
             <div className="mt-3">
               <CapacityGauge
@@ -248,13 +248,13 @@ export default function AccountPage() {
                 <dt className="text-[12px] text-ink-soft">Spent on cars</dt>
                 <dd className="num text-[12px] text-brass">{formatNumber(account.coinsSpentOnCars)}</dd>
               </div>
-              <div className="flex items-baseline justify-between gap-2 border-t border-ink/10 pt-2">
+              <div className="flex items-baseline justify-between gap-2 border-t border-ink pt-2">
                 <dt className="text-[12px] font-semibold text-ink">Spendable</dt>
                 <dd className="num text-[12px] font-semibold text-racing">{formatNumber(spendable)}</dd>
               </div>
             </dl>
             {!archived ? (
-              <p className="mt-4 border-t border-ink/10 pt-3 text-[11px] leading-snug text-ink-faint">
+              <p className="mt-4 border-t border-ink pt-3 text-[11px] leading-snug text-ink-faint">
                 {!GARAGE_RULES[account.game].hasSlots
                   ? "CPM1 has no car slots — there is nothing to buy, every model in the game fits once."
                   : spendable >= LIMITS.SLOT_COST_COINS

@@ -113,25 +113,25 @@ export function SlotModal({ open, account, onClose, onReview }: SlotModalProps) 
           </div>
         </div>
 
-        <div className="flex items-center justify-between rounded-[14px] border border-ink/10 bg-ink/[0.04] px-4 py-3 backdrop-blur-md">
+        <div className="flex items-center justify-between rounded-[14px] border border-ink bg-ink px-4 py-3">
           <span className="label-caps">New garage size</span>
           <span className="num text-sm text-racing">
             {account.cars}/{newCapacity} slots
           </span>
         </div>
 
-        <div className="flex items-center justify-between rounded-[14px] border border-ink/10 bg-ink/[0.04] px-4 py-3 backdrop-blur-md">
+        <div className="flex items-center justify-between rounded-[14px] border border-ink bg-ink px-4 py-3">
           <span className="label-caps">Total cost</span>
           <span className="num text-sm text-racing">{formatNumber(cost)} coins</span>
         </div>
 
-        <p className="rounded-[14px] border border-brass/30 bg-brass/8 px-3 py-2 text-[11px] leading-snug text-ink-soft">
+        <p className="rounded-[14px] border border-brass bg-brass px-3 py-2 text-[11px] leading-snug text-ink-soft">
           The {LIMITS.NEW_GARAGE_PRICE} new garage is bought in the game, not with coins — it adds{" "}
           {LIMITS.NEW_GARAGE_SLOTS} slots at once. Tick it in the account form.
         </p>
 
         {blocker ? (
-          <p className="rounded-[14px] border border-oxblood/35 bg-oxblood/8 px-3 py-2 text-xs text-oxblood">
+          <p className="rounded-[14px] border border-oxblood bg-oxblood px-3 py-2 text-xs text-oxblood">
             {blocker}
           </p>
         ) : null}

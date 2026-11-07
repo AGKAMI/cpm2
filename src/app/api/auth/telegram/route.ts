@@ -8,7 +8,7 @@ import {
   sessionCookieOptions,
 } from "@/lib/auth";
 import { initDataUserId, telegramBotToken, verifyTelegramInitData } from "@/lib/telegram";
-import { bindUserTelegram, getUserByTelegramId, verifyUserCredentials } from "@/lib/service-turso";
+import { bindUserTelegram, getUserByEmail, getUserByTelegramId, verifyUserCredentials } from "@/lib/service-turso";
 
 export const dynamic = "force-dynamic";
 
@@ -61,7 +61,29 @@ export async function POST(request: Request) {
       return response;
     }
 
-    // Not bound yet: verify email + password, then bind this Telegram id to that account.
+    // Not bound yet.
+    // 1) Console-only path: APP_PASSWORD matches → bind this Telegram id to the console owner.
+    //    Matches the website's console lock screen: password only, no email.
+    if (!email && password) {
+      const appPassword = process.env.APP_PASSWORD;
+      const given = password.trim();
+      const expected = appPassword ? appPassword.trim() : "";
+      if (appPassword && given === expected) {
+        const owner = await getUserByEmail("ojuniormaluleke@gmail.com");
+        if (!owner) {
+          return NextResponse.json(
+            { error: { code: "OWNER_NOT_FOUND", message: "Console owner account not found. Register first." } },
+            { status: 401 },
+          );
+        }
+        await bindUserTelegram(owner.id, telegramUserId);
+        const response = NextResponse.json({ ok: true, user: { id: owner.id, email: owner.email }, mode: "console" });
+        response.cookies.set(SESSION_COOKIE, createSessionToken(owner.id), sessionCookieOptions(request));
+        return response;
+      }
+    }
+
+    // 2) Player binding: email + password → verify credentials, then bind Telegram id to that account.
     if (!email || !password) {
       return NextResponse.json(
         {

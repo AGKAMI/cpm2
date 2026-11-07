@@ -133,7 +133,7 @@ export function GaragePanel({ account, readOnly = false, onChanged }: GaragePane
           </Button>
         </div>
       ) : garage && garage.cars.length === 0 ? (
-        <div className="rounded-[14px] border border-dashed border-ink/15 px-4 py-8 text-center">
+        <div className="rounded-[14px] border border-dashed border-ink px-4 py-8 text-center">
           <p className="text-[13px] text-ink">No cars logged</p>
           <p className="mt-1 text-[12px] text-ink-faint">
             Search the catalog to add your first.
@@ -144,7 +144,7 @@ export function GaragePanel({ account, readOnly = false, onChanged }: GaragePane
           {garage.cars.map((car) => (
             <li
               key={car.id}
-              className="flex items-start gap-3 border-t border-ink/8 py-2.5 first:border-0 first:pt-0"
+              className="flex items-start gap-3 border-t border-ink py-2.5 first:border-0 first:pt-0"
             >
               <span className="num w-11 shrink-0 pt-0.5 text-[12px] text-ink-faint">
                 #{car.carCode}
@@ -161,7 +161,7 @@ export function GaragePanel({ account, readOnly = false, onChanged }: GaragePane
                   onClick={() => void remove(car)}
                   disabled={removingId !== null}
                   aria-label={`Remove #${car.carCode} ${car.carName} from the garage`}
-                  className="square-btn mt-0.5 h-7 w-7 shrink-0 hover:border-oxblood/50 hover:bg-oxblood/10 hover:text-oxblood"
+                  className="square-btn mt-0.5 h-7 w-7 shrink-0 hover:border-oxblood hover:bg-oxblood hover:text-oxblood"
                 >
                   <svg
                     viewBox="0 0 24 24"

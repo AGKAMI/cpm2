@@ -60,7 +60,7 @@ export function CapacityGauge({
             fill="none"
             strokeWidth="8"
             strokeLinecap="round"
-            className="stroke-ink/10"
+            className="stroke-ink"
           />
           {slots > 0 ? (
             <path
@@ -68,7 +68,7 @@ export function CapacityGauge({
               fill="none"
               strokeWidth="8"
               strokeLinecap="round"
-              className="stroke-brass/35"
+              className="stroke-brass"
             />
           ) : null}
           <path
@@ -108,7 +108,7 @@ export function CapacityGauge({
       </div>
 
       {atCapacity ? (
-        <span className="shrink-0 rounded-full border border-racing/40 px-2 py-0.5 font-sans text-[9px] font-semibold uppercase tracking-[0.14em] text-racing">
+        <span className="shrink-0 rounded-full border border-racing px-2 py-0.5 font-sans text-[9px] font-semibold uppercase tracking-[0.14em] text-racing">
           Full
         </span>
       ) : null}

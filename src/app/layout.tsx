@@ -50,6 +50,39 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
     >
       <head>
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+        />
+        {/* Lock scroll/zoom + call Telegram WebApp ready()/expand() ONLY if we're in a WebApp context.
+           When opened from the bot profile "OPEN" button (outside the chat),
+           Telegram may not inject window.Telegram.WebApp at all. If we lock
+           overflow:hidden without ever calling ready()/expand(), the page is
+           stuck as raw HTML. Only lock when WebApp is confirmed. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){
+              var d=document.documentElement,b=document.body;
+              var waited=0;
+              var poll=setInterval(function(){
+                var w=window.Telegram?.WebApp;
+                if(w){
+                  clearInterval(poll);
+                  try{
+                    w.ready?.();w.expand?.();
+                    d.style.touchAction='manipulation';
+                    if(b){
+                      b.style.touchAction='manipulation';
+                    }
+                  }catch(e){}
+                  return;
+                }
+                waited+=50;
+                if(waited>=30000) clearInterval(poll);
+              },50);
+            })()`,
+          }}
+        />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className={`min-h-screen antialiased ${body.variable} ${mono.variable}`}>

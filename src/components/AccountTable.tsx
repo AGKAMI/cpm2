@@ -94,9 +94,7 @@ export function AccountTable({
             {accounts.map((account, index) => (
               <tr
                 key={account.id}
-                className={`group border-b border-mix(in srgb, var(--color-ink) 10%, transparent) transition-colors hover:bg-mix(in srgb, var(--color-ink) 6%, transparent) ${
-                  busyId === account.id ? "opacity-60" : ""
-                }`}
+                className={`group border-b border-ink transition-colors hover:bg-ink ${busyId === account.id ? "opacity-60" : ""}`}
               >
                 {selectable ? (
                   <td className="px-2.5 py-3">
@@ -158,7 +156,7 @@ export function AccountTable({
                     <button
                       type="button"
                       onClick={() => onBuySlot(account)}
-                      className="mt-1.5 inline-flex min-h-[24px] cursor-pointer items-center rounded-full font-sans text-[11px] font-medium text-racing border border-racing/30 bg-racing/8 px-3 py-1 transition hover:bg-racing/16 hover:border-racing/50"
+                      className="mt-1.5 inline-flex min-h-[24px] cursor-pointer items-center rounded-full font-sans text-[11px] font-medium text-racing border border-racing bg-racing px-3 py-1 transition hover:bg-racing hover:border-racing"
                     >
                       + unlock 21st slot (100c)
                     </button>
@@ -217,7 +215,7 @@ export function AccountTable({
         {accounts.map((account) => (
           <article
             key={account.id}
-            className={`panel-tight rounded-[20px] p-4 border border-ink/8 transition-all duration-150 group ${busyId === account.id ? "opacity-60" : ""}`}
+            className={`panel-tight rounded-[20px] p-4 border border-ink transition-all duration-150 group ${busyId === account.id ? "opacity-60" : ""}`}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -306,7 +304,7 @@ export function AccountTable({
               <button
                 type="button"
                 onClick={() => onBuySlot(account)}
-                className="mt-3 w-full cursor-pointer rounded-full border border-racing/35 py-2 font-sans text-[11px] font-semibold text-racing transition-colors hover:bg-racing hover:text-paper-raised"
+                className="mt-3 w-full cursor-pointer rounded-full border border-racing py-2 font-sans text-[11px] font-semibold text-racing transition-colors hover:bg-racing hover:text-paper-raised"
               >
                 + Unlock the 21st slot · 100 coins
               </button>
@@ -335,7 +333,7 @@ function SortButton({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex min-h-[24px] cursor-pointer items-center gap-1 rounded-full transition align-center ${align === "right" ? "flex-row-reverse" : ""} ${active ? "text-racing border-racing/30 bg-racing/8 px-2 py-0.5" : "text-ink-soft border-ink/10 px-2 py-0.5"}`}
+      className={`inline-flex min-h-[24px] cursor-pointer items-center gap-1 rounded-full transition align-center ${align === "right" ? "flex-row-reverse" : ""} ${active ? "text-racing border-racing bg-racing px-2 py-0.5" : "text-ink-soft border-ink px-2 py-0.5"}`}
     >
       {label}
       <span
@@ -402,7 +400,7 @@ function StepButton({
       disabled={disabled}
       title={label}
       aria-label={label}
-      className="grid h-6 w-6 cursor-pointer place-items-center rounded-full border border-mix(in srgb, var(--color-ink) 12%, transparent) text-[13px] leading-none text-ink-faint transition-colors hover:border-racing/50 hover:bg-mix(in srgb, var(--color-ink) 10%, transparent) hover:text-racing active:scale-95 disabled:opacity-30"
+      className="grid h-6 w-6 cursor-pointer place-items-center rounded-full border border-ink text-[13px] leading-none text-ink-faint transition-colors hover:border-racing hover:bg-ink hover:text-racing active:scale-95 disabled:opacity-30"
     >
       {children}
     </button>
@@ -428,8 +426,8 @@ function IconAction({
       aria-label={label}
       className={`grid h-8 w-8 cursor-pointer place-items-center rounded-full border border-transparent transition-colors ${
         danger
-          ? "text-ink-faint hover:border-racing/40 hover:bg-racing/10 hover:text-racing"
-          : "text-ink-faint hover:border-ink/20 hover:bg-ink/5 hover:text-racing"
+          ? "text-ink-faint hover:border-racing hover:bg-racing hover:text-racing"
+          : "text-ink-faint hover:border-ink hover:bg-ink hover:text-racing"
       }`}
     >
       {icon}

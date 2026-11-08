@@ -200,3 +200,40 @@ export type Appointment = {
   missedCount: number;
   createdAt: string;
 };
+
+export type Promotion = {
+  id: number;
+  title: string;
+  subtitle: string;
+  description: string;
+  discountPercent: number;
+  discountCode: string;
+  ctaText: string;
+  ctaLink: string;
+  backgroundColor: string;
+  accentColor: string;
+  imageUrl: string;
+  isActive: boolean;
+  startDate: string | null;
+  endDate: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PromotionInput = {
+  title: string;
+  subtitle?: string;
+  description?: string;
+  discountPercent?: number;
+  discountCode?: string;
+  ctaText?: string;
+  ctaLink?: string;
+  backgroundColor?: string;
+  accentColor?: string;
+  imageUrl?: string;
+  isActive?: boolean;
+  startDate?: string | null;
+  endDate?: string | null;
+  sortOrder?: number;
+};

@@ -47,6 +47,15 @@ const NAV = [
   { href: "/settings", label: "Settings", hint: "S" },
 ];
 
+const STORE_NAV = [
+  ...NAV,
+  { href: "/store", label: "Store", hint: "V" },
+];
+
+function getNavForPath(pathname: string) {
+  return pathname.startsWith("/store") ? STORE_NAV : NAV;
+}
+
 /** Shaped pill nav item with hover lift + active glow — used by both desktop header and mobile dock. */
 function NavItem({ item, active }: { item: (typeof NAV)[number]; active: boolean }) {
   const Icon = NAV_ICONS[item.href];
@@ -298,8 +307,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           Skip to content
         </a>
-        {pathname === "/" || pathname.startsWith("/store") ? null : (
-        <header
+        {pathname === "/" ? null : (
+                <header
           className="sticky top-0 z-30 border-b border-border shadow-lg pt-[env(safe-area-inset-top)]"
           style={{ backgroundColor: "var(--color-paper-raised)" }}
         >
@@ -324,12 +333,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Button>
 
             <nav className="ml-auto hidden items-center gap-2 sm:flex">
-              {NAV.map((item) => {
-                const active =
-                  item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-                return <NavItem key={item.href} item={item} active={active} />;
-              })}
-            </nav>
+                          {getNavForPath(pathname).map((item) => {
+                            const active =
+                              item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+                            return <NavItem key={item.href} item={item} active={active} />;
+                          })}
+                        </nav>
 
             <div className="ml-auto flex flex-wrap items-center gap-2 sm:ml-0">
               <span className="flex items-center gap-2 rounded-md bg-background px-3 py-1 border border-border">
@@ -364,20 +373,20 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="border-t border-border mb-4" />
         </footer>
 
-        {pathname === "/" || pathname.startsWith("/store") ? null : (
-        <nav
-          aria-label="Primary"
-          className="mobile-dock fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-md px-4 pb-4 sm:pb-3 sm:px-6 sm:hidden"
-        >
+        {pathname === "/" ? null : (
+                <nav
+                  aria-label="Primary"
+                  className="mobile-dock fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-md px-4 pb-4 sm:pb-3 sm:px-6 sm:hidden"
+                >
           <div
-            className="mx-auto flex max-w-[340px] items-center justify-center gap-2 overflow-x-auto whitespace-nowrap bg-background border-t border-border rounded-full px-3 py-2 shadow-xl"
-          >
-            {NAV.map((item) => {
-              const active =
-                item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-              return <NavItem key={item.href} item={item} active={active} />;
-            })}
-          </div>
+                      className="mx-auto flex max-w-[340px] items-center justify-center gap-2 overflow-x-auto whitespace-nowrap bg-background border-t border-border rounded-full px-3 py-2 shadow-xl"
+                    >
+                      {getNavForPath(pathname).map((item) => {
+                        const active =
+                          item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+                        return <NavItem key={item.href} item={item} active={active} />;
+                      })}
+                    </div>
         </nav>
         )}
 

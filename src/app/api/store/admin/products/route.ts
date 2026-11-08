@@ -164,9 +164,22 @@ export async function DELETE(request: Request) {
     if (!id) {
       return fail({ status: 400, body: { error: { code: "missing_id", message: "Product id required." } } });
     }
-    // Soft-unpublish instead of hard delete — protects order history references
-    // (full delete service to be added in Phase 6)
-    return fail({ status: 501, body: { error: { code: "not_implemented", message: "Use unpublish via PUT isPublished=false" } } });
+    // Check product exists
+    const product = await getProduct(Number(id));
+    if (!product) {
+      return fail({ status: 404, body: { error: { code: "not_found", message: "Product not found." } } });
+    }
+    // Soft delete: unpublish and mark as deleted (protects order history references)
+    // In future, we can add a deletedAt column for true soft delete
+    const updated = await updateProduct(Number(id), {
+      isPublished: false,
+      availabilityState: "unavailable",
+      stockQuantity: 0,
+    });
+    if (!updated) {
+      return fail({ status: 404, body: { error: { code: "not_found", message: "Product not found." } } });
+    }
+    return ok({ deleted: true, product: updated });
   } catch (err) {
     return fail(err);
   }

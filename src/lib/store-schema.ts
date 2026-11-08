@@ -111,6 +111,26 @@ CREATE TABLE IF NOT EXISTS vanta_admins (
   is_active      INTEGER  NOT NULL DEFAULT 1
 );
 
+CREATE TABLE IF NOT EXISTS vanta_promotions (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  title           TEXT    NOT NULL,
+  subtitle        TEXT    NOT NULL DEFAULT '',
+  description     TEXT    NOT NULL DEFAULT '',
+  discount_percent INTEGER NOT NULL DEFAULT 0,
+  discount_code   TEXT    NOT NULL DEFAULT '',
+  cta_text        TEXT    NOT NULL DEFAULT 'Shop now',
+  cta_link        TEXT    NOT NULL DEFAULT '/store/categories',
+  background_color TEXT   NOT NULL DEFAULT '#1c1c1f',
+  accent_color    TEXT    NOT NULL DEFAULT '#d4af4f',
+  image_url       TEXT    NOT NULL DEFAULT '',
+  is_active       INTEGER NOT NULL DEFAULT 1,
+  start_date      TEXT,
+  end_date        TEXT,
+  sort_order      INTEGER NOT NULL DEFAULT 0,
+  created_at      TEXT    NOT NULL,
+  updated_at      TEXT    NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS vanta_audit_logs (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   actor_platform TEXT,

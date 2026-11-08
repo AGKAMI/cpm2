@@ -4,7 +4,7 @@
  */
 
 import { getStoreDb } from "../store-db.ts";
-import type { Product, Category, ProductMedia, Inventory, ProductInput, Exclusivity, AvailabilityState } from "../store-types.ts";
+import type { Product, Category, ProductMedia, Inventory, ProductInput, Exclusivity, AvailabilityState, Promotion, PromotionInput } from "../store-types.ts";
 
 function rowToProduct(row: Record<string, unknown>): Product {
   return {
@@ -340,4 +340,127 @@ export async function createMedia(input: {
   const id = result.lastInsertRowid;
   if (id === null) throw new Error("Media insert returned no id");
   return rowToMedia({ id, ...input, file_type: input.fileType ?? "image", sort_order: input.sortOrder ?? 0, is_published: true, uploaded_at: now, version: 1 });
+}
+
+function rowToPromotion(row: Record<string, unknown>): Promotion {
+  return {
+    id: Number(row.id),
+    title: String(row.title ?? ""),
+    subtitle: String(row.subtitle ?? ""),
+    description: String(row.description ?? ""),
+    discountPercent: Number(row.discount_percent ?? 0),
+    discountCode: String(row.discount_code ?? ""),
+    ctaText: String(row.cta_text ?? "Shop now"),
+    ctaLink: String(row.cta_link ?? "/store/categories"),
+    backgroundColor: String(row.background_color ?? "#1c1c1f"),
+    accentColor: String(row.accent_color ?? "#d4af4f"),
+    imageUrl: String(row.image_url ?? ""),
+    isActive: Number(row.is_active ?? 1) === 1,
+    startDate: row.start_date === null || row.start_date === undefined ? null : String(row.start_date),
+    endDate: row.end_date === null || row.end_date === undefined ? null : String(row.end_date),
+    sortOrder: Number(row.sort_order ?? 0),
+    createdAt: String(row.created_at ?? ""),
+    updatedAt: String(row.updated_at ?? ""),
+  };
+}
+
+export async function listPromotions({ onlyActive = true }: { onlyActive?: boolean } = {}): Promise<Promotion[]> {
+  const db = await getStoreDb();
+  let sql = `SELECT * FROM vanta_promotions WHERE 1=1`;
+  const args: unknown[] = [];
+  if (onlyActive) {
+    sql += ` AND is_active = 1`;
+    const now = new Date().toISOString();
+    sql += ` AND (start_date IS NULL OR start_date <= ?)`;
+    args.push(now);
+    sql += ` AND (end_date IS NULL OR end_date >= ?)`;
+    args.push(now);
+  }
+  sql += ` ORDER BY sort_order ASC, created_at DESC`;
+  const result = await db.execute({ sql, args });
+  return result.rows.map(rowToPromotion);
+}
+
+export async function getPromotion(id: number): Promise<Promotion | null> {
+  const db = await getStoreDb();
+  const result = await db.execute({
+    sql: `SELECT * FROM vanta_promotions WHERE id = ?`,
+    args: [id],
+  });
+  if (result.rows.length === 0) return null;
+  return rowToPromotion(result.rows[0]);
+}
+
+export async function createPromotion(input: PromotionInput): Promise<Promotion> {
+  const db = await getStoreDb();
+  const now = new Date().toISOString();
+  const result = await db.execute({
+    sql: `INSERT INTO vanta_promotions (title, subtitle, description, discount_percent, discount_code, cta_text, cta_link, background_color, accent_color, image_url, is_active, start_date, end_date, sort_order, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    args: [
+      input.title.trim(),
+      input.subtitle ?? "",
+      input.description ?? "",
+      input.discountPercent ?? 0,
+      input.discountCode ?? "",
+      input.ctaText ?? "Shop now",
+      input.ctaLink ?? "/store/categories",
+      input.backgroundColor ?? "#1c1c1f",
+      input.accentColor ?? "#d4af4f",
+      input.imageUrl ?? "",
+      input.isActive ?? true ? 1 : 0,
+      input.startDate ?? null,
+      input.endDate ?? null,
+      input.sortOrder ?? 0,
+      now,
+      now,
+    ],
+  });
+  const id = result.lastInsertRowid;
+  if (id === null) throw new Error("Promotion insert returned no id");
+  return getPromotion(id) as Promise<Promotion>;
+}
+
+export async function updatePromotion(
+  promotionId: number,
+  input: Partial<PromotionInput>
+): Promise<Promotion | null> {
+  const db = await getStoreDb();
+  const fields: string[] = [];
+  const args: unknown[] = [];
+  const set = (col: string, val: unknown) => {
+    fields.push(`${col} = ?`);
+    args.push(val);
+  };
+  if (input.title !== undefined) set("title", input.title.trim());
+  if (input.subtitle !== undefined) set("subtitle", input.subtitle);
+  if (input.description !== undefined) set("description", input.description);
+  if (input.discountPercent !== undefined) set("discount_percent", input.discountPercent);
+  if (input.discountCode !== undefined) set("discount_code", input.discountCode);
+  if (input.ctaText !== undefined) set("cta_text", input.ctaText);
+  if (input.ctaLink !== undefined) set("cta_link", input.ctaLink);
+  if (input.backgroundColor !== undefined) set("background_color", input.backgroundColor);
+  if (input.accentColor !== undefined) set("accent_color", input.accentColor);
+  if (input.imageUrl !== undefined) set("image_url", input.imageUrl);
+  if (input.isActive !== undefined) set("is_active", input.isActive ? 1 : 0);
+  if (input.startDate !== undefined) set("start_date", input.startDate);
+  if (input.endDate !== undefined) set("end_date", input.endDate);
+  if (input.sortOrder !== undefined) set("sort_order", input.sortOrder);
+  if (fields.length === 0) return getPromotion(promotionId);
+  set("updated_at", new Date().toISOString());
+  args.push(promotionId);
+  await db.execute({
+    sql: `UPDATE vanta_promotions SET ${fields.join(", ")} WHERE id = ?`,
+    args,
+  });
+  return getPromotion(promotionId);
+}
+
+export async function deletePromotion(promotionId: number): Promise<boolean> {
+  const db = await getStoreDb();
+  const result = await db.execute({
+    sql: `DELETE FROM vanta_promotions WHERE id = ?`,
+    args: [promotionId],
+  });
+  return (result.affectedRowCount ?? 0) > 0;
 }

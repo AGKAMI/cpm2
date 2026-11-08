@@ -12,9 +12,9 @@ import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Field";
-import type { AdminRecord } from "@/lib/store/admin-service";
+import { vantaApi, type VantaAdminRecord } from "@/lib/store/client";
 
-type AdminRow = AdminRecord & { formattedId: string };
+type AdminRow = VantaAdminRecord & { formattedId: string };
 
 export default function OwnerPage() {
   const router = useRouter();
@@ -33,10 +33,9 @@ export default function OwnerPage() {
   async function loadAdmins() {
     setLoading(true);
     try {
-      const res = await fetch("/api/store/admin/admins", { cache: "no-store" });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error?.message ?? "Failed to load admins");
-      setAdmins((json.admins ?? []).map((a: AdminRecord) => ({ ...a, formattedId: `tg_${a.telegramUserId}` })));
+      const res = await vantaApi.adminAdmins();
+      setAdmins((res.admins ?? []).map((a: VantaAdminRecord) => ({ ...a, formattedId: `tg_${a.telegramUserId}` })));
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load admins.");
     } finally {
@@ -53,13 +52,7 @@ export default function OwnerPage() {
     }
     setSaving(true);
     try {
-      const res = await fetch("/api/store/admin/admins", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ telegramUserId: newId.trim(), telegramUsername: newName.trim() }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error?.message ?? "Failed to add admin");
+      await vantaApi.createAdmin({ telegramUserId: newId.trim(), telegramUsername: newName.trim() });
       setMsg("Admin added.");
       setNewId("");
       setNewName("");
@@ -75,11 +68,7 @@ export default function OwnerPage() {
     if (!window.confirm("Remove this admin?")) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/store/admin/admins/${encodeURIComponent(telegramUserId)}`, {
-        method: "DELETE",
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error?.message ?? "Failed to remove admin");
+      await vantaApi.deleteAdmin(telegramUserId);
       setMsg("Admin removed.");
       await loadAdmins();
     } catch (err) {

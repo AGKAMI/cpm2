@@ -979,6 +979,23 @@ export default function AdminPage() {
                                       >
                                         {p.isPublished ? "Unpublish" : "Publish"}
                                       </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={async () => {
+                                          if (!window.confirm(`Delete "${p.name}"? This will unpublish and mark unavailable.`)) return;
+                                          setError(null);
+                                          try {
+                                            await vantaApi.deleteProduct(p.id);
+                                            setMsg("Product deleted (unpublished & marked unavailable).");
+                                          } catch (err) {
+                                            setError(err instanceof Error ? err.message : "Failed to delete product.");
+                                          }
+                                        }}
+                                        className="text-destructive hover:bg-destructive/10"
+                                      >
+                                        Delete
+                                      </Button>
                                     </div>
                                   </article>
                                 );

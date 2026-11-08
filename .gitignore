@@ -59,3 +59,4 @@ scripts/migrate-to-turso.mjs
 scripts/debug-data.mjs
 scripts/apply-prices.cjs
 .env*.local
+.env*

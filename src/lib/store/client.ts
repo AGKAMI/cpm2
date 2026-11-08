@@ -75,6 +75,21 @@ export const vantaApi = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  promotions: () => request<{ promotions: VantaPromotion[] }>("/promotions"),
+  createPromotion: (body: unknown) =>
+    request<{ promotion: VantaPromotion }>("/admin/promotions", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  updatePromotion: (id: number, body: unknown) =>
+    request<{ promotion: VantaPromotion }>(`/admin/promotions?id=${id}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+  deletePromotion: (id: number) =>
+    request<{ deleted: boolean }>(`/admin/promotions?id=${id}`, {
+      method: "DELETE",
+    }),
   createProduct: (body: unknown) =>
     request<{ product: VantaProduct }>("/admin/products", {
       method: "POST",
@@ -86,10 +101,14 @@ export const vantaApi = {
       body: JSON.stringify(body),
     }),
   updateProductPublish: (id: number, publish: boolean) =>
-    request<{ product: VantaProduct }>(`/admin/products?id=${id}`, {
-      method: "PUT",
-      body: JSON.stringify({ isPublished: publish }),
-    }),
+      request<{ product: VantaProduct }>(`/admin/products?id=${id}`, {
+        method: "PUT",
+        body: JSON.stringify({ isPublished: publish }),
+      }),
+    deleteProduct: (id: number) =>
+      request<{ deleted: boolean }>(`/admin/products?id=${id}`, {
+        method: "DELETE",
+      }),
   orders: () => {
     let url = "/orders";
     const pid = guestPlayerId();
@@ -114,8 +133,18 @@ export const vantaApi = {
   profile: () => request<{ customer: VantaCustomer | null; telegramUser: TelegramUser | null }>("/profile"),
 
   // Admin order management
-  adminOrders: () => request<{ orders: VantaOrder[] }>("/admin/orders"),
-  verifyPayment: (orderId: string) =>
+    adminOrders: () => request<{ orders: VantaOrder[] }>("/admin/orders"),
+    adminAdmins: () => request<{ admins: VantaAdminRecord[] }>("/admin/admins"),
+    createAdmin: (body: { telegramUserId: string; telegramUsername: string }) =>
+      request<{ admin: VantaAdminRecord }>("/admin/admins", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    deleteAdmin: (telegramUserId: string) =>
+      request<{ deleted: boolean }>(`/admin/admins/${encodeURIComponent(telegramUserId)}`, {
+        method: "DELETE",
+      }),
+    verifyPayment: (orderId: string) =>
     request<{ orderId: string; paymentState: string; orderState: string }>(
       `/admin/orders/${encodeURIComponent(orderId)}/verify-payment`,
       { method: "POST", body: JSON.stringify({ orderId }) },
@@ -173,6 +202,36 @@ export type VantaCategory = {
   sortOrder: number;
   isActive: boolean;
   createdAt: string;
+};
+
+export type VantaPromotion = {
+  id: number;
+  title: string;
+  subtitle: string;
+  description: string;
+  discountPercent: number;
+  discountCode: string;
+  ctaText: string;
+  ctaLink: string;
+  backgroundColor: string;
+  accentColor: string;
+  imageUrl: string;
+  isActive: boolean;
+  startDate: string | null;
+  endDate: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type VantaAdminRecord = {
+  id: number;
+  telegramUserId: string;
+  telegramUsername: string;
+  role: "owner" | "admin";
+  addedBy: string | null;
+  addedAt: string;
+  isActive: boolean;
 };
 
 export type VantaOrder = {

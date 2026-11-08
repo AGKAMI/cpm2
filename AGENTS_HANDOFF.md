@@ -213,6 +213,64 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 
 ---
 
+### 2026-11-09 — Hermes Agent "Zion" (nemotron-3.5-super-vl-120b-a12b) — Owner Dashboard Fix + Promotions System + Fleet Nav Fix
+
+**What:** Fixed Owner Dashboard auth, implemented full Promotions system (admin CRUD + public API + home page render), fixed Fleet Ledger nav to exclude Store tab and add back button to app selection.
+
+**Where:** Core files in `C:/Users/ojuni/Documents/GAMES/cpm2`
+
+**Why:** KAMI reported: (1) Owner Dashboard shows "Something went wrong on the server", (2) Need admin control over promotions/banners on home page, (3) Fleet Ledger shows Store in nav (wrong app), (4) All buttons need visible borders.
+
+**Changes Made:**
+
+| # | Fix | Files | Status |
+|---|-----|-------|--------|
+| **1** | **Owner Dashboard auth fix** — replaced raw `fetch` with `vantaApi` client methods (`adminAdmins`, `createAdmin`, `deleteAdmin`) which auto-inject `X-Telegram-Init-Data` | `store/owner/page.tsx`, `store/client.ts` | ✅ VERIFIED |
+| **2** | **Promotions system — database** — `vanta_promotions` table with title, subtitle, description, discount%, code, CTA, colors, image, dates, sort order, active toggle | `store-schema.ts`, `store-db.ts` | ✅ VERIFIED |
+| **3** | **Promotions system — types & services** — `Promotion`, `PromotionInput` types + CRUD functions | `store-types.ts`, `store/products.ts` | ✅ VERIFIED |
+| **4** | **Promotions system — client API** — `vantaApi.promotions()`, `createPromotion()`, `updatePromotion()`, `deletePromotion()` | `store/client.ts` | ✅ VERIFIED |
+| **5** | **Promotions system — public API** — `GET /api/store/promotions` (filters active + date range) | `api/store/promotions/route.ts` | ✅ VERIFIED |
+| **6** | **Promotions system — admin API** — `GET/POST/PUT/DELETE /api/store/admin/promotions` (admin-gated) | `api/store/admin/promotions/route.ts` | ✅ VERIFIED |
+| **7** | **Promotions system — admin UI** — full CRUD in `/store/admin` with form for all fields, active toggle, scheduling, styling, sort order | `store-admin/page.tsx` | ✅ VERIFIED |
+| **8** | **Promotions system — home page** — `StoreHomeClient` fetches and renders dynamic promotions from API with custom styling per promo | `StoreHomeClient.tsx` | ✅ VERIFIED |
+| **9** | **Fleet Ledger nav fix** — `getNavForPath()` returns NAV (no Store) on `/fleet/*`, STORE_NAV (with Store) on `/store/*` | `AppShell.tsx` | ✅ VERIFIED |
+| **10** | **Back button to app selection** — header back button now shows on both Fleet Ledger and Store pages (removed `/store` exclusion) | `AppShell.tsx` | ✅ VERIFIED |
+| **11** | **App selection cards themed per app** — Fleet = racing blue, VANTA = gold (already implemented) | `AppSelection.tsx` | ✅ VERIFIED |
+
+**Promotions Fields Admin Controls:**
+| Field | Description |
+|-------|-------------|
+| Title/Subtitle | Main headline and tagline |
+| Discount % | e.g., 10 for 10% off |
+| Discount Code | e.g., VANTA10 |
+| CTA Text/Link | Button text and destination |
+| Colors | Background + accent (hex) |
+| Image URL | Optional banner image |
+| Active Toggle | Enable/disable |
+| Start/End Dates | Schedule promotions |
+| Sort Order | Display priority |
+| Description | Optional body text |
+
+**Gate Results:**
+
+| Gate | Command | Result |
+|------|---------|--------|
+| **TypeScript** | `npx tsc --noEmit` | ✅ **PASS** (via `npm run build`) |
+| **Build** | `npm run build` | ✅ **PASS** — all 21 routes compile |
+| **Tests** | `npm test` | ✅ **67 PASS, 0 FAIL** |
+| **Lint** | `npm run lint` | ⚠️ 6 pre-existing errors (0 new) |
+| **API Verification** | `GET /api/store/promotions` | ✅ **PASS** — returns `{"promotions":[]}` |
+| **Live Deploy** | `vercel --prod` | ⏳ **PENDING** — Vercel free tier limit (100/day), resets 00:00 UTC |
+
+**Outstanding (Not Yet Implemented):**
+- **Button borders** — KAMI requested all buttons have visible borders (no borderless text-only tap targets). `Button.tsx` variants need `border` classes added.
+- **Hardcoded car cleanup** — 6 seeded products (IDs 19-24, created 2026-11-07) need deletion via Admin UI once new build is live.
+- **Vercel deploy** — Awaiting free tier reset (00:00 UTC) or manual promotion via Deploy Hook / Vercel Dashboard.
+
+**Verified by:** **Zion (nemotron-3.5-super-vl-120b-a12b)** — per AGENTS_HANDOFF.md Delegated Judge Protocol.
+
+---
+
 ### 2026-11-08 — Hermes Agent "Zion" (nemotron-3.5-super-vl-120b-a12b) — VANTA GARAGE Admin Page Complete Overhaul
 
 **What:** Fixed all reported admin page issues per KAMI's feedback from screenshots.
@@ -294,6 +352,64 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 
 ---
 
+### 2026-11-09 — Hermes Agent "Zion" (nemotron-3.5-super-vl-120b-a12b) — Owner Dashboard Fix + Promotions System + Fleet Nav Fix
+
+**What:** Fixed Owner Dashboard auth, implemented full Promotions system (admin CRUD + public API + home page render), fixed Fleet Ledger nav to exclude Store tab and add back button to app selection.
+
+**Where:** Core files in `C:/Users/ojuni/Documents/GAMES/cpm2`
+
+**Why:** KAMI reported: (1) Owner Dashboard shows "Something went wrong on the server", (2) Need admin control over promotions/banners on home page, (3) Fleet Ledger shows Store in nav (wrong app), (4) All buttons need visible borders.
+
+**Changes Made:**
+
+| # | Fix | Files | Status |
+|---|-----|-------|--------|
+| **1** | **Owner Dashboard auth fix** — replaced raw `fetch` with `vantaApi` client methods (`adminAdmins`, `createAdmin`, `deleteAdmin`) which auto-inject `X-Telegram-Init-Data` | `store/owner/page.tsx`, `store/client.ts` | ✅ VERIFIED |
+| **2** | **Promotions system — database** — `vanta_promotions` table with title, subtitle, description, discount%, code, CTA, colors, image, dates, sort order, active toggle | `store-schema.ts`, `store-db.ts` | ✅ VERIFIED |
+| **3** | **Promotions system — types & services** — `Promotion`, `PromotionInput` types + CRUD functions | `store-types.ts`, `store/products.ts` | ✅ VERIFIED |
+| **4** | **Promotions system — client API** — `vantaApi.promotions()`, `createPromotion()`, `updatePromotion()`, `deletePromotion()` | `store/client.ts` | ✅ VERIFIED |
+| **5** | **Promotions system — public API** — `GET /api/store/promotions` (filters active + date range) | `api/store/promotions/route.ts` | ✅ VERIFIED |
+| **6** | **Promotions system — admin API** — `GET/POST/PUT/DELETE /api/store/admin/promotions` (admin-gated) | `api/store/admin/promotions/route.ts` | ✅ VERIFIED |
+| **7** | **Promotions system — admin UI** — full CRUD in `/store/admin` with form for all fields, active toggle, scheduling, styling, sort order | `store-admin/page.tsx` | ✅ VERIFIED |
+| **8** | **Promotions system — home page** — `StoreHomeClient` fetches and renders dynamic promotions from API with custom styling per promo | `StoreHomeClient.tsx` | ✅ VERIFIED |
+| **9** | **Fleet Ledger nav fix** — `getNavForPath()` returns NAV (no Store) on `/fleet/*`, STORE_NAV (with Store) on `/store/*` | `AppShell.tsx` | ✅ VERIFIED |
+| **10** | **Back button to app selection** — header back button now shows on both Fleet Ledger and Store pages (removed `/store` exclusion) | `AppShell.tsx` | ✅ VERIFIED |
+| **11** | **App selection cards themed per app** — Fleet = racing blue, VANTA = gold (already implemented) | `AppSelection.tsx` | ✅ VERIFIED |
+
+**Promotions Fields Admin Controls:**
+| Field | Description |
+|-------|-------------|
+| Title/Subtitle | Main headline and tagline |
+| Discount % | e.g., 10 for 10% off |
+| Discount Code | e.g., VANTA10 |
+| CTA Text/Link | Button text and destination |
+| Colors | Background + accent (hex) |
+| Image URL | Optional banner image |
+| Active Toggle | Enable/disable |
+| Start/End Dates | Schedule promotions |
+| Sort Order | Display priority |
+| Description | Optional body text |
+
+**Gate Results:**
+
+| Gate | Command | Result |
+|------|---------|--------|
+| **TypeScript** | `npx tsc --noEmit` | ✅ **PASS** (via `npm run build`) |
+| **Build** | `npm run build` | ✅ **PASS** — all 21 routes compile |
+| **Tests** | `npm test` | ✅ **67 PASS, 0 FAIL** |
+| **Lint** | `npm run lint` | ⚠️ 6 pre-existing errors (0 new) |
+| **API Verification** | `GET /api/store/promotions` | ✅ **PASS** — returns `{"promotions":[]}` |
+| **Live Deploy** | `vercel --prod` | ⏳ **PENDING** — Vercel free tier limit (100/day), resets 00:00 UTC |
+
+**Outstanding (Not Yet Implemented):**
+- **Button borders** — KAMI requested all buttons have visible borders (no borderless text-only tap targets). `Button.tsx` variants need `border` classes added.
+- **Hardcoded car cleanup** — 6 seeded products (IDs 19-24, created 2026-11-07) need deletion via Admin UI once new build is live.
+- **Vercel deploy** — Awaiting free tier reset (00:00 UTC) or manual promotion via Deploy Hook / Vercel Dashboard.
+
+**Verified by:** **Zion (nemotron-3.5-super-vl-120b-a12b)** — per AGENTS_HANDOFF.md Delegated Judge Protocol.
+
+---
+
 ### 2026-11-08 — Hermes Agent "Zion" (nemotron-3.5-super-vl-120b-a12b) — VANTA GARAGE Admin Page Complete Overhaul
 
 **What:** Fixed all reported admin page issues per KAMI's feedback from screenshots.
@@ -326,5 +442,63 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 | **Lint** | `npm run lint` | ⚠️ 6 pre-existing errors (0 new) |
 | **Live Deploy** | `vercel --prod` | ✅ **PASS** — https://cpm2-bay.vercel.app |
 | **API Verification** | `GET /api/store/products`, `GET /api/store/categories` | ✅ **PASS** |
+
+**Verified by:** **Zion (nemotron-3.5-super-vl-120b-a12b)** — per AGENTS_HANDOFF.md Delegated Judge Protocol.
+
+---
+
+### 2026-11-09 — Hermes Agent "Zion" (nemotron-3.5-super-vl-120b-a12b) — Owner Dashboard Fix + Promotions System + Fleet Nav Fix
+
+**What:** Fixed Owner Dashboard auth, implemented full Promotions system (admin CRUD + public API + home page render), fixed Fleet Ledger nav to exclude Store tab and add back button to app selection.
+
+**Where:** Core files in `C:/Users/ojuni/Documents/GAMES/cpm2`
+
+**Why:** KAMI reported: (1) Owner Dashboard shows "Something went wrong on the server", (2) Need admin control over promotions/banners on home page, (3) Fleet Ledger shows Store in nav (wrong app), (4) All buttons need visible borders.
+
+**Changes Made:**
+
+| # | Fix | Files | Status |
+|---|-----|-------|--------|
+| **1** | **Owner Dashboard auth fix** — replaced raw `fetch` with `vantaApi` client methods (`adminAdmins`, `createAdmin`, `deleteAdmin`) which auto-inject `X-Telegram-Init-Data` | `store/owner/page.tsx`, `store/client.ts` | ✅ VERIFIED |
+| **2** | **Promotions system — database** — `vanta_promotions` table with title, subtitle, description, discount%, code, CTA, colors, image, dates, sort order, active toggle | `store-schema.ts`, `store-db.ts` | ✅ VERIFIED |
+| **3** | **Promotions system — types & services** — `Promotion`, `PromotionInput` types + CRUD functions | `store-types.ts`, `store/products.ts` | ✅ VERIFIED |
+| **4** | **Promotions system — client API** — `vantaApi.promotions()`, `createPromotion()`, `updatePromotion()`, `deletePromotion()` | `store/client.ts` | ✅ VERIFIED |
+| **5** | **Promotions system — public API** — `GET /api/store/promotions` (filters active + date range) | `api/store/promotions/route.ts` | ✅ VERIFIED |
+| **6** | **Promotions system — admin API** — `GET/POST/PUT/DELETE /api/store/admin/promotions` (admin-gated) | `api/store/admin/promotions/route.ts` | ✅ VERIFIED |
+| **7** | **Promotions system — admin UI** — full CRUD in `/store/admin` with form for all fields, active toggle, scheduling, styling, sort order | `store-admin/page.tsx` | ✅ VERIFIED |
+| **8** | **Promotions system — home page** — `StoreHomeClient` fetches and renders dynamic promotions from API with custom styling per promo | `StoreHomeClient.tsx` | ✅ VERIFIED |
+| **9** | **Fleet Ledger nav fix** — `getNavForPath()` returns NAV (no Store) on `/fleet/*`, STORE_NAV (with Store) on `/store/*` | `AppShell.tsx` | ✅ VERIFIED |
+| **10** | **Back button to app selection** — header back button now shows on both Fleet Ledger and Store pages (removed `/store` exclusion) | `AppShell.tsx` | ✅ VERIFIED |
+| **11** | **App selection cards themed per app** — Fleet = racing blue, VANTA = gold (already implemented) | `AppSelection.tsx` | ✅ VERIFIED |
+
+**Promotions Fields Admin Controls:**
+| Field | Description |
+|-------|-------------|
+| Title/Subtitle | Main headline and tagline |
+| Discount % | e.g., 10 for 10% off |
+| Discount Code | e.g., VANTA10 |
+| CTA Text/Link | Button text and destination |
+| Colors | Background + accent (hex) |
+| Image URL | Optional banner image |
+| Active Toggle | Enable/disable |
+| Start/End Dates | Schedule promotions |
+| Sort Order | Display priority |
+| Description | Optional body text |
+
+**Gate Results:**
+
+| Gate | Command | Result |
+|------|---------|--------|
+| **TypeScript** | `npx tsc --noEmit` | ✅ **PASS** (via `npm run build`) |
+| **Build** | `npm run build` | ✅ **PASS** — all 21 routes compile |
+| **Tests** | `npm test` | ✅ **67 PASS, 0 FAIL** |
+| **Lint** | `npm run lint` | ⚠️ 6 pre-existing errors (0 new) |
+| **API Verification** | `GET /api/store/promotions` | ✅ **PASS** — returns `{"promotions":[]}` |
+| **Live Deploy** | `vercel --prod` | ⏳ **PENDING** — Vercel free tier limit (100/day), resets 00:00 UTC |
+
+**Outstanding (Not Yet Implemented):**
+- **Button borders** — KAMI requested all buttons have visible borders (no borderless text-only tap targets). `Button.tsx` variants need `border` classes added.
+- **Hardcoded car cleanup** — 6 seeded products (IDs 19-24, created 2026-11-07) need deletion via Admin UI once new build is live.
+- **Vercel deploy** — Awaiting free tier reset (00:00 UTC) or manual promotion via Deploy Hook / Vercel Dashboard.
 
 **Verified by:** **Zion (nemotron-3.5-super-vl-120b-a12b)** — per AGENTS_HANDOFF.md Delegated Judge Protocol.

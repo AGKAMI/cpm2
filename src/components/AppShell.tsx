@@ -48,7 +48,6 @@ const NAV = [
 ];
 
 const STORE_NAV = [
-  ...NAV,
   { href: "/store", label: "Store", hint: "V" },
 ];
 

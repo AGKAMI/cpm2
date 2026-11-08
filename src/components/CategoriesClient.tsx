@@ -290,9 +290,11 @@ export function CategoriesClient() {
                   <Link key={c.id} href={`/store/products/${c.id}`} className="product-card group cursor-pointer stagger-item" style={{ animationDelay: `${index * 40}ms` }}>
                     <div className="relative overflow-hidden rounded-[18px] border border-border">
                       {cardImages[c.id] ? (
-                                              <img src={cardImages[c.id]} alt={c.name} className="w-full h-[220px] object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
-                                              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                                            ) : (
+                                                                    <>
+                                                                      <img src={cardImages[c.id]} alt={c.name} className="w-full h-[220px] object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                                                                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                                                                    </>
+                                                                  ) : (
                                               <div className="w-full h-[220px] bg-surface-deep relative aspect-[4/3]">
                                                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                                                 <span className="absolute bottom-3 left-3 text-[10px] text-white/50 uppercase tracking-[0.2em]">No photo</span>

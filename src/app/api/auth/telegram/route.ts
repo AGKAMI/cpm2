@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       "local";
     if (rateLimited(`telegram:${ip}`)) {
       return NextResponse.json(
-        { error: { code: "AUTH_SLOW_DOWN", message: "Too many attempts — wait a minute and try again." } },
+        { error: { code: "AUTH_SLOW_DOWN", message: "Too many attempts - wait a minute and try again." } },
         { status: 429 },
       );
     }
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       throw new ApiError(
         401,
         "TELEGRAM_AUTH_INVALID",
-        "The Telegram signature did not verify — reopen the console from Telegram and try again.",
+        "The Telegram signature did not verify - reopen the console from Telegram and try again.",
       );
     }
 
@@ -102,7 +102,7 @@ export async function POST(request: Request) {
         {
           error: {
             code: "TELEGRAM_AUTH_INVALID",
-            message: "That email and password did not match — try again.",
+            message: "That email and password did not match - try again.",
           },
         },
         { status: 401 },

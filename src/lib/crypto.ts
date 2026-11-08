@@ -86,7 +86,7 @@ export function decryptSecret(payload: string): string {
     ]);
     return decrypted.toString("utf8");
   } catch {
-    throw new SecretError("Password could not be decrypted — the encryption key has changed.");
+    throw new SecretError("Password could not be decrypted - the encryption key has changed.");
   }
 }
 

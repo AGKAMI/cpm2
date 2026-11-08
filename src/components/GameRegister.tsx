@@ -197,7 +197,7 @@ export function GameRegister({ game }: { game: GameType }) {
   return (
     <div className="flex flex-col gap-4">
       <PageHeading
-        folio={game === "cpm1" ? "F-11" : "F-12"}
+        folio={game === "cpm1" ? "01" : "02"}
         title={showArchived ? `${label} archive` : `${label} register`}
         meta={`${source.length} ${label} account${source.length === 1 ? "" : "s"}${
           showArchived ? " · restore any time" : ""
@@ -300,7 +300,7 @@ export function GameRegister({ game }: { game: GameType }) {
               {source.length === 0
                 ? showArchived
                   ? "Archived accounts keep every balance and can be restored at any time."
-                  : `Add your first ${label} account with the button up top — set its game to ${label} in the form.`
+                  : `Add your first ${label} account with the button up top - set its game to ${label} in the form.`
                 : carFilter
                   ? "Pick a different car, or clear the filter to see every account again."
                   : "Nothing matches this search or filter."}
@@ -309,7 +309,7 @@ export function GameRegister({ game }: { game: GameType }) {
         </section>
       ) : (
         <section className="panel animate-rise overflow-hidden rounded-[20px]">
-          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-ink bg-ink px-4 py-2.5">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-border bg-background px-4 py-2.5">
             <span className="flex items-baseline gap-2.5">
               <span className="panel-title">{label}</span>
               <span className="num text-[10px] text-ink-faint">

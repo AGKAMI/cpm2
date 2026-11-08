@@ -4,8 +4,9 @@
  */
 
 import { getStoreDb } from "../store-db.ts";
-import { reserveStock, releaseStock, confirmStockDeduction, getInventory } from "./products.ts";
+import { reserveStock, releaseStock, confirmStockDeduction, getInventory, createInventory, getProduct } from "./products.ts";
 import type { Order, OrderState, PaymentState, DeliveryState } from "../store-types.ts";
+import { ApiError } from "../api.ts";
 
 const RESERVATION_MINUTES = 60;
 
@@ -44,14 +45,29 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   });
   if (existing.rows.length > 0) {
     const order = await getOrder(existing.rows[0].id as string);
-    if (!order) throw new Error("Existing order not found");
+    if (!order) throw new ApiError(500, "ORDER_NOT_FOUND", "Existing order not found.");
     return { order, reservedUntil: order.reservedUntil ?? "" };
   }
 
+  // Ensure inventory exists for this product (auto-seed from product stock)
+  const existingInventory = await getInventory(input.productId);
+  if (!existingInventory) {
+    const product = await getProduct(input.productId);
+    if (!product) throw new ApiError(404, "PRODUCT_NOT_FOUND", "Product not found.");
+    await createInventory(input.productId, product.stockQuantity);
+  }
+
   // Atomic stock reservation
-  const reserved = await reserveStock(input.productId, input.quantity);
+  let reserved = await reserveStock(input.productId, input.quantity);
   if (!reserved) {
-    throw new Error("INSUFFICIENT_STOCK");
+    // Reservation failed — possibly a leaked reservation from a previous
+    // failed checkout attempt (stock reserved but order insert failed).
+    // Release and retry once.
+    await releaseStock(input.productId, input.quantity);
+    reserved = await reserveStock(input.productId, input.quantity);
+  }
+  if (!reserved) {
+    throw new ApiError(400, "INSUFFICIENT_STOCK", "Insufficient stock available.");
   }
 
   const reservedUntil = new Date(Date.now() + RESERVATION_MINUTES * 60 * 1000).toISOString();
@@ -59,26 +75,27 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   const now = nowIso();
 
   await db.execute({
-    sql: `INSERT INTO vanta_orders (id, customer_id, product_id, order_state, payment_state, delivery_state, amount_cents, currency, exchange_rate, reserved_until, payment_method, player_id, in_game_name, idempotency_key, created_at, updated_at)
-          VALUES (?, ?, ?, 'awaiting_payment', 'pending', 'unscheduled', ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)`,
-    args: [
-      id,
-      input.customerId,
-      input.productId,
-      input.amountCents,
-      input.currency,
-      reservedUntil,
-      input.paymentMethod,
-      input.playerId,
-      input.inGameName,
-      input.idempotencyKey,
-      now,
-      now,
-    ],
+  sql: `INSERT INTO vanta_orders (id, customer_id, product_id, quantity, order_state, payment_state, delivery_state, amount_cents, currency, exchange_rate, reserved_until, payment_method, player_id, in_game_name, idempotency_key, created_at, updated_at)
+        VALUES (?, ?, ?, ?, 'awaiting_payment', 'pending', 'unscheduled', ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)`,
+  args: [
+    id,
+    input.customerId,
+    input.productId,
+    input.quantity,
+    input.amountCents,
+    input.currency,
+    reservedUntil,
+    input.paymentMethod,
+    input.playerId,
+    input.inGameName,
+    input.idempotencyKey,
+    now,
+    now,
+  ],
   });
 
   const order = await getOrder(id);
-  if (!order) throw new Error("Order insert returned no row");
+  if (!order) throw new ApiError(500, "ORDER_INSERT_FAILED", "Order insert returned no row.");
   return { order, reservedUntil };
 }
 
@@ -102,13 +119,19 @@ export async function getOrderByIdempotencyKey(key: string): Promise<Order | nul
   return rowToOrder(result.rows[0]);
 }
 
-export async function listOrders({ customerId }: { customerId?: number } = {}): Promise<Order[]> {
+export async function listOrders(
+  { customerId, playerId }: { customerId?: number; playerId?: string } = {},
+): Promise<Order[]> {
   const db = await getStoreDb();
   let sql = `SELECT * FROM vanta_orders WHERE 1=1`;
   const args: unknown[] = [];
   if (customerId !== undefined) {
     sql += ` AND customer_id = ?`;
     args.push(customerId);
+  }
+  if (playerId !== undefined) {
+    sql += ` AND player_id = ?`;
+    args.push(playerId);
   }
   sql += ` ORDER BY created_at DESC`;
   const result = await db.execute({ sql, args });
@@ -142,7 +165,7 @@ export async function confirmPayment(orderId: string): Promise<void> {
 
   const inventory = await getInventory(order.productId);
   if (inventory) {
-    await confirmStockDeduction(order.productId, 1); // quantity handled per-order item; default 1
+    await confirmStockDeduction(order.productId, order.quantity);
   }
 
   await updatePaymentState(orderId, "verified");
@@ -159,7 +182,7 @@ export async function expireReservation(orderId: string): Promise<void> {
 
   const inventory = await getInventory(order.productId);
   if (inventory) {
-    await releaseStock(order.productId, 1);
+    await releaseStock(order.productId, order.quantity);
   }
 
   await updatePaymentState(orderId, "expired");
@@ -167,7 +190,7 @@ export async function expireReservation(orderId: string): Promise<void> {
 }
 
 export async function listExpiredReservations(): Promise<Order[]> {
-  /**
+  /***
    * Orders still in awaiting_payment whose reserved_until has passed.
    * For the recovery job to process.
    */
@@ -181,11 +204,80 @@ export async function listExpiredReservations(): Promise<Order[]> {
   return result.rows.map(rowToOrder);
 }
 
+export async function listAllOrders(): Promise<Order[]> {
+  /***
+   * Admin view: list every order regardless of customer scope.
+   */
+  const db = await getStoreDb();
+  const result = await db.execute({
+    sql: `SELECT * FROM vanta_orders ORDER BY created_at DESC`,
+    args: [],
+  });
+  return result.rows.map(rowToOrder);
+}
+
+export async function rejectPayment(orderId: string): Promise<void> {
+  /***
+   * Admin rejects an EFT payment (proof invalid / not received).
+   * Release reserved stock, mark payment rejected, order cancelled.
+   */
+  const order = await getOrder(orderId);
+  if (!order) throw new Error("Order not found");
+  if (order.paymentState === "verified") throw new Error("Payment already verified");
+
+  const inventory = await getInventory(order.productId);
+  if (inventory) {
+    await releaseStock(order.productId, order.quantity);
+  }
+
+  await updatePaymentState(orderId, "rejected");
+  await updateOrderState(orderId, "cancelled");
+}
+
+export async function setDeliveryEvidence(orderId: string, evidenceUrl: string): Promise<void> {
+  /***
+   * Admin uploads delivery evidence (photo/screenshot URL) for an order.
+   * Creates or updates an appointment record with the evidence link.
+   */
+  const db = await getStoreDb();
+  const order = await getOrder(orderId);
+  if (!order) throw new Error("Order not found");
+
+  const now = nowIso();
+  const appointmentId = order.appointmentId ?? `APT_${Date.now().toString(36)}`;
+
+  // Ensure an appointment row exists
+  const existing = await db.execute({
+    sql: `SELECT id FROM vanta_appointments WHERE order_id = ? LIMIT 1`,
+    args: [orderId],
+  });
+
+  if (existing.rows.length === 0) {
+    await db.execute({
+      sql: `INSERT INTO vanta_appointments (id, order_id, scheduled_at, admin_platform, admin_user_id, status, delivery_evidence, customer_confirmed, missed_count, created_at)
+            VALUES (?, ?, ?, 'whatsapp', 'admin', 'scheduled', ?, 0, 0, ?)`,
+      args: [appointmentId, orderId, now, evidenceUrl, now],
+    });
+    await db.execute({
+      sql: `UPDATE vanta_orders SET appointment_id = ?, updated_at = ? WHERE id = ?`,
+      args: [appointmentId, now, orderId],
+    });
+  } else {
+    await db.execute({
+      sql: `UPDATE vanta_appointments SET delivery_evidence = ?, updated_at = ? WHERE order_id = ?`,
+      args: [evidenceUrl, now, orderId],
+    });
+  }
+
+  await updateOrderState(orderId, "delivery_scheduled");
+}
+
 function rowToOrder(row: Record<string, unknown>): Order {
   return {
     id: String(row.id ?? ""),
     customerId: Number(row.customer_id),
     productId: Number(row.product_id),
+    quantity: Number(row.quantity ?? 1),
     orderState: (row.order_state ?? "awaiting_payment") as OrderState,
     paymentState: (row.payment_state ?? "pending") as PaymentState,
     deliveryState: (row.delivery_state ?? "unscheduled") as DeliveryState,

@@ -11,7 +11,24 @@ function telegramInitData(): string {
   return typeof webApp?.initData === "string" ? webApp.initData : "";
 }
 
+/**
+ * Web guests identify themselves by the player id captured at checkout
+ * (Telegram identities are linked server-side and don't need this).
+ */
+function guestPlayerId(): string | null {
+  if (typeof window === "undefined" || telegramInitData()) return null;
+  const pid = window.localStorage.getItem("vanta_player_id");
+  return pid && pid.trim() ? pid.trim() : null;
+}
+
+function ownerEmail(): string | null {
+  if (typeof window === "undefined") return null;
+  const email = window.localStorage.getItem("vanta_owner_email");
+  return email && email.trim() ? email.trim() : null;
+}
+
 const TELEGRAM_INIT_DATA_HEADER = "X-Telegram-Init-Data";
+const OWNER_EMAIL_HEADER = "X-Owner-Email";
 
 async function request<T>(
   path: string,
@@ -23,6 +40,8 @@ async function request<T>(
   }
   const initData = telegramInitData();
   if (initData) headers.set(TELEGRAM_INIT_DATA_HEADER, initData);
+  const email = ownerEmail();
+  if (email) headers.set(OWNER_EMAIL_HEADER, email);
 
   let response: Response;
   try {
@@ -43,32 +62,80 @@ async function request<T>(
 
 export const vantaApi = {
   products: (params?: { q?: string; featured?: boolean }) => {
-    const url = new URL(`${STORE_BASE}/products`);
-    if (params?.q) url.searchParams.set("q", params.q);
-    if (params?.featured) url.searchParams.set("featured", "1");
-    return request<{ products: VantaProduct[]; total: number }>(url.pathname + url.search);
+    let url = "/products";
+    const qs = new URLSearchParams();
+    if (params?.q) qs.set("q", params.q);
+    if (params?.featured) qs.set("featured", "1");
+    if (qs.toString()) url += `?${qs.toString()}`;
+    return request<{ products: VantaProduct[]; total: number }>(url);
   },
   categories: () => request<{ categories: VantaCategory[] }>("/categories"),
-  createProduct: (body: unknown) =>
-    request<{ product: VantaProduct }>("/products", {
+  createCategory: (body: { name: string; slug: string; description?: string; sortOrder?: number }) =>
+    request<{ category: VantaCategory }>("/admin/categories", {
       method: "POST",
       body: JSON.stringify(body),
     }),
-  orders: () => request<{ orders: VantaOrder[] }>("/orders"),
-  order: (id: string) => request<{ order: VantaOrder }>(`/orders?id=${encodeURIComponent(id)}`),
+  createProduct: (body: unknown) =>
+    request<{ product: VantaProduct }>("/admin/products", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  updateProduct: (id: number, body: unknown) =>
+    request<{ product: VantaProduct }>(`/admin/products?id=${id}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+  updateProductPublish: (id: number, publish: boolean) =>
+    request<{ product: VantaProduct }>(`/admin/products?id=${id}`, {
+      method: "PUT",
+      body: JSON.stringify({ isPublished: publish }),
+    }),
+  orders: () => {
+    let url = "/orders";
+    const pid = guestPlayerId();
+    if (pid) url += `?playerId=${encodeURIComponent(pid)}`;
+    return request<{ orders: VantaOrder[] }>(url);
+  },
+  order: (id: string) => {
+    let url = `/orders?id=${encodeURIComponent(id)}`;
+    const pid = guestPlayerId();
+    if (pid) url += `&playerId=${encodeURIComponent(pid)}`;
+    return request<{ order: VantaOrder }>(url);
+  },
   checkout: (body: unknown) =>
     request<{ order: VantaOrder; reservedUntil: string; payfastUrl: string | null }>("/checkout", {
       method: "POST",
       body: JSON.stringify(body),
     }),
   media: (productId: number) =>
-    request<{ media: VantaProductMedia[] }>(`/admin/media?productId=${productId}`),
+    request<{ media: VantaProductMedia[] }>(`/media?productId=${productId}`),
+
+  // Customer profile
+  profile: () => request<{ customer: VantaCustomer | null; telegramUser: TelegramUser | null }>("/profile"),
+
+  // Admin order management
+  adminOrders: () => request<{ orders: VantaOrder[] }>("/admin/orders"),
+  verifyPayment: (orderId: string) =>
+    request<{ orderId: string; paymentState: string; orderState: string }>(
+      `/admin/orders/${encodeURIComponent(orderId)}/verify-payment`,
+      { method: "POST", body: JSON.stringify({ orderId }) },
+    ),
+  rejectPayment: (orderId: string, reason?: string) =>
+    request<{ orderId: string; paymentState: string; orderState: string; reason: string | null }>(
+      `/admin/orders/${encodeURIComponent(orderId)}/reject-payment`,
+      { method: "POST", body: JSON.stringify({ orderId, reason }) },
+    ),
+  setDeliveryEvidence: (orderId: string, evidenceUrl: string) =>
+    request<{ orderId: string; deliveryEvidence: string; orderState: string }>(
+      `/admin/orders/${encodeURIComponent(orderId)}/delivery-evidence`,
+      { method: "POST", body: JSON.stringify({ orderId, evidenceUrl }) },
+    ),
 };
 
 export type VantaProduct = {
   id: number;
   categoryId: number | null;
-  cpm2CarCode: number | null;   // CPM2 catalog car code
+  cpm2CarCode: number | null;
   name: string;
   description: string;
   basePriceCents: number;
@@ -77,8 +144,16 @@ export type VantaProduct = {
   availabilityState: string;
   exclusivity: string;
   isFeatured: boolean;
+  isNew: boolean;
+  isSale: boolean;
   isPublished: boolean;
   version: number;
+  airSuspension: boolean;       // Air suspension installation included
+  unlockedBodykits: boolean;    // Design unlocks bodykits
+  specHp: number | null;        // legacy — perf specs kept for old rows only
+  specTopSpeed: number | null;
+  specZeroHundred: string | null;
+  specDrive: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -117,6 +192,24 @@ export type VantaOrder = {
   appointmentId: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+export type VantaCustomer = {
+  id: number;
+  inGameName: string;
+  playerId: string;
+  currencyPref: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type TelegramUser = {
+  id: number;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+  photoUrl?: string;
+  displayName: string;
 };
 
 export function formatPrice(cents: number, currency = "ZAR"): string {

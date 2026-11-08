@@ -24,15 +24,13 @@ export async function requireStoreCustomer(request: Request) {
   return customer;
 }
 
-/** Admin gate — only the owner Telegram id can manage products/pricing. */
+/** Admin gate — owner (STORE_ADMIN_TELEGRAM_ID) or any active admin row can manage products/pricing. */
+import { resolveAdminStatus } from "./admin-service";
+
 export async function requireStoreAdmin(request: Request) {
-  const telegramUserId = await assertTelegramAuth(request);
-  if (telegramUserId === null) {
-    throw new Error("NO_TELEGRAM_AUTH");
-  }
-  const adminId = Number(process.env.STORE_ADMIN_TELEGRAM_ID ?? "7036681178");
-  if (telegramUserId !== adminId) {
+  const status = await resolveAdminStatus(request);
+  if (!status.isAdmin) {
     throw new Error("NOT_ADMIN");
   }
-  return { telegramUserId, isAdmin: true };
+  return { telegramUserId: status.telegramUserId, isAdmin: true, isOwner: status.isOwner };
 }

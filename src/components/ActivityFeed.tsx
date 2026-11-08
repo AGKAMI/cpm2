@@ -58,7 +58,7 @@ export function ActivityFeed({ events }: { events: FleetEvent[] }) {
                   {Object.entries(event.changes).map(([field, change]) => (
                     <span
                       key={field}
-                      className="num rounded-full border border-ink bg-ink px-1.5 py-0.5 text-[10px] text-ink-soft"
+                      className="num rounded-full border border-border bg-background px-1.5 py-0.5 text-[10px] text-ink-soft"
                     >
                       <span className="text-ink-faint">{field}</span>{" "}
                       <span className="text-ink">{renderValue(change.from)}</span>{" "}
@@ -78,6 +78,6 @@ export function ActivityFeed({ events }: { events: FleetEvent[] }) {
 
 function renderValue(value: unknown): string {
   if (typeof value === "number") return formatNumber(value);
-  if (value === null || value === undefined) return "—";
+  if (value === null || value === undefined) return "-";
   return String(value);
 }

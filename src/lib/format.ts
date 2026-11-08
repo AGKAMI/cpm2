@@ -2,7 +2,7 @@ import { formatNumber } from "./constants.ts";
 
 export function relativeTime(iso: string): string {
   const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return "—";
+  if (Number.isNaN(then)) return "-";
 
   const diff = Date.now() - then;
   const minute = 60_000;
@@ -18,7 +18,7 @@ export function relativeTime(iso: string): string {
 
 export function absoluteTime(iso: string): string {
   const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "—";
+  if (Number.isNaN(date.getTime())) return "-";
   return date.toLocaleString("en-US", {
     month: "short",
     day: "2-digit",

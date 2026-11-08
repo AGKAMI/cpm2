@@ -23,7 +23,7 @@ export async function GET(
 
   if (!isGameType(game)) {
     return fail(
-      new ApiError(400, "game_invalid", `Unknown game "${game}" — expected ${GAMES.join(" or ")}.`),
+      new ApiError(400, "game_invalid", `Unknown game "${game}" - expected ${GAMES.join(" or ")}.`),
     );
   }
 

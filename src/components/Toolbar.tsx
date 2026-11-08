@@ -57,7 +57,7 @@ export function FleetToolbar({
             name="q"
             value={query}
             onChange={(event) => onQuery(event.target.value)}
-            placeholder="email or notes — press / "
+            placeholder="email or notes"
             aria-label="Search accounts"
             autoComplete="off"
             spellCheck={false}
@@ -72,10 +72,10 @@ export function FleetToolbar({
             name="filter"
             value={filter}
             onChange={(event) => onFilter(event.target.value as FleetFilter)}
-            className="glass-control mt-1 block h-10 cursor-pointer rounded-[12px] px-3 font-sans text-[12px] font-medium text-ink-soft hover:border-ink focus:border-racing"
+            className="mt-1 block h-10 cursor-pointer rounded-[12px] px-3 font-sans text-[12px] font-medium text-ink-soft hover:border-ink focus:border-racing"
           >
           {FILTERS.map((item) => (
-            <option key={item.key} value={item.key} className="bg-paper-raised text-ink">
+            <option key={item.key} value={item.key} className="bg-background text-ink">
               {item.label}
             </option>
           ))}

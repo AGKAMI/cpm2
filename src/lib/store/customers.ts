@@ -56,6 +56,16 @@ export async function getCustomer(id: number): Promise<Customer | null> {
   return rowToCustomer(result.rows[0]);
 }
 
+export async function getCustomerByPlayerId(playerId: string): Promise<Customer | null> {
+  const db = await getStoreDb();
+  const result = await db.execute({
+    sql: `SELECT * FROM vanta_customers WHERE player_id = ? LIMIT 1`,
+    args: [playerId],
+  });
+  if (result.rows.length === 0) return null;
+  return rowToCustomer(result.rows[0]);
+}
+
 export async function getCustomerByPlatformIdentity(platform: Platform, platformUserId: string): Promise<{ customer: Customer; identity: PlatformIdentity } | null> {
   const db = await getStoreDb();
   const result = await db.execute({

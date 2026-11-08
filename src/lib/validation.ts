@@ -116,7 +116,7 @@ export const accountCreateSchema = z
         path: ["cars"],
         message:
           data.game === "cpm1"
-            ? `Cars cannot exceed ${capacity} — CPM1 holds one of every model in the game.`
+            ? `Cars cannot exceed ${capacity} - CPM1 holds one of every model in the game.`
             : `Cars cannot exceed ${capacity} (${data.baseSlots} base + ${data.slots} coin slot(s)${
                 data.newGarage ? ` + ${LIMITS.NEW_GARAGE_SLOTS} new-garage slots` : ""
               }).`,
@@ -213,11 +213,11 @@ export const tradeRatesSchema = z.object({
   randPerCoin: z
     .number({ error: "The coins rate is required." })
     .min(0, { error: "The coins rate cannot be negative." })
-    .max(100_000, { error: "The coins rate looks wrong — check the pack price." }),
+    .max(100_000, { error: "The coins rate looks wrong - check the pack price." }),
   randPerCash: z
     .number({ error: "The cash rate is required." })
     .min(0, { error: "The cash rate cannot be negative." })
-    .max(100_000, { error: "The cash rate looks wrong — check the pack price." }),
+    .max(100_000, { error: "The cash rate looks wrong - check the pack price." }),
 });
 
 export type TradeRatesInput = z.infer<typeof tradeRatesSchema>;
@@ -278,7 +278,7 @@ export const tradeIdentifySchema = z.object({
   imageBase64: z
     .string({ error: "A screenshot is required." })
     .min(50, { error: "That image looks empty." })
-    .max(7_000_000, { error: "Screenshot is too large — keep it under 5MB." }),
+    .max(7_000_000, { error: "Screenshot is too large - keep it under 5MB." }),
   mimeType: z.enum(["image/png", "image/jpeg", "image/webp"], {
     error: "Screenshot must be a PNG, JPEG or WebP image.",
   }),

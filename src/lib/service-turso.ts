@@ -149,7 +149,7 @@ async function assertEmailFree(email: string, game: GameType, exceptId?: number)
       409,
       "EMAIL_TAKEN",
       isArchived
-        ? `${email} is tracked but archived — restore it instead of adding it again.`
+        ? `${email} is tracked but archived - restore it instead of adding it again.`
         : `${email} is already tracked.`,
     );
   }
@@ -308,7 +308,7 @@ export async function updateAccount(id: number, payload: unknown, userId?: numbe
       throw new ApiError(
         422,
         "CPM1_HAS_NO_SLOTS",
-        "CPM1 has no car slots — every model in the game can be owned, one of each.",
+        "CPM1 has no car slots - every model in the game can be owned, one of each.",
       );
     }
     throw new ApiError(
@@ -358,8 +358,8 @@ export async function updateAccount(id: number, payload: unknown, userId?: numbe
       422,
       "CAR_CAPACITY_EXCEEDED",
       next.game === "cpm1"
-        ? `${next.cars} cars need more room — CPM1 holds one of every model in the game (${capacity} models).`
-        : `${next.cars} cars need more room — this garage holds ${capacity} (${next.baseSlots} base + ${next.slots} coin slot(s)${next.newGarage ? ` + ${LIMITS.NEW_GARAGE_SLOTS} new-garage slots` : ""}).`,
+        ? `${next.cars} cars need more room - CPM1 holds one of every model in the game (${capacity} models).`
+        : `${next.cars} cars need more room - this garage holds ${capacity} (${next.baseSlots} base + ${next.slots} coin slot(s)${next.newGarage ? ` + ${LIMITS.NEW_GARAGE_SLOTS} new-garage slots` : ""}).`,
     );
   }
 
@@ -394,7 +394,7 @@ export async function updateAccount(id: number, payload: unknown, userId?: numbe
       ? `New garage added (+${LIMITS.NEW_GARAGE_SLOTS} slots, ${LIMITS.NEW_GARAGE_PRICE})`
       : `New garage removed (-${LIMITS.NEW_GARAGE_SLOTS} slots)`
     : removedSlots > 0
-      ? `Removed ${removedSlots} car slot(s) — the game does not refund slot coins`
+      ? `Removed ${removedSlots} car slot(s) - the game does not refund slot coins`
       : baseChanged
         ? `Base garage size set to ${next.baseSlots}`
         : "Account details updated";
@@ -437,7 +437,7 @@ export async function archiveAccount(id: number, userId?: number): Promise<{ id:
     sql: `UPDATE accounts SET archived = 1, updated_at = ? WHERE id = ?`,
     args: [now(), id],
   });
-  await logEvent(id, existing.email, "archived", "Account archived — balances kept, nothing destroyed", {
+  await logEvent(id, existing.email, "archived", "Account archived - balances kept, nothing destroyed", {
     cash: { from: existing.cash, to: existing.cash },
     coins: { from: existing.coins, to: existing.coins },
     cars: { from: existing.cars, to: existing.cars },
@@ -476,7 +476,7 @@ export async function purchaseSlots(id: number, payload: unknown, userId?: numbe
     throw new ApiError(
       422,
       "CPM1_HAS_NO_SLOTS",
-      "CPM1 has no car slots — every model in the game can be owned, one of each.",
+      "CPM1 has no car slots - every model in the game can be owned, one of each.",
     );
   }
 
@@ -484,7 +484,7 @@ export async function purchaseSlots(id: number, payload: unknown, userId?: numbe
     throw new ApiError(
       422,
       "SLOT_LIMIT_REACHED",
-      `A CPM2 garage has ${LIMITS.MAX_COIN_SLOTS} coin slot — the 21st, for ${LIMITS.SLOT_COST_COINS} coins (this one already has ${existing.slots}). The other ${LIMITS.NEW_GARAGE_SLOTS} slots come with the ${LIMITS.NEW_GARAGE_PRICE} garage.`,
+      `A CPM2 garage has ${LIMITS.MAX_COIN_SLOTS} coin slot - the 21st, for ${LIMITS.SLOT_COST_COINS} coins (this one already has ${existing.slots}). The other ${LIMITS.NEW_GARAGE_SLOTS} slots come with the ${LIMITS.NEW_GARAGE_PRICE} garage.`,
     );
   }
 
@@ -493,7 +493,7 @@ export async function purchaseSlots(id: number, payload: unknown, userId?: numbe
     throw new ApiError(
       422,
       "INSUFFICIENT_COINS",
-      `Need ${cost.toLocaleString("en-US")} coins for ${count} slot(s) — this account only has ${existing.coins.toLocaleString("en-US")}.`,
+      `Need ${cost.toLocaleString("en-US")} coins for ${count} slot(s) - this account only has ${existing.coins.toLocaleString("en-US")}.`,
     );
   }
 
@@ -796,7 +796,7 @@ export async function addGarageCar(accountId: number, payload: unknown, userId?:
       throw new ApiError(
         400,
         "car_duplicate",
-        `CPM1 holds one of each model — #${entry.code} ${entry.name} is already in this garage.`,
+        `CPM1 holds one of each model - #${entry.code} ${entry.name} is already in this garage.`,
       );
     }
   }
@@ -811,7 +811,7 @@ export async function addGarageCar(accountId: number, payload: unknown, userId?:
       400,
       "garage_full",
       account.game === "cpm1"
-        ? `Garage is full (${ownedCount}/${capacity}) — CPM1 holds one of every model in the game.`
+        ? `Garage is full (${ownedCount}/${capacity}) - CPM1 holds one of every model in the game.`
         : `Garage is full (${ownedCount}/${capacity}). Unlock a slot or buy the new garage first.`,
     );
   }

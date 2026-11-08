@@ -21,6 +21,7 @@ export function buildPayFastCheckoutUrl(
   returnUrl: string,
   cancelUrl: string,
   notifyUrl: string,
+  itemName?: string,
 ): { url: string; configured: boolean } {
   if (!isPayFastConfigured()) {
     return { url: "", configured: false };
@@ -35,8 +36,8 @@ export function buildPayFastCheckoutUrl(
     cancel_url: cancelUrl,
     notify_url: notifyUrl,
     amount: amountZar,
-    item_name: `VANTA GARAGE — ${order.productId}`,
-    item_description: `Player: ${order.playerId} — ${order.inGameName}`,
+    item_name: itemName ?? `VANTA GARAGE - #${order.productId}`,
+    item_description: `Player: ${order.playerId} - ${order.inGameName}`,
     custom_str1: order.id,
     name_first: "VANTA",
     name_last: "Customer",
@@ -56,7 +57,8 @@ export function buildPayFastCheckoutUrl(
     .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
     .join("&");
 
-  return { url: `${PAYFAST_BASE}?${qs}`, configured: true };
+  const baseUrl = getPayFastBaseUrl();
+  return { url: `${baseUrl}?${qs}`, configured: true };
 }
 
 export function getPayFastBaseUrl(): string {

@@ -11,14 +11,14 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { vantaApi, formatPrice, type VantaProduct } from "@/lib/store/client";
+import Link from "next/link";
+import { carByCode, searchCars, type CarEntry } from "@/lib/car-catalog";
+import { vantaApi, formatPrice, type VantaProduct, type VantaCategory } from "@/lib/store/client";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Field";
-
-type Exclusivity = "standard" | "limited_edition" | "one_of_one";
-type Availability = "available" | "limited" | "sold_out" | "unavailable";
+import { Modal } from "@/components/ui/Modal";
 
 type ProductForm = {
   cpm2CarCode: string;
@@ -28,10 +28,14 @@ type ProductForm = {
   basePriceCents: string;
   currency: string;
   stockQuantity: string;
-  availabilityState: Availability;
-  exclusivity: Exclusivity;
+  airSuspension: boolean;
+  unlockedBodykits: boolean;
+  hdLogo: boolean;
   isFeatured: boolean;
+  isNew: boolean;
+  isSale: boolean;
   isPublished: boolean;
+  categoryId: string;
 };
 
 const EMPTY_FORM: ProductForm = {
@@ -42,31 +46,72 @@ const EMPTY_FORM: ProductForm = {
   basePriceCents: "",
   currency: "ZAR",
   stockQuantity: "0",
-  availabilityState: "available",
-  exclusivity: "standard",
+  airSuspension: false,
+  unlockedBodykits: false,
+  hdLogo: false,
   isFeatured: false,
+  isNew: false,
+  isSale: false,
   isPublished: true,
+  categoryId: "",
+};
+
+type CategoryForm = {
+  name: string;
+  slug: string;
+  description: string;
+  sortOrder: string;
+};
+
+const EMPTY_CATEGORY_FORM: CategoryForm = {
+  name: "",
+  slug: "",
+  description: "",
+  sortOrder: "0",
 };
 
 export default function AdminPage() {
   const router = useRouter();
   const [products, setProducts] = useState<VantaProduct[]>([]);
+  const [categories, setCategories] = useState<VantaCategory[]>([]);
   const [form, setForm] = useState<ProductForm>(EMPTY_FORM);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [inlineEditingId, setInlineEditingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  // Category management state
+  const [showCategoryForm, setShowCategoryForm] = useState(false);
+  const [categoryForm, setCategoryForm] = useState<CategoryForm>(EMPTY_CATEGORY_FORM);
+  const [categorySaving, setCategorySaving] = useState(false);
+  // Car search state for the searchable catalog picker
+  const [carQuery, setCarQuery] = useState("");
+  const [carOpen, setCarOpen] = useState(false);
+  const [pickedCar, setPickedCar] = useState<CarEntry | null>(null);
+  // Image URL converter state
+  const [converterOpen, setConverterOpen] = useState(false);
+  const [converterInput, setConverterInput] = useState("");
+  const [converterFile, setConverterFile] = useState<File | null>(null);
+  const [converterResult, setConverterResult] = useState<string | null>(null);
+  const [converterLoading, setConverterLoading] = useState(false);
+  const [converterError, setConverterError] = useState<string | null>(null);
+
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [pRes] = await Promise.all([
+      const [pRes, cRes] = await Promise.all([
         vantaApi.products({}),
+        vantaApi.categories(),
       ]);
       setProducts(pRes.products);
-    } catch {
-      setError("Couldn't load products or categories.");
+      setCategories(cRes.categories);
+      setError(null);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Couldn't load products or categories.",
+      );
     } finally {
       setLoading(false);
     }
@@ -81,128 +126,430 @@ export default function AdminPage() {
     setForm((f) => ({ ...f, [k]: v }));
   };
 
-  const resetForm = () => {
-    setForm(EMPTY_FORM);
-    setEditingId(null);
+  const pickCar = (car: CarEntry) => {
+    setForm((f) => ({ ...f, cpm2CarCode: String(car.code), name: car.name }));
+    setPickedCar(car);
+    setCarQuery("");
+    setCarOpen(false);
     setError(null);
-    setMsg(null);
   };
 
-  const selectProduct = (p: VantaProduct) => {
-    setForm({
-      cpm2CarCode: String(p.cpm2CarCode ?? ""),
-      imageUrl: "",
-      name: p.name,
-      description: p.description,
-      basePriceCents: String(p.basePriceCents),
-      currency: p.currency,
-      stockQuantity: String(p.stockQuantity),
-      availabilityState: p.availabilityState as Availability,
-      exclusivity: p.exclusivity as Exclusivity,
-      isFeatured: p.isFeatured,
-      isPublished: p.isPublished,
+  const clearPickedCar = () => {
+    setPickedCar(null);
+    setForm((f) => ({ ...f, cpm2CarCode: "", name: "" }));
+  };
+
+  // --- Image URL converter ---
+  const convertUrlToDataUrl = async (url: string): Promise<string> => {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to fetch image (${response.status})`);
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error("Failed to read image data"));
+      reader.readAsDataURL(blob);
     });
-    setEditingId(p.id);
-    setMsg(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    setError(null);
-    try {
-      const body = {
-        cpm2CarCode: form.cpm2CarCode ? Number(form.cpm2CarCode) : undefined,
-        imageUrl: form.imageUrl || undefined,
-        name: form.name,
-        description: form.description,
-        basePriceCents: Number(form.basePriceCents),
-        currency: form.currency,
-        stockQuantity: Number(form.stockQuantity),
-        availabilityState: form.availabilityState,
-        exclusivity: form.exclusivity,
-        isFeatured: form.isFeatured,
-        isPublished: form.isPublished,
-      };
-      const url = editingId
-        ? `/api/store/admin/products?id=${editingId}`
-        : "/api/store/admin/products";
-      const resp = await fetch(url, {
-        method: editingId ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const json = await resp.json().catch(() => ({}));
-      if (!resp.ok) throw new Error(json.error?.message ?? `Save failed (${resp.status})`);
-      setMsg(editingId ? "Product updated." : "Product created.");
-      resetForm();
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handlePublish = async (id: number, publish: boolean) => {
-    const resp = await fetch(`/api/store/admin/products?id=${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isPublished: publish }),
+  const convertFileToDataUrl = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error("Failed to read image file"));
+      reader.readAsDataURL(file);
     });
-    if (!resp.ok) {
-      setError("Couldn't update publish state.");
+  };
+
+  const handleConvertUrl = async () => {
+    if (!converterInput.trim()) {
+      setConverterError("Please paste an image URL.");
       return;
     }
-    setMsg(publish ? "Published." : "Unpublished.");
-    await load();
+    setConverterLoading(true);
+    setConverterError(null);
+    try {
+      const dataUrl = await convertUrlToDataUrl(converterInput.trim());
+      setConverterResult(dataUrl);
+    } catch (err) {
+      setConverterError(err instanceof Error ? err.message : "Conversion failed.");
+    } finally {
+      setConverterLoading(false);
+    }
   };
 
+  const handleConvertFile = async () => {
+    if (!converterFile) {
+      setConverterError("Please select an image file.");
+      return;
+    }
+    setConverterLoading(true);
+    setConverterError(null);
+    try {
+      const dataUrl = await convertFileToDataUrl(converterFile);
+      setConverterResult(dataUrl);
+    } catch (err) {
+      setConverterError(err instanceof Error ? err.message : "Conversion failed.");
+    } finally {
+      setConverterLoading(false);
+    }
+  };
+
+  const useConverterResult = () => {
+      if (converterResult) {
+        setForm((f) => ({ ...f, imageUrl: converterResult }));
+        // Keep converter open with preview visible until user closes modal
+        setConverterInput("");
+        setConverterFile(null);
+        setConverterError(null);
+        setConverterLoading(false);
+      }
+    };
+
+    const resetConverter = () => {
+      setConverterInput("");
+      setConverterFile(null);
+      setConverterResult(null);
+      setConverterError(null);
+      setConverterLoading(false);
+    };
+
+    const resetForm = () => {
+      setForm(EMPTY_FORM);
+      setPickedCar(null);
+      setEditingId(null);
+      setInlineEditingId(null);
+      setError(null);
+      setMsg(null);
+    };
+
+    const resetCategoryForm = () => {
+      setCategoryForm(EMPTY_CATEGORY_FORM);
+      setShowCategoryForm(false);
+    };
+
+    const selectProduct = (p: VantaProduct) => {
+      setForm({
+        cpm2CarCode: String(p.cpm2CarCode ?? ""),
+        imageUrl: "",
+        name: p.name,
+        description: p.description,
+        basePriceCents: String(p.basePriceCents / 100), // display in Rands
+        currency: p.currency,
+        stockQuantity: String(p.stockQuantity),
+        airSuspension: p.airSuspension,
+        unlockedBodykits: p.unlockedBodykits,
+        hdLogo: false,
+        isFeatured: p.isFeatured,
+        isNew: p.isNew,
+        isSale: p.isSale,
+        isPublished: p.isPublished,
+        categoryId: String(p.categoryId ?? ""),
+      });
+      setEditingId(p.id);
+      setInlineEditingId(p.id);
+      setMsg(null);
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setSaving(true);
+      setError(null);
+      // Catalog guard (mirrors the server-side check): a typed/hand-edited code
+      // that isn't a real CPM2 catalog car never reaches the API.
+      if (form.cpm2CarCode && !carByCode(Number(form.cpm2CarCode), "cpm2")) {
+        setError(`CPM2 catalog has no car #${form.cpm2CarCode}. Pick a car from the catalog search.`);
+        setSaving(false);
+        return;
+      }
+      try {
+        const body = {
+          cpm2CarCode: form.cpm2CarCode ? Number(form.cpm2CarCode) : undefined,
+          imageUrl: form.imageUrl || undefined,
+          name: form.name,
+          description: form.description,
+          basePriceCents: Math.round(Number(form.basePriceCents) * 100), // Rands → cents
+          currency: form.currency,
+          stockQuantity: Number(form.stockQuantity),
+          airSuspension: form.airSuspension,
+          unlockedBodykits: form.unlockedBodykits,
+          hdLogo: form.hdLogo,
+          isFeatured: form.isFeatured,
+          isNew: form.isNew,
+          isSale: form.isSale,
+          isPublished: form.isPublished,
+          categoryId: form.categoryId ? Number(form.categoryId) : undefined,
+        };
+        if (editingId) {
+          await vantaApi.updateProduct(editingId, body);
+        } else {
+          await vantaApi.createProduct(body);
+        }
+        setMsg(editingId ? "Product updated." : "Product created.");
+        resetForm();
+        await load();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Save failed.");
+      } finally {
+        setSaving(false);
+      }
+    };
+
+    const handleCategorySubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setCategorySaving(true);
+        setError(null);
+        try {
+          await vantaApi.createCategory({
+            name: categoryForm.name,
+            slug: categoryForm.slug,
+            description: categoryForm.description,
+            sortOrder: Number(categoryForm.sortOrder) || 0,
+          });
+          setMsg("Category created.");
+          resetCategoryForm();
+          await load();
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Failed to create category.");
+        } finally {
+          setCategorySaving(false);
+        }
+      };
+
+    const handlePublish = async (id: number, publish: boolean) => {
+      setError(null);
+      try {
+        await vantaApi.updateProductPublish(id, publish);
+        setMsg(publish ? "Published." : "Unpublished.");
+        await load();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Couldn't update publish state.");
+      }
+    };
+
+    const handleCategoryChange = (k: keyof CategoryForm, v: string) => {
+      setCategoryForm((f) => ({ ...f, [k]: v }));
+      // Auto-generate slug from name
+      if (k === "name" && !categoryForm.slug) {
+        setCategoryForm((f) => ({ ...f, slug: v.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "") }));
+      }
+    };
+
   if (loading) {
+        return (
+          <StoreShell>
+            <PageHeading folio="AD" title="Admin - Product Manager" backHref="/store" />
+            <p className="text-muted-foreground">Loading admin…</p>
+          </StoreShell>
+        );
+      }
+
+    // Car codes are set-once: locked for editing when the product already has one.
+    const carLocked = editingId !== null && form.cpm2CarCode !== "";
+
+    // Searchable catalog matches (name-only, no codes visible)
+    const carMatches = searchCars(carQuery, 30, "cpm2");
+
     return (
-      <StoreShell>
-        <p className="text-muted-foreground">Loading admin…</p>
-      </StoreShell>
-    );
-  }
+          <StoreShell>
+            <PageHeading folio="AD" title="Admin - Product Manager" backHref="/store" />
+            {error && (
+          <p className="mb-4 rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            {error}
+          </p>
+        )}
+        {msg && (
+          <p className="mb-4 rounded-md border border-primary bg-primary/10 px-3 py-2 text-xs text-primary">
+            {msg}
+          </p>
+        )}
 
-  return (
-    <StoreShell>
-      <PageHeading folio="AD" title="Admin — Product Manager" />
-      {error && (
-        <p className="mb-4 rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-xs text-destructive">
-          {error}
-        </p>
-      )}
-      {msg && (
-        <p className="mb-4 rounded-md border border-primary bg-primary/10 px-3 py-2 text-xs text-primary">
-          {msg}
-        </p>
-      )}
+        {/* Category Management */}
+        <section className="panel rounded-xl border border-border p-4 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-foreground">Categories</h3>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowCategoryForm(!showCategoryForm)}
+            >
+              {showCategoryForm ? "Hide" : "Add Category"}
+            </Button>
+          </div>
+          {showCategoryForm && (
+            <form onSubmit={handleCategorySubmit} className="grid gap-3 sm:grid-cols-2 mb-4">
+              <Field label="Name">
+                <TextInput
+                  value={categoryForm.name}
+                  onChange={(e) => handleCategoryChange("name", e.target.value)}
+                  placeholder="e.g. Sports Cars"
+                />
+              </Field>
+              <Field label="Slug" hint="Auto-generated from name, used in URLs">
+                <TextInput
+                  value={categoryForm.slug}
+                  onChange={(e) => handleCategoryChange("slug", e.target.value)}
+                  placeholder="sports-cars"
+                />
+              </Field>
+              <Field label="Description" hint="Optional description">
+                            <textarea
+                              value={categoryForm.description}
+                              onChange={(e) => handleCategoryChange("description", e.target.value)}
+                              placeholder="Optional description"
+                              className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground min-h-[60px] resize-y sm:col-span-2"
+                            />
+                          </Field>
+              <Field label="Sort Order" hint="Lower numbers appear first">
+                <input
+                  type="number"
+                  value={categoryForm.sortOrder}
+                  onChange={(e) => handleCategoryChange("sortOrder", e.target.value)}
+                  className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
+                />
+              </Field>
+              <div className="sm:col-span-2 flex gap-2">
+                <Button type="submit" variant="primary" disabled={categorySaving}>
+                  {categorySaving ? "Creating…" : "Create Category"}
+                </Button>
+                <Button variant="outline" type="button" onClick={resetCategoryForm} disabled={categorySaving}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          )}
+          <div className="flex flex-wrap gap-2">
+            {categories.length === 0 ? (
+              <span className="text-xs text-muted-foreground">No categories yet. Click "Add Category" to create one.</span>
+            ) : (
+              categories.map((cat) => (
+                <span
+                  key={cat.id}
+                  className="text-xs px-2 py-1 rounded-full border border-border bg-background text-foreground"
+                >
+                  {cat.name} ({cat.slug})
+                </span>
+              ))
+            )}
+          </div>
+        </section>
 
-      {/* Create / Edit form */}
-      <section className="panel rounded-xl border border-border p-6 mb-8">
-        <h3 className="text-sm font-semibold text-foreground mb-4">
-          {editingId ? "Edit product" : "Add product"}
-        </h3>
-        <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Field label="CPM2 car code" hint="From the CPM2 catalog (e.g. 49)">
-            <TextInput
-              id="cpm2-car-code"
-              value={form.cpm2CarCode}
-              onChange={(e) => handleChange("cpm2CarCode", e.target.value)}
-              placeholder="49"
-            />
+      {/* Create / Edit form - hidden when editing inline within a card */}
+            {!inlineEditingId && (
+              <section className="panel rounded-xl border border-border p-6 mb-8">
+              <h3 className="text-sm font-semibold text-foreground mb-4">
+                {editingId ? "Edit product" : "Add product"}
+              </h3>
+              <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <Field
+            label="Car (CPM2 catalog)"
+            hint={
+              carLocked
+                ? "Locked - car codes are set once at creation and cannot be changed"
+                : editingId !== null
+                  ? "No car linked yet - pick one; the code locks once set"
+                  : "Pick a car from the catalog - it auto-fills the name below, then you can edit it"
+            }
+          >
+            {carLocked ? (
+              <select
+                id="cpm2-car-code"
+                disabled
+                defaultValue={form.cpm2CarCode}
+                aria-readonly="true"
+                className="w-full border border-input bg-secondary px-3 py-2 rounded-md text-sm text-foreground cursor-not-allowed"
+              >
+                <option value={form.cpm2CarCode}>
+                  {carByCode(Number(form.cpm2CarCode), "cpm2")?.name ?? `#${form.cpm2CarCode}`}
+                </option>
+              </select>
+            ) : pickedCar ? (
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-mono text-muted-foreground">#{pickedCar.code}</span>
+                  <span className="text-foreground">{pickedCar.name}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearPickedCar}
+                    aria-label="Clear picked car"
+                  >
+                    ✕
+                  </Button>
+                </div>
+                <div className="border border-input rounded-md px-2 py-1 bg-background">
+                  <span className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
+                    Picked from catalog - name below is editable
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="relative" onBlur={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) setCarOpen(false);
+              }}>
+                <input
+                  id="cpm2-car-code"
+                  value={carQuery}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setCarQuery(v);
+                    setCarOpen(true);
+                    if (v === "") {
+                      setForm((f) => ({ ...f, cpm2CarCode: "", name: "" }));
+                      setPickedCar(null);
+                    }
+                  }}
+                  onFocus={() => setCarOpen(true)}
+                  placeholder="Type a car name or code…"
+                  autoComplete="off"
+                  className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
+                />
+                {carOpen && (carMatches.length > 0 ? (
+                  <div
+                    className="absolute z-20 mt-1 w-full max-h-64 overflow-y-auto border border-border rounded-md bg-card shadow-lg"
+                    onMouseDown={(e) => e.preventDefault()}
+                  >
+                    {carMatches.map((car) => (
+                      <button
+                        key={car.code}
+                        type="button"
+                        onClick={() => pickCar(car)}
+                        className="block w-full text-left px-3 py-2 text-sm bg-card hover:bg-background hover:border-primary border-b border-border last:border-b-0"
+                      >
+                        <span className="text-foreground">{car.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="absolute z-20 mt-1 w-full border border-border rounded-md bg-card px-3 py-2 text-sm text-muted-foreground">
+                    No car in the CPM2 catalog matches &quot;{carQuery}&quot;.
+                  </div>
+                ))}
+              </div>
+            )}
           </Field>
-          <Field label="Image URL" hint="Direct link to the car image">
-            <TextInput
-              id="image-url"
-              value={form.imageUrl}
-              onChange={(e) => handleChange("imageUrl", e.target.value)}
-              placeholder="https://..."
-            />
+          <Field label="Image URL" hint="Direct link to the car image, or use Convert to turn a URL/file into a data URL">
+            <div className="flex gap-2">
+              <TextInput
+                id="image-url"
+                value={form.imageUrl}
+                onChange={(e) => handleChange("imageUrl", e.target.value)}
+                placeholder="https://..."
+                className="flex-1"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  resetConverter();
+                  setConverterOpen(true);
+                }}
+              >
+                Convert image
+              </Button>
+            </div>
           </Field>
-          <Field label="Name" hint="Vehicle name as you want it shown">
+          <Field label="Name" hint='Auto-filled from the catalog pick above - edit for custom design names (e.g. "GOLF GTI III - Midnight Chrome")'>
             <TextInput
               id="name"
               value={form.name}
@@ -210,141 +557,554 @@ export default function AdminPage() {
               placeholder="Toyota Supra MK4"
             />
           </Field>
-          <Field label="Price (cents)" hint="R320 000 = 32000000">
-            <TextInput
+          <Field label="Price (ZAR)" hint="Enter price in Rands, e.g. 60.00">
+            <input
               id="price"
               type="number"
+              step="0.01"
+              min="0"
               value={form.basePriceCents}
               onChange={(e) => handleChange("basePriceCents", e.target.value)}
+              className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
             />
           </Field>
-          <Field label="Stock" hint="How many available">
-            <TextInput
+          <Field
+            label="Stock"
+            hint={editingId === null ? "Must be at least 1 when adding a new car" : "How many available - set to 0 to mark out of stock"}
+          >
+            <input
               id="stock"
               type="number"
+              min={editingId === null ? 1 : 0}
               value={form.stockQuantity}
               onChange={(e) => handleChange("stockQuantity", e.target.value)}
+              className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
             />
           </Field>
-          <Field label="Category" hint="Select a category">
-            <TextInput
+          <Field label="Category" hint={categories.length === 0 ? "No categories yet - add some via the Categories tab" : "Select a category for filtering"}>
+            <select
               id="category"
-              value={form.currency}
-              onChange={() => {}}
-              placeholder="Select from categories tab"
-              disabled
-            />
-          </Field>
-          <Field label="Availability">
-            <select
-              id="availability"
-              value={form.availabilityState}
-              onChange={(e) => handleChange("availabilityState", e.target.value as Availability)}
-              className="border border-input bg-background px-3 py-2 rounded-md text-sm"
+              value={form.categoryId}
+              onChange={(e) => handleChange("categoryId", e.target.value)}
+              className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
             >
-              <option value="available">Available</option>
-              <option value="limited">Limited</option>
-              <option value="sold_out">Sold out</option>
-              <option value="unavailable">Unavailable</option>
+              <option value="">Select a category</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={String(cat.id)}>
+                  {cat.name}
+                </option>
+              ))}
             </select>
           </Field>
-          <Field label="Exclusivity">
-            <select
-              id="exclusivity"
-              value={form.exclusivity}
-              onChange={(e) => handleChange("exclusivity", e.target.value as Exclusivity)}
-              className="border border-input bg-background px-3 py-2 rounded-md text-sm"
-            >
-              <option value="standard">Standard</option>
-              <option value="limited_edition">Limited edition</option>
-              <option value="one_of_one">One of One</option>
-            </select>
+          <Field label="Air suspension install" hint="This design includes air suspension installation">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="air-suspension"
+                checked={form.airSuspension}
+                onChange={(e) => handleChange("airSuspension", e.target.checked)}
+                className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
+              />
+              <span className="text-sm text-foreground">Include air suspension</span>
+            </div>
+          </Field>
+          <Field label="Unlocked bodykits" hint="This design unlocks bodykits">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="unlocked-bodykits"
+                checked={form.unlockedBodykits}
+                onChange={(e) => handleChange("unlockedBodykits", e.target.checked)}
+                className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
+              />
+              <span className="text-sm text-foreground">Include unlocked bodykits</span>
+            </div>
+          </Field>
+          <Field label="HD Logo" hint="This design includes a high-definition logo">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="hd-logo"
+                checked={form.hdLogo}
+                onChange={(e) => handleChange("hdLogo", e.target.checked)}
+                className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
+              />
+              <span className="text-sm text-foreground">Include HD logo</span>
+            </div>
           </Field>
           <Field label="Featured">
-            <input
-              type="checkbox"
-              checked={form.isFeatured}
-              onChange={(e) => handleChange("isFeatured", e.target.checked)}
-              className="accent-primary"
-            />
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={form.isFeatured}
+                          onChange={(e) => handleChange("isFeatured", e.target.checked)}
+                          className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
+                        />
+                        <span className="text-sm text-foreground">Featured on home page</span>
+                      </div>
+                    </Field>
+                    <Field label="New Arrival">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={form.isNew}
+                          onChange={(e) => handleChange("isNew", e.target.checked)}
+                          className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
+                        />
+                        <span className="text-sm text-foreground">Show &quot;New&quot; badge</span>
+                      </div>
+                    </Field>
+                    <Field label="Sale">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={form.isSale}
+                          onChange={(e) => handleChange("isSale", e.target.checked)}
+                          className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
+                        />
+                        <span className="text-sm text-foreground">Show &quot;Sale&quot; badge</span>
+                      </div>
+                    </Field>
+                    <Field label="Published">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={form.isPublished}
+                onChange={(e) => handleChange("isPublished", e.target.checked)}
+                className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
+              />
+              <span className="text-sm text-foreground">Visible to customers</span>
+            </div>
           </Field>
-          <Field label="Published">
+          <div className="col-span-2 sm:col-span-2 lg:col-span-3 xl:col-span-4 flex gap-2 flex-wrap">
+                      <Button type="submit" variant="primary" disabled={saving}>
+                        {saving ? "Saving…" : editingId ? "Update product" : "Create product"}
+                      </Button>
+                      <Button variant="outline" type="button" onClick={resetForm} disabled={saving}>
+                        Reset
+                      </Button>
+                    </div>
+                  </form>
+                </section>
+                )}
+
+                {/* Product list */}
+                <section className="space-y-3">
+                  <div className="flex items-baseline justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-foreground">Catalogue</h3>
+                    <span className="text-xs text-muted-foreground">{products.length} product{products.length === 1 ? "" : "s"}</span>
+                  </div>
+                  {products.length === 0 ? (
+                    <p className="text-muted-foreground">No products yet. Add your first above.</p>
+                  ) : (
+                    <div className="grid gap-3">
+                      {products.map((p) => {
+                        const isInline = inlineEditingId === p.id;
+                        if (isInline) {
+                          return (
+                            <article key={p.id} className="panel rounded-xl border border-border p-4">
+                              <div className="flex items-baseline justify-between mb-3">
+                                <span className="text-xs font-mono text-muted-foreground">#{p.id}</span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setInlineEditingId(null)}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                              <form onSubmit={(e) => { e.preventDefault(); handleSubmit(e); }} className="grid gap-3 sm:grid-cols-2">
+                      <Field
+                        label="Car (CPM2 catalog)"
+                        hint={carLocked ? "Car code is locked - set once at creation" : "Pick a car from the catalog - name auto-fills below"}
+                      >
+                        {carLocked ? (
+                          <select
+                            id="cpm2-car-code"
+                            disabled
+                            defaultValue={form.cpm2CarCode}
+                            aria-readonly="true"
+                            className="w-full border border-input bg-secondary px-3 py-2 rounded-md text-sm text-foreground cursor-not-allowed"
+                          >
+                            <option value={form.cpm2CarCode}>
+                              {carByCode(Number(form.cpm2CarCode), "cpm2")?.name ?? `#${form.cpm2CarCode}`}
+                            </option>
+                          </select>
+                        ) : pickedCar ? (
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-mono text-muted-foreground">#{pickedCar.code}</span>
+                              <span className="text-foreground">{pickedCar.name}</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={clearPickedCar}
+                                aria-label="Clear picked car"
+                              >
+                                ✕
+                              </Button>
+                            </div>
+                            <div className="border border-input rounded-md px-2 py-1 bg-background">
+                              <span className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
+                                Picked from catalog - name below is editable
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="relative" onBlur={(e) => {
+                            if (!e.currentTarget.contains(e.relatedTarget as Node)) setCarOpen(false);
+                          }}>
+                            <input
+                              id="cpm2-car-code"
+                              value={carQuery}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                setCarQuery(v);
+                                setCarOpen(true);
+                                if (v === "") {
+                                  setForm((f) => ({ ...f, cpm2CarCode: "", name: "" }));
+                                  setPickedCar(null);
+                                }
+                              }}
+                              onFocus={() => setCarOpen(true)}
+                              placeholder="Type a car name or code…"
+                              autoComplete="off"
+                              className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
+                            />
+                            {carOpen && (carMatches.length > 0 ? (
+                              <div
+                                className="absolute z-20 mt-1 w-full max-h-64 overflow-y-auto border border-border rounded-md bg-card shadow-lg"
+                                onMouseDown={(e) => e.preventDefault()}
+                              >
+                                {carMatches.map((car) => (
+                                  <button
+                                    key={car.code}
+                                    type="button"
+                                    onClick={() => pickCar(car)}
+                                    className="block w-full text-left px-3 py-2 text-sm bg-card hover:bg-background hover:border-primary border-b border-border last:border-b-0"
+                                  >
+                                    <span className="text-foreground">{car.name}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="absolute z-20 mt-1 w-full border border-border rounded-md bg-card px-3 py-2 text-sm text-muted-foreground">
+                                No car in the CPM2 catalog matches &quot;{carQuery}&quot;.
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </Field>
+                      <Field label="Name" hint='Auto-filled from the catalog pick above - edit for custom design names (e.g. "GOLF GTI III - Midnight Chrome")'>
+                        <TextInput
+                          id="name"
+                          value={form.name}
+                          onChange={(e) => handleChange("name", e.target.value)}
+                          placeholder="Toyota Supra MK4"
+                        />
+                      </Field>
+                      <Field label="Price (ZAR)">
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={form.basePriceCents}
+                          onChange={(e) => handleChange("basePriceCents", e.target.value)}
+                          className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
+                        />
+                      </Field>
+                      <Field
+                        label="Stock"
+                        hint={editingId === null ? "Must be at least 1 when adding a new car" : "How many available - set to 0 to mark out of stock"}
+                      >
+                        <input
+                          type="number"
+                          min={editingId === null ? 1 : 0}
+                          value={form.stockQuantity}
+                          onChange={(e) => handleChange("stockQuantity", e.target.value)}
+                          className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
+                        />
+                      </Field>
+                      <Field label="Category" hint={categories.length === 0 ? "No categories yet - add some via the Categories tab" : "Select a category"}>
+                        <select
+                          value={form.categoryId}
+                          onChange={(e) => handleChange("categoryId", e.target.value)}
+                          className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
+                        >
+                          <option value="">Select a category</option>
+                          {categories.map((cat) => (
+                            <option key={cat.id} value={String(cat.id)}>{cat.name}</option>
+                          ))}
+                        </select>
+                      </Field>
+                      <Field label="Air suspension install">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={form.airSuspension}
+                            onChange={(e) => handleChange("airSuspension", e.target.checked)}
+                            className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
+                          />
+                          <span className="text-sm text-foreground">Include air suspension</span>
+                        </div>
+                      </Field>
+                      <Field label="Unlocked bodykits">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={form.unlockedBodykits}
+                            onChange={(e) => handleChange("unlockedBodykits", e.target.checked)}
+                            className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
+                          />
+                          <span className="text-sm text-foreground">Include unlocked bodykits</span>
+                        </div>
+                      </Field>
+                      <Field label="HD Logo">
+                                              <div className="flex items-center gap-2">
+                                                <input
+                                                  type="checkbox"
+                                                  checked={form.hdLogo}
+                                                  onChange={(e) => handleChange("hdLogo", e.target.checked)}
+                                                  className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
+                                                />
+                                                <span className="text-sm text-foreground">Include HD logo</span>
+                                              </div>
+                                            </Field>
+                                            <Field label="New Arrival">
+                                              <div className="flex items-center gap-2">
+                                                <input
+                                                  type="checkbox"
+                                                  checked={form.isNew}
+                                                  onChange={(e) => handleChange("isNew", e.target.checked)}
+                                                  className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
+                                                />
+                                                <span className="text-sm text-foreground">Show &quot;New&quot; badge</span>
+                                              </div>
+                                            </Field>
+                                            <Field label="Sale">
+                                              <div className="flex items-center gap-2">
+                                                <input
+                                                  type="checkbox"
+                                                  checked={form.isSale}
+                                                  onChange={(e) => handleChange("isSale", e.target.checked)}
+                                                  className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
+                                                />
+                                                <span className="text-sm text-foreground">Show &quot;Sale&quot; badge</span>
+                                              </div>
+                                            </Field>
+                                            <Field label="Published">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={form.isPublished}
+                            onChange={(e) => handleChange("isPublished", e.target.checked)}
+                            className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
+                          />
+                          <span className="text-sm text-foreground">Visible to customers</span>
+                        </div>
+                      </Field>
+                      <div className="col-span-2 flex gap-2">
+                        <Button type="submit" variant="primary" disabled={saving}>
+                          {saving ? "Saving…" : "Update product"}
+                        </Button>
+                      </div>
+                    </form>
+                  </article>
+                );
+              }
+              return (
+                <article
+                  key={p.id}
+                  className={`panel rounded-xl border p-4 ${
+                    p.stockQuantity === 0
+                      ? "border-oxblood bg-oxblood/5"
+                      : "border-border"
+                  }`}
+                >
+                  <div className="flex items-baseline justify-between mb-2">
+                    <span className="text-xs font-mono text-muted-foreground">#{p.id}</span>
+                    <span className={`text-xs ${p.isPublished ? "text-primary" : "text-muted-foreground"} font-medium capitalize`}>
+                      {p.isPublished ? "published" : "unpublished"}
+                    </span>
+                  </div>
+                  <h4 className="text-sm font-medium text-foreground truncate">{p.name}</h4>
+                                    <div className="flex items-baseline gap-2 mb-3 flex-wrap">
+                                      <span className="text-primary font-semibold">{formatPrice(p.basePriceCents, p.currency)}</span>
+                                      <span
+                                        className={`text-xs ml-2 font-medium ${
+                                          p.stockQuantity === 0
+                                            ? "text-oxblood"
+                                            : "text-muted-foreground"
+                                        }`}
+                                      >
+                                        {p.stockQuantity === 0 ? "Out of stock" : `${p.stockQuantity} left`}
+                                      </span>
+                                      {p.categoryId && categories.length > 0 && (
+                                        <span className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground border border-border px-2 py-0.5 rounded ml-2">
+                                          {categories.find((c) => c.id === p.categoryId)?.name ?? "Category"}
+                                        </span>
+                                      )}
+                                      {p.exclusivity !== "standard" && (
+                                        <span className="text-[10px] uppercase tracking-[0.15em] text-accent-foreground border border-accent px-2 py-0.5 rounded ml-2">
+                                          {p.exclusivity.replace("_", " ")}
+                                        </span>
+                                      )}
+                                      {p.isNew && (
+                                        <span className="bd bd-new text-[10px] font-bold px-2 py-0.5 rounded">New</span>
+                                      )}
+                                      {p.isSale && (
+                                        <span className="bd bd-sale text-[10px] font-bold px-2 py-0.5 rounded">Sale</span>
+                                      )}
+                                      {p.isFeatured && (
+                                        <span className="bd bd-featured text-[10px] font-bold px-2 py-0.5 rounded">Featured</span>
+                                      )}
+                                    </div>
+                                    {p.stockQuantity === 0 && (
+                                      <p className="text-[10px] uppercase tracking-[0.15em] text-oxblood mt-1">
+                                        Out of stock - edit to restock
+                                      </p>
+                                    )}
+                                    <div className="flex gap-2 flex-wrap">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => selectProduct(p)}
+                                      >
+                                        Edit
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handlePublish(p.id, !p.isPublished)}
+                                      >
+                                        {p.isPublished ? "Unpublish" : "Publish"}
+                                      </Button>
+                                    </div>
+                                  </article>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </section>
+
+                        <div className="mt-6 flex gap-2 flex-wrap">
+                          <Button variant="outline" onClick={() => router.push("/store")}>
+                            Back to store
+                          </Button>
+                          <Link href="/store/admin/eft" className="flex items-center gap-2 px-4 py-2 text-[9px] uppercase tracking-[0.15em] whitespace-nowrap cursor-pointer font-bold text-ink-soft">
+                            EFT Review
+                          </Link>
+                        </div>
+
+      {/* Image URL converter modal */}
+      <Modal
+        open={converterOpen}
+        onClose={() => setConverterOpen(false)}
+        title="Image URL Converter"
+        subtitle="Convert an image URL or file into a data URL you can paste as the product image"
+        width="max-w-lg"
+      >
+        <div className="space-y-4">
+          <div>
+            <p className="text-xs font-medium text-foreground mb-2">Option 1: Image URL</p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={converterInput}
+                onChange={(e) => setConverterInput(e.target.value)}
+                placeholder="https://example.com/image.jpg"
+                className="flex-1 border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              />
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleConvertUrl}
+                disabled={converterLoading || !converterInput.trim()}
+              >
+                {converterLoading ? "Converting…" : "Convert URL"}
+              </Button>
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-border">
+            <p className="text-xs font-medium text-foreground mb-2">Option 2: Upload image file</p>
             <input
-              type="checkbox"
-              checked={form.isPublished}
-              onChange={(e) => handleChange("isPublished", e.target.checked)}
-              className="accent-primary"
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0] ?? null;
+                setConverterFile(file);
+                if (file) setConverterInput(""); // clear URL when file selected
+              }}
+              className="block w-full text-sm text-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary"
             />
-          </Field>
-          <div className="col-span-2 flex gap-2">
-            <Button type="submit" variant="primary" disabled={saving}>
-              {saving ? "Saving…" : editingId ? "Update product" : "Create product"}
-            </Button>
-            <Button variant="outline" type="button" onClick={resetForm} disabled={saving}>
-              Reset
+            {converterFile && (
+              <p className="text-xs text-muted-foreground mt-1">
+                {converterFile.name} ({Math.round(converterFile.size / 1024)} KB)
+              </p>
+            )}
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleConvertFile}
+              disabled={converterLoading || !converterFile}
+              className="mt-2"
+            >
+              {converterLoading ? "Converting…" : "Convert file"}
             </Button>
           </div>
-        </form>
-      </section>
 
-      {/* Product list */}
-      <section className="space-y-3">
-        <div className="flex items-baseline justify-between mb-4">
-          <h3 className="text-sm font-semibold text-foreground">Catalogue</h3>
-          <span className="text-xs text-muted-foreground">{products.length} product{products.length === 1 ? "" : "s"}</span>
-        </div>
-        {products.length === 0 ? (
-          <p className="text-muted-foreground">No products yet. Add your first above.</p>
-        ) : (
-          <div className="grid gap-3">
-            {products.map((p) => (
-              <article key={p.id} className="panel rounded-xl border border-border p-4">
-                <div className="flex items-baseline justify-between mb-2">
-                  <span className="text-xs font-mono text-muted-foreground">#{p.id}</span>
-                  <span className={`text-xs ${p.isPublished ? "text-primary" : "text-muted-foreground"} font-medium capitalize`}>
-                    {p.isPublished ? "published" : "unpublished"}
+          {converterError && (
+            <p className="text-xs text-destructive">{converterError}</p>
+          )}
+
+          {converterResult && (
+            <div className="pt-3 border-t border-border space-y-3">
+              <p className="text-xs font-medium text-foreground">Result</p>
+              <div className="relative group">
+                <img
+                  src={converterResult}
+                  alt="Preview"
+                  className="max-w-full max-h-48 rounded-md border border-border object-cover"
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded border border-primary-foreground">
+                    Click to copy
                   </span>
                 </div>
-                <h4 className="text-sm font-medium text-foreground truncate">{p.name}</h4>
-                {p.cpm2CarCode !== null && (
-                  <p className="text-[10px] text-muted-foreground mb-2">CPM2 code: {p.cpm2CarCode}</p>
-                )}
-                <div className="flex items-baseline gap-2 mb-3">
-                  <span className="text-primary font-semibold">{formatPrice(p.basePriceCents, p.currency)}</span>
-                  <span className="text-xs text-muted-foreground ml-2">{p.stockQuantity} left</span>
-                  {p.exclusivity !== "standard" && (
-                    <span className="text-[10px] uppercase tracking-[0.15em] text-accent-foreground border border-accent px-2 py-0.5 rounded ml-2">
-                      {p.exclusivity.replace("_", " ")}
-                    </span>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => selectProduct(p)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handlePublish(p.id, !p.isPublished)}
-                  >
-                    {p.isPublished ? "Unpublish" : "Publish"}
-                  </Button>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <div className="mt-6">
-        <Button variant="outline" onClick={() => router.push("/store")}>
-          Back to store
-        </Button>
-      </div>
+              </div>
+              <textarea
+                value={converterResult}
+                readOnly
+                rows={3}
+                className="w-full border border-input bg-background px-3 py-2 rounded-md text-xs font-mono text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                onClick={async (e) => {
+                  const ta = e.target as HTMLTextAreaElement;
+                  ta.select();
+                  try {
+                    await navigator.clipboard.writeText(converterResult!);
+                  } catch {
+                    document.execCommand("copy");
+                  }
+                }}
+              />
+              <Button
+                variant="primary"
+                onClick={useConverterResult}
+                disabled={converterLoading}
+                className="w-full"
+              >
+                Use this URL
+              </Button>
+            </div>
+          )}
+        </div>
+        <footer>
+          <Button variant="outline" onClick={() => setConverterOpen(false)} size="sm">
+            Cancel
+          </Button>
+        </footer>
+      </Modal>
     </StoreShell>
   );
 }

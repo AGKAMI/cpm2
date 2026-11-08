@@ -161,7 +161,7 @@ export function GaragePanel({ account, readOnly = false, onChanged }: GaragePane
                   onClick={() => void remove(car)}
                   disabled={removingId !== null}
                   aria-label={`Remove #${car.carCode} ${car.carName} from the garage`}
-                  className="square-btn mt-0.5 h-7 w-7 shrink-0 hover:border-oxblood hover:bg-oxblood hover:text-oxblood"
+                  className="square-btn mt-0.5 h-7 w-7 shrink-0 hover:border-racing hover:bg-racing hover:text-primary-foreground"
                 >
                   <svg
                     viewBox="0 0 24 24"

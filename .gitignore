@@ -58,3 +58,4 @@ scripts/test-arg-format.py
 scripts/migrate-to-turso.mjs
 scripts/debug-data.mjs
 scripts/apply-prices.cjs
+.env*.local

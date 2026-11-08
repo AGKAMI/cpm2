@@ -68,7 +68,7 @@ export function ExportConfirmModal({
             className={`flex-1 cursor-pointer rounded-[14px] border px-3 py-2.5 text-left transition-colors ${
               picked === "csv"
                 ? "border-racing bg-racing"
-                : "border-ink bg-ink hover:border-ink hover:bg-ink"
+                : "border-border bg-background hover:border-primary hover:text-primary-foreground hover:border-racing"
             }`}
           >
             <span className="block font-sans text-[12px] font-semibold text-ink">
@@ -83,7 +83,7 @@ export function ExportConfirmModal({
             className={`flex-1 cursor-pointer rounded-[14px] border px-3 py-2.5 text-left transition-colors ${
               picked === "json"
                 ? "border-racing bg-racing"
-                : "border-ink bg-ink hover:border-ink hover:bg-ink"
+                : "border-border bg-background hover:border-primary hover:text-primary-foreground hover:border-racing"
             }`}
           >
             <span className="block font-sans text-[12px] font-semibold text-ink">
@@ -158,7 +158,7 @@ export function SlotPurchaseConfirmModal({
 
         {balanceAfter < 0 ? (
           <p className="rounded-[14px] border border-oxblood bg-oxblood px-3 py-2 text-xs text-oxblood">
-            This account only has {formatNumber(account.coins)} coins — not enough for {count} slot(s).
+            This account only has {formatNumber(account.coins)} coins - not enough for {count} slot(s).
           </p>
         ) : null}
       </div>

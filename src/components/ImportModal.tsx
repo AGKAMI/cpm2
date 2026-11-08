@@ -97,13 +97,13 @@ export function ImportModal({ open, busy, onClose, onImport }: ImportModalProps)
               ))}
             </ul>
             {report.results.some((row) => row.status !== "created") ? (
-              <div className="max-h-44 overflow-y-auto rounded-[14px] border border-ink bg-ink p-2">
+              <div className="max-h-44 overflow-y-auto rounded-[14px] border border-border bg-background p-2">
                 {report.results
                   .filter((row) => row.status !== "created")
                   .map((row) => (
                     <p key={`${row.row}-${row.email}`} className="truncate text-[11px] text-ink-faint">
                       row {row.row} · {row.email ?? "?"} · {row.status}
-                      {row.message && row.status === "failed" ? ` — ${row.message}` : ""}
+                      {row.message && row.status === "failed" ? ` - ${row.message}` : ""}
                     </p>
                   ))}
               </div>
@@ -120,7 +120,7 @@ export function ImportModal({ open, busy, onClose, onImport }: ImportModalProps)
               className="field-rule h-44 resize-none num text-[12px]"
             />
             <p className="text-[11px] text-ink-faint">
-              Duplicates are skipped, bad rows are reported — nothing is half-imported. Hard caps
+              Duplicates are skipped, bad rows are reported - nothing is half-imported. Hard caps
               ({LIMITS.MAX_CASH.toLocaleString("en-US")} cash · {LIMITS.MAX_COINS.toLocaleString("en-US")} coins ·
               {" "}CPM2 base garage + {LIMITS.MAX_COIN_SLOTS} coin slot) are enforced per row.
             </p>

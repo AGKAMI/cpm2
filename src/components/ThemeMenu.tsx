@@ -53,7 +53,7 @@ export function ThemeMenu() {
         open={open}
         onClose={() => setOpen(false)}
         title="Appearance"
-        subtitle="Neutral glass · single and double-tone accents"
+        subtitle="Neutral tones · single and double-tone accents"
         width="max-w-xl"
       >
         <ThemeGallery />

@@ -37,7 +37,7 @@ export type Category = {
 export type Product = {
   id: number;
   categoryId: number | null;
-  cpm2CarCode: number | null;   // links to CPM2 catalog car (car-catalog.ts)
+  cpm2CarCode: number | null;
   name: string;
   description: string;
   basePriceCents: number;
@@ -46,8 +46,16 @@ export type Product = {
   availabilityState: AvailabilityState;
   exclusivity: Exclusivity;
   isFeatured: boolean;
+  isNew: boolean;
+  isSale: boolean;
   isPublished: boolean;
   version: number;
+  airSuspension: boolean;       // Air suspension installation included
+  unlockedBodykits: boolean;    // Design unlocks bodykits
+  specHp: number | null;        // legacy — perf specs kept for old rows only
+  specTopSpeed: number | null;
+  specZeroHundred: string | null;
+  specDrive: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -137,7 +145,15 @@ export type ProductInput = {
   availabilityState?: AvailabilityState;
   exclusivity?: Exclusivity;
   isFeatured?: boolean;
+  isNew?: boolean;
+  isSale?: boolean;
   isPublished?: boolean;
+  airSuspension?: boolean;      // Air suspension installation included
+  unlockedBodykits?: boolean;   // Design unlocks bodykits
+  specHp?: number;              // legacy — accepted for old rows, UI removed
+  specTopSpeed?: number;
+  specZeroHundred?: string;
+  specDrive?: string;
 };
 
 export type OrderState = "awaiting_payment" | "payment_confirmed" | "processing" | "delivery_scheduled" | "awaiting_delivery" | "delivery_in_progress" | "delivery_verified" | "completed" | "cancelled" | "refund_pending" | "refunded" | "disputed";
@@ -156,6 +172,7 @@ export type Order = {
   id: string;
   customerId: number;
   productId: number;
+  quantity: number;
   orderState: OrderState;
   paymentState: PaymentState;
   deliveryState: DeliveryState;

@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS vanta_customers (
   in_game_name   TEXT    NOT NULL DEFAULT '',
   player_id      TEXT    NOT NULL DEFAULT '',
   currency_pref  TEXT    NOT NULL DEFAULT 'ZAR',
+  email          TEXT    NOT NULL DEFAULT '',
   created_at     TEXT    NOT NULL,
   updated_at     TEXT    NOT NULL
 );
@@ -47,6 +48,12 @@ CREATE TABLE IF NOT EXISTS vanta_products (
   is_featured        INTEGER NOT NULL DEFAULT 0,
   is_published       INTEGER NOT NULL DEFAULT 0,
   version            INTEGER NOT NULL DEFAULT 1,
+  air_suspension     INTEGER NOT NULL DEFAULT 0,  -- Air suspension installation included in the design
+  unlocked_bodykits  INTEGER NOT NULL DEFAULT 0,  -- Design unlocks bodykits
+  spec_hp            INTEGER,
+  spec_top_speed     INTEGER,
+  spec_zero_hundred  TEXT,
+  spec_drive         TEXT,
   created_at         TEXT    NOT NULL,
   updated_at         TEXT    NOT NULL
 );
@@ -94,6 +101,16 @@ CREATE TABLE IF NOT EXISTS vanta_system_config (
   updated_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS vanta_admins (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  telegram_user_id TEXT   NOT NULL UNIQUE,
+  telegram_username TEXT  NOT NULL DEFAULT '',
+  role           TEXT     NOT NULL DEFAULT 'admin' CHECK (role IN ('owner', 'admin')),
+  added_by       TEXT,
+  added_at       TEXT     NOT NULL,
+  is_active      INTEGER  NOT NULL DEFAULT 1
+);
+
 CREATE TABLE IF NOT EXISTS vanta_audit_logs (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   actor_platform TEXT,
@@ -120,7 +137,8 @@ CREATE TABLE IF NOT EXISTS vanta_orders (
   id                 TEXT PRIMARY KEY,
   customer_id        INTEGER NOT NULL REFERENCES vanta_customers(id),
   product_id         INTEGER NOT NULL REFERENCES vanta_products(id),
-  order_state        TEXT    NOT NULL DEFAULT 'awaiting_payment' CHECK (order_state IN ('checkout_initiated', 'awaiting_payment', 'payment_verification', 'payment_confirmed', 'processing', 'delivery_scheduled', 'awaiting_delivery', 'delivery_in_progress', 'delivery_verified', 'completed', 'cancelled', 'refund_pending', 'refunded', 'disputed')),
+  quantity           INTEGER NOT NULL DEFAULT 1,
+  order_state        TEXT NOT NULL DEFAULT 'awaiting_payment' CHECK (order_state IN ('checkout_initiated', 'awaiting_payment', 'payment_verification', 'payment_confirmed', 'processing', 'delivery_scheduled', 'awaiting_delivery', 'delivery_in_progress', 'delivery_verified', 'completed', 'cancelled', 'refund_pending', 'refunded', 'disputed')),
   payment_state      TEXT    NOT NULL DEFAULT 'pending' CHECK (payment_state IN ('pending', 'verified', 'rejected', 'expired')),
   delivery_state     TEXT    NOT NULL DEFAULT 'unscheduled' CHECK (delivery_state IN ('unscheduled', 'scheduled', 'in_progress', 'completed', 'missed')),
   amount_cents       INTEGER NOT NULL DEFAULT 0,

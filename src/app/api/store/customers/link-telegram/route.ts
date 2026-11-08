@@ -1,0 +1,52 @@
+/**
+ * VANTA GARAGE — link Telegram identity.
+ * POST /api/store/customers/link-telegram
+ * Body: none (initData carried in X-Telegram-Init-Data header)
+ * Links the current Telegram Mini App user to a VANTA customer profile.
+ */
+
+import { fail, ok, readJson } from "@/lib/route";
+import { assertTelegramAuth } from "@/lib/telegram";
+import { getCustomerByPlatformIdentity, linkPlatformIdentity } from "@/lib/store/customers";
+import { NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
+
+export async function POST(request: Request) {
+  try {
+    const telegramUserId = await assertTelegramAuth(request);
+    if (telegramUserId === null) {
+      return NextResponse.json({ error: "no_telegram_user", message: "No Telegram user id in initData" }, { status: 401 });
+    }
+
+    const existing = await getCustomerByPlatformIdentity("telegram", String(telegramUserId));
+    if (existing) {
+      return ok({
+        linked: true,
+        customerId: existing.customer.id,
+        inGameName: existing.customer.inGameName,
+        message: "Telegram already linked to this customer.",
+      });
+    }
+
+    // Auto-create a customer linked to this Telegram id if none exists yet.
+    // The customer gets a placeholder in-game name; they can edit it later.
+    const { createCustomer } = await import("@/lib/store/customers");
+    const created = await createCustomer({
+      inGameName: `tg_${telegramUserId}`,
+      playerId: "",
+      currencyPref: "ZAR",
+    });
+    await linkPlatformIdentity(created.id, "telegram", String(telegramUserId), "");
+
+    return ok({
+      linked: true,
+      customerId: created.id,
+      inGameName: created.inGameName,
+      message: "Telegram linked - your orders and delivery history will appear here.",
+    });
+  } catch (err) {
+    return fail(err);
+  }
+}
+

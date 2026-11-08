@@ -18,7 +18,7 @@ export async function GET(request: Request) {
       "local";
     if (rateLimited(`trade:prices:${ip}`)) {
       return NextResponse.json(
-        { error: { code: "AUTH_SLOW_DOWN", message: "Too many attempts — wait a minute and try again." } },
+        { error: { code: "AUTH_SLOW_DOWN", message: "Too many attempts - wait a minute and try again." } },
         { status: 429 },
       );
     }
@@ -41,7 +41,7 @@ export async function PUT(request: Request) {
       "local";
     if (rateLimited(`trade:prices:${ip}`)) {
       return NextResponse.json(
-        { error: { code: "AUTH_SLOW_DOWN", message: "Too many attempts — wait a minute and try again." } },
+        { error: { code: "AUTH_SLOW_DOWN", message: "Too many attempts - wait a minute and try again." } },
         { status: 429 },
       );
     }
@@ -61,7 +61,7 @@ export async function DELETE(request: Request) {
       "local";
     if (rateLimited(`trade:prices:${ip}`)) {
       return NextResponse.json(
-        { error: { code: "AUTH_SLOW_DOWN", message: "Too many attempts — wait a minute and try again." } },
+        { error: { code: "AUTH_SLOW_DOWN", message: "Too many attempts - wait a minute and try again." } },
         { status: 429 },
       );
     }

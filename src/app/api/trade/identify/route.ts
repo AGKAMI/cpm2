@@ -17,12 +17,12 @@ const GEMINI_ENDPOINT =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
 const PROMPT = `This is a screenshot from Car Parking Multiplayer 2 (CPM2), a mobile car game.
-Identify the highlighted/centred car — not background traffic or UI icons.
+Identify the highlighted/centred car - not background traffic or UI icons.
 Reply with JSON only: {"carName": "<the car's exact displayed name>"}.
 Rules:
 - Use the name exactly as it appears in CPM2 (make + model + generation, e.g. "VOLKSWAGEN GOLF MK7 GTI", not "MK2" or "MK6").
 - Do not invent generations or trims not shown.
-- CPM2 has a Golf MK7 GTI (code 157), not MK2/MK6 — do not guess those.
+- CPM2 has a Golf MK7 GTI (code 157), not MK2/MK6 - do not guess those.
 - If several cars are visible, pick the most prominent one.`;
 
 type GeminiResponse = {
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
       "local";
     if (rateLimited(`trade:identify:${ip}`)) {
       return NextResponse.json(
-        { error: { code: "AUTH_SLOW_DOWN", message: "Too many attempts — wait a minute and try again." } },
+        { error: { code: "AUTH_SLOW_DOWN", message: "Too many attempts - wait a minute and try again." } },
         { status: 429 },
       );
     }
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
       throw new ApiError(
         503,
         "GEMINI_NOT_CONFIGURED",
-        "Screenshot identification is not configured yet — add GEMINI_API_KEY to .env.local and restart the server.",
+        "Screenshot identification is not configured yet - add GEMINI_API_KEY to .env.local and restart the server.",
       );
     }
 
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
       throw new ApiError(
         502,
         "GEMINI_FAILED",
-        "Gemini did not answer in time — try again in a moment.",
+        "Gemini did not answer in time - try again in a moment.",
       );
     }
 

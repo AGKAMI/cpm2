@@ -1,9 +1,9 @@
-import { redirect } from "next/navigation";
+import { AppSelection } from "@/components/AppSelection";
 
 /**
- * The old overview dashboard is gone — the owner wants the app dead simple.
- * The CPM2 register is the front door now.
+ * App selection — Fleet Ledger or VANTA Garage.
+ * No redirect, no default app. You choose.
  */
 export default function Page() {
-  redirect("/fleet/cpm2");
+  return <AppSelection />;
 }

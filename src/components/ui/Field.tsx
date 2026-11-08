@@ -38,7 +38,7 @@ function Meter({ value, max, tone }: { value: number; max: number; tone: "brass"
   const ratio = max > 0 ? Math.min(1, Math.max(0, value / max)) : 0;
   const near = ratio >= 0.8;
   return (
-    <div className="h-[3px] w-full overflow-hidden rounded-full bg-muted">
+    <div className="h-[3px] w-full overflow-hidden rounded-full bg-background">
       <div
         className={`h-full transition-[width] duration-500 ${near ? "bg-destructive" : tone}`}
         style={{ width: `${ratio * 100}%` }}
@@ -56,7 +56,7 @@ export function TextInput({ invalid, mono, className = "", ...props }: TextInput
   return (
     <input
       {...props}
-      className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${mono ? "font-mono" : ""} ${invalid ? "border-destructive" : ""} ${className}`}
+      className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-background disabled:text-muted-foreground ${mono ? "font-mono" : ""} ${invalid ? "border-destructive" : ""} ${className}`}
     />
   );
 }
@@ -109,7 +109,7 @@ export function NumericInput({
           const parsed = raw === "" ? 0 : Number.parseInt(raw, 10);
           onChange(Number.isFinite(parsed) ? parsed : 0);
         }}
-        className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pr-16 ${invalid ? "border-destructive" : ""}`}
+        className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-background disabled:text-muted-foreground pr-16 ${invalid ? "border-destructive" : ""}`}
       />
       {max !== undefined && value >= max ? (
         <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium uppercase text-destructive">
@@ -146,7 +146,7 @@ export function TextArea({
       value={value}
       placeholder={placeholder}
       onChange={(event) => onChange(event.target.value)}
-      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none leading-relaxed"
+      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-background disabled:text-muted-foreground resize-none leading-relaxed"
     />
   );
 }

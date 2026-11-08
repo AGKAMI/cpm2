@@ -137,7 +137,7 @@ export function TradeDesk() {
             <button
               type="button"
               onClick={() => setPickerSide(key)}
-              className="cursor-pointer rounded-full border border-racing px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-racing transition hover:bg-racing hover:border-racing"
+              className="cursor-pointer rounded-full border border-border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground hover:border-primary hover:text-primary-foreground hover:border-primary"
             >
               + Car
             </button>
@@ -145,7 +145,7 @@ export function TradeDesk() {
               type="button"
               onClick={() => clearSide(key)}
               disabled={side.cars.length === 0 && side.cash === 0}
-              className="cursor-pointer text-[10px] text-ink-faint underline-offset-2 transition hover:text-oxblood hover:underline disabled:cursor-default disabled:opacity-0"
+              className="cursor-pointer text-[10px] text-ink-faint underline-offset-2 transition hover:text-oxblood hover:underline disabled:cursor-default disabled:bg-secondary disabled:text-secondary-foreground"
             >
               clear
             </button>
@@ -161,7 +161,7 @@ export function TradeDesk() {
               const entry = prices.get(code);
               const unpriced = !entry;
               return (
-                <li key={`${code}-${index}`} className="rounded-[12px] border border-ink px-3 py-2 transition-all duration-150 ease-out group-hover:bg-ink">
+                <li key={`${code}-${index}`} className="rounded-[12px] border border-border px-3 py-2 transition-all duration-150 ease-out group-hover:border-primary group-hover:text-primary-foreground">
                   <div className="flex items-center gap-2">
                     <span className="num w-9 shrink-0 text-[11px] text-ink-faint">#{code}</span>
                     <span className="min-w-0 flex-1 truncate text-[12.5px] text-ink">
@@ -179,7 +179,7 @@ export function TradeDesk() {
                         type="button"
                         onClick={() => removeCar(key, code)}
                         aria-label={`Remove ${car?.name ?? `code ${code}`} from this side`}
-                        className="grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-full border border-ink text-ink-faint transition-all duration-150 hover:bg-oxblood hover:text-oxblood hover:border-oxblood active:scale-95"
+                        className="grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-full border border-border text-foreground transition-all duration-150 hover:bg-racing hover:text-primary-foreground hover:border-racing active:scale-95"
                       >
                       <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
                         <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
@@ -193,7 +193,7 @@ export function TradeDesk() {
                       type="button"
                       onClick={() => removeCar(key, code)}
                       aria-label={`Remove one ${car?.name ?? `code ${code}`}`}
-                      className="shrink-0 cursor-pointer place-items-center rounded-full border border-ink px-2 py-0.5 text-[10px] text-ink transition hover:bg-ink"
+                      className="shrink-0 cursor-pointer place-items-center rounded-full border border-border px-2 py-0.5 text-[10px] text-ink hover:border-primary hover:text-primary-foreground"
                     >
                       −
                     </button>
@@ -202,7 +202,7 @@ export function TradeDesk() {
                       type="button"
                       onClick={() => addCar(key, code)}
                       aria-label={`Add one ${car?.name ?? `code ${code}`}`}
-                      className="shrink-0 cursor-pointer place-items-center rounded-full border border-ink px-2 py-0.5 text-[10px] text-ink transition hover:bg-ink"
+                      className="shrink-0 cursor-pointer place-items-center rounded-full border border-border px-2 py-0.5 text-[10px] text-ink hover:border-primary hover:text-primary-foreground"
                     >
                       +
                     </button>
@@ -210,7 +210,7 @@ export function TradeDesk() {
                   </div>
 
                   {unpriced && (
-                    <p className="mt-1 text-[10px] text-racing">No price — not counted yet.</p>
+                    <p className="mt-1 text-[10px] text-racing">No price - not counted yet.</p>
                   )}
                 </li>
               );
@@ -261,7 +261,7 @@ export function TradeDesk() {
 
         {value.unpriced > 0 && (
           <p className="text-[10.5px] text-racing">
-            {value.unpriced} unpriced car{value.unpriced === 1 ? "" : "s"} — not counted yet.
+            {value.unpriced} unpriced car{value.unpriced === 1 ? "" : "s"} - not counted yet.
           </p>
         )}
       </div>
@@ -289,23 +289,23 @@ export function TradeDesk() {
             {renderSide("them")}
           </div>
 
-          {/* Verdict — only shown once both sides have at least one car or cash */}
+          {/* Verdict - only shown once both sides have at least one car or cash */}
           {(sides.you.cars.length === 0 && sides.you.cash === 0) ||
           (sides.them.cars.length === 0 && sides.them.cash === 0) ? (
             <p className="text-center text-[12px] text-ink-faint py-4">
-              Put cars on both sides — the desk prices the deal in Rands and tells you straight if it robs you.
+              Put cars on both sides - the desk prices the deal in Rands and tells you straight if it robs you.
             </p>
           ) : (
             <>
               <section
                 className={`rounded-[18px] border px-5 py-5 text-center ${
                   incomplete
-                    ? "border-ink bg-ink"
+                    ? "border-border bg-background"
                     : verdict.status === "gain"
                     ? "border-racing bg-racing"
                     : verdict.status === "loss"
                     ? "border-racing bg-racing"
-                    : "border-ink bg-ink"}
+                    : "border-border bg-background"}
                 `}
               >
                 <p className="num text-[11px] uppercase tracking-[0.18em] text-ink-faint">
@@ -322,16 +322,16 @@ export function TradeDesk() {
                 {incomplete ? (
                   <p className="mt-2 text-[12px] text-ink-soft">
                     {unpricedCount === 1
-                      ? "1 car has no price on record — not counted yet."
-                      : `${unpricedCount} cars have no price on record — not counted yet.`}
+                      ? "1 car has no price on record - not counted yet."
+                      : `${unpricedCount} cars have no price on record - not counted yet.`}
                   </p>
                 ) : (
                   <p className="mt-2 text-[12px] text-ink-soft">
                     {verdict.status === "gain"
-                      ? `Roughly ${leanPct}% in your favour — take the deal.`
+                      ? `Roughly ${leanPct}% in your favour - take the deal.`
                       : verdict.status === "loss"
-                        ? `Roughly ${leanPct}% against you — you'd be robbing yourself.`
-                        : "Too close to call — nobody is getting robbed."}
+                        ? `Roughly ${leanPct}% against you - you'd be robbing yourself.`
+                        : "Too close to call - nobody is getting robbed."}
                   </p>
                 )}
               </section>

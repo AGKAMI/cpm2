@@ -123,7 +123,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               type="button"
               onClick={() => remove(toast.id)}
               aria-label="Dismiss notification"
-              className="mr-2 -mt-2 flex h-8 w-8 shrink-0 items-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+              className="mr-2 -mt-2 flex h-8 w-8 shrink-0 items-center rounded-md text-muted-foreground hover:border-primary hover:text-primary-foreground transition-colors"
             >
               <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />

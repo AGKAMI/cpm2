@@ -42,7 +42,7 @@ export function GuestGate({ children }: { children: React.ReactNode }) {
     return (
       <div className="relative min-h-[320px]">
         {/* The register content stays mounted but blurred, inert and
-            unclickable — the nav above it is untouched, so the guest can
+            unclickable - the nav above it is untouched, so the guest can
             still switch to the trade desk or another page. */}
         <div inert={true} aria-hidden="true" className="pointer-events-none select-none blur-[7px]">
           {children}
@@ -62,24 +62,25 @@ export function GuestGate({ children }: { children: React.ReactNode }) {
             <div className="flex flex-col gap-2">
               <Button
                 variant="primary"
-                
-                className="w-full justify-center mt-1"
+                className="w-full justify-center mt-1 hover:bg-racing hover:text-primary-foreground hover:border-primary"
                 onClick={() => router.push(`/auth?from=${encodeURIComponent(path())}`)}
               >
                 Sign in or create account
               </Button>
               <Button
                 variant="ghost"
-                
-                className="w-full justify-center mt-1"
+                className="w-full justify-center mt-1 hover:border-primary hover:text-primary-foreground"
                 onClick={() => router.push("/trade")}
               >
                 Browse the trade desk instead
               </Button>
             </div>
-            <p className="mt-6 text-[11px] text-ink-faint">
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-6 text-[11px] text-primary underline underline-offset-2 hover:text-primary hover:cursor-pointer"
+            >
               Already signed in? Refresh the page.
-            </p>
+            </button>
           </div>
         </div>
       </div>

@@ -19,8 +19,16 @@ function rowToProduct(row: Record<string, unknown>): Product {
     availabilityState: (row.availability_state ?? "available") as AvailabilityState,
     exclusivity: (row.exclusivity ?? "standard") as Exclusivity,
     isFeatured: Number(row.is_featured ?? 0) === 1,
+    isNew: Number(row.is_new ?? 0) === 1,
+    isSale: Number(row.is_sale ?? 0) === 1,
     isPublished: Number(row.is_published ?? 0) === 1,
     version: Number(row.version ?? 1),
+    airSuspension: Number(row.air_suspension ?? 0) === 1,
+    unlockedBodykits: Number(row.unlocked_bodykits ?? 0) === 1,
+    specHp: row.spec_hp === null || row.spec_hp === undefined ? null : Number(row.spec_hp),
+    specTopSpeed: row.spec_top_speed === null || row.spec_top_speed === undefined ? null : Number(row.spec_top_speed),
+    specZeroHundred: row.spec_zero_hundred === null || row.spec_zero_hundred === undefined ? null : String(row.spec_zero_hundred),
+    specDrive: row.spec_drive === null || row.spec_drive === undefined ? null : String(row.spec_drive),
     createdAt: String(row.created_at ?? ""),
     updatedAt: String(row.updated_at ?? ""),
   };
@@ -83,8 +91,8 @@ export async function createProduct(input: ProductInput): Promise<Product> {
   const db = await getStoreDb();
   const now = new Date().toISOString();
   const result = await db.execute({
-    sql: `INSERT INTO vanta_products (category_id, cpm2_car_code, name, description, base_price_cents, currency, stock_quantity, availability_state, exclusivity, is_featured, is_published, version, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+    sql: `INSERT INTO vanta_products (category_id, cpm2_car_code, name, description, base_price_cents, currency, stock_quantity, availability_state, exclusivity, is_featured, is_new, is_sale, is_published, air_suspension, unlocked_bodykits, version, created_at, updated_at, spec_hp, spec_top_speed, spec_zero_hundred, spec_drive)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)`,
     args: [
       input.categoryId ?? null,
       input.cpm2CarCode ?? null,
@@ -96,14 +104,22 @@ export async function createProduct(input: ProductInput): Promise<Product> {
       input.availabilityState ?? "available",
       input.exclusivity ?? "standard",
       input.isFeatured ? 1 : 0,
+      input.isNew ? 1 : 0,
+      input.isSale ? 1 : 0,
       input.isPublished ? 1 : 0,
+      input.airSuspension ? 1 : 0,
+      input.unlockedBodykits ? 1 : 0,
       now,
       now,
+      input.specHp ?? null,
+      input.specTopSpeed ?? null,
+      input.specZeroHundred ?? null,
+      input.specDrive ?? null,
     ],
   });
   const id = result.lastInsertRowid;
   if (id === null) throw new Error("Product insert returned no id");
-  return rowToProduct({ id, category_id: input.categoryId ?? null, cpm2_car_code: input.cpm2CarCode ?? null, name: input.name.trim(), description: input.description ?? "", base_price_cents: input.basePriceCents ?? 0, currency: input.currency ?? "ZAR", stock_quantity: input.stockQuantity ?? 0, availability_state: input.availabilityState ?? "available", exclusivity: input.exclusivity ?? "standard", is_featured: input.isFeatured ? 1 : 0, is_published: input.isPublished ? 1 : 0, version: 1, created_at: now, updated_at: now });
+  return rowToProduct({ id, category_id: input.categoryId ?? null, cpm2_car_code: input.cpm2CarCode ?? null, name: input.name.trim(), description: input.description ?? "", base_price_cents: input.basePriceCents ?? 0, currency: input.currency ?? "ZAR", stock_quantity: input.stockQuantity ?? 0, availability_state: input.availabilityState ?? "available", exclusivity: input.exclusivity ?? "standard", is_featured: input.isFeatured ? 1 : 0, is_new: input.isNew ? 1 : 0, is_sale: input.isSale ? 1 : 0, is_published: input.isPublished ? 1 : 0, air_suspension: input.airSuspension ? 1 : 0, unlocked_bodykits: input.unlockedBodykits ? 1 : 0, version: 1, spec_hp: input.specHp ?? null, spec_top_speed: input.specTopSpeed ?? null, spec_zero_hundred: input.specZeroHundred ?? null, spec_drive: input.specDrive ?? null, created_at: now, updated_at: now });
 }
 
 export async function getProduct(id: number): Promise<Product | null> {
@@ -151,7 +167,7 @@ export async function updateProductStock(productId: number, stockQuantity: numbe
 
 export async function updateProduct(
   productId: number,
-  input: Partial<ProductInput> & { isFeatured?: boolean; isPublished?: boolean },
+  input: Partial<ProductInput> & { isFeatured?: boolean; isPublished?: boolean; isNew?: boolean; isSale?: boolean },
 ): Promise<Product | null> {
   const db = await getStoreDb();
   const fields: string[] = [];
@@ -169,8 +185,16 @@ export async function updateProduct(
   if (input.stockQuantity !== undefined) set("stock_quantity", input.stockQuantity);
   if (input.availabilityState !== undefined) set("availability_state", input.availabilityState);
   if (input.exclusivity !== undefined) set("exclusivity", input.exclusivity);
+  if (input.specHp !== undefined) set("spec_hp", input.specHp);
+  if (input.specTopSpeed !== undefined) set("spec_top_speed", input.specTopSpeed);
+  if (input.specZeroHundred !== undefined) set("spec_zero_hundred", input.specZeroHundred);
+  if (input.specDrive !== undefined) set("spec_drive", input.specDrive);
   if (input.isFeatured !== undefined) set("is_featured", input.isFeatured ? 1 : 0);
+  if (input.isNew !== undefined) set("is_new", input.isNew ? 1 : 0);
+  if (input.isSale !== undefined) set("is_sale", input.isSale ? 1 : 0);
   if (input.isPublished !== undefined) set("is_published", input.isPublished ? 1 : 0);
+  if (input.airSuspension !== undefined) set("air_suspension", input.airSuspension ? 1 : 0);
+  if (input.unlockedBodykits !== undefined) set("unlocked_bodykits", input.unlockedBodykits ? 1 : 0);
   if (fields.length === 0) return getProduct(productId);
   set("updated_at", new Date().toISOString());
   args.push(productId);

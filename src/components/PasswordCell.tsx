@@ -153,7 +153,7 @@ export function PasswordCell({ accountId }: { accountId: number }) {
     }
     try {
       await navigator.clipboard.writeText(revealed!);
-      toast.success("Password copied", "It is on your clipboard — paste it wherever you need it.");
+      toast.success("Password copied", "It is on your clipboard - paste it wherever you need it.");
     } catch (err) {
       toast.error(
         "Copy failed",
@@ -180,7 +180,7 @@ export function PasswordCell({ accountId }: { accountId: number }) {
         disabled={busy || consentBusy}
         title={revealed ? "Hide password" : "Reveal password (auto-hides after 10s)"}
         aria-label={revealed ? "Hide password" : "Reveal password"}
-        className="square-btn h-7 w-7 disabled:opacity-40"
+        className="square-btn h-7 w-7 disabled:bg-secondary disabled:text-secondary-foreground"
       >
         {revealed ? (
           <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
@@ -212,7 +212,7 @@ export function PasswordCell({ accountId }: { accountId: number }) {
             type="button"
             onClick={revealWithConsent}
             disabled={consentBusy}
-            className="square-btn h-7 w-7 disabled:opacity-40"
+            className="square-btn h-7 w-7 disabled:bg-secondary disabled:text-secondary-foreground"
             aria-label="Unlock stored passwords"
           >
             <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">

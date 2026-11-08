@@ -155,7 +155,7 @@ export async function assertTelegramAuth(request: Request): Promise<number | nul
     throw new ApiError(
       401,
       "TELEGRAM_AUTH_INVALID",
-      "The Telegram signature did not verify — reopen the console from Telegram and try again.",
+      "The Telegram signature did not verify - reopen the console from Telegram and try again.",
     );
   }
 

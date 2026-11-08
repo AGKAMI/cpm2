@@ -87,7 +87,7 @@ export function CarFilterModal({ open, game, onClose, onSelect }: CarFilterModal
       open={open}
       onClose={onClose}
       title={`Filter ${label} accounts by car`}
-      subtitle={`Searching the ${label} catalog. Pick a car to see which ${label} accounts hold it — cars are matched by code within ${label} only.`}
+      subtitle={`Searching the ${label} catalog. Pick a car to see which ${label} accounts hold it - cars are matched by code within ${label} only.`}
       width="max-w-2xl"
       footer={null}
     >
@@ -155,10 +155,10 @@ export function CarFilterModal({ open, game, onClose, onSelect }: CarFilterModal
                       onSelect(entry.code);
                       onClose();
                     }}
-                    className={`flex w-full items-center gap-3 rounded-[12px] border border-transparent px-3 py-2.5 text-left transition-colors ${
+                    className={`flex w-full items-center gap-3 rounded-[12px] border border-border px-3 py-2.5 text-left transition-colors ${
                       none
-                        ? "cursor-pointer opacity-60 hover:border-ink hover:bg-ink"
-                        : "cursor-pointer hover:border-racing hover:bg-racing"
+                        ? "cursor-pointer bg-background hover:border-primary hover:text-primary-foreground"
+                        : "cursor-pointer hover:border-primary hover:text-primary-foreground hover:border-primary"
                     }`}
                   >
                     <span className="num w-11 shrink-0 text-[12px] text-ink-faint">

@@ -78,7 +78,7 @@ export function TradeCarPickerModal({
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setError("Screenshot is too large — keep it under 5MB.");
+      setError("Screenshot is too large - keep it under 5MB.");
       return;
     }
     try {
@@ -99,7 +99,7 @@ export function TradeCarPickerModal({
     } catch (err) {
       if (err instanceof ApiRequestError && err.code === "GEMINI_NOT_CONFIGURED") {
         setError(
-          "Screenshot identification needs a free Gemini API key — add GEMINI_API_KEY to .env.local and restart. Catalog search works right now.",
+          "Screenshot identification needs a free Gemini API key - add GEMINI_API_KEY to .env.local and restart. Catalog search works right now.",
         );
       } else {
         setError(err instanceof ApiRequestError ? err.message : "Could not analyse that screenshot.");
@@ -149,7 +149,7 @@ export function TradeCarPickerModal({
       open={open}
       onClose={handleClose}
       title="Add a car to the deal"
-      subtitle="Search the CPM2 catalog, or let Gemini read a screenshot — you confirm the match either way."
+      subtitle="Search the CPM2 catalog, or let Gemini read a screenshot - you confirm the match either way."
       width="max-w-2xl"
       footer={
         scanning
@@ -232,7 +232,7 @@ export function TradeCarPickerModal({
                       type="button"
                       onClick={() => pick(entry.code)}
                       aria-label={`Add #${entry.code} ${entry.name} to the deal`}
-                      className="flex w-full cursor-pointer items-center gap-3 rounded-[12px] border border-racing px-3 py-2.5 text-left transition-colors hover:border-racing hover:bg-racing"
+                      className="flex w-full cursor-pointer items-center gap-3 rounded-[12px] border border-border px-3 py-2.5 text-left hover:border-primary hover:text-primary-foreground"
                     >
                       <span className="num w-11 shrink-0 text-[12px] text-ink-faint">
                         #{entry.code}
@@ -276,7 +276,7 @@ export function TradeCarPickerModal({
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
-                className="flex cursor-pointer flex-col items-center gap-3 rounded-[16px] border border-dashed border-ink px-6 py-10 transition hover:border-racing hover:bg-racing"
+                className="flex cursor-pointer flex-col items-center gap-3 rounded-[16px] border border-dashed border-border px-6 py-10 hover:border-primary hover:text-primary-foreground"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -327,14 +327,14 @@ export function TradeCarPickerModal({
                   </p>
                 ) : null}
 
-                {/* Gemini read a car the catalog doesn't have — hand off to a
+                {/* Gemini read a car the catalog doesn't have - hand off to a
                     catalog search pre-filled with its make/model so the user
                     sees what the catalog really offers. */}
                 {!scanning && geminiName && matches.length === 0 ? (
                   <button
                     type="button"
                     onClick={() => searchCatalogFor(geminiName)}
-                    className="cursor-pointer self-start rounded-full border border-racing px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-racing transition hover:bg-racing"
+                    className="cursor-pointer self-start rounded-full border border-border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-foreground hover:border-primary hover:text-primary-foreground hover:border-primary"
                   >
                     Search the catalog for “{geminiName}”
                   </button>
@@ -349,7 +349,7 @@ export function TradeCarPickerModal({
                           <button
                             type="button"
                             onClick={() => pick(match.code)}
-                            className="flex w-full cursor-pointer items-center gap-3 rounded-[12px] border border-ink px-3 py-2.5 text-left transition hover:border-racing hover:bg-racing"
+                            className="flex w-full cursor-pointer items-center gap-3 rounded-[12px] border border-border px-3 py-2.5 text-left hover:border-primary hover:text-primary-foreground"
                           >
                             <span className="num w-11 shrink-0 text-[12px] text-ink-faint">
                               #{match.code}

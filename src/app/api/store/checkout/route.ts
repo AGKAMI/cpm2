@@ -7,11 +7,17 @@
 import { fail, ok, readJson } from "@/lib/route";
 import { ApiError } from "@/lib/api";
 import { z } from "zod";
-import { requireStoreCustomer } from "@/lib/store/auth";
+import { assertTelegramAuth } from "@/lib/telegram";
+import {
+  getCustomerByPlatformIdentity,
+  getCustomerByPlayerId,
+  createCustomer,
+  linkPlatformIdentity,
+} from "@/lib/store/customers";
 import { createOrder } from "@/lib/store/checkout";
 import { getProduct } from "@/lib/store/products";
-import { linkPlatformIdentity, createCustomer } from "@/lib/store/customers";
 import { buildPayFastCheckoutUrl } from "@/lib/store/payfast";
+import type { Customer } from "@/lib/store-types";
 
 const checkoutSchema = z.object({
   productId: z.coerce.number().int().positive(),
@@ -24,10 +30,34 @@ const checkoutSchema = z.object({
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Resolve the buying customer:
+ * - Telegram Mini App → linked customer, or auto-created + linked on first buy.
+ * - Any browser (web) → guest identified by Player ID from the checkout form;
+ *   reused when the same player has bought before, created otherwise.
+ * `requireStoreCustomer` forced Telegram-only checkout, which locked every
+ * web visitor out — the store is reachable in any browser now.
+ */
+async function resolveBuyer(
+  request: Request,
+  playerId: string,
+  inGameName: string,
+): Promise<Customer> {
+  const telegramUserId = await assertTelegramAuth(request);
+  if (telegramUserId !== null) {
+    const linked = await getCustomerByPlatformIdentity("telegram", String(telegramUserId));
+    if (linked) return linked.customer;
+    const created = await createCustomer({ inGameName, playerId });
+    await linkPlatformIdentity(created.id, "telegram", String(telegramUserId), "");
+    return created;
+  }
+  return (await getCustomerByPlayerId(playerId)) ?? await createCustomer({ inGameName, playerId });
+}
+
 export async function POST(request: Request) {
   try {
-    const customer = await requireStoreCustomer(request);
     const body = checkoutSchema.parse(await readJson(request));
+    const customer = await resolveBuyer(request, body.playerId.trim(), body.inGameName.trim());
 
     const product = await getProduct(body.productId);
     if (!product) {
@@ -40,7 +70,7 @@ export async function POST(request: Request) {
     const amountCents = product.basePriceCents * body.quantity;
 
     const result = await createOrder({
-      customerId: customer.customer.id,
+      customerId: customer.id,
       productId: body.productId,
       quantity: body.quantity,
       amountCents,
@@ -58,6 +88,7 @@ export async function POST(request: Request) {
         `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://cpm2-bay.vercel.app"}/store/orders/${result.order.id}`,
         `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://cpm2-bay.vercel.app"}/store/orders/${result.order.id}?cancelled=1`,
         `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://cpm2-bay.vercel.app"}/api/store/payments/payfast/webhook`,
+        product.name,
       );
       if (pf.configured) {
         payfastUrl = pf.url;

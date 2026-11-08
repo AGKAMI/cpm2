@@ -10,6 +10,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { updatePaymentState, updateOrderState, getOrder } from "@/lib/store/checkout";
 import { recordPayment } from "@/lib/store/payments";
 import { ledgerEntry } from "@/lib/store/ledger";
+import { notifyCustomer } from "@/lib/store/notifications";
 
 const PAYFAST_MERCHANT_ID = process.env.PAYFAST_MERCHANT_ID;
 const PAYFAST_MERCHANT_KEY = process.env.PAYFAST_MERCHANT_KEY;
@@ -67,6 +68,13 @@ export async function POST(request: Request) {
     const currency = "ZAR";
     const providerRef = String(body.m_payment_id ?? "");
 
+    // Amount integrity: webhook amount must match order amount exactly
+    if (amountCents !== order.amountCents) {
+      throw new Error(
+        `Amount mismatch: webhook ${amountCents}¢ ≠ order ${order.amountCents}¢ (order ${order.id})`,
+      );
+    }
+
     await recordPayment({
       orderId: String(orderId),
       provider: "payfast",
@@ -77,25 +85,44 @@ export async function POST(request: Request) {
     });
 
     if (body.payment_status === "COMPLETED") {
-      await updatePaymentState(orderId, "verified");
-      await updateOrderState(orderId, "payment_confirmed");
-      await ledgerEntry({
-        orderId: String(orderId),
-        type: "payment",
-        amountCents,
-        currency,
-        relatedPaymentId: providerRef,
-      });
-    } else {
-      await updatePaymentState(orderId, "rejected");
-      await ledgerEntry({
-        orderId: String(orderId),
-        type: "fee", // failed payment attempt logged
-        amountCents: 0,
-        currency,
-        relatedPaymentId: providerRef,
-      });
-    }
+          await updatePaymentState(orderId, "verified");
+          await updateOrderState(orderId, "payment_confirmed");
+          await ledgerEntry({
+            orderId: String(orderId),
+            type: "payment",
+            amountCents,
+            currency,
+            relatedPaymentId: providerRef,
+          });
+          // Notify customer (fire-and-forget)
+          notifyCustomer(order.customerId, "payment_confirmed_payfast", {
+            id: order.id,
+            productId: order.productId,
+            amountCents: order.amountCents,
+            currency: order.currency,
+            inGameName: order.inGameName,
+            playerId: order.playerId,
+          }).catch((err) => console.error("Notification failed:", err));
+        } else {
+          await updatePaymentState(orderId, "rejected");
+          await ledgerEntry({
+            orderId: String(orderId),
+            type: "fee",
+            amountCents: 0,
+            currency,
+            relatedPaymentId: providerRef,
+          });
+          // Notify customer (fire-and-forget)
+          notifyCustomer(order.customerId, "payment_rejected", {
+            id: order.id,
+            productId: order.productId,
+            amountCents: order.amountCents,
+            currency: order.currency,
+            inGameName: order.inGameName,
+            playerId: order.playerId,
+            reason: "PayFast payment failed or cancelled",
+          }).catch((err) => console.error("Notification failed:", err));
+        }
 
     return ok({ received: true });
   } catch (err) {

@@ -7,17 +7,6 @@ import { ThemeGallery } from "@/components/ThemeGallery";
 import { Button } from "@/components/ui/Button";
 import { LIMITS, formatNumber } from "@/lib/constants";
 
-const SHORTCUTS = [
-  { keys: "N", action: "New account" },
-  { keys: "/", action: "Search the fleet" },
-  { keys: "G then 1", action: "Go to the CPM1 register" },
-  { keys: "G then 2", action: "Go to the CPM2 register" },
-  { keys: "G then T", action: "Go to the trade desk" },
-  { keys: "G then S", action: "Go to settings" },
-  { keys: "?", action: "Show the shortcut list" },
-  { keys: "Esc", action: "Close a dialog" },
-];
-
 export default function SettingsPage() {
   const fleet = useFleet();
   const [ownerLabel, setOwnerLabel] = useState("checking…");
@@ -73,7 +62,7 @@ export default function SettingsPage() {
           </dl>
           <div className="mt-6 border-t border-ink pt-6">
             <p className="text-[12px] leading-relaxed text-ink-soft">
-              Only your Telegram account can open the console from the bot — anyone else who finds it sees
+              Only your Telegram account can open the console from the bot - anyone else who finds it sees
               a locked screen. The browser asks for the console password instead.
             </p>
             <Button variant="destructive" size="sm" className="mt-4" onClick={lockConsole}>
@@ -91,18 +80,6 @@ export default function SettingsPage() {
           <h2 className="panel-title mb-4">Accounts</h2>
           <dl className="flex flex-col">
             <Row label="Total accounts" value={String(fleet.accounts.length)} />
-          </dl>
-        </section>
-
-        <section className="panel rounded-[24px] p-6 sm:p-8 hidden sm:block">
-          <h2 className="panel-title mb-4">Keyboard</h2>
-          <dl className="flex flex-col">
-            {SHORTCUTS.map((item) => (
-              <div key={item.keys} className="flex items-baseline justify-between gap-4 border-b border-ink py-2 last:border-0">
-                <dt className="text-[12px] text-ink-soft">{item.action}</dt>
-                <dd className="num rounded-full border border-ink bg-ink px-1.5 py-0.5 text-[11px] text-ink">{item.keys}</dd>
-              </div>
-            ))}
           </dl>
         </section>
       </div>

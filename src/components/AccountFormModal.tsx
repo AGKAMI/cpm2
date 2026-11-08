@@ -10,13 +10,6 @@ import { accountCreateSchema } from "@/lib/validation";
 import { ApiRequestError } from "@/lib/client";
 import type { AccountSummary } from "@/lib/types";
 
-type AccountFormModalProps = {
-  open: boolean;
-  account: AccountSummary | null;
-  onClose: () => void;
-  onSubmit: (payload: Record<string, unknown>) => Promise<boolean>;
-};
-
 type Issue = { path: PropertyKey[]; message: string };
 
 function mapIssues(issues: Issue[]): Record<string, string> {
@@ -26,6 +19,13 @@ function mapIssues(issues: Issue[]): Record<string, string> {
     if (!mapped[key]) mapped[key] = issue.message;
   }
   return mapped;
+}
+
+export interface AccountFormModalProps {
+  open: boolean;
+  account: AccountSummary | null;
+  onClose: () => void;
+  onSubmit: (payload: Record<string, unknown>) => Promise<boolean>;
 }
 
 export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFormModalProps) {
@@ -54,10 +54,9 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
   });
   const carsOverflow = cars > capacity;
 
-  /** Move the caret to whatever went wrong first — never leave the user guessing. */
   function focusFirstError(issues: Record<string, string>) {
     const order = ["email", "password", "game", "cash", "coins", "cars", "baseSlots", "slots", "notes"];
-    const first = order.find((field) => issues[field]);
+    const first = order.find((f) => issues[f]);
     if (!first) return;
     const field = document.getElementById(`account-${first}`);
     if (field instanceof HTMLElement) {
@@ -114,16 +113,16 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
         else if (slots > LIMITS.MAX_COIN_SLOTS) {
           next.slots = `Extra slots cannot exceed ${LIMITS.MAX_COIN_SLOTS} per account.`;
         } else if (account && slots > account.slots) {
-          next.slots = `Extra slots can only be bought (${LIMITS.SLOT_COST_COINS} coins each) — use the “Unlock 21st slot” button.`;
+          next.slots = `Extra slots can only be bought (${LIMITS.SLOT_COST_COINS} coins each) - use the "Unlock 21st slot" button.`;
         }
       }
       if (cars < 0) next.cars = "Cars cannot be negative.";
       else if (cars > capacity) {
         if (slotless) {
-          next.cars = `Cars cannot exceed ${capacity} — CPM1 holds one of every model in the game.`;
+          next.cars = `Cars cannot exceed ${capacity} - CPM1 holds one of every model in the game.`;
         } else {
           const extra = newGarage ? ` + ${LIMITS.NEW_GARAGE_SLOTS} new-garage slots` : "";
-          next.cars = `Cars cannot exceed ${capacity} (${baseSlots} base + ${slots} coin slot(s)${extra}).`;
+          next.cars = `Cars cannot exceed ${capacity} (${baseSlots} base + ${slots} coin slot${extra}).`;
         }
       }
       if (password.length > LIMITS.MAX_PASSWORD_LENGTH) {
@@ -156,18 +155,8 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
         editing
           ? "Change balances, credentials or garage. Password stays as-is unless you replace it."
           : slotless
-            ? "Log an account you made — CPM1 holds every model, one of each, and has no car slots."
-            : "Log an account you made — CPM2 garages hold 21 slots, the 21st for 100 coins, plus 15 with the new garage."
-      }
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose} type="button">
-            Cancel
-          </Button>
-          <Button variant="primary" type="submit" form="account-form" disabled={saving}>
-            {saving ? "Saving…" : editing ? "Save changes" : "Add to fleet"}
-          </Button>
-        </>
+            ? "Log an account you made - CPM1 holds every model, one of each, and has no car slots."
+            : "Log an account you made - CPM2 garages hold 21 slots, the 21st for 100 coins, plus 15 with the new garage."
       }
     >
       <form id="account-form" onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
@@ -185,42 +174,32 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
           />
         </Field>
 
-        <Field
-          label="Password"
-          htmlFor="account-password"
-          error={errors.password}
-          hint={editing ? "blank = keep current" : undefined}
-        >
-          <div className="relative">
-            <TextInput
-              id="account-password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              value={password}
-              autoComplete="new-password"
-              placeholder={editing ? "••••••••" : "game password"}
-              invalid={Boolean(errors.password)}
-              onChange={(event) => setPassword(event.target.value)}
-              className="pr-16"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((value) => !value)}
-              aria-pressed={showPassword}
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-1.5 inline-flex min-h-[24px] items-center font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint transition hover:text-racing"
-            >
-              {showPassword ? "Hide" : "Show"}
-            </button>
-          </div>
-        </Field>
+        <div className="relative">
+          <TextInput
+            id="account-password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            value={password}
+            autoComplete="new-password"
+            placeholder={editing ? "••••••••" : "game password"}
+            invalid={Boolean(errors.password)}
+            onChange={(event) => setPassword(event.target.value)}
+            className="pr-16"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            aria-pressed={showPassword}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-1.5 inline-flex min-h-[24px] items-center font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint transition hover:text-racing"
+          >
+            {showPassword ? "Hide" : "Show"}
+          </button>
+        </div>
 
         <div className="flex flex-col gap-1.5">
           <p className="label-caps flex items-baseline justify-between gap-3">
             <span>Game</span>
-            <span className="num tracking-normal normal-case text-ink-faint">
-              {slotless ? "no car slots · one of each model" : "21 slots · 21st for 100 coins"}
-            </span>
           </p>
           <div className="flex gap-2">
             {GAMES.map((option) => (
@@ -230,30 +209,18 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
                 type="button"
                 onClick={() => setGame(option)}
                 aria-pressed={game === option}
-                className={`flex-1 cursor-pointer rounded-[14px] border px-3 py-2.5 text-left transition-colors ${
+                className={`flex-1 cursor-pointer rounded-[14px] border px-3 py-2 text-left transition-colors ${
                   game === option
                     ? "border-racing bg-racing"
-                    : "border-ink bg-ink hover:border-ink hover:bg-ink"
+                    : "border-border bg-background hover:border-primary hover:text-primary-foreground hover:border-primary"
                 }`}
               >
                 <span className="block font-sans text-[12px] font-semibold text-ink">
                   {GAME_LABELS[option]}
                 </span>
-                <span className="num mt-0.5 block text-[10px] text-ink-faint">
-                  {option === "cpm1" ? "every model, once each" : "20 free + 21st + new garage"}
-                </span>
               </button>
             ))}
           </div>
-          {errors.game ? (
-            <p className="flex items-start gap-1.5 text-[11px] leading-snug text-racing">
-              <svg viewBox="0 0 24 24" className="mt-px h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 7.5v5.5M12 16.2v.1" strokeLinecap="round" />
-              </svg>
-              {errors.game}
-            </p>
-          ) : null}
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -264,14 +231,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
             hint={`max ${formatNumber(LIMITS.MAX_CASH)}`}
             meter={{ value: cash, max: LIMITS.MAX_CASH, tone: "racing" }}
           >
-            <NumericInput
-              id="account-cash"
-              value={cash}
-              onChange={setCash}
-              max={LIMITS.MAX_CASH}
-              invalid={Boolean(errors.cash)}
-              suffix="CASH"
-            />
+            <NumericInput id="account-cash" value={cash} onChange={setCash} max={LIMITS.MAX_CASH} invalid={Boolean(errors.cash)} suffix="CASH" />
           </Field>
 
           <Field
@@ -281,14 +241,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
             hint={`max ${formatNumber(LIMITS.MAX_COINS)}`}
             meter={{ value: coins, max: LIMITS.MAX_COINS, tone: "brass" }}
           >
-            <NumericInput
-              id="account-coins"
-              value={coins}
-              onChange={setCoins}
-              max={LIMITS.MAX_COINS}
-              invalid={Boolean(errors.coins)}
-              suffix="COINS"
-            />
+            <NumericInput id="account-coins" value={coins} onChange={setCoins} max={LIMITS.MAX_COINS} invalid={Boolean(errors.coins)} suffix="COINS" />
           </Field>
 
           <Field
@@ -303,23 +256,10 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
                   : `${cars} of ${capacity} slots used`
             }
           >
-            <NumericInput
-              id="account-cars"
-              value={cars}
-              onChange={setCars}
-              invalid={Boolean(errors.cars)}
-              suffix="CARS"
-            />
+            <NumericInput id="account-cars" value={cars} onChange={setCars} invalid={Boolean(errors.cars)} suffix="CARS" />
           </Field>
 
-          {slotless ? (
-            <div className="flex flex-col gap-1.5">
-              <span className="label-caps">Car slots</span>
-              <p className="rounded-[14px] border border-ink bg-ink px-4 py-3 text-[11px] leading-snug text-ink-faint">
-                CPM1 has no car slots. Every model in the game can be owned — but only one of each.
-              </p>
-            </div>
-          ) : (
+          {!slotless ? (
             <>
               <Field
                 label="Base garage size"
@@ -327,113 +267,72 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
                 error={errors.baseSlots}
                 hint={`free slots · default ${LIMITS.BASE_CAR_SLOTS}`}
               >
-                <NumericInput
-                  id="account-baseSlots"
-                  value={baseSlots}
-                  onChange={setBaseSlots}
-                  max={LIMITS.MAX_BASE_CAR_SLOTS}
-                  invalid={Boolean(errors.baseSlots)}
-                  suffix="SLOTS"
-                />
+                <NumericInput id="account-baseSlots" value={baseSlots} onChange={setBaseSlots} max={LIMITS.MAX_BASE_CAR_SLOTS} invalid={Boolean(errors.baseSlots)} suffix="SLOTS" />
               </Field>
 
               <Field
-                label="Coin-bought slot"
+                label="Car slots"
                 htmlFor="account-slots"
                 error={errors.slots}
-                hint={
-                  editing && account && slots > account.slots
-                    ? "buy with the slot button"
-                    : `the 21st · ${LIMITS.SLOT_COST_COINS} coins`
-                }
+                hint={editing && account && slots > account.slots ? "buy with the slot button" : `the 21st · ${LIMITS.SLOT_COST_COINS} coins`}
               >
-                <NumericInput
-                  id="account-slots"
-                  value={slots}
-                  onChange={setSlots}
-                  max={LIMITS.MAX_COIN_SLOTS}
-                  invalid={Boolean(errors.slots)}
-                  suffix="SLOTS"
-                />
+                <NumericInput id="account-slots" value={slots} onChange={setSlots} max={LIMITS.MAX_COIN_SLOTS} invalid={Boolean(errors.slots)} suffix="SLOTS" />
               </Field>
             </>
-          )}
+          ) : null}
 
-          {slotless ? null : (
-            <div className="flex flex-col gap-1.5">
-              <span className="label-caps flex items-baseline justify-between gap-3">
-                <span>New garage</span>
-                <span className="num tracking-normal normal-case text-ink-faint">
-                  +{LIMITS.NEW_GARAGE_SLOTS} slots
-                </span>
+          <div className="flex flex-col gap-1.5">
+            <span className="label-caps flex items-baseline justify-between gap-3">
+              <span>New garage</span>
+              <span className="num text-[10px] text-ink-faint">+${LIMITS.NEW_GARAGE_SLOTS} slots</span>
+            </span>
+            <button
+              id="account-newGarage"
+              type="button"
+              onClick={() => setNewGarage((v) => !v)}
+              aria-pressed={newGarage}
+              className={`flex cursor-pointer items-center justify-between gap-3 rounded-[14px] border px-4 py-3 text-left transition-all duration-200 ease-out ${newGarage ? "border-racing bg-racing" : "border-border bg-background hover:border-primary hover:text-primary-foreground hover:border-primary"}`}
+            >
+              <span className="flex items-center gap-2">
+                <span className="block text-[12px] font-semibold text-foreground">${newGarage ? "Owned" : "Not owned"}</span>
+                <span className="num text-[10px] text-ink-faint">${LIMITS.NEW_GARAGE_PRICE} · ${LIMITS.NEW_GARAGE_SLOTS} extra slots</span>
               </span>
-              <button
-                id="account-newGarage"
-                type="button"
-                onClick={() => setNewGarage((value) => !value)}
-                aria-pressed={newGarage}
-                className={`flex cursor-pointer items-center justify-between gap-3 rounded-[14px] border px-4 py-3 text-left transition-all duration-200 ease-out ${
-                  newGarage
-                    ? "border-racing bg-racing"
-                    : "border-ink bg-ink hover:border-ink hover:bg-ink"
-                }`}
-              >
-                <span>
-                  <span className="block font-sans text-[12px] font-semibold text-ink">
-                    {newGarage ? "Owned" : "Not owned"}
-                  </span>
-                  <span className="num mt-0.5 block text-[10px] text-ink-faint">
-                    {LIMITS.NEW_GARAGE_PRICE} · {LIMITS.NEW_GARAGE_SLOTS} extra slots
-                  </span>
-                </span>
-                <span
-                  className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border ${newGarage ? "border-racing text-racing" : "border-ink text-ink-faint"}`}
-                  aria-hidden="true"
-                >
-                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2">
-                    {newGarage ? (
-                      <path d="M5 12.5l4.5 4.5L19 7.5" strokeLinecap="round" strokeLinejoin="round" />
-                    ) : (
-                      <path d="M12 5v14M5 12h14" strokeLinecap="round" />
-                    )}
-                  </svg>
-                </span>
-              </button>
-            </div>
-          )}
+              <span className={`grid h-6 w-6 shrink-0 rounded-full border ${newGarage ? "border-racing text-racing" : "border-ink text-ink-faint"}`} aria-hidden="true">
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" vector-effect="non-scaling-stroke">
+                  {newGarage ? <path d="M5 12.5l4.5 4.5L19 7.5" strokeLinecap="round" strokeLinejoin="round" /> : <path d="M12 5v14M5 12h14" strokeLinecap="round" />}
+                </svg>
+              </span>
+            </button>
+          </div>
 
           <Field
             label="Coins spent on cars"
             htmlFor="account-coins-spent"
             error={errors.coinsSpentOnCars}
-            hint="ledger only — keeps the fleet stats honest"
+            hint="ledger only - keeps the fleet stats honest"
           >
-            <NumericInput
-              id="account-coins-spent"
-              value={coinsSpentOnCars}
-              onChange={setCoinsSpentOnCars}
-              max={LIMITS.MAX_COINS}
-              invalid={Boolean(errors.coinsSpentOnCars)}
-              suffix="COINS"
-            />
+            <NumericInput id="account-coins-spent" value={coinsSpentOnCars} onChange={setCoinsSpentOnCars} max={LIMITS.MAX_COINS} invalid={Boolean(errors.coinsSpentOnCars)} suffix="COINS" />
           </Field>
+
+          <Field label="Notes" htmlFor="account-notes" error={errors.notes} hint="optional">
+            <TextArea id="account-notes" value={notes} onChange={(value) => setNotes(value)} placeholder="optional notes…" />
+          </Field>
+
+          {errors.form ? (
+            <p className="rounded-[14px] border border-racing bg-racing px-3 py-2 text-xs text-racing">{errors.form}</p>
+          ) : null}
         </div>
 
-        <Field label="Notes" htmlFor="account-notes" error={errors.notes} hint="optional">
-          <TextArea
-            id="account-notes"
-            value={notes}
-            onChange={setNotes}
-            placeholder="Which device / region / what it is used for"
-          />
-        </Field>
-
-        {errors.form ? (
-          <p className="rounded-[14px] border border-racing bg-racing px-3 py-2 text-xs text-racing">
-            {errors.form}
-          </p>
-        ) : null}
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
+          <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
+            Cancel
+          </Button>
+          <Button type="submit" variant="primary" disabled={saving}>
+            {saving ? "Saving…" : "Save account"}
+          </Button>
+        </div>
       </form>
     </Modal>
   );
 }
+

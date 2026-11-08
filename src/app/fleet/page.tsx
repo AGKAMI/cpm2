@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PageHeading } from "@/components/PageHeading";
 import { GAMES, GAME_LABELS, formatNumber } from "@/lib/constants";
 import { carsForGame } from "@/lib/car-catalog";
+import { CarCodesList } from "@/components/CarCodesList";
 
 /**
  * Fleet entry point — a game picker, not a register.
@@ -17,7 +18,7 @@ export default function FleetIndexPage() {
       <PageHeading
         folio="F-10"
         title="Fleet"
-        meta="choose a game — each has its own catalog and garage"
+        meta="choose a game - each has its own catalog and garage"
       />
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -25,7 +26,7 @@ export default function FleetIndexPage() {
           <Link
             key={game}
             href={`/fleet/${game}`}
-            className="panel animate-rise group rounded-[24px] p-6 sm:p-8 hover:bg-ink hover:border-racing transition-all duration-300 ease-out border border-ink"
+            className="panel animate-rise group rounded-[24px] p-6 sm:p-8 hover:border-primary hover:text-primary-foreground hover:border-racing transition-all duration-300 ease-out border border-border"
           >
             <div className="flex items-baseline justify-between gap-3">
               <span className="panel-title text-ink">{GAME_LABELS[game]}</span>
@@ -53,16 +54,18 @@ export default function FleetIndexPage() {
               <span className="rounded-full border border-racing bg-racing px-3 py-1 text-[9px] uppercase tracking-[0.2em] text-racing">
                 {game === "cpm1" ? "G1" : "G2"}
               </span>
-              <span className="flex-1 h-px bg-ink/5" />
+              <span className="flex-1 h-px bg-border" />
             </div>
           </Link>
         ))}
       </div>
 
       <p className="num px-1 text-[10px] text-ink-faint">
-        codes collide between the two games — #13 is a 2007 PEUGEOT 308 in CPM1 and a HONDA CIVIC in
-        CPM2 — so each register only ever shows its own game&rsquo;s cars
+        codes collide between the two games - #13 is a 2007 PEUGEOT 308 in CPM1 and a HONDA CIVIC in
+        CPM2 - so each register only ever shows its own game&rsquo;s cars
       </p>
+
+      <CarCodesList />
     </div>
   );
 }

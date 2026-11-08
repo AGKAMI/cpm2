@@ -55,10 +55,10 @@ function NavItem({ item, active }: { item: (typeof NAV)[number]; active: boolean
       key={item.href}
       href={item.href}
       className={cn(
-        "relative flex flex-col items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-medium transition-all duration-200 whitespace-nowrap",
+        "relative flex flex-col items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-medium whitespace-nowrap",
         active
-          ? "bg-primary border border-primary text-primary hover:bg-primary"
-          : "bg-background border border-border text-muted-foreground hover:bg-accent hover:text-foreground hover:border-accent",
+          ? "bg-primary border border-primary text-primary-foreground hover:bg-racing hover:text-primary-foreground hover:border-primary"
+          : "bg-background border border-border text-muted-foreground hover:border-primary hover:text-primary-foreground hover:border-primary",
       )}
       aria-current={active ? "page" : undefined}
     >
@@ -99,6 +99,12 @@ const NAV_ICONS: Record<string, ReactNode> = {
       <circle cx="7" cy="17" r="2.2" />
     </svg>
   ),
+  "/store": (
+    <svg viewBox="0 0 24 24" className="h-[19px] w-[19px]" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+      <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+      <path d="M9 17v-2m6 2v-2m-6-10v2m6 2v2" />
+    </svg>
+  ),
 };
 
 const SHORTCUTS = [
@@ -108,6 +114,7 @@ const SHORTCUTS = [
   { keys: "G then 2", action: "Go to the CPM2 register" },
   { keys: "G then T", action: "Go to the trade desk" },
   { keys: "G then S", action: "Go to settings" },
+  { keys: "G then V", action: "Go to the store" },
   { keys: "?", action: "Show this list" },
   { keys: "Esc", action: "Close a dialog" },
 ];
@@ -190,6 +197,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         if (key === "f") router.push("/fleet");
         if (key === "t") router.push("/trade");
         if (key === "s") router.push("/settings");
+        if (key === "v") router.push("/store");
         return;
       }
 
@@ -290,9 +298,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           Skip to content
         </a>
-        <header className="sticky top-0 z-30 border-b border-border bg-background pt-[env(safe-area-inset-top)]">
+        {pathname === "/" || pathname.startsWith("/store") ? null : (
+        <header
+          className="sticky top-0 z-30 border-b border-border shadow-lg pt-[env(safe-area-inset-top)]"
+          style={{ backgroundColor: "var(--color-paper-raised)" }}
+        >
           <div className="relative mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-4 gap-y-2 px-4 pb-3 pt-3 sm:px-6">
-            <Link href="/fleet/cpm2" className="flex items-center gap-3">
+            <Link href="/fleet" className="flex items-center gap-3">
               <img
                 src="/icon.svg"
                 alt=""
@@ -307,6 +319,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </span>
               </span>
             </Link>
+            <Button variant="ghost" size="icon" onClick={() => router.push("/")} aria-label="Back to app selection">
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 19l-7-7 7-7"/></svg>
+            </Button>
 
             <nav className="ml-auto hidden items-center gap-2 sm:flex">
               {NAV.map((item) => {
@@ -317,11 +332,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             </nav>
 
             <div className="ml-auto flex flex-wrap items-center gap-2 sm:ml-0">
-              <span className="flex items-center gap-2 rounded-md bg-muted px-3 py-1">
+              <span className="flex items-center gap-2 rounded-md bg-background px-3 py-1 border border-border">
                 <span
-                  className={`h-2 w-2 rounded-full ${
-                    fleet.error ? "bg-destructive" : fleet.loading ? "bg-primary animate-blink" : "bg-foreground"
-                  }`}
+                  className={`h-2 w-2 rounded-full animate-pulse ${fleet.error ? "bg-destructive" : fleet.loading ? "bg-secondary" : "bg-racing"}`}
                 />
                 <span className="text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
                   {fleet.error ? "offline" : fleet.loading ? "syncing" : "live"}
@@ -338,6 +351,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
         </header>
+        )}
 
         <main
           id="main"
@@ -350,6 +364,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="border-t border-border mb-4" />
         </footer>
 
+        {pathname === "/" || pathname.startsWith("/store") ? null : (
         <nav
           aria-label="Primary"
           className="mobile-dock fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-md px-4 pb-4 sm:pb-3 sm:px-6 sm:hidden"
@@ -364,6 +379,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             })}
           </div>
         </nav>
+        )}
 
         <AccountFormModal
           key={`form-${formSession}`}
@@ -373,7 +389,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             setFormOpen(false);
             setEditing(null);
           }}
-          onSubmit={async (payload) => {
+          onSubmit={async (payload: Record<string, unknown>) => {
             if (editing) {
               await fleet.updateAccount(editing.id, payload);
               return true;
@@ -429,7 +445,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   if (event.key === "Enter") void confirmExportConsent();
                 }}
                 autoComplete="current-password"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-background file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-background"
               />
               <div className="flex gap-2 justify-center">
                 <Button variant="outline" onClick={() => setAwaitingExportConsent(false)} type="button">
@@ -483,7 +499,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 className="flex items-baseline justify-between gap-4 border-b border-border py-2 last:border-0"
               >
                 <dt className="text-sm font-medium text-foreground">{item.action}</dt>
-                <dd className="rounded-full border border-input bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                <dd className="rounded-full border border-input bg-background px-2 py-0.5 text-[11px] text-muted-foreground border border-border">
                   {item.keys}
                 </dd>
               </div>

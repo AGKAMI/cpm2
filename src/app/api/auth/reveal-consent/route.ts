@@ -25,7 +25,7 @@ export async function POST(request: Request) {
       "local";
     if (rateLimited(`reveal-consent:${ip}`)) {
       return NextResponse.json(
-        { error: { code: "AUTH_SLOW_DOWN", message: "Too many attempts — wait a minute and try again." } },
+        { error: { code: "AUTH_SLOW_DOWN", message: "Too many attempts - wait a minute and try again." } },
         { status: 429 },
       );
     }

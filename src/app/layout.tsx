@@ -1,18 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { FleetProvider } from "@/components/FleetProvider";
 import { AppShell } from "@/components/AppShell";
 import { TelegramBridge } from "@/components/TelegramBridge";
 import { ToastProvider } from "@/components/ui/Toaster";
 import { DEFAULT_PALETTE, PALETTE_IDS } from "@/lib/themes";
-
-const body = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
 
 const mono = JetBrains_Mono({
   subsets: ["latin"],
@@ -26,7 +20,7 @@ const themeScript = `(function(){try{var d=document.documentElement;var m=localS
 export const metadata: Metadata = {
   title: "CPM // FLEET LEDGER",
   description:
-    "Track Car Parking Multiplayer accounts — CPM1 and CPM2 — balances, coins, cars and purchased car slots.",
+    "Track Car Parking Multiplayer accounts - CPM1 and CPM2 - balances, coins, cars and purchased car slots.",
 };
 
 export const viewport: Viewport = {
@@ -36,7 +30,7 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   // suppressHydrationWarning: the themeScript above writes data-theme and
   // data-palette onto <html> before React hydrates, so the client element
   // deliberately carries attributes the server HTML does not have. Without it
@@ -46,7 +40,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${body.variable} ${mono.variable}`}
+      className={`${mono.variable}`}
       suppressHydrationWarning
     >
       <head>
@@ -85,8 +79,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className={`min-h-screen antialiased ${body.variable} ${mono.variable}`}>
-        <div className="glass-aurora-field" aria-hidden="true" />
+      <body className={`min-h-screen antialiased bg-background ${mono.variable}`}>
         <Script
           src="https://telegram.org/js/telegram-web-app.js"
           strategy="beforeInteractive"

@@ -33,7 +33,7 @@ export const DEFAULT_PALETTE: PaletteId = "titanium";
 
 /** Neutral surfaces shared by every palette. Keep in sync with globals.css. */
 export const PALETTE_BASE: Record<ThemeMode, { bg: string; surface: string; ink: string }> = {
-  night: { bg: "#010d16", surface: "#05131d", ink: "#f5f9ff" },
+  night: { bg: "#070707", surface: "#09090a", ink: "#f4efe4" },
   paper: { bg: "#f1f3f5", surface: "#fafbfd", ink: "#0e1217" },
 };
 

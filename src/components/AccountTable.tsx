@@ -94,7 +94,7 @@ export function AccountTable({
             {accounts.map((account, index) => (
               <tr
                 key={account.id}
-                className={`group border-b border-ink transition-colors hover:bg-ink ${busyId === account.id ? "opacity-60" : ""}`}
+                className={`group border-b border-border ${busyId === account.id ? "bg-background" : ""}`}
               >
                 {selectable ? (
                   <td className="px-2.5 py-3">
@@ -113,7 +113,7 @@ export function AccountTable({
                   {String(index + 1).padStart(2, "0")}
                 </td>
                 <td className="px-2.5 py-3">
-                  <Link href={`/accounts/${account.id}`} className="inline-block max-w-[210px] hover:opacity-80">
+                  <Link href={`/accounts/${account.id}`} className="inline-block max-w-[210px] hover:border-primary hover:text-primary-foreground">
                     <span className="plate max-w-[210px]">
                       <span className="plate-text num text-[12px]">{account.email}</span>
                     </span>
@@ -156,7 +156,7 @@ export function AccountTable({
                     <button
                       type="button"
                       onClick={() => onBuySlot(account)}
-                      className="mt-1.5 inline-flex min-h-[24px] cursor-pointer items-center rounded-full font-sans text-[11px] font-medium text-racing border border-racing bg-racing px-3 py-1 transition hover:bg-racing hover:border-racing"
+                      className="mt-1.5 inline-flex min-h-[24px] cursor-pointer items-center rounded-full font-sans text-[11px] font-medium text-racing border border-border bg-racing px-3 py-1 transition hover:bg-racing hover:text-primary-foreground hover:text-primary-foreground hover:border-primary"
                     >
                       + unlock 21st slot (100c)
                     </button>
@@ -215,11 +215,11 @@ export function AccountTable({
         {accounts.map((account) => (
           <article
             key={account.id}
-            className={`panel-tight rounded-[20px] p-4 border border-ink transition-all duration-150 group ${busyId === account.id ? "opacity-60" : ""}`}
+            className={`panel-tight rounded-[20px] p-4 border border-border group ${busyId === account.id ? "bg-background" : ""}`}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <Link href={`/accounts/${account.id}`} className="inline-block hover:opacity-80">
+                <Link href={`/accounts/${account.id}`} className="inline-block hover:border-primary hover:text-primary-foreground">
                   <span className="plate">
                     <span className="plate-text num text-[12px]">{account.email}</span>
                   </span>
@@ -304,7 +304,7 @@ export function AccountTable({
               <button
                 type="button"
                 onClick={() => onBuySlot(account)}
-                className="mt-3 w-full cursor-pointer rounded-full border border-racing py-2 font-sans text-[11px] font-semibold text-racing transition-colors hover:bg-racing hover:text-paper-raised"
+                className="mt-3 w-full cursor-pointer rounded-full border border-border py-2 font-sans text-[11px] font-semibold text-racing hover:border-primary hover:text-primary-foreground"
               >
                 + Unlock the 21st slot · 100 coins
               </button>
@@ -333,11 +333,11 @@ function SortButton({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex min-h-[24px] cursor-pointer items-center gap-1 rounded-full transition align-center ${align === "right" ? "flex-row-reverse" : ""} ${active ? "text-racing border-racing bg-racing px-2 py-0.5" : "text-ink-soft border-ink px-2 py-0.5"}`}
+      className={`inline-flex min-h-[24px] cursor-pointer items-center gap-1 rounded-full ${align === "right" ? "flex-row-reverse" : ""} ${active ? "text-racing border-racing bg-racing px-2 py-0.5" : "text-ink-soft border-border px-2 py-0.5"}`}
     >
       {label}
       <span
-        className={`text-[9px] transition-opacity ${active ? "opacity-100" : "opacity-0"}`}
+        className={`text-[9px] ${active ? "text-racing" : "text-ink-faint"}`}
         aria-hidden
       >
         <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
@@ -400,7 +400,7 @@ function StepButton({
       disabled={disabled}
       title={label}
       aria-label={label}
-      className="grid h-6 w-6 cursor-pointer place-items-center rounded-full border border-ink text-[13px] leading-none text-ink-faint transition-colors hover:border-racing hover:bg-ink hover:text-racing active:scale-95 disabled:opacity-30"
+      className="grid h-6 w-6 cursor-pointer place-items-center rounded-full border border-border text-[13px] leading-none text-ink-soft hover:border-primary hover:text-primary-foreground active:scale-95 disabled:bg-background"
     >
       {children}
     </button>
@@ -412,11 +412,13 @@ function IconAction({
   onClick,
   icon,
   danger = false,
+  active = false,
 }: {
   label: string;
   onClick: () => void;
   icon: React.ReactNode;
   danger?: boolean;
+  active?: boolean;
 }) {
   return (
     <button
@@ -424,10 +426,10 @@ function IconAction({
       onClick={onClick}
       title={label}
       aria-label={label}
-      className={`grid h-8 w-8 cursor-pointer place-items-center rounded-full border border-transparent transition-colors ${
-        danger
-          ? "text-ink-faint hover:border-racing hover:bg-racing hover:text-racing"
-          : "text-ink-faint hover:border-ink hover:bg-ink hover:text-racing"
+      className={`grid h-8 w-8 cursor-pointer place-items-center rounded-full border border-border transition-colors ${
+        active
+          ? "text-racing border-racing hover:border-primary hover:text-primary-foreground"
+          : "text-ink-faint border-border hover:border-primary hover:text-primary-foreground"
       }`}
     >
       {icon}

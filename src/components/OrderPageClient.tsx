@@ -24,21 +24,31 @@ export function OrderPageClient({ orderId }: { orderId: string }) {
     })();
   }, [orderId]);
 
-  if (loading) return <StoreShell><p className="text-muted-foreground">Loading order…</p></StoreShell>;
+  if (loading)
+    return (
+      <StoreShell>
+        <PageHeading folio="03" title={`Order ${orderId}`} backHref="/store/orders" />
+        <div className="panel rounded-xl border border-border p-6" aria-hidden="true">
+          <div className="h-3 w-1/2 rounded-sm bg-background mb-3 animate-pulse" />
+          <div className="h-3 w-2/3 rounded-sm bg-background animate-pulse" />
+          <div className="h-2 w-1/3 rounded-sm bg-background mt-4 animate-pulse" />
+        </div>
+      </StoreShell>
+    );
   if (!order) return notFound();
 
   return (
     <StoreShell>
       <PageHeading folio="03" title={`Order ${order.id}`} />
       <div className="grid gap-6 md:grid-cols-2">
-        <div className="panel rounded-xl border border-border p-6">
+        <div className="panel rounded-xl border border-border p-6 bg-background">
           <h3 className="text-sm font-semibold text-foreground mb-4">Vehicle</h3>
           <p className="text-sm text-muted-foreground mb-4">{order.inGameName}</p>
           <div className="flex items-baseline gap-2">
             <span className="text-xl text-primary font-semibold">{formatPrice(order.amountCents, order.currency)}</span>
           </div>
         </div>
-        <div className="panel rounded-xl border border-border p-6">
+        <div className="panel rounded-xl border border-border p-6 bg-background">
           <h3 className="text-sm font-semibold text-foreground mb-4">Status</h3>
           <div className="flex flex-col gap-2">
             <div className="flex items-baseline gap-2">

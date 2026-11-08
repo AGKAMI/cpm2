@@ -5,13 +5,12 @@
 
 import { fail, ok } from "@/lib/route";
 import { listCategories } from "@/lib/store/products";
-import { requireStoreCustomer } from "@/lib/store/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
-    await requireStoreCustomer(request);
+    // Public: category browsing is open (see products route).
     const categories = await listCategories();
     return ok({ categories });
   } catch (err) {

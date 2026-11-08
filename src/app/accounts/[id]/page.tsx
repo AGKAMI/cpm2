@@ -88,7 +88,7 @@ export default function AccountPage() {
               type="button"
               onClick={() => {
                 navigator.clipboard.writeText(account.email);
-                toast.success("Email copied", "It is on your clipboard — paste it wherever you need it.");
+                toast.success("Email copied", "It is on your clipboard - paste it wherever you need it.");
               }}
               title="Copy email"
               aria-label="Copy email"
@@ -204,7 +204,7 @@ export default function AccountPage() {
                 <Fact label="Coin slot" value={String(account.slots)} tone="text-brass" />
                 <Fact
                   label="New garage"
-                  value={account.newGarage ? `+${LIMITS.NEW_GARAGE_SLOTS}` : "—"}
+                  value={account.newGarage ? `+${LIMITS.NEW_GARAGE_SLOTS}` : "-"}
                   tone="text-brass"
                 />
                 <Fact label="Capacity" value={String(account.capacity)} tone="text-racing" />
@@ -219,7 +219,7 @@ export default function AccountPage() {
             <p className="mt-3 text-[11px] leading-snug text-ink-faint">
               {GARAGE_RULES[account.game].hasSlots
                 ? `CPM2 garage: ${LIMITS.BASE_CAR_SLOTS} free slots, the 21st for ${LIMITS.SLOT_COST_COINS} coins, plus ${LIMITS.NEW_GARAGE_SLOTS} more with the ${LIMITS.NEW_GARAGE_PRICE} garage.`
-                : "CPM1 has no car slots — every model in the game can be owned, but only one of each."}
+                : "CPM1 has no car slots - every model in the game can be owned, but only one of each."}
             </p>
           </div>
         </section>
@@ -256,9 +256,9 @@ export default function AccountPage() {
             {!archived ? (
               <p className="mt-4 border-t border-ink pt-3 text-[11px] leading-snug text-ink-faint">
                 {!GARAGE_RULES[account.game].hasSlots
-                  ? "CPM1 has no car slots — there is nothing to buy, every model in the game fits once."
+                  ? "CPM1 has no car slots - there is nothing to buy, every model in the game fits once."
                   : spendable >= LIMITS.SLOT_COST_COINS
-                    ? `${formatNumber(spendable)} coins are spendable — “+ Unlock 21st slot” above turns them into garage space.`
+                    ? `${formatNumber(spendable)} coins are spendable - “+ Unlock 21st slot” above turns them into garage space.`
                     : `You need ${LIMITS.SLOT_COST_COINS} coins to unlock the 21st slot for this account.`}
               </p>
             ) : null}

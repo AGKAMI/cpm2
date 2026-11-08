@@ -211,7 +211,7 @@ export function FleetProvider({ children }: { children: ReactNode }) {
         setArchived((current) => [account, ...current]);
         setStats(computeFleetStats(accountsRef.current.filter((item) => item.id !== account.id)));
         scheduleSync();
-        toast.success("Archived", `${account.email} is filed away — balances kept.`, {
+        toast.success("Archived", `${account.email} is filed away - balances kept.`, {
           label: "Undo",
           onClick: () => {
             void api

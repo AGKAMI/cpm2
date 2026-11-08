@@ -29,12 +29,12 @@ export default function AuthPage() {
           const body = (await response.json().catch(() => null)) as
             | { error?: { code?: string; message?: string } }
             | null;
-          setError(body?.error?.message ?? "Sign in failed — try again.");
+          setError(body?.error?.message ?? "Sign in failed - try again.");
           return;
         }
       } else {
         if (password !== confirmPassword) {
-          setError("Passwords don't match — try again.");
+          setError("Passwords don't match - try again.");
           return;
         }
         const response = await fetch("/api/auth/register", {

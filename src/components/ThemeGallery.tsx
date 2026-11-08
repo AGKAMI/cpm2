@@ -20,10 +20,10 @@ export function ThemeGallery() {
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-sm text-[12px] leading-relaxed text-ink-soft">
-          Glass and surfaces stay neutral. Choose the cabin light and the accent pair.
+          Surfaces stay neutral. Choose the cabin light and the accent pair.
         </p>
         <div
-          className="glass-control inline-flex rounded-full p-1"
+          className="inline-flex rounded-full p-1"
           role="group"
           aria-label="Cabin light"
         >
@@ -37,7 +37,7 @@ export function ThemeGallery() {
                 aria-pressed={active}
                 className={`cursor-pointer rounded-full px-3 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors ${
                   active
-                    ? "bg-racing/14 text-racing shadow-[inset_0_1px_0_inset-shadow]"
+                    ? "bg-racing text-racing shadow-[inset_0_1px_0_inset-shadow]"
                     : "text-ink-faint hover:text-ink"
                 }`}
               >
@@ -95,11 +95,11 @@ function PaletteCard({
       type="button"
       onClick={onSelect}
       aria-pressed={active}
-      title={`${palette.name} — ${hexes}`}
+      title={`${palette.name} - ${hexes}`}
       className={`group relative cursor-pointer rounded-[14px] border p-3 text-left transition-[border-color,background-color,transform] duration-150 active:scale-[0.99] ${
         active
           ? "border-racing bg-racing"
-          : "border-ink bg-ink hover:border-racing hover:bg-ink"
+          : "border-border bg-background hover:border-primary hover:text-primary-foreground hover:border-racing"
       }`}
     >
       <div className="flex items-center gap-1.5" aria-hidden="true">

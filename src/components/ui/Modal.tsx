@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 type ModalProps = {
@@ -25,13 +25,53 @@ export function Modal({
   const sheetRef = useRef<HTMLDivElement | null>(null);
   const onCloseRef = useRef(onClose);
   const triggerRef = useRef<HTMLElement | null>(null);
+  const [mounted, setMounted] = useState(open);
+  const [closing, setClosing] = useState(false);
+  const [opened, setOpened] = useState(open);
 
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
 
+  // Open: mount the sheet → then apply .is-open so the scale-up
+  // transition runs from --modal-scale to 1.
+  // Close: drop .is-open → apply .is-closing → wait --modal-close-dur → unmount.
   useEffect(() => {
-    if (!open) return;
+    if (open) {
+      // Defer all setState so the mount render commits before we
+      // apply .is-open (triggers the scale-up transition).
+      const t = setTimeout(() => {
+        setClosing(false);
+        setMounted(true);
+        requestAnimationFrame(() => setOpened(true));
+      }, 0);
+      return () => clearTimeout(t);
+    } else if (!open && mounted) {
+      const closeMs =
+        parseFloat(
+          getComputedStyle(document.documentElement).getPropertyValue(
+            "--modal-close-dur",
+          ),
+        ) || 150;
+      // Defer the close-state flip so the current frame renders with
+      // .is-open still active, then transition to .is-closing.
+      const t1 = setTimeout(() => {
+        setOpened(false);
+        setClosing(true);
+      }, 0);
+      const t2 = setTimeout(() => {
+        setClosing(false);
+        setMounted(false);
+      }, closeMs);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
+    }
+  }, [open, mounted]);
+
+  useEffect(() => {
+    if (!mounted) return;
 
     triggerRef.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -76,12 +116,12 @@ export function Modal({
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = previousOverflow;
       window.clearTimeout(timer);
-      if (triggerRef.current?.isConnected) triggerRef.current.focus();
+      if (!closing && triggerRef.current?.isConnected) triggerRef.current.focus();
       triggerRef.current = null;
     };
-  }, [open]);
+  }, [mounted, closing]);
 
-  if (!open || typeof document === "undefined") return null;
+  if (!mounted || typeof document === "undefined") return null;
 
   return createPortal(
     <div
@@ -96,7 +136,7 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`relative z-10 my-auto flex max-h-[92vh] w-full flex-col overflow-hidden rounded-md border border-border bg-background shadow-lg ${width}`}
+        className={`t-modal relative z-10 my-auto flex max-h-[92vh] w-full flex-col overflow-hidden rounded-md border border-border bg-color-paper-sunken shadow-lg ${width} ${opened ? "is-open" : ""} ${closing ? "is-closing" : ""}`}
       >
         <header className="flex items-start gap-4 border-b border-border px-5 py-4 sm:px-6">
           <div className="min-w-0 flex-1">
@@ -107,7 +147,7 @@ export function Modal({
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+            className="rounded-md p-1.5 text-muted-foreground hover:border-primary hover:text-primary-foreground transition-colors"
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
               <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />

@@ -30,6 +30,13 @@ export async function proxy(request: NextRequest) {
   if (pathname.startsWith("/api/bg")) {
     return NextResponse.next();
   }
+  // VANTA GARAGE store API has its own identity model — public catalog,
+  // guest checkout by player id, order scoping, and its own admin gate
+  // (requireStoreAdmin). The console session must not gate it: the store
+  // is reachable from any browser, logged in or not.
+  if (pathname.startsWith("/api/store/")) {
+    return NextResponse.next();
+  }
 
   // --- Per-user gate ---
   const userId = verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value);

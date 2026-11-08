@@ -6,15 +6,19 @@
  */
 
 import { ok, fail } from "@/lib/route";
-import { requireStoreAdmin } from "@/lib/store/auth";
+import { resolveAdminStatus } from "@/lib/store/admin-service";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
-    await requireStoreAdmin(request);
-    return ok({ isAdmin: true });
+    const status = await resolveAdminStatus(request);
+    return ok({
+      isAdmin: status.isAdmin,
+      isOwner: status.isOwner,
+      telegramUserId: status.telegramUserId,
+    });
   } catch {
-    return ok({ isAdmin: false });
+    return ok({ isAdmin: false, isOwner: false });
   }
 }

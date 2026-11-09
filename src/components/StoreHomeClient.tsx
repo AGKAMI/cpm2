@@ -75,12 +75,12 @@ export function StoreHomeClient() {
           .slice(0, 6);
         setBestSellers(sellers);
 
-        setError(null);
-        const ids = Array.from(
-          new Set([...f.products, ...arrivals, ...saleItems, ...sellers].map((p) => p.id)),
-        ).slice(0, 20);
+        // Compute media IDs from all products that will be displayed in sections.
+        // Use all.products since arrivals/sale/best-sellers may be empty until
+        // we have isNew/isSale/isFeatured flags set on products.
+        const displayIds = [...new Set(all.products.map((p) => p.id))].slice(0, 20);
         const covers = await Promise.all(
-          ids.map((id) =>
+          displayIds.map((id) =>
             vantaApi
               .media(id)
               .then((m): [number, string | undefined] => [id, m.media[0]?.publicUrl])
@@ -102,6 +102,8 @@ export function StoreHomeClient() {
             .filter(Boolean),
         );
         setCategories(cats.categories.filter((cat) => categoryIdsWithProducts.has(cat.id)));
+
+        setError(null);
 
       } catch (err) {
         setError(err instanceof Error ? err.message : "Couldn't load catalogue.");

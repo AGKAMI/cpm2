@@ -1,6 +1,5 @@
 import { Metadata } from "next";
 import { StoreHomeClient } from "@/components/StoreHomeClient";
-import { StoreShell } from "@/components/StoreShell";
 
 export const metadata: Metadata = {
   title: "VANTA GARAGE - CPM2 vehicles for sale",
@@ -11,9 +10,5 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default function HomePage() {
-  return (
-    <StoreShell>
-      <StoreHomeClient />
-    </StoreShell>
-  );
+  return <StoreHomeClient />;
 }

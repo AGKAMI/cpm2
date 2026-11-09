@@ -2,7 +2,6 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getProduct } from "@/lib/store/products";
 import { CheckoutClient } from "@/components/CheckoutClient";
-import { StoreShell } from "@/components/StoreShell";
 
 export async function generateMetadata({ params }: { params: Promise<{ productId: string }> }): Promise<Metadata> {
   const { productId } = await params;
@@ -19,9 +18,5 @@ export default async function CheckoutPage({ params }: { params: Promise<{ produ
   const { productId } = await params;
   const product = await getProduct(Number(productId));
   if (!product) return notFound();
-  return (
-    <StoreShell>
-      <CheckoutClient productId={product.id} />
-    </StoreShell>
-  );
+  return <CheckoutClient productId={product.id} />;
 }

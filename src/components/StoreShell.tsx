@@ -72,7 +72,6 @@ interface StoreShellProps {
 export function StoreShell({ children, dock }: StoreShellProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const tabsRef = useRef<HTMLDivElement>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isOwner, setIsOwner] = useState<boolean | null>(null);
 
@@ -113,43 +112,6 @@ export function StoreShell({ children, dock }: StoreShellProps) {
       return pathname === t.href || pathname.startsWith(`${t.href}/`);
     })?.key;
 
-  // Tabs sliding
-  useEffect(() => {
-    const tabs = tabsRef.current;
-    if (!tabs) return;
-    const pill = tabs.querySelector<HTMLElement>(".t-tabs-pill")!;
-    const tabEls = [...tabs.querySelectorAll<HTMLElement>(".t-tab")];
-    if (!pill || tabEls.length === 0) return;
-
-    function moveTo(tab: HTMLElement, animate: boolean) {
-      if (!animate) {
-        const prev = pill.style.transition;
-        pill.style.transition = "none";
-        pill.style.transform = `translateX(${tab.offsetLeft}px)`;
-        pill.style.width = `${tab.offsetWidth}px`;
-        void pill.offsetWidth;
-        pill.style.transition = prev;
-      } else {
-        pill.style.transform = `translateX(${tab.offsetLeft}px)`;
-        pill.style.width = `${tab.offsetWidth}px`;
-      }
-    }
-
-    const active = () => tabEls.find((t) => t.getAttribute("aria-selected") === "true") || tabEls[0];
-
-    tabEls.forEach((tab) => {
-      tab.addEventListener("click", () => {
-        tabEls.forEach((t) => t.setAttribute("aria-selected", t === tab ? "true" : "false"));
-        moveTo(tab, true);
-      });
-    });
-
-    const init = () => moveTo(active(), false);
-    requestAnimationFrame(init);
-    window.addEventListener("resize", init);
-    return () => window.removeEventListener("resize", init);
-  }, []);
-
   return (
     <div className="relative min-h-screen bg-[#0a0a0a]">
       {/* Store header — shield logo, gold serif brand, search icon. */}
@@ -180,19 +142,6 @@ export function StoreShell({ children, dock }: StoreShellProps) {
           </div>
         </div>
       </header>
-      {/* Desktop store nav — tabs sliding active pill. */}
-      <nav
-        ref={tabsRef}
-        aria-label="Store sections"
-        className="mx-auto max-w-[1440px] hidden sm:flex items-center gap-1 border-b border-border px-4 sm:px-6 pt-6 pb-3"
-      >
-        <div className="t-tabs inline-flex items-center gap-1 px-3 py-1 rounded-[48px] bg-[#0a0a0a] border border-border shadow-sm">
-          <span className="t-tabs-pill" aria-hidden="true" />
-          {visibleNav.map((item) => (
-            <StoreNavItem key={item.href} item={item} active={activeTab === item.key} />
-          ))}
-        </div>
-      </nav>
 
       <main
         id="store-main"
@@ -203,7 +152,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
 
       <nav
         aria-label="Store"
-        className="store-dock fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-md px-4 pb-4 sm:pb-3 sm:px-6 sm:hidden"
+        className="store-dock fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-md px-4 pb-4 sm:pb-3 sm:px-6"
       >
         <div className="mx-auto flex max-w-[340px] items-center justify-center gap-2 overflow-x-auto whitespace-nowrap border border-border rounded-full px-3 py-2 shadow-lg" style={{ backgroundColor: "#0a0a0a" }}>
           {visibleNav.map((item) => (

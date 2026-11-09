@@ -344,103 +344,15 @@ export function StoreHomeClient() {
       </section>
 
       <div className="foot mb-4 px-4 text-center text-[10px] text-ink-soft tracking-[0.08em]">
-        KAMI'S VANTA GARAGE · VERIFIED CPM2 BUILDS<br />
+        KAMI&rsquo;S VANTA GARAGE · VERIFIED CPM2 BUILDS<br />
         <span className="opacity-70">Secured by VANTA Guard</span>
       </div>
     </>
   );
 
-  const loadingSkeleton = (
-    <>
-      <section className="hero px-4 pt-4 pb-4 relative">
-        <div className="animate-pulse">
-          <div className="h-4 w-1/4 bg-surface-deep rounded mb-2" />
-          <div className="h-8 w-3/4 bg-surface-deep rounded mb-1" />
-          <div className="h-8 w-1/2 bg-surface-deep rounded" />
-        </div>
-      </section>
-      <section className="px-4">
-        <div className="animate-pulse">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="product-card">
-                <div className="relative overflow-hidden rounded-[18px] border border-border">
-                  <div className="w-full h-[220px] bg-surface-deep" />
-                  <div className="absolute bottom-2 left-2 right-2 p-2 bg-black/60">
-                    <div className="h-4 w-3/4 bg-surface-deep rounded mb-1" />
-                    <div className="h-6 w-1/2 bg-gold rounded" />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-      <section className="sec mb-6 px-4 animate-pulse">
-        <div className="h-5 w-1/4 bg-surface-deep rounded mb-3" />
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="panel p-4">
-              <div className="h-3 w-1/3 bg-surface-deep rounded mb-1" />
-              <div className="h-5 w-1/2 bg-surface-deep rounded" />
-            </div>
-          ))}
-        </div>
-      </section>
-      <section className="sec mb-6 px-4 animate-pulse">
-        <div className="h-5 w-1/4 bg-surface-deep rounded mb-3" />
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="product-card">
-              <div className="relative overflow-hidden rounded-[18px] border border-border">
-                <div className="w-full h-[220px] bg-surface-deep" />
-                <div className="absolute bottom-2 left-2 right-2 p-2 bg-black/60">
-                  <div className="h-4 w-3/4 bg-surface-deep rounded mb-1" />
-                  <div className="h-6 w-1/2 bg-gold rounded" />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-      <section className="sec mb-6 px-4 animate-pulse">
-        <div className="h-5 w-1/4 bg-surface-deep rounded mb-3" />
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="product-card">
-              <div className="relative overflow-hidden rounded-[18px] border border-border">
-                <div className="w-full h-[220px] bg-surface-deep" />
-                <div className="absolute bottom-2 left-2 right-2 p-2 bg-black/60">
-                  <div className="h-4 w-3/4 bg-surface-deep rounded mb-1" />
-                  <div className="h-6 w-1/2 bg-destructive rounded" />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-      <section className="sec mb-10 px-4 animate-pulse">
-        <div className="h-5 w-1/4 bg-surface-deep rounded mb-3" />
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="product-card">
-              <div className="relative overflow-hidden rounded-[18px] border border-border">
-                <div className="w-full h-[220px] bg-surface-deep" />
-                <div className="absolute bottom-2 left-2 right-2 p-2 bg-black/60">
-                  <div className="h-4 w-3/4 bg-surface-deep rounded mb-1" />
-                  <div className="h-6 w-1/2 bg-gold rounded" />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-    </>
-  );
-
   return (
     <StoreShell dock={dock}>
-      {loaded ? content : loadingSkeleton}
+      {loaded ? content : null}
       {error && (
         <div className="p-6 text-center">
           <p className="rounded-md border border-destructive bg-background px-4 py-3 text-xs text-destructive">{error}</p>

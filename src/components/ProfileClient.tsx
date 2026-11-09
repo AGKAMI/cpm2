@@ -468,16 +468,18 @@ export function ProfileClient() {
       </div>
 
       {/* Wishlist */}
-      <div className="mt-8 panel rounded-xl border border-border p-6">
-        <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-4">
-          Wishlist
-        </h3>
-        <div className="text-center py-8 text-ink-soft">
-          <span className="text-[24px] mb-2 block">🤍</span>
-          <p className="text-sm">Your saved builds will appear here.</p>
-          <p className="text-[10px] text-ink-faint mt-1">Tap the heart on any vehicle to save it.</p>
+      {customer && (
+        <div className="mt-8 panel rounded-xl border border-border p-6">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-4">
+            Wishlist
+          </h3>
+          <div className="text-center py-8 text-ink-soft">
+            <span className="text-[24px] mb-2 block">🤍</span>
+            <p className="text-sm">Your saved builds will appear here.</p>
+            <p className="text-[10px] text-ink-faint mt-1">Tap the heart on any vehicle to save it.</p>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Settings */}
       <div className="mt-8 panel rounded-xl border border-border p-6">
@@ -496,7 +498,7 @@ export function ProfileClient() {
               aria-label={darkMode ? "Disable dark mode" : "Enable dark mode"}
             >
               <span
-                className={`absolute top-1 w-3 h-3 bg-background rounded-full transition-transform ${darkMode ? "right-1" : "left-1"}`}
+                className={`absolute top-1 w-3 h-3 bg-foreground rounded-full transition-transform ${darkMode ? "right-1" : "left-1"}`}
               />
             </button>
           </div>

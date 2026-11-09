@@ -6,7 +6,7 @@ import { removeAdmin } from "@/lib/store/admin-service";
 
 export const dynamic = "force-dynamic";
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const status = await requireStoreAdmin(request);
     if (!status.isOwner) {
@@ -16,7 +16,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       });
     }
 
-    const telegramUserId = params.id;
+    const { id: telegramUserId } = await params;
     if (!telegramUserId || telegramUserId === "admins") {
       return fail({
         status: 400,

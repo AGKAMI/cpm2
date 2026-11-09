@@ -6,6 +6,7 @@ import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Field";
+import { useToast } from "@/components/ui/Toaster";
 
 type VantaCustomer = {
   id: number;
@@ -33,6 +34,8 @@ export function ProfileClient() {
     typeof window !== "undefined" ? localStorage.getItem("vanta_dark_mode") === "true" : true
   );
   const [orderNotifications, setOrderNotifications] = useState(false);
+  const [linkMode, setLinkMode] = useState<"telegram" | "email" | null>(null);
+  const toast = useToast();
 
   async function checkSession() {
     try {
@@ -107,7 +110,9 @@ export function ProfileClient() {
       setCustomer({ id: data.customerId, inGameName: data.inGameName, playerId: data.customerId, email: "", currencyPref: "ZAR" });
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Link failed — try again.");
+      const msg = err instanceof Error ? err.message : "Link failed — try again.";
+      setError(msg);
+      toast.error("Link failed", msg);
     } finally {
       setLoading(false);
     }
@@ -134,7 +139,9 @@ export function ProfileClient() {
       setTelegramId("");
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to link Telegram ID.");
+      const msg = err instanceof Error ? err.message : "Failed to link Telegram ID.";
+      setError(msg);
+      toast.error("Link failed", msg);
     } finally {
       setLoading(false);
     }
@@ -167,8 +174,10 @@ export function ProfileClient() {
       setSuccess("Account created and logged in!");
       setError(null);
     } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to save email/password.";
       setSuccess(null);
-      setError(err instanceof Error ? err.message : "Failed to save email/password.");
+      setError(msg);
+      toast.error("Save failed", msg);
     } finally {
       setLoading(false);
     }
@@ -195,8 +204,10 @@ export function ProfileClient() {
       setSuccess("Logged in successfully!");
       setError(null);
     } catch (err) {
+      const msg = err instanceof Error ? err.message : "Login failed.";
       setSuccess(null);
-      setError(err instanceof Error ? err.message : "Login failed.");
+      setError(msg);
+      toast.error("Login failed", msg);
     } finally {
       setLoading(false);
     }
@@ -210,6 +221,7 @@ export function ProfileClient() {
       setSuccess("Logged out.");
     } catch {
       setError("Logout failed.");
+      toast.error("Logout failed", "Could not log out — try again.");
     } finally {
       setLoading(false);
     }
@@ -295,7 +307,6 @@ export function ProfileClient() {
                 </Button>
               </div>
               {success && <p className="mt-2 text-xs text-primary">{success}</p>}
-              {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
             </div>
 
             <div className="mt-4 pt-3 border-t border-border">
@@ -310,102 +321,149 @@ export function ProfileClient() {
             </div>
           </>
         ) : (
-          // NOT LINKED AT ALL
+          // NOT LINKED AT ALL — show options first, expand after choice
           <>
-            <p className="text-sm text-muted-foreground">
-              Link your Telegram to see your orders and delivery history here.
-            </p>
-
-            <div className="mt-4 pt-3 border-t border-border">
-              <p className="text-xs text-muted-foreground mb-2">
-                Or paste your Telegram ID:
-              </p>
-              <Field label="Telegram ID" htmlFor="telegram-id" hint="Your Telegram user ID (e.g. from @userinfobot)">
-                <TextInput
-                  id="telegram-id"
-                  value={telegramId}
-                  onChange={(e) => setTelegramId(e.target.value)}
-                  placeholder="e.g. 7036681178"
-                />
-              </Field>
-              <Button
-                variant="primary"
-                className="w-full"
-                onClick={linkByTelegramId}
-                disabled={loading || !telegramId}
-              >
-                {loading ? "Linking…" : "Link Telegram ID"}
-              </Button>
-            </div>
-
-            <div className="mt-4 pt-3 border-t border-border">
-              <p className="text-xs text-muted-foreground mb-2">
-                Or link via Telegram WebApp:
-              </p>
-              {typeof window !== "undefined" && typeof window.Telegram !== "undefined" && window.Telegram.WebApp?.initData ? (
-                <Button
-                  variant="primary"
-                  className="w-full"
-                  onClick={linkTelegram}
-                  disabled={loading}
-                >
-                  {loading ? "Linking…" : "Link Telegram"}
-                </Button>
-              ) : (
-                <p className="text-[10px] text-ink-faint">
-                  Open this page inside Telegram to link automatically.
+            {linkMode === null ? (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Link your Telegram to see your orders and delivery history here.
                 </p>
-              )}
-            </div>
-
-            <div className="mt-4 pt-3 border-t border-border">
-              <p className="text-xs text-muted-foreground mb-2">
-                Set up email & password for web login:
-              </p>
-              <div className="flex flex-col gap-2">
-                <Field label="Email" htmlFor="account-email" hint="Used to log in on the web">
-                  <TextInput
-                    id="account-email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                  />
-                </Field>
-                {playerId ? (
-                  <p className="text-[10px] text-primary">Linked to your checkout Player ID: {playerId}</p>
-                ) : (
-                  <Field label="Player ID (optional)" htmlFor="setup-player-id" hint="Your CPM2 Player ID from checkout">
+                <div className="mt-4 pt-3 border-t border-border space-y-2">
+                  <Button
+                    variant="primary"
+                    className="w-full"
+                    onClick={() => setLinkMode("telegram")}
+                    disabled={loading}
+                  >
+                    {loading ? "Linking…" : "Link Telegram ID"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setLinkMode("email")}
+                    disabled={loading}
+                  >
+                    Create account &amp; log in
+                  </Button>
+                  {typeof window !== "undefined" && typeof window.Telegram !== "undefined" && window.Telegram.WebApp?.initData ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={linkTelegram}
+                      disabled={loading}
+                    >
+                      {loading ? "Linking…" : "Link via Telegram WebApp"}
+                    </Button>
+                  ) : (
+                    <p className="text-[10px] text-ink-faint text-center">
+                      Open this page inside Telegram to link automatically.
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : linkMode === "telegram" ? (
+              <div className="space-y-3">
+                <div className="mt-4 pt-3 border-t border-border">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Or paste your Telegram ID:
+                  </p>
+                  <Field label="Telegram ID" htmlFor="telegram-id" hint="Your Telegram user ID (e.g. from @userinfobot)">
                     <TextInput
-                      id="setup-player-id"
-                      value={playerId}
-                      onChange={(e) => setPlayerId(e.target.value)}
-                      placeholder="e.g. AB123456"
+                      id="telegram-id"
+                      value={telegramId}
+                      onChange={(e) => setTelegramId(e.target.value)}
+                      placeholder="e.g. 7036681178"
                     />
                   </Field>
+                  <Button
+                    variant="primary"
+                    className="w-full"
+                    onClick={linkByTelegramId}
+                    disabled={loading || !telegramId}
+                  >
+                    {loading ? "Linking…" : "Link Telegram ID"}
+                  </Button>
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => setLinkMode(null)}>
+                    Back
+                  </Button>
+                </div>
+                {typeof window !== "undefined" && typeof window.Telegram !== "undefined" && window.Telegram.WebApp?.initData ? (
+                  <div className="mt-4 pt-3 border-t border-border">
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Or link via Telegram WebApp:
+                    </p>
+                    <Button
+                      variant="primary"
+                      className="w-full"
+                      onClick={linkTelegram}
+                      disabled={loading}
+                    >
+                      {loading ? "Linking…" : "Link Telegram"}
+                    </Button>
+                    <p className="text-[10px] text-ink-faint text-center mt-2">
+                      Open this page inside Telegram to link automatically.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-ink-faint text-center mt-4">
+                    Open this page inside Telegram to link automatically.
+                  </p>
                 )}
-                <Field label="Password" htmlFor="account-password" hint="Set a password to log in from the web">
-                  <TextInput
-                    id="account-password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    type="password"
-                    placeholder="••••••••"
-                  />
-                </Field>
-                <Button
-                  variant="primary"
-                  className="w-full"
-                  onClick={saveEmailPassword}
-                  disabled={loading || !email || !password}
-                >
-                  {loading ? "Creating account…" : "Create account & log in"}
-                </Button>
               </div>
-              {success && <p className="mt-2 text-xs text-primary">{success}</p>}
-              {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
-            </div>
-
-            {error && <p className="mt-3 text-xs text-destructive">{error}</p>}
+            ) : (
+              // linkMode === "email"
+              <div className="space-y-3">
+                <div className="mt-4 pt-3 border-t border-border">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Set up email &amp; password for web login:
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    <Field label="Email" htmlFor="account-email" hint="Used to log in on the web">
+                      <TextInput
+                        id="account-email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@example.com"
+                      />
+                    </Field>
+                    {playerId ? (
+                      <p className="text-[10px] text-primary">Linked to your checkout Player ID: {playerId}</p>
+                    ) : (
+                      <Field label="Player ID (optional)" htmlFor="setup-player-id" hint="Your CPM2 Player ID from checkout">
+                        <TextInput
+                          id="setup-player-id"
+                          value={playerId}
+                          onChange={(e) => setPlayerId(e.target.value)}
+                          placeholder="e.g. AB123456"
+                        />
+                      </Field>
+                    )}
+                    <Field label="Password" htmlFor="account-password" hint="Set a password to log in from the web">
+                      <TextInput
+                        id="account-password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        type="password"
+                        placeholder="••••••••"
+                      />
+                    </Field>
+                    <Button
+                      variant="primary"
+                      className="w-full"
+                      onClick={saveEmailPassword}
+                      disabled={loading || !email || !password}
+                    >
+                      {loading ? "Creating account…" : "Create account &amp; log in"}
+                    </Button>
+                    <Button variant="outline" size="sm" className="w-full" onClick={() => setLinkMode(null)}>
+                      Back
+                    </Button>
+                  </div>
+                  {success && <p className="mt-2 text-xs text-primary">{success}</p>}
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>

@@ -15,7 +15,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { carByCode, searchCars, type CarEntry } from "@/lib/car-catalog";
-import { vantaApi, formatPrice, type VantaProduct, type VantaCategory } from "@/lib/store/client";
+import { vantaApi, formatPrice, type VantaProduct, type VantaCategory, type VantaPromotion } from "@/lib/store/client";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
@@ -72,10 +72,41 @@ const EMPTY_CATEGORY_FORM: CategoryForm = {
   sortOrder: "0",
 };
 
+type PromotionForm = {
+  title: string;
+  subtitle: string;
+  description: string;
+  discountPercent: string;
+  discountCode: string;
+  ctaText: string;
+  ctaLink: string;
+  backgroundColor: string;
+  accentColor: string;
+  imageUrl: string;
+  isActive: boolean;
+  sortOrder: string;
+};
+
+const EMPTY_PROMOTION_FORM: PromotionForm = {
+  title: "",
+  subtitle: "",
+  description: "",
+  discountPercent: "0",
+  discountCode: "",
+  ctaText: "Shop now",
+  ctaLink: "/store/categories",
+  backgroundColor: "#1c1c1f",
+  accentColor: "#d4af4f",
+  imageUrl: "",
+  isActive: true,
+  sortOrder: "0",
+};
+
 export default function AdminPage() {
   const router = useRouter();
   const [products, setProducts] = useState<VantaProduct[]>([]);
   const [categories, setCategories] = useState<VantaCategory[]>([]);
+  const [promotions, setPromotions] = useState<VantaPromotion[]>([]);
   const [form, setForm] = useState<ProductForm>(EMPTY_FORM);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [inlineEditingId, setInlineEditingId] = useState<number | null>(null);
@@ -87,6 +118,11 @@ export default function AdminPage() {
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [categoryForm, setCategoryForm] = useState<CategoryForm>(EMPTY_CATEGORY_FORM);
   const [categorySaving, setCategorySaving] = useState(false);
+  // Promotion management state
+  const [showPromotionForm, setShowPromotionForm] = useState(false);
+  const [editingPromotionId, setEditingPromotionId] = useState<number | null>(null);
+  const [promotionForm, setPromotionForm] = useState<PromotionForm>(EMPTY_PROMOTION_FORM);
+  const [promotionSaving, setPromotionSaving] = useState(false);
   // Car search state for the searchable catalog picker
   const [carQuery, setCarQuery] = useState("");
   const [carOpen, setCarOpen] = useState(false);
@@ -105,16 +141,18 @@ export default function AdminPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [pRes, cRes] = await Promise.all([
+      const [pRes, cRes, promoRes] = await Promise.all([
         vantaApi.products({}),
         vantaApi.categories(),
+        vantaApi.promotions(),
       ]);
       setProducts(pRes.products);
       setCategories(cRes.categories);
+      setPromotions(Array.isArray(promoRes.promotions) ? promoRes.promotions : []);
       setError(null);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Couldn't load products or categories.",
+        err instanceof Error ? err.message : "Couldn't load products, categories, or promotions.",
       );
     } finally {
       setLoading(false);
@@ -320,6 +358,79 @@ export default function AdminPage() {
         }
       };
 
+    // --- Promotion management ---
+
+    const resetPromotionForm = () => {
+      setPromotionForm(EMPTY_PROMOTION_FORM);
+      setEditingPromotionId(null);
+      setMsg(null);
+    };
+
+    const selectPromotion = (p: VantaPromotion) => {
+      setPromotionForm({
+        title: p.title,
+        subtitle: p.subtitle,
+        description: p.description,
+        discountPercent: String(p.discountPercent),
+        discountCode: p.discountCode,
+        ctaText: p.ctaText,
+        ctaLink: p.ctaLink,
+        backgroundColor: p.backgroundColor,
+        accentColor: p.accentColor,
+        imageUrl: p.imageUrl,
+        isActive: p.isActive,
+        sortOrder: String(p.sortOrder),
+      });
+      setEditingPromotionId(p.id);
+      setMsg(null);
+    };
+
+    const handlePromotionSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setPromotionSaving(true);
+      setError(null);
+      try {
+        const body = {
+          title: promotionForm.title,
+          subtitle: promotionForm.subtitle || undefined,
+          description: promotionForm.description || undefined,
+          discountPercent: Number(promotionForm.discountPercent) || 0,
+          discountCode: promotionForm.discountCode || undefined,
+          ctaText: promotionForm.ctaText || "Shop now",
+          ctaLink: promotionForm.ctaLink || "/store/categories",
+          backgroundColor: promotionForm.backgroundColor || "#1c1c1f",
+          accentColor: promotionForm.accentColor || "#d4af4f",
+          imageUrl: promotionForm.imageUrl || undefined,
+          isActive: promotionForm.isActive,
+          sortOrder: Number(promotionForm.sortOrder) || 0,
+        };
+        if (editingPromotionId) {
+          await vantaApi.updatePromotion(editingPromotionId, body);
+        } else {
+          await vantaApi.createPromotion(body);
+        }
+        setMsg(editingPromotionId ? "Promotion updated." : "Promotion created.");
+        resetPromotionForm();
+        await load();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to save promotion.");
+      } finally {
+        setPromotionSaving(false);
+      }
+    };
+
+    const handlePromotionDelete = async (id: number) => {
+      if (!window.confirm(`Delete this promotion?`)) return;
+      setError(null);
+      try {
+        await vantaApi.deletePromotion(id);
+        setMsg("Promotion deleted.");
+        await load();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to delete promotion.");
+      }
+    };
+
     const handlePublish = async (id: number, publish: boolean) => {
       setError(null);
       try {
@@ -439,6 +550,192 @@ export default function AdminPage() {
             )}
           </div>
         </section>
+
+      {/* Promotions Management */}
+            <section className="panel rounded-xl border border-border p-4 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-foreground">Promotions</h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowPromotionForm(true);
+                    setEditingPromotionId(null);
+                    setPromotionForm(EMPTY_PROMOTION_FORM);
+                    setMsg(null);
+                    setError(null);
+                  }}
+                >
+                  {showPromotionForm ? "Hide form" : "Add Promotion"}
+                </Button>
+              </div>
+
+              {showPromotionForm && (
+                <form onSubmit={handlePromotionSubmit} className="grid gap-3 sm:grid-cols-2 mb-4">
+                  <Field label="Title">
+                    <TextInput
+                      value={promotionForm.title}
+                      onChange={(e) => setPromotionForm((f) => ({ ...f, title: e.target.value }))}
+                      placeholder="e.g. Founders Weekend"
+                    />
+                  </Field>
+                  <Field label="Subtitle (eyebrow text)">
+                    <TextInput
+                      value={promotionForm.subtitle}
+                      onChange={(e) => setPromotionForm((f) => ({ ...f, subtitle: e.target.value }))}
+                      placeholder="Special offer"
+                    />
+                  </Field>
+                  <Field label="Description">
+                    <TextInput
+                      value={promotionForm.description}
+                      onChange={(e) => setPromotionForm((f) => ({ ...f, description: e.target.value }))}
+                      placeholder="10% off every Limited Edition"
+                    />
+                  </Field>
+                  <Field label="Discount %">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={promotionForm.discountPercent}
+                      onChange={(e) => setPromotionForm((f) => ({ ...f, discountPercent: e.target.value }))}
+                      className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
+                    />
+                  </Field>
+                  <Field label="Discount Code">
+                    <TextInput
+                      value={promotionForm.discountCode}
+                      onChange={(e) => setPromotionForm((f) => ({ ...f, discountCode: e.target.value }))}
+                      placeholder="VANTA10"
+                    />
+                  </Field>
+                  <Field label="CTA Text">
+                    <TextInput
+                      value={promotionForm.ctaText}
+                      onChange={(e) => setPromotionForm((f) => ({ ...f, ctaText: e.target.value }))}
+                      placeholder="Shop now"
+                    />
+                  </Field>
+                  <Field label="CTA Link">
+                    <TextInput
+                      value={promotionForm.ctaLink}
+                      onChange={(e) => setPromotionForm((f) => ({ ...f, ctaLink: e.target.value }))}
+                      placeholder="/store/categories"
+                    />
+                  </Field>
+                  <Field label="Background Color">
+                    <input
+                      type="color"
+                      value={promotionForm.backgroundColor}
+                      onChange={(e) => setPromotionForm((f) => ({ ...f, backgroundColor: e.target.value }))}
+                      className="w-full h-10 border-none bg-transparent cursor-pointer"
+                    />
+                  </Field>
+                  <Field label="Accent Color">
+                    <input
+                      type="color"
+                      value={promotionForm.accentColor}
+                      onChange={(e) => setPromotionForm((f) => ({ ...f, accentColor: e.target.value }))}
+                      className="w-full h-10 border-none bg-transparent cursor-pointer"
+                    />
+                  </Field>
+                  <Field label="Image URL (optional background image)">
+                    <TextInput
+                      value={promotionForm.imageUrl}
+                      onChange={(e) => setPromotionForm((f) => ({ ...f, imageUrl: e.target.value }))}
+                      placeholder="https://..."
+                    />
+                  </Field>
+                  <Field label="Active">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={promotionForm.isActive}
+                        onChange={(e) => setPromotionForm((f) => ({ ...f, isActive: e.target.checked }))}
+                        className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
+                      />
+                      <span className="text-sm text-foreground">Show on home page</span>
+                    </div>
+                  </Field>
+                  <Field label="Sort Order">
+                    <input
+                      type="number"
+                      value={promotionForm.sortOrder}
+                      onChange={(e) => setPromotionForm((f) => ({ ...f, sortOrder: e.target.value }))}
+                      className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
+                    />
+                  </Field>
+                  <div className="sm:col-span-2 flex gap-2">
+                    <Button type="submit" variant="primary" disabled={promotionSaving}>
+                      {promotionSaving ? "Saving…" : editingPromotionId ? "Update Promotion" : "Create Promotion"}
+                    </Button>
+                    <Button variant="outline" type="button" onClick={resetPromotionForm} disabled={promotionSaving}>
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              )}
+
+              <div className="flex flex-wrap gap-3">
+                {promotions.length === 0 ? (
+                  <span className="text-xs text-muted-foreground">No promotions yet. Click "Add Promotion" to create one.</span>
+                ) : (
+                  promotions.map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex items-center justify-between gap-2 px-3 py-2 rounded-md border border-border bg-surface-deep"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-mono text-muted-foreground">#{p.id}</span>
+                          {p.isActive ? (
+                            <span className="text-[10px] text-primary font-bold">ACTIVE</span>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground">INACTIVE</span>
+                          )}
+                        </div>
+                        <h4 className="text-sm font-medium text-foreground truncate">{p.title}</h4>
+                        <p className="text-[10px] text-ink-soft truncate">
+                          {p.description || p.subtitle || ""}
+                        </p>
+                        <div className="flex items-center gap-1 mt-1">
+                          {p.discountCode && (
+                            <span className="text-[10px] font-bold text-gold">{p.discountCode}</span>
+                          )}
+                          {p.discountPercent > 0 && (
+                            <span className="text-[10px] text-muted-foreground">{p.discountPercent}% off</span>
+                          )}
+                          <span className="text-[10px] text-muted-foreground">{p.ctaText}</span>
+                        </div>
+                        <div className="flex items-center gap-1 mt-1">
+                          <span className="text-[10px] text-ink-faint">bg: {p.backgroundColor}</span>
+                          <span className="text-[10px] text-ink-faint">accent: {p.accentColor}</span>
+                          {p.imageUrl && <span className="text-[10px] text-ink-faint">🖼️ image</span>}
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => selectPromotion(p)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handlePromotionDelete(p.id)}
+                          className="text-destructive hover:bg-destructive/10"
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
 
       {/* Create / Edit form - hidden when editing inline within a card */}
             {!inlineEditingId && showProductForm && (

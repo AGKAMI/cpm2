@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { vantaApi, formatPrice, type VantaProduct, type VantaCategory, type VantaCustomer, type TelegramUser } from "@/lib/store/client";
+import { vantaApi, formatPrice, type VantaProduct, type VantaCategory, type VantaCustomer, type VantaPromotion, type TelegramUser } from "@/lib/store/client";
 import { StoreShell } from "@/components/StoreShell";
 
 export function StoreHomeClient() {
@@ -18,6 +18,7 @@ export function StoreHomeClient() {
   const [loaded, setLoaded] = useState(false);
   const [customer, setCustomer] = useState<VantaCustomer | null>(null);
   const [telegramUser, setTelegramUser] = useState<TelegramUser | null>(null);
+  const [promotions, setPromotions] = useState<VantaPromotion[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -32,6 +33,14 @@ export function StoreHomeClient() {
         setCategories(cats.categories);
         setCustomer(profile.customer);
         setTelegramUser(profile.telegramUser);
+
+        // Fetch active promotions (customizable template cards)
+        try {
+          const promos = await vantaApi.promotions();
+          setPromotions(Array.isArray(promos.promotions) ? promos.promotions : []);
+        } catch {
+          // Promotions not available — sections stay hidden.
+        }
 
         // Fetch this customer's orders — used to gate data-dependent sections.
         if (profile.customer?.playerId) {
@@ -204,21 +213,64 @@ export function StoreHomeClient() {
         </>
       )}
 
-      <section className="promo mb-6 px-4 relative overflow-hidden rounded-[22px] p-5 border border-[rgba(212,175,79,0.45)] bg-[radial-gradient(120%_140%_at_100%_0%,rgba(216,180,90,.22),transparent_55%)]">
-        <div className="wm absolute right-[-14px] bottom-[-22px] opacity-90 pointer-events-none">
-          <div
-            dangerouslySetInnerHTML={{
-              __html: `<svg viewBox="0 0 100 114" width="120" height="137" style="flex:none;display:block"><path d="M12,8H88L94,14V60Q94,90 50,108Q6,90 6,60V14Z" fill="none" stroke="#d4af4f" stroke-width="2" opacity=".2"/></svg>`,
-            }}
-          />
-        </div>
-        <span className="eyebrow">Founders weekend</span>
-        <h3 className="font-serif font-bold text-[24px] leading-none mb-1">10% off every Limited Edition</h3>
-        <p className="text-[11px] text-ink-soft mb-3">Code <b className="text-gold tracking-[0.12em]">VANTA10</b> · ends Sunday 23:59</p>
-        <button className="btn btn-gold-gradient rounded-full px-4 py-2 text-[11px] font-bold tracking-wider">
-          Shop exclusives <span className="text-[10px] ml-1">▸</span>
-        </button>
-      </section>
+      {promotions.length > 0 && (
+        <section className="promo mb-6 px-4 relative overflow-hidden rounded-[22px] p-5">
+          {promotions.map((promo) => (
+            <Link
+              key={promo.id}
+              href={promo.ctaLink || "/store/categories"}
+              className="block cursor-pointer"
+            >
+              <div
+                className={`relative overflow-hidden rounded-[22px] p-5 border border-[rgba(255,255,255,0.15)]`}
+                style={{
+                  backgroundColor: promo.backgroundColor || "#1c1c1f",
+                  color: promo.accentColor ? "#ffffff" : undefined,
+                }}
+              >
+                {promo.imageUrl && (
+                  <img
+                    src={promo.imageUrl}
+                    alt={promo.title}
+                    className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none"
+                  />
+                )}
+                <div className="relative z-10">
+                  <span
+                    className="eyebrow"
+                    style={{ color: promo.accentColor || "#d4af4f" }}
+                  >
+                    {promo.subtitle || "Special offer"}
+                  </span>
+                  <h3 className="font-serif font-bold text-[24px] leading-none mb-1">
+                    {promo.title}
+                  </h3>
+                  {promo.description && (
+                    <p className="text-[11px] text-ink-soft mb-3">
+                      {promo.description}
+                    </p>
+                  )}
+                  {(promo.discountPercent || promo.discountCode) && (
+                    <p className="text-[11px] mb-3">
+                      {promo.discountCode ? (
+                        <>
+                          Code <b className="text-[11px] font-bold tracking-[0.12em]">{promo.discountCode}</b>{" "}
+                          {promo.discountPercent > 0 ? `· ${promo.discountPercent}% off` : ""}
+                        </>
+                      ) : (
+                        `${promo.discountPercent}% off`
+                      )}
+                    </p>
+                  )}
+                  <button className="btn rounded-full px-4 py-2 text-[11px] font-bold tracking-wider">
+                    {promo.ctaText || "Shop now"} <span className="text-[10px] ml-1">▸</span>
+                  </button>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </section>
+      )}
 
       {categories.length > 0 && (
         <section className="sec mb-6 px-4">

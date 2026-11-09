@@ -212,8 +212,13 @@ export function ProductPageClient({ productId }: { productId: string }) {
 
         {/* Right column: purchase */}
         <div className="flex flex-col gap-6">
-          <section className="panel rounded-xl border border-border p-6 sticky top-6">
-            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-4">Purchase</h3>
+          <section
+            className="panel rounded-xl border border-border p-6 sticky sm:top-6"
+            style={{ position: "sticky", bottom: "1rem", top: "auto" }}
+          >
+            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-4">
+              Purchase
+            </h3>
             <div className="space-y-3">
               <div className="flex items-baseline justify-between gap-2">
                 <span className="text-xs text-muted-foreground">Vehicle</span>

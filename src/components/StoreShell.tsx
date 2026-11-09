@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
+import { NotificationBell } from "@/components/NotificationBell";
 
 type StoreTab = "home" | "categories" | "orders" | "profile" | "admin" | "owner";
 
@@ -139,6 +140,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
             <Button variant="ghost" size="icon" onClick={() => {}} aria-label="Search">
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
             </Button>
+            <NotificationBell />
           </div>
         </div>
       </header>

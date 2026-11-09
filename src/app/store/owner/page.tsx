@@ -14,7 +14,7 @@ import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Field";
-import { vantaApi, type VantaAdminRecord } from "@/lib/store/client";
+import { vantaApi, formatPrice, type VantaAdminRecord } from "@/lib/store/client";
 
 type AdminRow = VantaAdminRecord & { formattedId: string };
 
@@ -27,10 +27,28 @@ export default function OwnerPage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [newId, setNewId] = useState("");
   const [newNickname, setNewNickname] = useState("");
+  const [ownerStats, setOwnerStats] = useState<{
+    totalCustomers: number;
+    totalOrders: number;
+    totalRevenueCents: number;
+    totalAdmins: number;
+    totalProducts: number;
+    verifiedOrders: number;
+  } | null>(null);
 
   useEffect(() => {
     loadAdmins();
+    loadOwnerStats();
   }, []);
+
+  async function loadOwnerStats() {
+    try {
+      const res = await vantaApi.ownerStats();
+      setOwnerStats(res);
+    } catch {
+      // Owner stats non-fatal
+    }
+  }
 
   async function loadAdmins() {
     setLoading(true);
@@ -93,9 +111,21 @@ export default function OwnerPage() {
 
   return (
       <StoreShell>
-        <PageHeading folio="OW" title="Owner Dashboard" backHref="/store/admin" />
-
-      {error && (
+        <PageHeading folio="OW" title="Owner Dashboard" backHref="/store/admin" meta={ownerStats ? formatPrice(ownerStats.totalRevenueCents) : undefined} />
+        {ownerStats && (
+          <section className="mb-6">
+            <h3 className="text-xs font-semibold text-foreground uppercase tracking-[0.15em] mb-3">Store Stats</h3>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <OwnerStatCard label="Customers" value={String(ownerStats.totalCustomers)} />
+              <OwnerStatCard label="Total Orders" value={String(ownerStats.totalOrders)} />
+              <OwnerStatCard label="Revenue" value={formatPrice(ownerStats.totalRevenueCents)} />
+              <OwnerStatCard label="Admins" value={String(ownerStats.totalAdmins)} />
+              <OwnerStatCard label="Products Live" value={String(ownerStats.totalProducts)} />
+              <OwnerStatCard label="Paid Orders" value={String(ownerStats.verifiedOrders)} />
+            </div>
+          </section>
+        )}
+        {error && (
         <p className="mb-4 rounded-md border border-destructive bg-destructive px-3 py-2 text-xs text-destructive">
           {error}
         </p>
@@ -191,5 +221,14 @@ export default function OwnerPage() {
         </Button>
       </div>
     </StoreShell>
+  );
+}
+
+function OwnerStatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <article className="panel rounded-xl border border-border p-5">
+      <p className="text-[10px] text-muted-foreground uppercase tracking-[0.15em]">{label}</p>
+      <p className="text-xl font-bold text-foreground mt-1">{value}</p>
+    </article>
   );
 }

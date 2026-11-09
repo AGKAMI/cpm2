@@ -144,7 +144,14 @@ export const vantaApi = {
       request<{ deleted: boolean }>(`/admin/admins/${encodeURIComponent(telegramUserId)}`, {
         method: "DELETE",
       }),
-    verifyPayment: (orderId: string) =>
+    adminDashboardStats: () =>
+    request<DashboardStats>("/admin/dashboard/stats"),
+  adminDashboardAlerts: () =>
+    request<{ alerts: DashboardAlert[] }>("/admin/dashboard/alerts"),
+
+  ownerStats: () => request<OwnerStats>("/owner/stats"),
+
+  verifyPayment: (orderId: string) =>
     request<{ orderId: string; paymentState: string; orderState: string }>(
       `/admin/orders/${encodeURIComponent(orderId)}/verify-payment`,
       { method: "POST", body: JSON.stringify({ orderId }) },
@@ -270,6 +277,36 @@ export type TelegramUser = {
   lastName?: string;
   photoUrl?: string;
   displayName: string;
+};
+
+export type DashboardStats = {
+  totalOrders: number;
+  totalRevenueCents: number;
+  pendingOrders: number;
+  verifiedOrders: number;
+  rejectedPayments: number;
+  totalProducts: number;
+  lowStockProducts: number;
+  outOfStockProducts: number;
+};
+
+export type DashboardAlert = {
+  id: string;
+  type: string;
+  severity: "high" | "medium";
+  title: string;
+  description: string;
+  entityId: string;
+  createdAt: string;
+};
+
+export type OwnerStats = {
+  totalCustomers: number;
+  totalOrders: number;
+  totalRevenueCents: number;
+  totalAdmins: number;
+  totalProducts: number;
+  verifiedOrders: number;
 };
 
 export function formatPrice(cents: number, currency = "ZAR"): string {

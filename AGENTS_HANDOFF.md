@@ -1278,8 +1278,6 @@ Each agent's implementation will be scored on:
 
 **Kermes' commitment:** All code in this plan will be committed, deployed, and recorded in AGENTS_HANDOFF.md before marking complete. No uncommitted changes left in working tree.
 
----
-
 # 2026-11-09 — VANTA GARAGE Master Implementation Gap Analysis & Build Plan
 
 **Purpose:** Comprehensive gap analysis vs `Vanta_Garage_Plan.txt` (master specification, 1755 lines). The current deployment is a partial frontend skeleton. This document lists every missing module, what it does, how it works, and how it will be built. Intended for multi-agent review and voting before implementation begins.

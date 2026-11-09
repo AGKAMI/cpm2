@@ -7,6 +7,7 @@ import { vantaApi, type VantaCategory, type VantaProduct } from "@/lib/store/cli
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { formatPrice } from "@/lib/store/client";
+import { HeartToggle } from "@/components/HeartToggle";
 
 const ICONS: Record<string, string> = {
   search: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`,
@@ -27,6 +28,12 @@ export function CategoriesClient() {
   const [fopen, setFopen] = useState(false);
   const [sort, setSort] = useState("feat");
   const [cardImages, setCardImages] = useState<Record<number, string>>({});
+  const [debouncedQ, setDebouncedQ] = useState("");
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(q), 300);
+    return () => clearTimeout(t);
+  }, [q]);
 
   useEffect(() => {
     (async () => {
@@ -74,8 +81,8 @@ export function CategoriesClient() {
       (avail === "low" && c.stockQuantity > 0 && c.stockQuantity <= 3);
     const promoOk = !promo || c.exclusivity !== "standard";
     const qOk =
-      !q ||
-      (c.name + " " + c.description).toLowerCase().includes(q.toLowerCase());
+      !debouncedQ ||
+      (c.name + " " + c.description).toLowerCase().includes(debouncedQ.toLowerCase());
     return priceOk && exclOk && availOk && promoOk && qOk;
   });
 
@@ -329,6 +336,7 @@ export function CategoriesClient() {
                     <div className="mt-3 px-1">
                       <h4 className="font-bold text-sm text-ink leading-snug">{c.name}</h4>
                       <div className="flex items-baseline flex-wrap gap-2 mt-2">
+                        <HeartToggle productId={c.id} />
                         <span className="price-primary text-base font-bold tabular-nums">
                           {formatPrice(c.basePriceCents, c.currency)}
                         </span>

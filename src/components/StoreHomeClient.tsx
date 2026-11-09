@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { vantaApi, formatPrice, type VantaProduct, type VantaCategory, type VantaCustomer, type VantaPromotion, type TelegramUser } from "@/lib/store/client";
 import { StoreShell } from "@/components/StoreShell";
+import { HeartToggle } from "@/components/HeartToggle";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export function StoreHomeClient() {
   const [featured, setFeatured] = useState<VantaProduct[]>([]);
@@ -134,7 +136,10 @@ const content = (
                       <div>
                         <small className="text-white/80 uppercase tracking-[0.06em]">{c.name.toUpperCase()}</small>
                         <h3 className="font-serif font-bold text-xl leading-none mt-1">{c.name}</h3>
-                        <div className="mt-2 font-bold tabular-nums text-lg">{formatPrice(c.basePriceCents, c.currency)}</div>
+                        <div className="mt-2 font-bold tabular-nums text-lg">
+                          <HeartToggle productId={c.id} />
+                          {formatPrice(c.basePriceCents, c.currency)}
+                        </div>
                       </div>
                       <div className="go w-10 h-10 rounded-full bg-gold flex items-center justify-center text-ink">
                         <span className="text-[12px]">▸</span>
@@ -254,6 +259,7 @@ const content = (
                   <h4 className="font-bold text-sm">{c.name}</h4>
                   <p className="text-[10px] text-ink-soft">{c.availabilityState}</p>
                   <div className="vc-f mt-1">
+                    <HeartToggle productId={c.id} />
                     <span className="pr font-bold tabular-nums">{formatPrice(c.basePriceCents, c.currency)}</span>
                   </div>
                 </div>
@@ -291,6 +297,7 @@ const content = (
                   <h4 className="font-bold text-sm">{c.name}</h4>
                   <p className="text-[10px] text-ink-soft">{c.availabilityState}</p>
                   <div className="vc-f mt-1">
+                    <HeartToggle productId={c.id} />
                     <span className="pr font-bold tabular-nums">{formatPrice(c.basePriceCents, c.currency)}</span>
                   </div>
                 </div>

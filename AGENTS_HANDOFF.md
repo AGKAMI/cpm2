@@ -431,6 +431,18 @@ Completed (removed from list): Profile "Link your Telegram" button, `STORE_ADMIN
 
 ---
 
+### 2026-11-09 — Telegram ID uses real username
+
+**What:** Fixed `link-telegram-id/route.ts` to call Telegram's Bot API `getUser` and use the real Telegram username (`username`/`first_name`/`last_name`) as the customer's display name instead of the placeholder `tg_${telegramUserId}`. Also added `updateCustomer()` to `customers.ts` so existing `tg_XXX` entries are updated to real names on re-link. If Telegram API is unreachable, falls back to `tg_${telegramUserId}`.
+
+**Where:** `src/app/api/store/customers/link-telegram-id/route.ts`, `src/lib/store/customers.ts`
+
+**Gates:** tsc clean, lint 0 errors (pre-existing admin/page.tsx only), tests 67/67, build green. Deployed to production via Deploy Hook.
+
+**Verified by:** nemotron-3.5-super-vl-120b-a12b
+
+---
+
 ### 2026-11-09 — Profile page dark mode toggle + wishlist gate
 
 **What:** Fixed three Profile page issues per KAMI's feedback:

@@ -382,7 +382,7 @@ html {
    Every t-* snippet below reads from these semantic names. */
 :root {
   /* ── Motion tokens — shared scale ────────────────────────────── */
-  --duration-stagger: 40ms;
+  --duration-stagger: 30ms;
   --duration-micro: 80ms;
   --duration-quick: 150ms;
   --duration-fast: 250ms;
@@ -393,6 +393,8 @@ html {
   --ease-in-out: ease-in-out;
   --ease-out: ease-out;
   --ease-linear: linear;
+  --ease-arc: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-rubber: cubic-bezier(0.34, 1.56, 0.64, 1);
   --distance-micro: 4px;
   --distance-small: 6px;
   --distance-base: 8px;
@@ -402,16 +404,18 @@ html {
   --scale-medium: 0.97;
   --scale-small: 0.98;
   --scale-tiny: 0.99;
+  --scale-popover-start: 0.95;
+  --knob-stretch: 112%;
   --blur-small: 2px;
   --blur-medium: 3px;
   --blur-large: 8px;
 
   /* ── Modal open / close (06-modal.md) ────────────────────────── */
   --modal-open-dur: 250ms;
-  --modal-close-dur: 150ms;
+  --modal-close-dur: 200ms;
   --modal-scale: 0.96;
   --modal-scale-close: 0.96;
-  --modal-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --modal-ease: var(--ease-out);
 
   /* ── Skeleton loader and reveal (14-skeleton-reveal.md) ──────── */
   --pulse-dur: 1000ms;
@@ -628,6 +632,153 @@ html {
 @media (prefers-reduced-motion: reduce) {
   .t-tabs-pill, .t-tab { transition: none !important; }
 }
+
+/* ── Popover / dropdown: start at scale 0.95, transition from trigger ── */
+.t-popover {
+  transform-origin: var(--popover-origin, center);
+  transform: scale(var(--scale-popover-start));
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out);
+  will-change: transform, opacity;
+}
+.t-popover.is-open {
+  transform: scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+.t-popover.is-closing {
+  transform-origin: var(--popover-origin, center);
+  transform: scale(var(--scale-popover-start));
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform var(--duration-quick) var(--ease-out),
+    opacity var(--duration-quick) var(--ease-out);
+}
+
+/* ── Dropdown: 150–250ms, ease-out ── */
+.t-dropdown {
+  transform-origin: var(--dropdown-origin, top);
+  transform: scaleY(0.96);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out);
+}
+.t-dropdown.is-open {
+  transform: scaleY(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── List row stagger: 30ms per row ── */
+.t-list-row {
+  opacity: 0;
+  transform: translateY(var(--distance-small));
+  transition:
+    opacity var(--duration-quick) var(--ease-out),
+    transform var(--duration-quick) var(--ease-out);
+}
+.t-list-row.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.t-list-row:nth-child(1) { transition-delay: 0ms; }
+.t-list-row:nth-child(2) { transition-delay: var(--duration-stagger); }
+.t-list-row:nth-child(3) { transition-delay: calc(var(--duration-stagger) * 2); }
+.t-list-row:nth-child(4) { transition-delay: calc(var(--duration-stagger) * 3); }
+.t-list-row:nth-child(5) { transition-delay: calc(var(--duration-stagger) * 4); }
+.t-list-row:nth-child(6) { transition-delay: calc(var(--duration-stagger) * 5); }
+
+@media (prefers-reduced-motion: reduce) {
+  .t-popover, .t-popover.is-open, .t-popover.is-closing,
+  .t-dropdown, .t-dropdown.is-open,
+  .t-list-row, .t-list-row.is-visible {
+    transition: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+}
+
+/* ── Success pulse: confirm with a pulse ── */
+.t-pulse-success {
+  position: relative;
+  overflow: hidden;
+}
+.t-pulse-success::after {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(92, 192, 138, 0.35) 0%, transparent 70%);
+  transform: scale(0);
+  opacity: 0;
+  transition:
+    transform var(--duration-medium) var(--ease-out),
+    opacity var(--duration-medium) var(--ease-out);
+}
+.t-pulse-success.is-pulsing::after {
+  transform: scale(2.2);
+  opacity: 1;
+}
+
+/* ── Icon crossfade with scale and blur ── */
+.t-icon-crossfade {
+  transition:
+    transform var(--duration-quick) var(--ease-out),
+    filter var(--duration-quick) var(--ease-out),
+    opacity var(--duration-quick) var(--ease-out);
+}
+.t-icon-crossfade.is-exit {
+  transform: scale(0.9);
+  filter: blur(var(--blur-small));
+  opacity: 0;
+}
+.t-icon-crossfade.is-enter {
+  transform: scale(1.1);
+  filter: blur(var(--blur-small));
+  opacity: 0;
+}
+
+/* ── Arc movement for object transitions ── */
+.t-move-arc {
+  transition:
+    transform var(--duration-medium) var(--ease-arc);
+}
+
+/* ── Knob stretch on press: 12% stretch ── */
+.t-knob {
+  transition:
+    transform var(--duration-micro) var(--ease-out);
+}
+.t-knob.is-pressed {
+  transform: scaleX(var(--knob-stretch)) scaleY(calc(1 / 1.12));
+}
+
+/* ── Details settle with stagger ── */
+.t-detail {
+  opacity: 0;
+  transform: translateY(var(--distance-micro));
+  transition:
+    opacity var(--duration-quick) var(--ease-out),
+    transform var(--duration-quick) var(--ease-out);
+}
+.t-detail.is-settled {
+  opacity: 1;
+  transform: translateY(0);
+}
+.t-detail:nth-child(1) { transition-delay: 0ms; }
+.t-detail:nth-child(2) { transition-delay: var(--duration-stagger); }
+.t-detail:nth-child(3) { transition-delay: calc(var(--duration-stagger) * 2); }
+.t-detail:nth-child(4) { transition-delay: calc(var(--duration-stagger) * 3); }
+
+/* ── Exits 20% shorter than entrances ── */
+/* Applied via t-modal.is-closing (--modal-close-dur: 200ms vs --modal-open-dur: 250ms) */
 
 /* ── VANTA Garage showroom components ── */
 .hero-banner {

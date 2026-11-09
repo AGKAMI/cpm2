@@ -11,6 +11,10 @@ type ModalProps = {
   children: ReactNode;
   footer?: ReactNode;
   width?: string;
+  /** When true, modal opens as a popover: starts at scale 0.95, transforms from trigger origin. */
+  popover?: boolean;
+  /** CSS transform-origin string (e.g. "top left", "120px 20px"). Defaults to center. */
+  origin?: string;
 };
 
 export function Modal({
@@ -21,6 +25,8 @@ export function Modal({
   children,
   footer,
   width = "max-w-2xl",
+  popover = false,
+  origin,
 }: ModalProps) {
   const sheetRef = useRef<HTMLDivElement | null>(null);
   const onCloseRef = useRef(onClose);
@@ -136,7 +142,8 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`t-modal relative z-10 my-auto flex max-h-[92vh] w-full flex-col overflow-hidden rounded-md border border-border bg-color-paper-sunken shadow-lg ${width} ${opened ? "is-open" : ""} ${closing ? "is-closing" : ""}`}
+        style={({ "--popover-origin": origin ?? "center" } as React.CSSProperties)}
+        className={`t-modal relative z-10 my-auto flex max-h-[92vh] w-full flex-col overflow-hidden rounded-md border border-border bg-color-paper-sunken shadow-lg ${width} ${popover ? "t-popover" : ""} ${opened ? "is-open" : ""} ${closing ? "is-closing" : ""}`}
       >
         <header className="flex items-start gap-4 border-b border-border px-5 py-4 sm:px-6">
           <div className="min-w-0 flex-1">

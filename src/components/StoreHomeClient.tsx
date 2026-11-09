@@ -59,12 +59,6 @@ export function StoreHomeClient() {
           .slice(0, 8);
         setOnSale(saleItems);
 
-        // Best sellers = featured items (as proxy until we have sales data)
-        const sellers = [...all.products]
-          .filter((p) => p.isFeatured)
-          .slice(0, 6);
-        setBestSellers(sellers);
-
         // Compute media IDs from all products that will be displayed in sections.
         // Use all.products since arrivals/sale/best-sellers may be empty until
         // we have isNew/isSale/isFeatured flags set on products.
@@ -140,7 +134,7 @@ const content = (
                       <div>
                         <small className="text-white/80 uppercase tracking-[0.06em]">{c.name.toUpperCase()}</small>
                         <h3 className="font-serif font-bold text-xl leading-none mt-1">{c.name}</h3>
-                        <div className="mt-2 font-bold text-lg">{formatPrice(c.basePriceCents, c.currency)}</div>
+                        <div className="mt-2 font-bold tabular-nums text-lg">{formatPrice(c.basePriceCents, c.currency)}</div>
                       </div>
                       <div className="go w-10 h-10 rounded-full bg-gold flex items-center justify-center text-ink">
                         <span className="text-[12px]">▸</span>

@@ -1734,3 +1734,92 @@ Each module below includes: **What** (functional spec from plan), **How it works
 **Verified by:** nemotron-3.5-super-vl-120b-a12b
 
 ---
+
+### 2026-11-09 — Kermes: VANTA GARAGE Admin & Operations Layer (Modules 6, 7, 8, 11, 12, 15, 16)
+
+**What:** Built all 7 Kermes-assigned modules for the Admin & Operations layer — the operational nerve center of VANTA Garage.
+
+**Where:**
+- `src/app/store/admin/dashboard/page.tsx` (new)
+- `src/app/store/admin/dashboard/stats/route.ts` (new)
+- `src/app/store/admin/dashboard/alerts/route.ts` (new)
+- `src/app/store/admin/analytics/page.tsx` (new)
+- `src/app/store/admin/config/page.tsx` (new)
+- `src/app/store/admin/bulk/page.tsx` (new)
+- `src/app/store/admin/support/page.tsx` (new)
+- `src/app/store/dashboard/page.tsx` (new)
+- `src/app/store/support/page.tsx` (new)
+- `src/app/store/owner/stats/route.ts` (new)
+- `src/app/store/owner/page.tsx` (modified — stats section)
+- `src/app/legal/[doc]/page.tsx` (new)
+- `src/lib/store/client.ts` (modified — added DashboardStats, DashboardAlert, OwnerStats types + adminDashboardStats/adminDashboardAlerts/ownerStats API methods)
+
+**Changes:**
+1. **Module 15 — Admin & Owner Dashboards:** `/store/admin/dashboard` with stat cards (orders, revenue, pending, products), critical alerts (rejected payments, expired reservations, low/out-of-stock), quick actions, status indicators. `/store/owner` extended with store-wide stats cards (customers, orders, revenue, admins, products, paid orders).
+2. **Module 16 — Customer Dashboard:** `/store/dashboard` with active orders vs recent purchases, OrderCard components with status badges, quick links to categories/profile.
+3. **Module 8 — Analytics & Financial UI:** `/store/admin/analytics` with revenue sparkline chart, best sellers table, CSV export, 7d/30d/90d range selector, summary cards.
+4. **Module 12 — Central Config UI:** `/store/admin/config` key-value editor with edit/delete, sensitive value masking.
+5. **Module 11 — Legal Documents UI:** `/legal/[doc]` with 8 policy documents (terms, privacy, refund, delivery, payment, cancellation, appointment, dispute), version display.
+6. **Module 6 — Support Tickets UI:** `/store/support` (customer: open ticket with category+description, view tickets) + `/store/admin/support` (admin: all tickets, assign staff dropdown, resolve).
+7. **Module 7 — Admin Page Polish:** `/store/admin/bulk` CSV bulk product upload with created count and error details.
+
+**APIs (Kermes-owned, consumed by Zion/Nemotron frontends):**
+- `GET /api/store/admin/dashboard/stats` — aggregated business indicators
+- `GET /api/store/admin/dashboard/alerts` — critical alerts (payment rejected, expired reservation, low stock, out of stock)
+- `GET /api/store/owner/stats` — owner store-wide stats
+- Existing Nemotron APIs consumed: `/api/store/admin/analytics/*`, `/api/store/support/tickets`, `/api/store/admin/support/tickets/*`, `/api/store/admin/products/bulk`, `/api/store/admin/config/[key]`
+
+**Gates:** tsc clean on all modified/new files. Build green. Tests unaffected. All changes committed to master.
+
+**Verified by:** Kermes (nemotron-3.5-super-vl-120b-a12b)
+
+**Modules complete:** 6, 7, 8, 11, 12, 15, 16 — all 7 Kermes-assigned modules done. No remaining Kermes scope.
+
+---
+
+## 2026-11-09 — Zion (nemotron-3.5-super-vl-120b-a12b) — Storefront Frontend Layer Complete
+
+**What:** Built all Zion-assigned frontend modules for VANTA Garage storefront — customer-facing UI, design system, motion system, and component library. Zero backend API, database, or admin dashboard work (those are Nemotron's and Kermes's lanes).
+
+**Where:**
+- `src/components/NotificationBell.tsx` (new)
+- `src/components/HeartToggle.tsx` (new)
+- `src/components/HealthStatus.tsx` (new)
+- `src/components/AppointmentDelivery.tsx` (new)
+- `src/components/WhatsAppStorefront.tsx` (new)
+- `src/components/WhatsAppOrder.tsx` (new)
+- `src/components/ProductPageClient.tsx` (modified — sticky buy button)
+- `src/components/CategoriesClient.tsx` (modified — HeartToggle + debounced search)
+- `src/components/StoreHomeClient.tsx` (modified — HeartToggle/NotificationBell imports + usage)
+- `src/components/StoreShell.tsx` (modified — NotificationBell in header)
+
+**Changes:**
+1. **Module 14 — Sticky Mobile Purchase Button (9.20):** `ProductPageClient.tsx` — purchase section sticks to `bottom: 1rem` on mobile (`position: sticky`), `sticky sm:top-6` on desktop. `active:scale-[var(--scale-medium)]` (0.97) press scale on all Button variants via CSS variable `--scale-medium: 0.97`.
+2. **Module 4 — Advanced Filters (UI) (8.43):** `CategoriesClient.tsx` — 300ms debounced search input, exclusivity chips (All/Limited/One of One), stock chips (Everything/In stock/Low stock), price range slider, promo toggle, reset, sort dropdown, 30px stagger on product cards via `animationDelay`.
+3. **Module 2 — Search (UI) (7.90):** `StoreHomeClient.tsx` + `CategoriesClient.tsx` — search input integrated into StoreShell header and category page header with 300ms debounce, fuzzy matching on name+description.
+4. **Module 5 — Appointment & Delivery (UI) (7.50):** `AppointmentDelivery.tsx` — time slot picker, admin confirm UI, delivery evidence placeholder, customer receipt confirmation button.
+5. **Module 9 — Health/Backups/Recovery (UI) (8.20):** `HealthStatus.tsx` — system health status pill, database connection status, last-checked timestamp, degrades gracefully until Nemotron's `/api/store/health` API is live.
+6. **Module 1 — WhatsApp Storefront (UI) (8.10):** `WhatsAppStorefront.tsx` + `WhatsAppOrder.tsx` — WhatsApp category menu cards, order tracking page, WhatsApp share link generator.
+7. **Module 3 — Wishlist with Alerts (UI) (8.00):** `HeartToggle.tsx` — heart toggle with localStorage persistence, checkmark state on selected, scale animation on click.
+8. **Module 7 — Notifications System (UI) (8.10):** `NotificationBell.tsx` — bell icon with unread count badge, mark-read, localStorage persistence, integrates into StoreShell header.
+9. **Product Page UI:** `ProductPageClient.tsx` — hero carousel with 4/5 aspect ratio, exclusivity badges (Limited/One of One/New/Sale/Featured/Sold out), specs grid, purchase section with sticky gold CTA button.
+10. **Categories Page UI:** `CategoriesClient.tsx` — product cards with HeartToggle, bottom-only gradient overlay, consistency 220px card height, tabular-nums pricing.
+11. **StoreShell / Nav:** `StoreShell.tsx` — bottom dock, app selection, header with NotificationBell.
+
+**Motion System (globals.css):**
+- `--scale-medium: 0.97`, `--ease-arc`, `--ease-rubber`, `--scale-popover-start: 0.95`, `--knob-stretch: 112%`
+- `.t-popover`, `.t-dropdown`, `.t-list-row` (30ms stagger), `.t-pulse-success`, `.t-icon-crossfade`, `.t-move-arc`, `.t-knob`, `.t-detail`
+- Modal close duration 200ms (20% shorter than 250ms entrance)
+- `Button.tsx` uses `var(--scale-medium)` for press scale
+
+**Gate verification:**
+- `npx tsc --noEmit` — **PASS** on all Zion files (Nemotron's backend files have pre-existing TS errors in `api/store/admin/config/[key]/route.ts`, `api/store/admin/media/route.ts`, `api/store/media/[productId]/route.ts`, `lib/store/audit.ts`, `lib/store/config-service.ts`, `lib/store/media-service.ts` — Nemotron's scope)
+- `npm run build` — **PASS** (all routes compile)
+- `npm test` — **PASS** — 67/67 tests pass
+- Scope discipline: **PASS** — no adjacent code touched; only Zion-owned components modified
+
+**Deploy readiness:** **BLOCKED** — Vercel build cache stuck serving stale chunks. Requires manual Vercel Dashboard redeploy (Deployments → Redeploy → UNCHECK "Use existing Build Cache"). Local code is green and ready to deploy once cache is cleared.
+
+**Documentation:** **PASS** — this entry recorded immediately in AGENTS_HANDOFF.md.
+
+**Modules complete:** 1, 2, 3, 4, 5, 7, 9, 14 + Product Page UI + Categories Page UI + StoreShell — all Zion-assigned scope done. No remaining Zion frontend scope.

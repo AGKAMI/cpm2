@@ -6,6 +6,8 @@ import { vantaApi, formatPrice, type VantaOrder } from "@/lib/store/client";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
+import { Field, TextInput } from "@/components/ui/Field";
 
 type OrderWithProduct = VantaOrder & { productName?: string; productPrice?: number };
 
@@ -15,6 +17,16 @@ export function EftReviewClient() {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<"pending" | "verified" | "all">("pending");
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
+
+  // Rejection modal state
+  const [rejectModal, setRejectModal] = useState(false);
+  const [rejectOrderId, setRejectOrderId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+
+  // Evidence modal state
+  const [evidenceModal, setEvidenceModal] = useState(false);
+  const [evidenceOrderId, setEvidenceOrderId] = useState<string | null>(null);
+  const [evidenceUrl, setEvidenceUrl] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -64,48 +76,74 @@ export function EftReviewClient() {
     }
   };
 
-  const handleReject = async (order: VantaOrder) => {
-    const reason = window.prompt("Reason for rejection (optional):");
-    setBusyIds((prev) => new Set([...prev, order.id]));
+  const openReject = (orderId: string) => {
+    setRejectOrderId(orderId);
+    setRejectReason("");
+    setRejectModal(true);
+  };
+
+  const closeReject = () => {
+    setRejectModal(false);
+    setRejectOrderId(null);
+    setRejectReason("");
+  };
+
+  const handleRejectSubmit = async () => {
+    if (!rejectOrderId) return;
+    setBusyIds((prev) => new Set([...prev, rejectOrderId]));
     try {
-      await vantaApi.rejectPayment(order.id, reason ?? undefined);
+      await vantaApi.rejectPayment(rejectOrderId, rejectReason || undefined);
       setOrders((curr) =>
         curr.map((o) =>
-          o.id === order.id
+          o.id === rejectOrderId
             ? { ...o, paymentState: "rejected", orderState: "cancelled" }
             : o,
         ),
       );
+      closeReject();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Rejection failed.");
     } finally {
       setBusyIds((prev) => {
         const next = new Set(prev);
-        next.delete(order.id);
+        next.delete(rejectOrderId ?? "");
         return next;
       });
     }
   };
 
-  const handleEvidence = async (order: VantaOrder) => {
-    const url = window.prompt("Delivery evidence URL (photo/screenshot link):");
-    if (!url) return;
-    setBusyIds((prev) => new Set([...prev, order.id]));
+  const openEvidence = (orderId: string) => {
+    setEvidenceOrderId(orderId);
+    setEvidenceUrl("");
+    setEvidenceModal(true);
+  };
+
+  const closeEvidence = () => {
+    setEvidenceModal(false);
+    setEvidenceOrderId(null);
+    setEvidenceUrl("");
+  };
+
+  const handleEvidenceSubmit = async () => {
+    if (!evidenceOrderId) return;
+    if (!evidenceUrl.trim()) return;
+    setBusyIds((prev) => new Set([...prev, evidenceOrderId]));
     try {
-      await vantaApi.setDeliveryEvidence(order.id, url);
+      await vantaApi.setDeliveryEvidence(evidenceOrderId, evidenceUrl.trim());
       setOrders((curr) =>
         curr.map((o) =>
-          o.id === order.id
+          o.id === evidenceOrderId
             ? { ...o, orderState: "delivery_scheduled", appointmentId: "set" }
             : o,
         ),
       );
+      closeEvidence();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Evidence upload failed.");
     } finally {
       setBusyIds((prev) => {
         const next = new Set(prev);
-        next.delete(order.id);
+        next.delete(evidenceOrderId ?? "");
         return next;
       });
     }
@@ -186,11 +224,81 @@ export function EftReviewClient() {
               order={order}
               isBusy={isBusy(order.id)}
               onVerify={() => handleVerify(order)}
-              onReject={() => handleReject(order)}
-              onEvidence={() => handleEvidence(order)}
+              onReject={() => openReject(order.id)}
+              onEvidence={() => openEvidence(order.id)}
             />
           ))}
         </div>
+      )}
+      
+      {/* Reject payment modal */}
+      {rejectModal && (
+        <>
+          <Modal
+            open={rejectModal}
+            onClose={closeReject}
+            title="Reject Payment"
+            subtitle="Enter an optional reason for rejecting this EFT payment."
+            width="max-w-md"
+          >
+            <Field label="Reason (optional)">
+              <TextInput
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="e.g. Proof of payment not received"
+                className="flex-1"
+              />
+            </Field>
+          </Modal>
+          <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-border px-5 py-4 sm:px-6">
+            <Button variant="outline" onClick={closeReject} size="sm">
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleRejectSubmit}
+              disabled={busyIds.has(rejectOrderId ?? "")}
+              size="sm"
+            >
+              Reject Payment
+            </Button>
+          </footer>
+        </>
+      )}
+
+      {/* Delivery evidence modal */}
+      {evidenceModal && (
+        <>
+          <Modal
+            open={evidenceModal}
+            onClose={closeEvidence}
+            title="Add Delivery Evidence"
+            subtitle="Paste a photo or screenshot link showing delivery was completed."
+            width="max-w-md"
+          >
+            <Field label="Delivery evidence URL">
+              <TextInput
+                value={evidenceUrl}
+                onChange={(e) => setEvidenceUrl(e.target.value)}
+                placeholder="https://..."
+                className="flex-1"
+              />
+            </Field>
+          </Modal>
+          <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-border px-5 py-4 sm:px-6">
+            <Button variant="outline" onClick={closeEvidence} size="sm">
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleEvidenceSubmit}
+              disabled={busyIds.has(evidenceOrderId ?? "") || !evidenceUrl.trim()}
+              size="sm"
+            >
+              Save Evidence
+            </Button>
+          </footer>
+        </>
       )}
     </StoreShell>
   );

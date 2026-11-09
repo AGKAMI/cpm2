@@ -449,3 +449,40 @@ Completed (removed from list): Profile "Link your Telegram" button, `STORE_ADMIN
 
 **Gate:** tsc ✅, build ✅ (local). Deployed to production via Deploy Hook (job `vXP4lwn4vcv4r1ApQTH0`). DELETE now returns 401 (auth required) instead of 404 (route not found) — route is live, auth enforced by Telegram initData + owner gate.
 
+---
+
+### 2026-11-09 — Strict Input Validation for admin forms
+
+**What:** Added Zod-based client-side validation schemas for all VANTA GARAGE admin forms (product, category, promotion) with email regex, URL, hex color, slug, and required-parameter checks. Validation runs before any API call; errors shown in summary banners at the top of each form.
+
+**Where:** `src/lib/store/validation.ts` (new), `src/app/store/admin/page.tsx` (validation integrated into all three form submit handlers)
+
+**Changes:**
+- `productFormSchema` — validates car code, name, description, price, currency, stock, image URL, category ID
+- `categoryFormSchema` — validates name, slug (lowercase/hyphens), description, sort order
+- `promotionFormSchema` — validates title, discount percent (0-100), discount code (uppercase), CTA text/link, hex colors, image URL, sort order, active flag
+- `emailFieldSchema` — reusable email regex validation (`/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/`)
+- Error summary banners render field-level errors when validation fails
+
+**Gate:** tsc ✅, build ✅, lint 0 new errors. Not yet deployed.
+
+---
+
+### 2026-11-09 — Product carousel replaces vertical grid
+
+**What:** Replaced the vertical product grid (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`) in CategoriesClient with a horizontal swipeable product carousel (`flex flex-nowrap snap-x`) with left/right scroll arrow buttons. Cards snap into place, show 320-340px wide on desktop, full width on mobile.
+
+**Where:** `src/components/CategoriesClient.tsx` (product grid section replaced)
+
+**Gate:** tsc ✅, build ✅. Not yet deployed.
+
+---
+
+### 2026-11-09 — EFT Review modals replace window.prompt()
+
+**What:** Replaced `window.prompt()` calls in EFT Review with proper Modal components. Rejection reason and delivery evidence URL now use modals with TextInput fields, Cancel/Save buttons, and busy states. EFT Review remains a standalone page at `/store/admin/eft` (not embedded in Admin page footer).
+
+**Where:** `src/components/EftReviewClient.tsx` (replaced window.prompt with Modal-based flows)
+
+**Gate:** tsc ✅, build ✅. Not yet deployed.
+

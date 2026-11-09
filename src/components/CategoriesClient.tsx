@@ -284,37 +284,56 @@ export function CategoriesClient() {
               </select>
             </div>
 
-            <div id="res" className="vgrid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 px-4">
-              {sorted.length ? (
-                sorted.map((c, index) => (
-                  <Link key={c.id} href={`/store/products/${c.id}`} className="product-card group cursor-pointer stagger-item" style={{ animationDelay: `${index * 40}ms` }}>
-                    <div className="relative overflow-hidden rounded-[18px] border border-border">
-                      {cardImages[c.id] ? (
-                                                                    <>
-                                                                      <img src={cardImages[c.id]} alt={c.name} className="w-full h-[220px] object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
-                                                                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                                                                    </>
-                                                                  ) : (
-                                              <div className="w-full h-[220px] bg-surface-deep relative aspect-[4/3]">
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                                                <span className="absolute bottom-3 left-3 text-[10px] text-white/50 uppercase tracking-[0.2em]">No photo</span>
-                                              </div>
-                                            )}
-                      <div className="absolute top-2 left-2 flex flex-col gap-1">
-                        {c.exclusivity !== "standard" && (
-                                                  <span className={`badge-exclusive ${c.exclusivity === "one_of_one" ? "badge-one" : "badge-limited"}`}>
-                                                    {c.exclusivity === "one_of_one" ? "One of One" : "Limited"}
-                                                  </span>
-                                                )}
+            <div id="res" className="carousel px-4">
+              <button
+                onClick={() => {
+                  const el = document.getElementById("res");
+                  el?.scrollBy({ left: -340, behavior: "smooth" });
+                }}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-14 w-10 rounded-r-lg bg-[#0a0a0a]/80 border border-border flex items-center justify-center text-gold hover:bg-[#0a0a0a] transition-colors hidden md:flex"
+                aria-label="Scroll left"
+              >
+                <span className="text-[14px]">‹</span>
+              </button>
+              <div
+                className="flex flex-nowrap gap-4 snap-x snap-mandatory pb-4"
+                style={{ scrollPaddingLeft: "16px", scrollPaddingRight: "16px" }}
+              >
+                {sorted.length ? (
+                  sorted.map((c, index) => (
+                    <Link
+                      key={c.id}
+                      href={`/store/products/${c.id}`}
+                      className="product-card group cursor-pointer snap-start stagger-item min-w-[320px] max-w-[340px]"
+                      style={{ animationDelay: `${index * 40}ms` }}
+                    >
+                      <div className="relative overflow-hidden rounded-[18px] border border-border">
+                        {cardImages[c.id] ? (
+                                                      <>
+                                                        <img src={cardImages[c.id]} alt={c.name} className="w-full h-[220px] object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                                                      </>
+                                                    ) : (
+                                                      <div className="w-full h-[220px] bg-surface-deep relative aspect-[4/3]">
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                                                        <span className="absolute bottom-3 left-3 text-[10px] text-white/50 uppercase tracking-[0.2em]">No photo</span>
+                                                      </div>
+                                                    )}
+                        <div className="absolute top-2 left-2 flex flex-col gap-1">
+                          {c.exclusivity !== "standard" && (
+                                                        <span className={`badge-exclusive ${c.exclusivity === "one_of_one" ? "badge-one" : "badge-limited"}`}>
+                                                          {c.exclusivity === "one_of_one" ? "One of One" : "Limited"}
+                                                        </span>
+                                                    )}
                         {c.isNew && (
                           <span className="badge-exclusive badge-new">New</span>
-                        )}
+                                                    )}
                         {c.isSale && (
                           <span className="badge-exclusive badge-sale">Sale</span>
-                        )}
+                                                    )}
                         {c.isFeatured && (
                           <span className="badge-exclusive badge-featured">Featured</span>
-                        )}
+                                                    )}
                       </div>
                     </div>
                     <div className="mt-3 px-1">
@@ -323,18 +342,31 @@ export function CategoriesClient() {
                       <div className="flex items-baseline flex-wrap gap-2">
                         <span className="price-primary">{formatPrice(c.basePriceCents, c.currency)}</span>
                         <span className={`stock-indicator ${c.stockQuantity === 0 ? "bad" : c.stockQuantity <= 3 ? "warn" : "ok"}`}>
-                          {c.stockQuantity === 0 ? "Sold out \u00b7 Waitlist" : c.stockQuantity <= 3 ? `Only ${c.stockQuantity} left` : `In stock \u00b7 ${c.stockQuantity}`}
+                          {c.stockQuantity === 0 ? "Sold out · Waitlist" : c.stockQuantity <= 3 ? `Only ${c.stockQuantity} left` : `In stock · ${c.stockQuantity}`}
                         </span>
                       </div>
                     </div>
                   </Link>
                 ))
               ) : (
-                <div className="empty grid-col-2 text-center py-10 text-muted-foreground stagger-item">
-                  <span className="text-[28px] mb-2 block">Search</span>
+                <div className="empty text-center py-10 text-muted-foreground stagger-item">
+                  <span className="text-[28px] mb-2 block">🔍</span>
                   <p>No vehicles match your filters.</p>
                 </div>
               )}
+                {sorted.length > 0 && (
+                  <button
+                    onClick={() => {
+                      const el = document.getElementById("res");
+                      el?.scrollBy({ left: 340, behavior: "smooth" });
+                    }}
+                    className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-14 w-10 rounded-l-lg bg-[#0a0a0a]/80 border border-border flex items-center justify-center text-gold hover:bg-[#0a0a0a] transition-colors hidden md:flex"
+                    aria-label="Scroll right"
+                  >
+                    <span className="text-[14px]">›</span>
+                  </button>
+                )}
+              </div>
             </div>
           </section>
         </>

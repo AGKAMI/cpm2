@@ -21,6 +21,14 @@ import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Field";
 import { Modal } from "@/components/ui/Modal";
+import {
+  validateProductForm,
+  validateCategoryForm,
+  validatePromotionForm,
+  type ProductFormInput,
+  type CategoryFormInput,
+  type PromotionFormInput,
+} from "@/lib/store/validation";
 
 type ProductForm = {
   cpm2CarCode: string;
@@ -47,7 +55,7 @@ const EMPTY_FORM: ProductForm = {
   description: "",
   basePriceCents: "",
   currency: "ZAR",
-  stockQuantity: "0",
+  stockQuantity: "1",
   airSuspension: false,
   unlockedBodykits: false,
   hdLogo: false,
@@ -111,9 +119,13 @@ export default function AdminPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [inlineEditingId, setInlineEditingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [msg, setMsg] = useState<string | null>(null);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [msg, setMsg] = useState<string | null>(null);
+    // Form validation errors (field-level)
+    const [productErrors, setProductErrors] = useState<Record<string, string>>({});
+    const [categoryErrors, setCategoryErrors] = useState<Record<string, string>>({});
+    const [promotionErrors, setPromotionErrors] = useState<Record<string, string>>({});
   // Category management state
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [categoryForm, setCategoryForm] = useState<CategoryForm>(EMPTY_CATEGORY_FORM);
@@ -297,6 +309,14 @@ export default function AdminPage() {
       e.preventDefault();
       setSaving(true);
       setError(null);
+      setProductErrors({});
+      // Client-side validation (strict input validation)
+      const validated = validateProductForm(form);
+      if (!validated.ok) {
+        setProductErrors(validated.errors);
+        setSaving(false);
+        return;
+      }
       // Catalog guard (mirrors the server-side check): a typed/hand-edited code
       // that isn't a real CPM2 catalog car never reaches the API.
       if (form.cpm2CarCode && !carByCode(Number(form.cpm2CarCode), "cpm2")) {
@@ -304,15 +324,16 @@ export default function AdminPage() {
         setSaving(false);
         return;
       }
+      const v = validated.data;
       try {
         const body = {
-          cpm2CarCode: form.cpm2CarCode ? Number(form.cpm2CarCode) : undefined,
-          imageUrl: form.imageUrl || undefined,
-          name: form.name,
-          description: form.description,
-          basePriceCents: Math.round(Number(form.basePriceCents) * 100), // Rands → cents
-          currency: form.currency,
-          stockQuantity: Number(form.stockQuantity),
+          cpm2CarCode: v.cpm2CarCode ? Number(v.cpm2CarCode) : undefined,
+          imageUrl: v.imageUrl || undefined,
+          name: v.name,
+          description: v.description,
+          basePriceCents: Math.round(parseFloat(v.basePriceCents) * 100), // Rands → cents
+          currency: v.currency,
+          stockQuantity: parseInt(v.stockQuantity, 10),
           airSuspension: form.airSuspension,
           unlockedBodykits: form.unlockedBodykits,
           hdLogo: form.hdLogo,
@@ -320,7 +341,7 @@ export default function AdminPage() {
           isNew: form.isNew,
           isSale: form.isSale,
           isPublished: form.isPublished,
-          categoryId: form.categoryId ? Number(form.categoryId) : undefined,
+          categoryId: v.categoryId ? Number(v.categoryId) : undefined,
         };
         if (editingId) {
           await vantaApi.updateProduct(editingId, body);
@@ -341,12 +362,21 @@ export default function AdminPage() {
         e.preventDefault();
         setCategorySaving(true);
         setError(null);
+        setCategoryErrors({});
+        // Client-side validation
+        const validated = validateCategoryForm(categoryForm);
+        if (!validated.ok) {
+          setCategoryErrors(validated.errors);
+          setCategorySaving(false);
+          return;
+        }
+        const v = validated.data;
         try {
           await vantaApi.createCategory({
-            name: categoryForm.name,
-            slug: categoryForm.slug,
-            description: categoryForm.description,
-            sortOrder: Number(categoryForm.sortOrder) || 0,
+            name: v.name,
+            slug: v.slug,
+            description: v.description,
+            sortOrder: parseInt(v.sortOrder, 10),
           });
           setMsg("Category created.");
           resetCategoryForm();
@@ -389,20 +419,29 @@ export default function AdminPage() {
       e.preventDefault();
       setPromotionSaving(true);
       setError(null);
+      setPromotionErrors({});
+      // Client-side validation
+      const validated = validatePromotionForm(promotionForm);
+      if (!validated.ok) {
+        setPromotionErrors(validated.errors);
+        setPromotionSaving(false);
+        return;
+      }
+      const v = validated.data;
       try {
         const body = {
-          title: promotionForm.title,
-          subtitle: promotionForm.subtitle || undefined,
-          description: promotionForm.description || undefined,
-          discountPercent: Number(promotionForm.discountPercent) || 0,
-          discountCode: promotionForm.discountCode || undefined,
-          ctaText: promotionForm.ctaText || "Shop now",
-          ctaLink: promotionForm.ctaLink || "/store/categories",
-          backgroundColor: promotionForm.backgroundColor || "#1c1c1f",
-          accentColor: promotionForm.accentColor || "#d4af4f",
-          imageUrl: promotionForm.imageUrl || undefined,
-          isActive: promotionForm.isActive,
-          sortOrder: Number(promotionForm.sortOrder) || 0,
+          title: v.title,
+          subtitle: v.subtitle || undefined,
+          description: v.description || undefined,
+          discountPercent: parseInt(v.discountPercent, 10),
+          discountCode: v.discountCode || undefined,
+          ctaText: v.ctaText,
+          ctaLink: v.ctaLink,
+          backgroundColor: v.backgroundColor,
+          accentColor: v.accentColor,
+          imageUrl: v.imageUrl || undefined,
+          isActive: v.isActive,
+          sortOrder: parseInt(v.sortOrder, 10),
         };
         if (editingPromotionId) {
           await vantaApi.updatePromotion(editingPromotionId, body);
@@ -495,6 +534,16 @@ export default function AdminPage() {
                       </div>
           {showCategoryForm && (
             <form onSubmit={handleCategorySubmit} className="grid gap-3 sm:grid-cols-2 mb-4">
+              {Object.keys(categoryErrors).length > 0 && (
+                <div className="col-span-2 rounded-md border border-destructive bg-destructive/10 px-3 py-2 mb-3">
+                  <p className="text-xs text-destructive font-bold mb-1">Fix the following:</p>
+                  <ul className="text-[10px] text-destructive list-disc pl-4 space-y-1">
+                    {Object.entries(categoryErrors).map(([field, msg]) => (
+                      <li key={field}>{field}: {msg}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <Field label="Name">
                 <TextInput
                   value={categoryForm.name}
@@ -577,6 +626,16 @@ export default function AdminPage() {
 
               {showPromotionForm && (
                 <form onSubmit={handlePromotionSubmit} className="grid gap-3 sm:grid-cols-2 mb-4">
+                  {Object.keys(promotionErrors).length > 0 && (
+                    <div className="col-span-2 rounded-md border border-destructive bg-destructive/10 px-3 py-2 mb-3">
+                      <p className="text-xs text-destructive font-bold mb-1">Fix the following:</p>
+                      <ul className="text-[10px] text-destructive list-disc pl-4 space-y-1">
+                        {Object.entries(promotionErrors).map(([field, msg]) => (
+                          <li key={field}>{field}: {msg}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   <Field label="Title">
                     <TextInput
                       value={promotionForm.title}
@@ -754,6 +813,16 @@ export default function AdminPage() {
                         {editingId ? "Edit product" : "Add product"}
                       </h3>
                       <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {Object.keys(productErrors).length > 0 && (
+            <div className="col-span-2 rounded-md border border-destructive bg-destructive/10 px-3 py-2 mb-3">
+              <p className="text-xs text-destructive font-bold mb-1">Fix the following:</p>
+              <ul className="text-[10px] text-destructive list-disc pl-4 space-y-1">
+                {Object.entries(productErrors).map(([field, msg]) => (
+                  <li key={field}>{field}: {msg}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           <Field
             label="Car (CPM2 catalog)"
             hint={

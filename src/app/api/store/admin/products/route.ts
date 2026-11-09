@@ -25,7 +25,7 @@ const productSchema = z.object({
   description: z.string().optional(),
   basePriceCents: z.coerce.number().int().nonnegative(),
   currency: z.string().default("ZAR"),
-  stockQuantity: z.coerce.number().int().nonnegative().default(0),
+  stockQuantity: z.coerce.number().int().nonnegative().default(1),
   availabilityState: z
     .enum(["available", "limited", "sold_out", "unavailable"])
     .default("available"),

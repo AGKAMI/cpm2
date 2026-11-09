@@ -106,7 +106,7 @@ export function ProfileClient() {
       }
 
       const data = await res.json();
-      setCustomer({ id: data.customerId, inGameName: data.inGameName, playerId: data.customerId, email: "", currencyPref: "ZAR" });
+      setCustomer({ id: data.customerId, inGameName: data.inGameName, playerId: "", email: "", currencyPref: "ZAR" });
       setError(null);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Link failed — try again.";
@@ -134,7 +134,7 @@ export function ProfileClient() {
       }
 
       const data = await res.json();
-      setCustomer({ id: data.customerId, inGameName: data.inGameName, playerId: data.customerId, email: "", currencyPref: "ZAR" });
+      setCustomer({ id: data.customerId, inGameName: data.inGameName, playerId: "", email: "", currencyPref: "ZAR" });
       setTelegramId("");
       setError(null);
     } catch (err) {

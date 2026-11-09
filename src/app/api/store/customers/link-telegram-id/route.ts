@@ -56,11 +56,24 @@ export async function POST(request: Request) {
       if (existing.customer.inGameName.startsWith("tg_") && tgDisplayName) {
         await updateCustomer(existing.customer.id, { inGameName: tgDisplayName });
       }
-      return ok({
-        customerId: existing.customer.id,
-        inGameName: tgDisplayName ?? existing.customer.inGameName,
-        message: "Telegram already linked to this account.",
-      });
+
+      // Set cookie for owner/admin tab detection on web
+      const cookie = `vanta_telegram_id=${telegramUserId}; Path=/; Max-Age=2592000; SameSite=Lax`;
+
+      return new NextResponse(
+        JSON.stringify({
+          customerId: existing.customer.id,
+          inGameName: tgDisplayName ?? existing.customer.inGameName,
+          message: "Telegram already linked to this account.",
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            "Set-Cookie": cookie,
+          },
+        },
+      );
     }
 
     // Check if there's an existing customer via guest playerId
@@ -75,11 +88,24 @@ export async function POST(request: Request) {
 
     await linkPlatformIdentity(created.id, "telegram", telegramUserId, "");
 
-    return ok({
-      customerId: created.id,
-      inGameName: created.inGameName,
-      message: "Telegram linked successfully.",
-    });
+    // Set a cookie so the owner/admin tabs show on web (no Telegram WebApp initData).
+    // resolveAdminStatus checks this cookie against STORE_ADMIN_TELEGRAM_ID.
+    const cookie = `vanta_telegram_id=${telegramUserId}; Path=/; Max-Age=2592000; SameSite=Lax`;
+
+    return new NextResponse(
+      JSON.stringify({
+        customerId: created.id,
+        inGameName: created.inGameName,
+        message: "Telegram linked successfully.",
+      }),
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Set-Cookie": cookie,
+        },
+      },
+    );
   } catch (err) {
     return fail(err);
   }

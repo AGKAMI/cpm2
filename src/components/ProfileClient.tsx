@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
@@ -501,34 +500,24 @@ export function ProfileClient() {
               />
             </button>
           </div>
-          <div className="flex items-center justify-between p-3 rounded-md border border-border">
-            <div>
-              <span className="text-sm font-medium text-foreground">Order notifications</span>
-              <p className="text-[10px] text-ink-soft">Get delivery updates on Telegram</p>
+          {customer && (
+            <div className="flex items-center justify-between p-3 rounded-md border border-border">
+              <div>
+                <span className="text-sm font-medium text-foreground">Order notifications</span>
+                <p className="text-[10px] text-ink-soft">Get delivery updates on Telegram</p>
+              </div>
+              <button
+                className={`w-10 h-5 rounded-full relative transition-colors ${orderNotifications ? "bg-primary" : "bg-border"}`}
+                onClick={() => toggleOrderNotifications()}
+                aria-label={orderNotifications ? "Disable order notifications" : "Enable order notifications"}
+                disabled={loading}
+              >
+                <span
+                  className={`absolute top-1 w-3 h-3 bg-background rounded-full transition-transform ${orderNotifications ? "right-1" : "left-1"}`}
+                />
+              </button>
             </div>
-            <button
-              className={`w-10 h-5 rounded-full relative transition-colors ${orderNotifications ? "bg-primary" : "bg-border"}`}
-              onClick={() => toggleOrderNotifications()}
-              aria-label={orderNotifications ? "Disable order notifications" : "Enable order notifications"}
-              disabled={loading}
-            >
-              <span
-                className={`absolute top-1 w-3 h-3 bg-background rounded-full transition-transform ${orderNotifications ? "right-1" : "left-1"}`}
-              />
-            </button>
-          </div>
-          <div className="flex items-center justify-between p-3 rounded-md border border-border">
-            <div>
-              <span className="text-sm font-medium text-foreground">Telegram link</span>
-              <p className="text-[10px] text-ink-soft">Linked account for Mini App access</p>
-            </div>
-            <Link
-              href="/store/profile"
-              className="text-[10px] font-bold text-primary underline-offset-2 hover:underline"
-            >
-              Manage
-            </Link>
-          </div>
+          )}
         </div>
       </div>
     </StoreShell>

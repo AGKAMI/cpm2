@@ -27,7 +27,9 @@ export async function POST(request: Request) {
     }
 
     // Verify the Telegram ID exists via Telegram's Bot API (getUser).
-    // This gates manual ID entry on Telegram confirming the user is real.
+    // Advisory only — never blocks linking on Telegram API failure
+    // (bad token, rate limit, network, etc.). A successful check just
+    // confirms the ID is real; any failure falls through and links anyway.
     const token = telegramBotToken();
     if (token) {
       try {
@@ -35,15 +37,10 @@ export async function POST(request: Request) {
           `https://api.telegram.org/bot${token}/getUser?user_id=${encodeURIComponent(telegramUserId)}`,
         );
         const tgData = await tgRes.json();
-        if (!tgData.ok || !tgData.result) {
-          return NextResponse.json(
-            { error: { code: "TELEGRAM_ID_NOT_FOUND", message: "Telegram ID not found — please check the ID and try again." } },
-            { status: 400 },
-          );
-        }
+        // tgData.ok && tgData.result → ID confirmed real by Telegram.
+        // Anything else → don't block, just proceed to link.
       } catch {
-        // If Telegram's API is unreachable, fall through and link anyway
-        // rather than blocking the user on a transient network error.
+        // Network error — proceed to link anyway.
       }
     }
 

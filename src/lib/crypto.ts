@@ -39,25 +39,36 @@ export function getKey(): Buffer {
   }
 
   const file = keyFilePath();
-  if (fs.existsSync(/* turbopackIgnore: true */ file)) {
-    const key = Buffer.from(
-      fs.readFileSync(/* turbopackIgnore: true */ file, "utf8").trim(),
-      "base64",
-    );
-    if (key.length !== 32) {
-      throw new SecretError(`Encryption key file is corrupted: ${file}`);
+  try {
+    if (fs.existsSync(/* turbopackIgnore: true */ file)) {
+      const key = Buffer.from(
+        fs.readFileSync(/* turbopackIgnore: true */ file, "utf8").trim(),
+        "base64",
+      );
+      if (key.length !== 32) {
+        throw new SecretError(`Encryption key file is corrupted: ${file}`);
+      }
+      cachedKey = key;
+      return key;
     }
-    cachedKey = key;
-    return key;
+  } catch {
+    // Read-only filesystem (Vercel serverless) or other IO error —
+    // fall through to an in-memory key. Sessions won't persist across
+    // cold starts but this avoids a 500 error.
   }
 
   const key = crypto.randomBytes(32);
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(/* turbopackIgnore: true */ file, key.toString("base64"), {
-    encoding: "utf8",
-    mode: 0o600,
-  });
   cachedKey = key;
+  try {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(/* turbopackIgnore: true */ file, key.toString("base64"), {
+      encoding: "utf8",
+      mode: 0o600,
+    });
+  } catch {
+    // Read-only filesystem — key stays in memory only; sessions won't
+    // persist across cold starts but this avoids a 500 error.
+  }
   return key;
 }
 

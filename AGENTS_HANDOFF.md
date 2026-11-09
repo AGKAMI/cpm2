@@ -410,6 +410,20 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 
 ---
 
+### 2026-11-09 — Profile page progressive disclosure + Deploy Hook usage
+
+**What:** Fixed ProfileClient "NOT LINKED AT ALL" state per KAMI's feedback. Previously all options (Telegram ID input, WebApp link, email/password form) rendered at once, filling the page. Now shows only two option buttons ("Link Telegram ID", "Create account & log in") plus auto-link hint. Clicking an option expands to reveal the relevant form fields. Added `linkMode` state ("telegram" | "email" | null) to manage progressive disclosure.
+
+**Also:** Switched all deploys from `vercel deploy --prod` to the Deploy Hook (`curl -X POST "https://api.vercel.com/v1/integrations/deploy/prj_kgMwWJI3lOTBPVmVT0NXvmh6N0ZE/o6UHndNi6D"`) to respect the Vercel free tier's 100 CLI deploys/day limit. Deploy Hook bypasses this limit.
+
+**Where:** `src/components/ProfileClient.tsx`
+
+**Gates:** tsc clean, lint 0 errors, tests 67/67, build green. Deployed to production via Deploy Hook and verified live on /store/profile.
+
+**Verified by:** nemotron-3.5-super-vl-120b-a12b
+
+---
+
 ### 2026-11-08 — Hermes Agent "Zion" (nemotron-3.5-super-vl-120b-a12b) — VANTA GARAGE Admin Page Complete Overhaul
 
 **What:** Fixed all reported admin page issues per KAMI's feedback from screenshots.

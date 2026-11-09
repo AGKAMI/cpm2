@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  generateBuildId: async () => {
+    // Force cache bust on each deploy
+    return `build-${Date.now()}`;
+  },
 };
 
 export default nextConfig;

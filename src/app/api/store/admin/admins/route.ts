@@ -8,6 +8,7 @@
 import { fail, ok, readJson } from "@/lib/route";
 import { requireStoreAdmin } from "@/lib/store/auth";
 import { listAdmins, addAdmin, removeAdmin } from "@/lib/store/admin-service";
+import { fetchTelegramUser } from "@/lib/telegram";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +39,19 @@ export async function POST(request: Request) {
       return fail({ status: 400, body: { error: { code: "missing_telegram_user_id", message: "telegramUserId is required" } } });
     }
 
-    const admin = await addAdmin(telegramUserId, telegramUsername ?? "", status.telegramUserId ?? "");
+    // Auto-fetch username from Telegram if not provided
+    let finalUsername = telegramUsername ?? "";
+    if (!finalUsername) {
+      const userInfo = await fetchTelegramUser(Number(telegramUserId));
+      if (userInfo?.username) {
+        finalUsername = userInfo.username;
+      } else if (userInfo?.first_name) {
+        // Fallback to first_name if no username
+        finalUsername = userInfo.first_name;
+      }
+    }
+
+    const admin = await addAdmin(telegramUserId, finalUsername, status.telegramUserId ?? "");
     return ok({ admin }, 201);
   } catch (err) {
     return fail(err);

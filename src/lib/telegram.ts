@@ -165,3 +165,34 @@ export async function assertTelegramAuth(request: Request): Promise<number | nul
   }
   return userId;
 }
+
+/**
+ * Fetches Telegram user info by user ID using the Bot API's getChat method.
+ * Returns { username, first_name, last_name } or null if user not found/bot can't access.
+ * Requires TELEGRAM_BOT_TOKEN env var.
+ */
+export async function fetchTelegramUser(userId: number): Promise<{
+  username: string | null;
+  first_name: string | null;
+  last_name: string | null;
+} | null> {
+  const token = telegramBotToken();
+  if (!token) return null;
+
+  try {
+    const resp = await fetch(`https://api.telegram.org/bot${token}/getChat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: userId }),
+    });
+    const data = await resp.json();
+    if (!data.ok) return null;
+    return {
+      username: data.result.username ?? null,
+      first_name: data.result.first_name ?? null,
+      last_name: data.result.last_name ?? null,
+    };
+  } catch {
+    return null;
+  }
+}

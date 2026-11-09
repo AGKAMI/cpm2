@@ -46,6 +46,25 @@ export async function createCustomer(input: {
   return rowToCustomer({ id, in_game_name: input.inGameName.trim(), player_id: input.playerId.trim(), currency_pref: input.currencyPref ?? "ZAR", created_at: now, updated_at: now });
 }
 
+export async function updateCustomer(id: number, updates: { inGameName?: string; playerId?: string; currencyPref?: string }): Promise<Customer | null> {
+  const db = await getStoreDb();
+  const fields: string[] = [];
+  const args: unknown[] = [];
+  if (updates.inGameName !== undefined) { fields.push("in_game_name = ?"); args.push(updates.inGameName.trim()); }
+  if (updates.playerId !== undefined) { fields.push("player_id = ?"); args.push(updates.playerId.trim()); }
+  if (updates.currencyPref !== undefined) { fields.push("currency_pref = ?"); args.push(updates.currencyPref); }
+  if (fields.length === 0) return getCustomer(id);
+  args.push(id);
+  const now = new Date().toISOString();
+  fields.push("updated_at = ?");
+  args.push(now);
+  const result = await db.execute({
+    sql: `UPDATE vanta_customers SET ${fields.join(", ")} WHERE id = ?`,
+    args,
+  });
+  return getCustomer(id);
+}
+
 export async function getCustomer(id: number): Promise<Customer | null> {
   const db = await getStoreDb();
   const result = await db.execute({

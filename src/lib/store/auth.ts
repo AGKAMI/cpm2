@@ -5,6 +5,7 @@
  * yet (caller shows onboarding).
  */
 
+import { ApiError } from "../api.ts";
 import { assertTelegramAuth } from "../telegram";
 import { getCustomerByPlatformIdentity } from "./customers";
 import type { Platform } from "../store-types";
@@ -19,7 +20,7 @@ export async function getStoreCustomer(request: Request) {
 export async function requireStoreCustomer(request: Request) {
   const customer = await getStoreCustomer(request);
   if (!customer) {
-    throw new Error("NO_CUSTOMER");
+    throw new ApiError(401, "NO_CUSTOMER", "No customer linked. Open the store from Telegram to link your account.");
   }
   return customer;
 }
@@ -30,7 +31,7 @@ import { resolveAdminStatus } from "./admin-service";
 export async function requireStoreAdmin(request: Request) {
   const status = await resolveAdminStatus(request);
   if (!status.isAdmin) {
-    throw new Error("NOT_ADMIN");
+    throw new ApiError(403, "NOT_ADMIN", "You are not authorized to access this resource.");
   }
   return { telegramUserId: status.telegramUserId, isAdmin: true, isOwner: status.isOwner };
 }

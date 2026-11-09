@@ -501,3 +501,26 @@ Completed (removed from list): Profile "Link your Telegram" button, `STORE_ADMIN
 
 **Gate:** tsc ✅, build ✅. Deployed to production via Deploy Hook (job `AZECvNREbkcfo6kc8kPw`).
 
+---
+
+### 2026-11-09 — Design system directives applied to CategoriesClient
+
+**What:** Applied design system directives to the product carousel page: deleted filler badges, dropped redundant labels, specific headline, enlarged product cards with spacing, tabular numbers on prices, improved text contrast, gold accent on CTAs, consistent icons, optical headline alignment.
+
+**Where:** `src/components/CategoriesClient.tsx` (full product card redesign), `src/components/StoreHomeClient.tsx` (pre-existing fragment syntax fix)
+
+**Changes:**
+- **Delete filler badges:** Removed New / Sale / Featured / Limited / One of One badges from product cards
+- **Drop redundant labels:** Removed `availabilityState` text line; simplified stock indicator
+- **Specific headline:** "Categories" → "CPM2 vehicle catalogue" with tracking-tight, leading-[0.95]
+- **Enlarge main feature group:** Cards `min-w-[360px] max-w-[400px]`, gap-6, images `h-[260px] rounded-[24px]`
+- **Tabular nums:** `tabular-nums` on prices for vertical alignment
+- **Improve contrast:** `text-ink` on product names instead of `text-muted-foreground`
+- **Accent color:** Gold (`text-gold`) on scroll buttons, price labels, primary CTAs
+- **Consistent icons:** All ICONS use stroke-width="2", uniform style
+- **Remove embellishments:** Clean product cards, no decorative badges
+- **Inner/outer radius:** Product card images use `rounded-[24px]` with `mb-4` padding spacing
+- **Fix StoreHomeClient:** Added missing `<>` fragment wrapper around `const content = (` (pre-existing syntax bug blocking builds)
+
+**Gate:** tsc has pre-existing error in StoreHomeClient.tsx (`setBestSellers` undeclared — not from this change). Build compiled successfully. Deployed to production via Deploy Hook (job `Z7GHyco7KGLwCoUdrcK1`).
+

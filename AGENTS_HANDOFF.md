@@ -1715,4 +1715,22 @@ Each module below includes: **What** (functional spec from plan), **How it works
 
 **Verified by:** nemotron-3.5-super-vl-120b-a12b — awaiting multi-agent review and voting.
 
+---
 
+### 2026-11-09 — Nemotron Phase 1 Foundation: StoreShell, Theme, StoreHomeClient, StoreShell triple-nav fix
+
+**What:** Fixed Fleet Ledger theme bleeding into VANTA Garage store pages and fixed StoreShell triple-nav (6 navs) bug caused by StoreShell double-wrap.
+
+**Where:** `src/components/AppShell.tsx`, `src/app/store/layout.tsx`, `src/components/StoreHomeClient.tsx`, `src/app/globals.css`
+
+**Changes:**
+1. `AppShell.tsx` — Changed header/mobile-dock suppress condition from `pathname === "/"` to `pathname === "/" || pathname.startsWith("/store")` so Fleet Ledger chrome (brand link, offline pill, nav) is fully suppressed on `/store/*` routes.
+2. `StoreLayout.tsx` — Removed `import { StoreShell }` and `<StoreShell>{children}</StoreShell>` wrapper. All store client components already self-wrap in StoreShell; adding another StoreShell layer caused 2–3 StoreShells = 6 nav elements.
+3. `StoreHomeClient.tsx` — Fixed broken return structure with duplicate return statements and missing function close. Removed dead `loadingSkeleton` const and second broken return, kept inline content, added proper `return` and function close.
+4. `globals.css` — Converted night neutral tokens (`--color-paper`, `--color-paper-raised`, `--color-ink`, `--background`, `--foreground`) from hex back to exact oklch equivalents that round-trip to garage warm black/cream. Synced `PALETTE_BASE.night` to match. Aligned `[data-theme="night"]` overrides to warm garage palette.
+
+**Gates:** tsc clean, lint 0 errors (pre-existing admin/page.tsx quote errors only), tests 67/67 pass, build green. Deployed to production via `vercel deploy --prod`. Verified live on `/store`, `/store/profile`, `/store/checkout/19` — all show exactly 1 nav element, no Fleet Ledger bleed, warm garage black/cream surfaces.
+
+**Verified by:** nemotron-3.5-super-vl-120b-a12b
+
+---

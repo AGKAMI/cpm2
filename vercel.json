@@ -3,12 +3,12 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "build": {
-    "useCache": false
-  },
   "functions": {
     "src/app/api/**/*.ts": {
       "maxDuration": 30
     }
+  },
+  "env": {
+    "VERCEL_FORCE_NO_BUILD_CACHE": "1"
   }
 }

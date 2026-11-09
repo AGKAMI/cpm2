@@ -7,7 +7,7 @@
 
 import { fail, ok, readJson } from "@/lib/route";
 import { requireStoreAdmin } from "@/lib/store/auth";
-import { listAdmins, addAdmin, removeAdmin } from "@/lib/store/admin-service";
+import { listAdmins, addAdmin } from "@/lib/store/admin-service";
 import { fetchTelegramUser } from "@/lib/telegram";
 
 export const dynamic = "force-dynamic";
@@ -54,33 +54,6 @@ export async function POST(request: Request) {
 
     const admin = await addAdmin(telegramUserId, telegramUsername, nickname.trim(), status.telegramUserId ?? "");
     return ok({ admin }, 201);
-  } catch (err) {
-    return fail(err);
-  }
-}
-
-export async function DELETE(request: Request) {
-  try {
-    const status = await requireStoreAdmin(request);
-    if (!status.isOwner) {
-      return fail({ status: 403, body: { error: { code: "OWNER_ONLY", message: "Only the owner can remove admins." } } });
-    }
-
-    const url = new URL(request.url);
-    const pathSegments = url.pathname.split("/").filter(Boolean);
-    // path: /api/store/admin/admins/<telegramUserId>
-    const telegramUserId = pathSegments[pathSegments.length - 1];
-    if (!telegramUserId || telegramUserId === "admins") {
-      return fail({ status: 400, body: { error: { code: "missing_id", message: "admin id is required" } } });
-    }
-
-    // Prevent removing yourself (owner safety)
-    if (telegramUserId === status.telegramUserId) {
-      return fail({ status: 400, body: { error: { code: "CANNOT_REMOVE_OWNER", message: "You cannot remove yourself." } } });
-    }
-
-    const removed = await removeAdmin(telegramUserId);
-    return ok({ removed }, 200);
   } catch (err) {
     return fail(err);
   }

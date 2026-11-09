@@ -458,6 +458,24 @@ Completed (removed from list): Profile "Link your Telegram" button, `STORE_ADMIN
 
 ---
 
+### 2026-11-09 — Telegram ID link bridges to owner/admin detection + Player ID fix
+
+**What:** Fixed three issues per KAMI's feedback:
+
+1. **Telegram ID link now shows owner/admin tabs** — `link-telegram-id/route.ts` sets a `vanta_telegram_id` cookie after successful link. `resolveAdminStatus` (in `admin-service.ts`) now checks this cookie against `STORE_ADMIN_TELEGRAM_ID` env var when there's no Telegram WebApp initData. So linking your Telegram ID (7036681178) on web makes `is-admin` return `isOwner: true`, showing ADMIN/OWNER tabs — matching the Telegram mini app workflow.
+
+2. **Player ID no longer shows database row ID** — `ProfileClient.tsx` was setting `playerId: data.customerId` (the auto-incremented DB ID, e.g., 2). Now sets `playerId: ""` until user enters their real CPM2 Player ID.
+
+3. **Existing `tg_XXX` customers updated** — `link-telegram-id/route.ts` now calls `updateCustomer()` to replace placeholder `tg_${telegramUserId}` names with real Telegram usernames from the Bot API `getUser` response.
+
+**Where:** `src/app/api/store/customers/link-telegram-id/route.ts`, `src/lib/store/admin-service.ts`, `src/lib/store/customers.ts`, `src/components/ProfileClient.tsx`
+
+**Gates:** tsc clean, lint 0 errors (pre-existing admin/page.tsx only), tests 67/67, build green. Deployed to production via Deploy Hook.
+
+**Verified by:** nemotron-3.5-super-vl-120b-a12b
+
+---
+
 ### 2026-11-09 — Profile page settings cleanup + crypto key fix
 
 **What:** Fixed four Profile page issues per KAMI's feedback:
@@ -723,4 +741,980 @@ Also fixed `src/app/api/store/customers/link-telegram-id/route.ts` — Telegram 
 **Gate:** tsc error TS2304 resolved. Build compiles via Turbopack. Deployed via Deploy Hook (job `YvxLwOvTrNCKhggckOBl`).
 
 **Notes:** This work was found as uncommitted changes in the working tree. It should have been committed and deployed by the originating agent before handing off. Going forward, all agents must commit and deploy their own work — do not leave uncommitted changes in the working tree.
+
+---
+
+## 2026-11-09 — Zion's VANTA GARAGE Completion Plan (Submitted for Multi-Agent Vote)
+
+**Purpose:** Comprehensive plan for everything missing from `Vanta_Garage_Plan.txt`. This is Zion's proposal for the agent vote on best implementations. Each area includes: how it works, build plan (files/DB/APIs), and verification gate.
+
+**Current state:** Functional MVP storefront (Telegram Mini App + admin + PayFast + EFT). Covers roughly plan sections 1–9, 16 partial, 23. Missing: WhatsApp storefront, search, wishlist, filters, appointments/delivery, support/disputes, notifications, analytics, backups, bulk ops, legal docs, config layer, cross-platform linking.
+
+---
+
+### 1. WhatsApp Storefront (KAMI-Bot `.vanta` command)
+
+**How it works:** Customer sends `.vanta` in WhatsApp → bot shows category menu → customer picks category → bot lists products with prices/stock → customer sends `ORDER <id>` → bot asks for Player ID + in-game name → customer confirms YES/NO → 60-min reservation created → order pending payment (EFT proof or PayFast link).
+
+**Build plan:**
+- Deploy `src/commands/general/vanta.js` to KAMI-Bot on bot-hosting.net (git push + deploy API + hard stop/start)
+- `vanta.js` calls `GET /api/store/products`, `GET /api/store/categories`, `POST /api/store/checkout` via HTTPS
+- Reuse existing checkout/reservation logic — no new backend needed
+- Order flow maps to same `vanta_orders` table as Mini App
+
+**Files:** `KAMI-Bot-main/commands/general/vanta.js` (deploy), `src/lib/store/checkout.ts` (reuse), `src/lib/store/customers.ts` (reuse)
+
+**Gate:** `.vanta` command responds in WhatsApp group chat; order appears in `/api/store/orders`; stock locks for 60 min.
+
+---
+
+### 2. Search (semantic, typos, partial matches)
+
+**How it works:** Search bar on store homepage/categories. Customer types partial vehicle name → backend returns fuzzy-matched products ranked by relevance → supports typos (Levenshtein), category filter, price filter.
+
+**Build plan:**
+- New API: `GET /api/store/search?q=<query>&category=<slug>&minPrice=<n>&maxPrice=<n>`
+- DB: Full-text search on `vanta_products.name` + `description` using Turso full-text index or SQLite FTS5
+- Frontend: Search input on `StoreHomeClient.tsx` + `CategoriesClient.tsx` with debounce (300ms)
+- Ranking: exact match > starts-with > contains > fuzzy
+
+**Files:** `src/app/api/store/search/route.ts` (new), `src/lib/store/search.ts` (new service), `StoreHomeClient.tsx`, `CategoriesClient.tsx`, `store-db.ts` (FTS index migration)
+
+**Gate:** `search?q=golf` returns Volkswagen Golf MK6 GTI; `search?q=gol` returns same (partial); `search?q=golff` returns same (typo tolerance).
+
+---
+
+### 3. Wishlist with Alerts
+
+**How it works:** Customer taps heart icon on product → added to wishlist → customer can view wishlist page → if price drops or stock returns, customer gets Telegram/WhatsApp notification (opt-in).
+
+**Build plan:**
+- DB: `vanta_wishlists` table (customerId, productId, createdAt)
+- API: `GET/POST/DELETE /api/store/wishlist`, `GET /api/store/wishlist/<customerId>`
+- Frontend: Heart toggle button on product cards + product page; wishlist page at `/store/wishlist`
+- Alerts: Price-change check runs daily cron comparing current price vs. wishlisted price at add time
+
+**Files:** `store-db.ts` (wishlist migration), `src/lib/store/wishlists.ts` (new service), `src/app/api/store/wishlist/route.ts` (new), `src/app/api/store/wishlist/[id]/route.ts` (new), product card components
+
+**Gate:** Heart toggle persists across refresh; wishlist page shows saved products; price drop triggers Telegram notification.
+
+---
+
+### 4. Advanced Filters
+
+**How it works:** Filter bar on categories page: price range slider, category pills, exclusivity chips (standard/limited/one-of-one), stock (in stock/out of stock), promotions (on sale only). Results update client-side with server fetch.
+
+**Build plan:**
+- API: `GET /api/store/products?category=<slug>&exclusivity=<type>&stock=<in-stock|out-of-stock>&onSale=<true|false>&minPrice=<n>&maxPrice=<n>` (extend existing products route)
+- Frontend: Filter component on `CategoriesClient.tsx` with collapsible mobile sheet
+- URL query params persist filters (shareable links)
+
+**Files:** `src/app/api/store/products/route.ts` (extend query handling), `CategoriesClient.tsx` (filter UI), `src/lib/store/products.ts` (filter logic)
+
+**Gate:** Filter by exclusivity=limited_edition shows only limited editions; filter by onSale=true shows only sale items; price range slider narrows results.
+
+---
+
+### 5. Appointment & Delivery System
+
+**How it works:** After payment confirmed, customer schedules delivery appointment → picks date/time slot → admin confirms → delivery happens in-game → both sides verify → customer confirms receipt → order marked completed. Missed appointments configurable limit.
+
+**Build plan:**
+- DB: `vanta_appointments` (orderId, scheduledAt, status, adminId, deliveryEvidenceUrl, customerConfirmedAt), `vanta_deliveries` (appointmentId, evidence, verifiedBy, verifiedAt)
+- API: `POST /api/store/appointments`, `GET /api/store/appointments/<orderId>`, `PATCH /api/store/admin/appointments/<id>/confirm`, `POST /api/store/deliveries/<id>/evidence`
+- Frontend: Appointment picker on order confirmation page; admin delivery management at `/store/admin/deliveries`; customer delivery tracking at `/store/orders/<id>`
+- Missed appointment limit: configurable system setting (default 2), owner sets threshold
+
+**Files:** `store-db.ts` (appointments/deliveries migrations), `src/lib/store/appointments.ts` (new service), `src/lib/store/deliveries.ts` (new service), `src/app/api/store/appointments/route.ts` (new), `src/app/api/store/admin/appointments/[id]/confirm/route.ts` (new), `src/app/api/store/deliveries/[id]/evidence/route.ts` (new)
+
+**Gate:** Customer can book appointment after payment; admin sees pending appointments; delivery evidence uploadable; customer confirmation marks order completed.
+
+---
+
+### 6. Support Tickets & Disputes
+
+**How it works:** Customer opens ticket (category: payment/delivery/order/account/vehicle) → attaches evidence → admin assigns staff → staff responds → ticket resolved. Disputes: payment/delivery dispute → evidence collection → internal investigation → resolution → escalation if needed.
+
+**Build plan:**
+- DB: `vanta_support_tickets` (ticketNumber, customerId, category, orderId, description, status, assignedStaffId, createdAt, resolvedAt), `vanta_ticket_messages`, `vanta_disputes` (ticketId, evidence, investigationNotes, resolution, escalatedAt)
+- API: `POST /api/store/support/tickets`, `GET /api/store/support/tickets`, `PATCH /api/store/admin/support/tickets/<id>`, `POST /api/store/support/tickets/<id>/messages`
+- Frontend: Support page at `/store/support` (customer), `/store/admin/support` (admin with assignment + metrics)
+- Business hours response expectations published
+
+**Files:** `store-db.ts` (tickets/migrations), `src/lib/store/support.ts` (new service), `src/lib/store/disputes.ts` (new service), `src/app/api/store/support/route.ts` (new), `src/app/api/store/admin/support/route.ts` (new)
+
+**Gate:** Customer can open ticket; admin can assign and respond; dispute resolution recorded with audit trail.
+
+---
+
+### 7. Notifications System
+
+**How it works:** Order stage updates sent via Telegram/WhatsApp (opt-in for promotional). Templates: order created, payment pending, payment received, payment rejected, processing started, appointment confirmed, delivery updated, delivery completed, refund status, dispute status.
+
+**Build plan:**
+- DB: `vanta_notifications` (customerId, type, channel, template, payload, status, sentAt, deliveredAt), `vanta_notification_preferences` (customerId, promotionalEnabled, orderUpdatesEnabled)
+- API: `POST /api/store/notifications/send`, `GET /api/store/notifications/preferences`, `PATCH /api/store/notifications/preferences`
+- Service: `sendNotification(customerId, type, payload)` — routes to Telegram bot API or WhatsApp KAMI-Bot based on preference
+- Cron: Daily delivery retry for failed notifications
+
+**Files:** `store-db.ts` (notifications/migrations), `src/lib/store/notifications.ts` (new service), `src/lib/store/telegram.ts` (extend with sendMessage), `src/app/api/store/notifications/route.ts` (new)
+
+**Gate:** Order status change triggers notification; customer can opt out of promotional; failed notifications retry daily.
+
+---
+
+### 8. Analytics & Financial Reporting
+
+**How it works:** Admin dashboard shows revenue trends, best sellers, conversion rates, refunds, payment fees, net revenue. CSV/PDF export with 7/30/90 day presets. Separate ZAR and other currency reporting.
+
+**Build plan:**
+- DB: `vanta_analytics_events` (eventType, productId, customerId, timestamp, metadata) — or compute from existing orders/payments/ledger tables
+- API: `GET /api/store/admin/analytics/revenue`, `GET /api/store/admin/analytics/best-sellers`, `GET /api/store/admin/analytics/conversion`, `GET /api/store/admin/analytics/export?format=csv&range=30d`
+- Frontend: Analytics page at `/store/admin/analytics` with charts + export buttons
+- Financial ledger: already exists (`financial_ledger` table) — reuse for reporting
+
+**Files:** `src/lib/store/analytics.ts` (new service), `src/app/api/store/admin/analytics/route.ts` (new), `src/app/store/admin/analytics/page.tsx` (new)
+
+**Gate:** Revenue report matches sum of confirmed payments; best sellers ranked by units sold; CSV export downloads correctly.
+
+---
+
+### 9. Health Checks, Error Tracking, Backups, Recovery
+
+**How it works:** `/api/health` endpoint returns DB connectivity, API status, uptime. Error tracking captures unhandled exceptions. Automatic Turso backups (daily) + manual backup trigger. Recovery procedures documented.
+
+**Build plan:**
+- API: `GET /api/health` (DB ping, cache status, uptime)
+- DB: Scheduled Turso backup (via Turso CLI or API), stored in secure location
+- Monitoring: Cron checks health endpoint, alerts on failure
+- Recovery: Documented restore procedure from backup
+
+**Files:** `src/app/api/health/route.ts` (new), `scripts/backup-turso.sh` (new), `AGENTS_HANDOFF.md` (recovery procedure section)
+
+**Gate:** `/api/health` returns 200 with DB status; backup file exists and is restorable; restore tested on staging.
+
+---
+
+### 10. Bulk Product Creation, Drafts, Scheduled Publication
+
+**How it works:** Admin uploads CSV for bulk product import. Draft products saved but unpublished. Scheduled publication date — product goes live automatically at set time. Preview before publication.
+
+**Build plan:**
+- DB: Add `status` (draft/published/scheduled), `publishAt` (timestamp) to `vanta_products`
+- API: `POST /api/store/admin/products/bulk` (CSV import), `PATCH /api/store/admin/products/<id>/publish` (extend existing)
+- Frontend: Bulk upload UI in admin product page; draft/scheduled badges; preview link for unpublished products
+- Cron: Daily check for scheduled products whose `publishAt` <= now → auto-publish
+
+**Files:** `store-db.ts` (status/publishAt columns), `src/app/api/store/admin/products/route.ts` (extend), `src/app/store/admin/page.tsx` (bulk upload UI), `src/lib/store/products.ts` (bulk import service)
+
+**Gate:** CSV import creates multiple products; draft products hidden from storefront; scheduled products auto-publish at set time.
+
+---
+
+### 11. Legal Documents
+
+**How it works:** Terms & Conditions, Privacy Policy, Refund Policy, Delivery Policy, Payment Policy, Cancellation Policy, Appointment Policy, Dispute Policy. Required acceptance at checkout. Owner notified of changes, reacceptance required where appropriate.
+
+**Build plan:**
+- Static pages: `/legal/terms`, `/legal/privacy`, `/legal/refund`, `/legal/delivery`, `/legal/payment`, `/legal/cancellation`, `/legal/appointment`, `/legal/dispute`
+- DB: `vanta_legal_acceptances` (customerId, documentId, version, acceptedAt, versionHash)
+- Checkout: Must-checkbox "I accept Terms & Conditions" before payment
+- Versioning: Each document has version; changes increment version and require reacceptance
+
+**Files:** `src/app/legal/[doc]/page.tsx` (new dynamic route), `store-db.ts` (legal_acceptances migration), `src/lib/store/legal.ts` (new service), checkout page (acceptance checkbox)
+
+**Gate:** Checkout blocked without terms acceptance; legal pages render correctly; version change triggers reacceptance prompt.
+
+---
+
+### 12. Central Configuration Layer
+
+**How it works:** All settings (currencies, exchange rates, payment gateways, EFT instructions, fees, promotion rules, stock policies, appointment limits, notification channels, staff roles, media provider, language, business hours, maintenance mode) stored centrally. Sensitive values in env vars, not frontend code.
+
+**Build plan:**
+- DB: `vanta_system_config` (key, value, type, isSensitive, updatedAt)
+- API: `GET /api/store/config/<key>` (public), `GET/PATCH /api/store/admin/config/<key>` (admin-gated)
+- Frontend: Admin config page at `/store/admin/config` with key-value editor
+- Frontend reads public config via `GET /api/store/config/<key>` at load
+
+**Files:** `store-db.ts` (system_config migration), `src/lib/store/config.ts` (new service), `src/app/api/store/config/[key]/route.ts` (new), `src/app/api/store/admin/config/[key]/route.ts` (new), `src/app/store/admin/config/page.tsx` (new)
+
+**Gate:** Config change updates runtime behavior without redeploy; sensitive keys not exposed to public API; admin config page lists all keys.
+
+---
+
+### 13. Cross-Platform Account Linking
+
+**How it works:** Customer using Telegram Mini App can link WhatsApp identity (and vice versa). Same customer ID across platforms. Order history unified. Never merge accounts solely on same display name.
+
+**Build plan:**
+- DB: `vanta_platform_identities` already exists — extend with link verification flow
+- API: `POST /api/store/customers/link-telegram` (exists), `POST /api/store/customers/link-whatsapp` (new), `GET /api/store/customers/<id>/platforms` (new)
+- Frontend: Profile page "Link WhatsApp" / "Link Telegram" buttons; verification code sent to other platform
+- Security: Link only via verified platform identity (bot sends code, customer enters it)
+
+**Files:** `src/app/api/store/customers/link-whatsapp/route.ts` (new), `src/lib/store/customers.ts` (extend link logic), `ProfileClient.tsx` (link UI)
+
+**Gate:** Customer can link Telegram + WhatsApp; order history visible from both platforms; unlink supported.
+
+---
+
+### 14. Sticky Mobile Purchase Button (Verification)
+
+**How it works:** On product page (mobile), purchase button sticks to bottom of screen, always visible while scrolling. Desktop: standard purchase button in content flow.
+
+**Build plan:**
+- CSS: `.sticky-purchase` — `position: sticky; bottom: 1rem;` on mobile, static on desktop
+- Frontend: `ProductPageClient.tsx` — wrap buy button in sticky container with `@media (max-width: 768px)` condition
+
+**Files:** `ProductPageClient.tsx`, `globals.css` (sticky purchase styles)
+
+**Gate:** Buy button visible at bottom of screen while scrolling on mobile viewport; normal positioning on desktop.
+
+---
+
+### Vote Criteria for All Agents
+
+Each agent's implementation will be scored on:
+1. **Correctness** — matches plan spec exactly
+2. **Gate verification** — tsc, build, tests all pass
+3. **Scope discipline** — no adjacent code touched
+4. **Deploy readiness** — committed and deployed, not left uncommitted
+5. **Documentation** — AGENTS_HANDOFF.md updated immediately
+
+**Zion's commitment:** All code in this plan will be committed, deployed, and recorded in AGENTS_HANDOFF.md before marking complete. No uncommitted changes left in working tree.
+
+---
+
+## 2026-11-09 — Kermes' VANTA GARAGE Completion Plan (Submitted for Multi-Agent Vote)
+
+**Purpose:** My independent proposal for everything missing from `Vanta_Garage_Plan.txt`. Submitted alongside Zion's plan for the agent vote. Each area covers: how it works, build plan (files/DB/APIs), and verification gate.
+
+**Philosophy:** Ship revenue-generating customer features first, admin tooling second. Every feature has a working gate — no feature is "done" until `tsc`/`build`/tests pass AND a live test (curl or browser) confirms it. No feature is left uncommitted. Admin dashboard is prioritized because it's the operational nerve center — without it, the owner can't run the store.
+
+**Current gaps (spec vs live app):**
+
+| Spec section | Required | Live status |
+|---|---|---|
+| §11.4 Customer Dashboard | Active orders, recent purchases | ❌ Missing — no customer dashboard exists |
+| §16.5 Admin Overview | Orders, payments, inventory, delivery ops, alerts, business indicators | ❌ `/store/admin` is product manager only |
+| §16.1 Admin Channels | Telegram + WhatsApp | ⚠️ Telegram only; `.vanta.js` not deployed |
+| §12 Search | Semantic, typos, partial matches | ❌ Missing |
+| §12.2 Wishlist | Save vehicles, price/stock alerts | ❌ Missing |
+| §10 Appointments & Delivery | Schedule, track, verify delivery | ⚠️ Partial (EFT evidence modal only) |
+| §15 Support & Disputes | Ticket system, dispute workflow | ❌ Missing |
+| §13 Notifications | Order stage updates | ❌ Missing |
+| §17 Analytics & Financial | Revenue, best sellers, CSV exports | ❌ Missing |
+| §20 Health/Backups | Health checks, backups, recovery | ❌ Missing |
+| §16.4 Bulk/Drafts/Scheduled | CSV import, drafts, scheduled publish | ❌ Missing |
+| §19.4 Legal Documents | 8 policies, checkout acceptance | ❌ Missing |
+| §22 Config Layer | Central settings | ❌ Missing |
+| §11.2 Cross-platform linking | Telegram ↔ WhatsApp | ⚠️ Telegram link only |
+| §4.6 Sticky mobile purchase | Sticky buy button mobile | ❌ Missing |
+
+---
+
+### 1. Admin & Owner Dashboards (PRIORITY 1 — operational nerve center)
+
+**How it works:** Two distinct dashboards.
+- **Admin dashboard** (`/store/admin/dashboard`): Operational overview — orders by state (pending/verified/rejected), payments today, low-stock alerts, critical alerts (failed payments, chargebacks), business indicators (revenue today, conversion), quick actions (review EFT, add product, view pending deliveries).
+- **Owner dashboard** (`/store/owner`): Already exists for admin management; extend with store-wide stats (total revenue, total orders, top products, admin count).
+
+**Build plan:**
+- DB: `vanta_orders`, `vanta_payments`, `vanta_products`, `vanta_inventory` already exist — aggregate via SQL, no new tables needed for v1.
+- API: `GET /api/store/admin/dashboard/stats` (aggregates), `GET /api/store/admin/dashboard/alerts` (critical alerts), `GET /api/store/owner/stats` (owner-level).
+- Frontend: New page `src/app/store/admin/dashboard/page.tsx` — stat cards + recent orders table + alert list. Extend `src/app/store/owner/page.tsx` with stats section.
+- Navigation: Add "Dashboard" tab to admin shell, visible only to admin/owner roles.
+
+**Files:** `src/app/store/admin/dashboard/page.tsx` (new), `src/app/store/admin/dashboard/stats/route.ts` (new), `src/app/store/admin/dashboard/alerts/route.ts` (new), `src/app/store/owner/page.tsx` (extend), `src/lib/store/dashboard.ts` (new service)
+
+**Gate:** `/api/store/admin/dashboard/stats` returns 200 with correct aggregates; admin dashboard page renders without Fleet Ledger header bleed; owner page shows stats.
+
+---
+
+### 2. Customer Dashboard (active orders + recent purchases)
+
+**How it works:** Customer page at `/store/dashboard` showing their active orders (pending payment, awaiting delivery, in progress) and recent purchase history (completed orders with vehicle, price, date, status). Full searchable order history link.
+
+**Build plan:**
+- API: `GET /api/store/orders?customerId=<id>&status=<state>` (extend existing), `GET /api/store/orders/history?customerId=<id>` (paginated).
+- Frontend: `src/app/store/dashboard/page.tsx` (new) — active orders cards + recent purchases table + link to full history.
+- Auth: Gated behind linked customer (Telegram ID or account).
+
+**Files:** `src/app/store/dashboard/page.tsx` (new), `src/app/api/store/orders/route.ts` (extend customer filter), `src/lib/store/orders.ts` (extend)
+
+**Gate:** Customer sees only their orders; active orders show correct states; recent purchases show completed orders; unauthenticated access redirected to `/auth`.
+
+---
+
+### 3. WhatsApp Storefront (deploy `.vanta` command)
+
+**How it works:** Customer sends `.vanta` in WhatsApp → bot shows category menu → picks category → bot lists products with prices/stock → sends `ORDER <id>` → bot asks for Player ID + in-game name → confirms YES/NO → 60-min reservation → order pending payment (EFT proof or PayFast link).
+
+**Build plan:**
+- Deploy `KAMI-Bot-main/commands/general/vanta.js` to bot-hosting.net (git push + deploy API + hard stop/start).
+- `vanta.js` calls `GET /api/store/products`, `GET /api/store/categories`, `POST /api/store/checkout` via HTTPS — no new backend needed.
+- Order flow maps to same `vanta_orders` table as Mini App — consistent data.
+
+**Files:** `KAMI-Bot-main/commands/general/vanta.js` (deploy), `src/lib/store/checkout.ts` (reuse)
+
+**Gate:** `.vanta` responds in WhatsApp group chat; order appears in `/api/store/orders`; stock locks for 60 min.
+
+---
+
+### 4. Search (semantic, typos, partial)
+
+**How it works:** Search bar on homepage/categories. Customer types partial vehicle name → backend returns fuzzy-matched products ranked by relevance → supports typos, category filter, price filter.
+
+**Build plan:**
+- API: `GET /api/store/search?q=<query>&category=<slug>&minPrice=<n>&maxPrice=<n>`.
+- DB: Full-text search on `vanta_products.name` + `description` using Turso FTS5 or LIKE with ranking in app layer.
+- Frontend: Search input on `StoreHomeClient.tsx` + `CategoriesClient.tsx` with 300ms debounce.
+- Ranking: exact match > starts-with > contains > fuzzy.
+
+**Files:** `src/app/api/store/search/route.ts` (new), `src/lib/store/search.ts` (new service), `store-db.ts` (FTS index migration), `StoreHomeClient.tsx`, `CategoriesClient.tsx`
+
+**Gate:** `search?q=golf` returns Volkswagen Golf; `search?q=gol` returns same (partial); `search?q=golff` returns same (typo tolerance).
+
+---
+
+### 5. Wishlist with Alerts
+
+**How it works:** Customer taps heart icon on product → added to wishlist → view wishlist page → if price drops or stock returns, customer gets Telegram/WhatsApp notification (opt-in).
+
+**Build plan:**
+- DB: `vanta_wishlists` table (customerId, productId, priceAtAdd, createdAt).
+- API: `GET/POST/DELETE /api/store/wishlist`, `GET /api/store/wishlist/<customerId>`.
+- Frontend: Heart toggle on product cards + product page; wishlist page at `/store/wishlist`.
+- Alerts: Daily cron compares current price vs. wishlisted price; sends notification on drop.
+
+**Files:** `store-db.ts` (wishlist migration), `src/lib/store/wishlists.ts` (new service), `src/app/api/store/wishlist/route.ts` (new), `src/app/api/store/wishlist/[id]/route.ts` (new), product card components
+
+**Gate:** Heart toggle persists across refresh; wishlist page shows saved products; price drop triggers notification.
+
+---
+
+### 6. Advanced Filters (server-side)
+
+**How it works:** Filter bar on categories page: price range slider, category pills, exclusivity chips, stock (in/out), promotions (on sale). Results update via server fetch; URL query params persist filters (shareable links).
+
+**Build plan:**
+- API: Extend `GET /api/store/products` with `category`, `exclusivity`, `stock`, `onSale`, `minPrice`, `maxPrice` query params.
+- Frontend: Filter component on `CategoriesClient.tsx` with collapsible mobile sheet.
+- URL: `useRouter` query persistence.
+
+**Files:** `src/app/api/store/products/route.ts` (extend), `CategoriesClient.tsx` (filter UI), `src/lib/store/products.ts` (filter logic)
+
+**Gate:** Filter by exclusivity=limited_edition shows only limited editions; price range slider narrows results; URL shares filtered state.
+
+---
+
+### 7. Appointment & Delivery System
+
+**How it works:** After payment confirmed, customer schedules delivery appointment → picks date/time slot → admin confirms → delivery happens in-game → both sides verify → customer confirms receipt → order marked completed. Missed appointments configurable limit.
+
+**Build plan:**
+- DB: `vanta_appointments` (orderId, scheduledAt, status, adminId, deliveryEvidenceUrl, customerConfirmedAt), `vanta_deliveries` (appointmentId, evidence, verifiedBy, verifiedAt).
+- API: `POST /api/store/appointments`, `GET /api/store/appointments/<orderId>`, `PATCH /api/store/admin/appointments/<id>/confirm`, `POST /api/store/deliveries/<id>/evidence`.
+- Frontend: Appointment picker on order confirmation page; admin delivery management at `/store/admin/deliveries`; customer delivery tracking at `/store/orders/<id>`.
+- Missed appointment limit: configurable system setting (default 2), owner sets threshold.
+
+**Files:** `store-db.ts` (appointments/deliveries migrations), `src/lib/store/appointments.ts` (new service), `src/lib/store/deliveries.ts` (new service), `src/app/api/store/appointments/route.ts` (new), `src/app/api/store/admin/appointments/[id]/confirm/route.ts` (new), `src/app/api/store/deliveries/[id]/evidence/route.ts` (new)
+
+**Gate:** Customer can book appointment after payment; admin sees pending appointments; delivery evidence uploadable; customer confirmation marks order completed.
+
+---
+
+### 8. Support Tickets & Disputes
+
+**How it works:** Customer opens ticket (category: payment/delivery/order/account/vehicle) → attaches evidence → admin assigns staff → staff responds → ticket resolved. Disputes: evidence collection → investigation → resolution → escalation.
+
+**Build plan:**
+- DB: `vanta_support_tickets` (ticketNumber, customerId, category, orderId, description, status, assignedStaffId, createdAt, resolvedAt), `vanta_ticket_messages`, `vanta_disputes`.
+- API: `POST /api/store/support/tickets`, `GET /api/store/support/tickets`, `PATCH /api/store/admin/support/tickets/<id>`, `POST /api/store/support/tickets/<id>/messages`.
+- Frontend: Support page at `/store/support` (customer), `/store/admin/support` (admin with assignment).
+- Business hours response expectations published.
+
+**Files:** `store-db.ts` (tickets/migrations), `src/lib/store/support.ts` (new service), `src/lib/store/disputes.ts` (new service), `src/app/api/store/support/route.ts` (new), `src/app/api/store/admin/support/route.ts` (new)
+
+**Gate:** Customer can open ticket; admin can assign and respond; dispute resolution recorded with audit trail.
+
+---
+
+### 9. Notifications System
+
+**How it works:** Order stage updates sent via Telegram/WhatsApp (opt-in for promotional). Templates: order created, payment pending, payment received, payment rejected, processing started, appointment confirmed, delivery updated, delivery completed, refund status, dispute status.
+
+**Build plan:**
+- DB: `vanta_notifications` (customerId, type, channel, template, payload, status, sentAt, deliveredAt), `vanta_notification_preferences`.
+- API: `POST /api/store/notifications/send`, `GET/PATCH /api/store/notifications/preferences`.
+- Service: `sendNotification(customerId, type, payload)` — routes to Telegram Bot API or WhatsApp KAMI-Bot.
+- Cron: Daily retry for failed notifications.
+
+**Files:** `store-db.ts` (notifications/migrations), `src/lib/store/notifications.ts` (new service), `src/lib/store/telegram.ts` (extend sendMessage), `src/app/api/store/notifications/route.ts` (new)
+
+**Gate:** Order status change triggers notification; customer can opt out of promotional; failed notifications retry daily.
+
+---
+
+### 10. Analytics & Financial Reporting
+
+**How it works:** Admin analytics page shows revenue trends, best sellers, conversion rates, refunds, payment fees, net revenue. CSV export with 7/30/90 day presets. Separate ZAR and other currency reporting. Reuses existing `financial_ledger` table.
+
+**Build plan:**
+- API: `GET /api/store/admin/analytics/revenue`, `GET /api/store/admin/analytics/best-sellers`, `GET /api/store/admin/analytics/conversion`, `GET /api/store/admin/analytics/export?format=csv&range=30d`.
+- Frontend: Analytics page at `/store/admin/analytics` with charts + export buttons.
+- Compute from existing orders/payments/ledger tables (no new tables needed for v1).
+
+**Files:** `src/lib/store/analytics.ts` (new service), `src/app/api/store/admin/analytics/route.ts` (new), `src/app/store/admin/analytics/page.tsx` (new)
+
+**Gate:** Revenue report matches sum of confirmed payments; best sellers ranked by units sold; CSV export downloads correctly.
+
+---
+
+### 11. Health Checks, Backups, Recovery
+
+**How it works:** `/api/health` returns DB connectivity, API status, uptime. Error tracking captures unhandled exceptions. Automatic Turso backups + manual trigger. Recovery procedures documented.
+
+**Build plan:**
+- API: `GET /api/health` (DB ping, uptime).
+- DB: Scheduled Turso backup via Turso CLI/API, stored securely.
+- Monitoring: Cron checks health endpoint, alerts on failure.
+- Recovery: Documented restore procedure from backup.
+
+**Files:** `src/app/api/health/route.ts` (new), `scripts/backup-turso.sh` (new), `AGENTS_HANDOFF.md` (recovery procedure section)
+
+**Gate:** `/api/health` returns 200 with DB status; backup file exists and is restorable; restore tested on staging.
+
+---
+
+### 12. Bulk Product Creation, Drafts, Scheduled Publication
+
+**How it works:** Admin uploads CSV for bulk product import. Draft products saved but unpublished. Scheduled publication date — product goes live automatically at set time. Preview before publication.
+
+**Build plan:**
+- DB: Add `status` (draft/published/scheduled), `publishAt` (timestamp) to `vanta_products`.
+- API: `POST /api/store/admin/products/bulk` (CSV import), extend `PATCH /api/store/admin/products/<id>/publish`.
+- Frontend: Bulk upload UI in admin product page; draft/scheduled badges; preview link for unpublished products.
+- Cron: Daily check for scheduled products whose `publishAt` <= now → auto-publish.
+
+**Files:** `store-db.ts` (status/publishAt columns), `src/app/api/store/admin/products/route.ts` (extend), `src/app/store/admin/page.tsx` (bulk upload UI), `src/lib/store/products.ts` (bulk import service)
+
+**Gate:** CSV import creates multiple products; draft products hidden from storefront; scheduled products auto-publish at set time.
+
+---
+
+### 13. Legal Documents
+
+**How it works:** Terms & Conditions, Privacy Policy, Refund Policy, Delivery Policy, Payment Policy, Cancellation Policy, Appointment Policy, Dispute Policy. Required acceptance at checkout. Owner notified of changes, reacceptance required where appropriate.
+
+**Build plan:**
+- Static pages: `/legal/terms`, `/legal/privacy`, `/legal/refund`, `/legal/delivery`, `/legal/payment`, `/legal/cancellation`, `/legal/appointment`, `/legal/dispute`.
+- DB: `vanta_legal_acceptances` (customerId, documentId, version, acceptedAt, versionHash).
+- Checkout: Must-checkbox "I accept Terms & Conditions" before payment.
+- Versioning: Each document has version; changes increment version and require reacceptance.
+
+**Files:** `src/app/legal/[doc]/page.tsx` (new dynamic route), `store-db.ts` (legal_acceptances migration), `src/lib/store/legal.ts` (new service), checkout page (acceptance checkbox)
+
+**Gate:** Checkout blocked without terms acceptance; legal pages render correctly; version change triggers reacceptance prompt.
+
+---
+
+### 14. Central Configuration Layer
+
+**How it works:** All settings (currencies, exchange rates, payment gateways, EFT instructions, fees, promotion rules, stock policies, appointment limits, notification channels, staff roles, media provider, language, business hours, maintenance mode) stored centrally. Sensitive values in env vars, not frontend code.
+
+**Build plan:**
+- DB: `vanta_system_config` (key, value, type, isSensitive, updatedAt).
+- API: `GET /api/store/config/<key>` (public), `GET/PATCH /api/store/admin/config/<key>` (admin-gated).
+- Frontend: Admin config page at `/store/admin/config` with key-value editor.
+- Frontend reads public config via `GET /api/store/config/<key>` at load.
+
+**Files:** `store-db.ts` (system_config migration), `src/lib/store/config.ts` (new service), `src/app/api/store/config/[key]/route.ts` (new), `src/app/api/store/admin/config/[key]/route.ts` (new), `src/app/store/admin/config/page.tsx` (new)
+
+**Gate:** Config change updates runtime behavior without redeploy; sensitive keys not exposed to public API; admin config page lists all keys.
+
+---
+
+### 15. Cross-Platform Account Linking
+
+**How it works:** Customer using Telegram Mini App can link WhatsApp identity (and vice versa). Same customer ID across platforms. Order history unified. Never merge accounts solely on same display name.
+
+**Build plan:**
+- DB: `vanta_platform_identities` already exists — extend with link verification flow.
+- API: `POST /api/store/customers/link-telegram` (exists), `POST /api/store/customers/link-whatsapp` (new), `GET /api/store/customers/<id>/platforms` (new).
+- Frontend: Profile page "Link WhatsApp" / "Link Telegram" buttons; verification code sent to other platform.
+- Security: Link only via verified platform identity (bot sends code, customer enters it).
+
+**Files:** `src/app/api/store/customers/link-whatsapp/route.ts` (new), `src/lib/store/customers.ts` (extend link logic), `ProfileClient.tsx` (link UI)
+
+**Gate:** Customer can link Telegram + WhatsApp; order history visible from both platforms; unlink supported.
+
+---
+
+### 16. Sticky Mobile Purchase Button
+
+**How it works:** On product page (mobile), purchase button sticks to bottom of screen, always visible while scrolling. Desktop: standard purchase button in content flow.
+
+**Build plan:**
+- CSS: `.sticky-purchase` — `position: sticky; bottom: 1rem;` on mobile, static on desktop.
+- Frontend: `ProductPageClient.tsx` — wrap buy button in sticky container with `@media (max-width: 768px)` condition.
+
+**Files:** `ProductPageClient.tsx`, `globals.css` (sticky purchase styles)
+
+**Gate:** Buy button visible at bottom of screen while scrolling on mobile viewport; normal positioning on desktop.
+
+---
+
+### Vote Criteria for All Agents
+
+Each agent's implementation will be scored on:
+
+1. **Correctness** — matches plan spec exactly
+2. **Gate verification** — tsc, build, tests all pass
+3. **Scope discipline** — no adjacent code touched
+4. **Deploy readiness** — committed and deployed, not left uncommitted
+5. **Documentation** — AGENTS_HANDOFF.md updated immediately
+
+**Kermes' commitment:** All code in this plan will be committed, deployed, and recorded in AGENTS_HANDOFF.md before marking complete. No uncommitted changes left in working tree.
+
+---
+
+# 2026-11-09 — VANTA GARAGE Master Implementation Gap Analysis & Build Plan
+
+**Purpose:** Comprehensive gap analysis vs `Vanta_Garage_Plan.txt` (master specification, 1755 lines). The current deployment is a partial frontend skeleton. This document lists every missing module, what it does, how it works, and how it will be built. Intended for multi-agent review and voting before implementation begins.
+
+**How to vote:** Each agent submits their own implementation plan for each module. All agents vote on the best implementation per module. The winning approach per module becomes the implementation baseline.
+
+---
+
+## Current State (built)
+
+| Layer | Status | Notes |
+|---|---|---|
+| StoreShell navigation | Built | Home/Categories/Orders/Profile/Admin/Owner tabs; theme bleed fixed; no Fleet Ledger bleed on /store/* |
+| Profile page | Built | Telegram ID link, email/password, dark mode toggle, settings; Telegram ID cookie set for owner/admin detection |
+| Checkout page | Built | Player ID validation (2L+6D), in-game name required, EFT-only payment, Rands pricing, EFT proof upload, auto-scroll, inline errors |
+| Product page | Built | Product media carousel, specs, exclusivity badges, gold buy button |
+| Categories page | Built | Category grid/pills, product cards |
+| Admin product manager | Built | Create/edit/publish products, catalog picker, stock validation, categories dropdown, HD Logo toggle, image converter |
+| Store home page | Built | Hero, featured carousel, promo banner, best sellers, personalised section |
+| Admin is-admin API | Built | Telegram initData + owner email + cookie (`vanta_telegram_id`) gate |
+| EFT Review modal | Built | Replace window.prompt with Modal components |
+
+**Total: ~67 tests pass, tsc clean, lint 0 new errors. Deployment cache issues resolved.**
+
+---
+
+## Missing Modules (per Vanta_Garage_Plan.txt)
+
+Each module below includes: **What** (functional spec from plan), **How it works** (technical design), **How I'll build it** (files, APIs, DB), **Acceptance criteria**.
+
+---
+
+### Module 1: Media Management Abstraction (§6.1, §6.2, §6.3)
+
+**What:** Provider-independent media hosting abstraction. Do not hardcode Cloudinary/Vercel Blob. Database stores media metadata with public delivery URL.
+
+**How it works:**
+- `vanta_product_media` table: id, product_id, provider, public_url, original_url, file_type, dimensions, file_size, upload_timestamp, version, folder, publication_status
+- `MediaProvider` interface: `upload(file)`, `getUrl(key)`, `delete(key)`, `list(prefix)`
+- Default provider: local file storage or Vercel Blob (configurable via env `MEDIA_PROVIDER`)
+- Frontend serves images via `/api/store/media?productId=X` proxy, never direct provider URLs
+- Fallback images for missing media
+
+**Build steps:**
+1. Create `src/lib/store/media-service.ts` with `MediaProvider` interface + local provider impl
+2. Create `src/lib/store-schema.ts` migration for `vanta_product_media` table
+3. Create `src/app/api/store/media/[productId]/route.ts` (GET list, POST upload)
+4. Create `src/app/api/store/admin/media/route.ts` (admin CRUD)
+5. Refactor `ProductPageClient.tsx` and `CategoriesClient.tsx` to fetch media via API, not direct URLs
+6. Add `src/components/MediaUploader.tsx` drag-and-drop component
+
+**Acceptance:** Images load through configured provider; fallback shows when media missing; admin can upload/reorder/delete images; media persists across providers.
+
+---
+
+### Module 2: Multi-Currency Pricing & Exchange Rates (§7.1, §22)
+
+**What:** Hybrid pricing management with multiple selectable currencies, sales promotions, admin-controlled promotions, customer currency switching. Maintain original base-currency prices; preserve exchange rate at order time.
+
+**How it works:**
+- `vanta_product_pricing` table: product_id, currency, base_amount, exchange_rate, effective_from, effective_to
+- Default currency: ZAR (South African merchant)
+- Customer can switch currency; prices convert using stored rate
+- All historical orders keep original transaction currency + rate
+- Exchange rate source configurable (manual override or API fetch)
+
+**Build steps:**
+1. Add `currency` column support to `vanta_products` (or new `vanta_product_pricing` table)
+2. Create `src/lib/store/pricing-service.ts` with `convert(amount, from, to, rate)` and `getRate(currency)`
+3. Create `src/app/api/store/pricing/route.ts` (GET rates, POST manual override)
+4. Update `formatPrice` to accept currency param
+5. Add currency selector in ProfileClient/settings and product cards
+6. Admin form: price input per currency
+
+**Acceptance:** Prices display in customer's selected currency; historical orders unchanged when rates change; admin can override rates; ZAR base preserved.
+
+---
+
+### Module 3: Promotions System (§7.2, §14)
+
+**What:** Sale prices, scheduled discounts, promotional banners, admin-controlled promotion placement, discount codes, start/end dates, sort order.
+
+**How it works:**
+- `vanta_promotions` table (already partially exists per handoff): title, subtitle, description, discount_percent, code, cta_text, cta_link, colors, image_url, active, start_date, end_date, sort_order
+- Public API: `GET /api/store/promotions` filters active + date range
+- Admin CRUD: `GET/POST/PUT/DELETE /api/store/admin/promotions`
+- Frontend: promo banner on home page with custom styling per promo; sale badges on products
+
+**Build steps:**
+1. Verify `vanta_promotions` table exists (per handoff, it does)
+2. Create `src/app/api/store/admin/promotions/route.ts` full CRUD
+3. Create `src/components/PromotionBanner.tsx` (home page hero banner)
+4. Create `src/components/SaleBadge.tsx` (product card badge)
+5. Wire into `StoreHomeClient.tsx` to fetch and render active promotions
+
+**Acceptance:** Admin can create/schedule promotions; home page shows active banners; products show sale price/badge; expired promos hide automatically.
+
+---
+
+### Module 4: EFT Proof Upload & Manual Verification (§8.3)
+
+**What:** Customer uploads proof of payment (image/PDF). Authorised staff inspect proof, approve/reject. Payment is NOT auto-confirmed on upload.
+
+**How it works:**
+- `vanta_payments` table: id, order_id, method (eft/payfast), amount, currency, status (pending/confirmed/rejected), proof_url, proof_uploaded_at, verified_at, verified_by, notes
+- Customer uploads file via `/api/store/checkout/<id>/proof` (POST)
+- Admin reviews proofs at `/store/admin/eft` (EFT review page)
+- Admin marks payment_confirmed → order state advances, stock deducted, ledger entry
+
+**Build steps:**
+1. Verify `vanta_payments` table exists; add if missing
+2. Create `src/app/api/store/checkout/[id]/proof/route.ts` (POST upload)
+3. Create `src/app/api/store/admin/payments/route.ts` (GET pending, POST confirm/reject)
+4. Create `src/app/store/admin/eft/page.tsx` (review queue with approve/reject buttons)
+5. Refine `CheckoutClient.tsx` EFT proof upload → POST to proof endpoint
+6. Add copy buttons for bank details (already partially exists)
+
+**Acceptance:** Customer can upload proof; admin sees queue; approve/reject updates order state; no auto-confirm on upload.
+
+---
+
+### Module 5: Payment Gateway Webhook Reconciliation (§8.4, §8.5)
+
+**What:** Automatic reconciliation for supported gateways (PayFast). Webhook signature verification. Idempotency. Duplicate event handling.
+
+**How it works:**
+- `vanta_payments.payment_gateway_ref`, `gateway_response`, `webhook_received_at`
+- `POST /api/store/payments/payfast/webhook` verifies MD5 signature (sorted params + passphrase)
+- On `payment_confirmed`: stock deducted → ledger entry → order state → `payment_confirmed`
+- Idempotency key on webhook event ID to prevent double processing
+
+**Build steps:**
+1. Verify `src/app/api/store/payments/payfast/webhook/route.ts` exists (per handoff it does)
+2. Add idempotency check (event ID stored in `vanta_payments.webhook_event_id`)
+3. Add stock deduction call on confirmation (`confirmStockDeduction`)
+4. Add financial ledger entry (`vanta_financial_ledger`)
+5. Test with PayFast sandbox ITN simulation
+
+**Acceptance:** Webhook verifies signature; duplicate webhooks ignored; stock deducted once; order state advances; ledger entry created.
+
+---
+
+### Module 6: Order Pipeline State Machine (§9.4)
+
+**What:** Configurable order pipeline with distinct payment state, order state, delivery state. States: checkout initiated → awaiting payment → payment verification → payment confirmed → processing → delivery appointment → awaiting delivery → delivery in progress → delivery verification → completed/cancelled/refund pending/refunded/disputed.
+
+**How it works:**
+- `vanta_orders` table: id, customer_id, product_id, quantity, amount_cents, currency, payment_state, order_state, delivery_state, reserved_until, created_at, updated_at
+- State transitions guarded server-side; invalid transitions rejected
+- Reservation: 60-min stock lock; release on expiry/cancellation
+
+**Build steps:**
+1. Verify `vanta_orders` table schema has state columns; add if missing
+2. Create `src/lib/store/orders.ts` state machine functions (`transitionState`, `reserveStock`, `releaseStock`)
+3. Update `src/app/api/store/checkout/route.ts` to set initial states
+4. Create `src/app/api/store/orders/[id]/route.ts` (GET single order with state)
+5. Create `src/components/OrderStatusBadge.tsx` (visual state indicator)
+
+**Acceptance:** Order flows through states correctly; cannot skip states; stock lock released on expiry/cancel; no double purchase of exclusive stock.
+
+---
+
+### Module 7: Appointments & Delivery System (§10)
+
+**What:** Customer and admin arrange delivery meeting. Appointment created. Delivery status updates. Evidence recorded. Customer confirms receipt. Missed appointments limited (configurable).
+
+**How it works:**
+- `vanta_appointments` table: id, order_id, scheduled_at, status, customer_confirmed, admin_confirmed, evidence_url, notes
+- `vanta_deliveries` table: id, appointment_id, delivery_date, status, evidence_attachments, customer_receipt_confirmed
+- Customer selects time slot; admin confirms; both parties receive notifications; delivery evidence uploaded; customer confirms receipt → order completed
+
+**Build steps:**
+1. Create `vanta_appointments` and `vanta_deliveries` tables
+2. Create `src/app/api/store/appointments/route.ts` (GET/POST)
+3. Create `src/app/api/store/deliveries/route.ts` (GET/POST evidence)
+4. Create `src/components/AppointmentScheduler.tsx` (time slot picker)
+5. Create `src/app/store/admin/deliveries/page.tsx` (admin delivery queue)
+6. Add delivery evidence upload + customer confirm receipt button
+
+**Acceptance:** Customer can book slot; admin confirms; evidence uploaded; receipt confirmed → order completed; missed appointments tracked and limited.
+
+---
+
+### Module 8: Notifications System (§13)
+
+**What:** Order stage updates (created, payment pending/confirmed/rejected, processing, appointment confirmed, delivery updated, completed, refunded, disputed). Promotional notifications opt-in only.
+
+**How it works:**
+- `vanta_notifications` table: id, customer_id, type, title, body, channel (telegram/whatsapp/email), sent_at, read_at, related_order_id
+- `vanta_notification_preferences` table: customer_id, channel, enabled
+- Template library with variables (order_id, amount, etc.)
+- Send via Telegram bot API, WhatsApp bot, or email (configurable per channel)
+
+**Build steps:**
+1. Create notification tables
+2. Create `src/lib/store/notifications.ts` (sendNotification, template render)
+3. Create `src/app/api/store/notifications/route.ts` (GET customer notifications, POST mark read)
+4. Create `src/components/NotificationBell.tsx` (unread count + dropdown)
+5. Wire order state changes to trigger notifications
+6. Add promotional opt-in toggle in ProfileClient settings
+
+**Acceptance:** Customer sees unread count; clicking shows notification list; order transitions trigger correct notifications; promotional opt-out respected.
+
+---
+
+### Module 9: Support Tickets & Disputes (§15)
+
+**What:** Dedicated ticket system. Ticket number, customer reference, category, related order, description, attachments, status, assigned staff, internal notes, customer-visible responses, timestamps. Categories: payment, delivery, orders, account, vehicle issues. Dispute workflow: case creation, evidence collection, investigation, resolution, escalation, audit history.
+
+**How it works:**
+- `vanta_support_tickets` table: id, ticket_number, customer_id, category, order_id, description, status, assigned_staff_id, created_at, updated_at
+- `vanta_support_ticket_messages` table: id, ticket_id, sender (customer/staff), message, attachments, is_customer_visible, created_at
+- `vanta_disputes` table: id, ticket_id, evidence, investigation_notes, resolution, escalated_to, created_at, resolved_at
+
+**Build steps:**
+1. Create support/dispute tables
+2. Create `src/app/api/store/support/tickets/route.ts` (GET/POST)
+3. Create `src/app/api/store/support/tickets/[id]/route.ts` (GET/PUT message)
+4. Create `src/app/api/store/support/disputes/route.ts` (case management)
+5. Create `src/components/SupportTicketForm.tsx`, `TicketThread.tsx`, `DisputeCase.tsx`
+6. Create `src/app/store/admin/support/page.tsx` (admin ticket queue)
+
+**Acceptance:** Customer can create ticket; staff can assign/resolve; dispute evidence collected; audit history preserved.
+
+---
+
+### Module 10: Administration Dashboard (§16.1, §16.5)
+
+**What:** Complete operational dashboard. Display: Orders, Payments, Inventory, Delivery operations, Critical alerts, Business performance indicators. Admin channels: Telegram + WhatsApp. Owner and staff roles. Configurable approval rules for refunds, financial adjustments, stock overrides, product deletion, price changes, staff permission changes, promotion publishing.
+
+**How it works:**
+- `/store/admin/dashboard` — overview cards (today's revenue, pending orders, low stock, alerts)
+- `/store/admin/orders` — order management with state transitions
+- `/store/admin/inventory` — stock override, restock
+- `/store/admin/deliveries` — delivery queue
+- `/store/admin/alerts` — critical alerts panel
+- Role-based access: owner vs staff; approval gates for sensitive ops
+
+**Build steps:**
+1. Create `src/app/store/admin/dashboard/page.tsx` (overview)
+2. Create `src/app/store/admin/orders/page.tsx` (order management with state transitions)
+3. Create `src/app/store/admin/inventory/page.tsx` (stock override)
+4. Create `src/app/store/admin/deliveries/page.tsx` (delivery queue)
+5. Create `src/app/store/admin/alerts/page.tsx` (critical alerts)
+6. Add role middleware: owner vs staff checks
+7. Add approval-rule middleware for sensitive operations
+
+**Acceptance:** Owner sees full dashboard; staff see scoped views; sensitive ops require approval; all admin actions audited.
+
+---
+
+### Module 11: Analytics & Financial Reporting (§17)
+
+**What:** Revenue trends, refunds, payment fees, net revenue, margins. Sales analytics: conversion rates, best sellers, sales trends, repeat purchases, customer cohorts. Customer analytics: retention, spending, segments. Advertising attribution: visits, orders, attributable revenue. CSV/JSON exports. Preset date ranges: 7, 30, 90 days.
+
+**How it works:**
+- `vanta_financial_ledger` table (already exists per handoff): payments, refunds, fees, adjustments, chargebacks, reconciliation records, transaction currency, exchange rate, timestamps, order IDs
+- Aggregation queries grouped by date range
+- Export: CSV/JSON download
+- Charts: revenue line, best sellers bar, customer retention
+
+**Build steps:**
+1. Verify `vanta_financial_ledger` table exists; add missing columns
+2. Create `src/app/api/store/admin/analytics/route.ts` (aggregation queries)
+3. Create `src/app/store/admin/analytics/page.tsx` (dashboard with charts)
+4. Create `src/app/store/admin/analytics/export/route.ts` (CSV/JSON download)
+5. Add chart components (revenue line, best sellers)
+
+**Acceptance:** Revenue trends visible; refunds/fees tracked; exports downloadable; date range presets work.
+
+---
+
+### Module 12: Wishlist with Alerts (§12.2)
+
+**What:** Customers save vehicles; receive alerts for price changes, stock changes, availability changes. Notifications respect preferences.
+
+**How it works:**
+- `vanta_wishlists` table: id, customer_id, product_id, created_at
+- `vanta_wishlist_alerts` table: id, wishlist_id, alert_type (price/stock/availability), triggered_at
+- Customer toggles heart on product card → adds/removes from wishlist
+- Background check: if product price/stock changes, create alert + notification
+
+**Build steps:**
+1. Create `vanta_wishlists` table
+2. Create `src/app/api/store/wishlist/route.ts` (GET/POST/DELETE)
+3. Create `src/components/WishlistButton.tsx` (heart toggle on product cards)
+4. Create `src/app/store/wishlist/page.tsx` (customer wishlist view)
+5. Background check: on product update, compare price/stock, create alerts
+
+**Acceptance:** Customer can add/remove wishlist items; sees wishlist page; gets alerts on changes.
+
+---
+
+### Module 13: Search (§12.1)
+
+**What:** Semantic search. Support vehicle names, partial matches, typos, descriptions, categories, attributes. Search suggestions: recent/popular. Result cards: image, name, price.
+
+**How it works:**
+- `src/lib/store/search.ts` with fuzzy matching (Levenshtein or simple substring) on name/description/category
+- `GET /api/store/search?q=...` returns matched products
+- Frontend: search bar in StoreShell header; results page
+
+**Build steps:**
+1. Create `src/lib/store/search.ts`
+2. Create `src/app/api/store/search/route.ts`
+3. Add search input to StoreShell header
+4. Create `src/app/store/search/page.tsx` (results grid)
+
+**Acceptance:** Search finds vehicles by name/partial/typo/category; results show image+name+price; recent searches suggested.
+
+---
+
+### Module 14: Cross-Platform Account Linking (§11.2)
+
+**What:** Same person may use Telegram and WhatsApp. Account linking through verified process. Never merge accounts solely because same display name. Separate platform identifiers + internal customer ID.
+
+**How it works:**
+- `vanta_platform_identities` table (exists): customer_id, platform (telegram/whatsapp), platform_user_id, platform_username, linked_at
+- Customer links WhatsApp via bot flow; Telegram via WebApp/initData or manual ID
+- Profile shows both linked identities
+
+**Build steps:**
+1. Verify `vanta_platform_identities` table exists
+2. Create WhatsApp link endpoint (bot webhook → store API)
+3. Update ProfileClient to show both Telegram and WhatsApp linked status
+4. Add unlink option
+
+**Acceptance:** Customer can link Telegram and WhatsApp to same account; profile shows both; separate platform IDs preserved.
+
+---
+
+### Module 15: Telegram Mini App Integration (Phase 3)
+
+**What:** Navigation (Home/Categories/Orders/Profile), homepage, categories, search, product pages, wishlist, customer profile, responsive presentation.
+
+**How it works:**
+- Telegram WebApp initData authentication (already partially exists)
+- StoreShell renders inside Telegram WebApp context
+- All store routes accessible within Mini App
+
+**Build steps:**
+1. Verify `TelegramBridge.tsx` and initData verification work
+2. Ensure all store pages render correctly inside WebApp (no external redirects)
+3. Test on Telegram bot profile "OPEN" button
+
+**Acceptance:** Store loads inside Telegram Mini App; navigation works; checkout completes inside WebApp.
+
+---
+
+### Module 16: WhatsApp Storefront (Phase 4)
+
+**What:** Interactive conversational storefront. Interactive menus, product browsing, search, product details, customer identity, order entry points.
+
+**How it works:**
+- WhatsApp bot webhook receives messages
+- Bot presents interactive menu (browse categories, search, view product, checkout entry)
+- Bot calls VANTA store APIs for product data, order creation
+- Order confirmation sent via WhatsApp
+
+**Build steps:**
+1. Integrate with existing WhatsApp bot (inspect existing repo first per plan §2)
+2. Create WhatsApp message handlers for store commands
+3. Bot calls `GET /api/store/products`, `POST /api/store/checkout`
+4. Order confirmation messages sent via WhatsApp
+
+**Acceptance:** Customer can browse and order via WhatsApp; order confirmed via WhatsApp message.
+
+---
+
+### Module 17: Central Configuration Layer (§22)
+
+**What:** Central config for supported currencies, base currency, exchange rates, payment gateways, EFT banking details, reservation duration, fees, promotion rules, stock policies, One of One relisting, appointment limits, delivery workflow, notification channels, templates, staff roles, approval rules, media provider, media settings, language, business hours, maintenance mode, launch controls.
+
+**How it works:**
+- `vanta_system_config` table: key, value, type, description, updated_at
+- `src/lib/store/config-service.ts` with `getConfig(key)`, `setConfig(key, value)`
+- Admin UI: `/store/admin/config` to edit settings
+- All services read from config, not hardcoded
+
+**Build steps:**
+1. Create `vanta_system_config` table
+2. Create `src/lib/store/config-service.ts`
+3. Create `src/app/store/admin/config/page.tsx` (settings UI)
+4. Refactor services to use config instead of hardcoded values
+
+**Acceptance:** Admin can change any setting without code changes; services read live config.
+
+---
+
+### Module 18: Audit Logging & Monitoring (§19.2, §20)
+
+**What:** Health checks, error tracking, automated alerts, retry mechanisms, background queues, graceful degradation, recovery procedures. Audit logs for operational and financial history.
+
+**How it works:**
+- `vanta_audit_logs` table: id, actor_id, action, entity_type, entity_id, old_values, new_values, created_at
+- Health check endpoint: `GET /api/store/health`
+- Error logging with structured context
+- Retry logic for failed background jobs
+
+**Build steps:**
+1. Create `vanta_audit_logs` table
+2. Create `src/lib/store/audit.ts` (logAction helper)
+3. Wrap all state-changing APIs with audit logging
+4. Create `src/app/api/store/health/route.ts`
+5. Add retry wrapper for background jobs
+
+**Acceptance:** All admin/customer mutations audited; health endpoint returns 200; failed jobs retryable.
+
+---
+
+## Implementation Sequence (per plan §24)
+
+| Phase | Focus |
+|---|---|
+| Phase 0 — Audit | **IN PROGRESS** — this document |
+| Phase 1 — Foundation | Media abstraction, config layer, audit logging |
+| Phase 2 — Catalogue & media | Products, categories, inventory, pricing, promotions, media |
+| Phase 3 — Telegram Mini App | Navigation, homepage, categories, search, product pages, wishlist, profile |
+| Phase 4 — WhatsApp storefront | Interactive menus, product browsing, order entry |
+| Phase 5 — Checkout & payments | Checkout, currency, EFT, gateway, reservation |
+| Phase 6 — Orders & delivery | Order pipeline, appointments, delivery, evidence |
+| Phase 7 — Administration | Product manager, staff roles, permissions, approval rules, inventory controls, financial ops |
+| Phase 8 — Communications | Notifications, support tickets, disputes, advertising, promotions |
+| Phase 9 — BI & hardening | Analytics, reports, security, backups, monitoring, recovery |
+
+---
+
+## Voting Process
+
+1. Each agent reviews this plan and submits their own implementation approach for any/all modules
+2. All agents vote on the best implementation per module (correctness, gate verification, scope discipline, deploy readiness, documentation)
+3. Winning approach per module becomes the implementation baseline
+4. Implementation proceeds phase by phase, with gates (tsc, lint, tests, build) before each deploy
+5. No public launch until release gate (§25.4) is met
+
+**Verified by:** nemotron-3.5-super-vl-120b-a12b — awaiting multi-agent review and voting.
+
 

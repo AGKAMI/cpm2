@@ -11,6 +11,7 @@ export type AdminRecord = {
   id: number;
   telegramUserId: string;
   telegramUsername: string;
+  nickname: string;
   role: "owner" | "admin";
   addedBy: string | null;
   addedAt: string;
@@ -22,6 +23,7 @@ function rowToAdmin(row: Record<string, unknown>): AdminRecord {
     id: Number(row.id),
     telegramUserId: String(row.telegram_user_id),
     telegramUsername: String(row.telegram_username ?? ""),
+    nickname: String(row.nickname ?? ""),
     role: (row.role as "owner" | "admin") ?? "admin",
     addedBy: row.added_by ? String(row.added_by) : null,
     addedAt: String(row.added_at ?? ""),
@@ -43,14 +45,15 @@ export async function listAdmins(): Promise<AdminRecord[]> {
 export async function addAdmin(
   telegramUserId: string,
   telegramUsername: string,
+  nickname: string,
   addedBy: string,
 ): Promise<AdminRecord> {
   const db = await getStoreDb();
   const now = new Date().toISOString();
   const result = await db.execute({
-    sql: `INSERT INTO vanta_admins (telegram_user_id, telegram_username, role, added_by, added_at, is_active)
-          VALUES (?, ?, 'admin', ?, ?, 1)`,
-    args: [telegramUserId, telegramUsername, addedBy, now],
+    sql: `INSERT INTO vanta_admins (telegram_user_id, telegram_username, nickname, role, added_by, added_at, is_active)
+          VALUES (?, ?, ?, 'admin', ?, ?, 1)`,
+    args: [telegramUserId, telegramUsername, nickname, addedBy, now],
   });
   const id = result.lastInsertRowid;
   if (id === null) throw new Error("Admin insert returned no id");

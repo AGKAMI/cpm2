@@ -453,13 +453,13 @@ export default function AdminPage() {
     };
 
   if (loading) {
-        return (
-          <StoreShell>
-            <PageHeading folio="AD" title="Admin - Product Manager" backHref="/store" />
-            <p className="text-muted-foreground">Loading admin…</p>
-          </StoreShell>
-        );
-      }
+          return (
+            <StoreShell>
+              <PageHeading folio="AD" title="Admin - Product Manager" backHref="/store" />
+              <div className="p-4 text-center text-muted-foreground">Loading admin…</div>
+            </StoreShell>
+          );
+        }
 
     // Car codes are set-once: locked for editing when the product already has one.
     const carLocked = editingId !== null && form.cpm2CarCode !== "";
@@ -471,28 +471,28 @@ export default function AdminPage() {
           <StoreShell>
             <PageHeading folio="AD" title="Admin - Product Manager" backHref="/store" />
             {error && (
-          <p className="mb-4 rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-xs text-destructive">
-            {error}
-          </p>
-        )}
-        {msg && (
-          <p className="mb-4 rounded-md border border-primary bg-primary/10 px-3 py-2 text-xs text-primary">
-            {msg}
-          </p>
-        )}
+                      <p className="mb-4 rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                        {error}
+                      </p>
+                    )}
+                    {msg && (
+                      <p className="mb-4 rounded-md border border-primary bg-primary/10 px-3 py-2 text-xs text-primary">
+                        {msg}
+                      </p>
+                    )}
 
-        {/* Category Management */}
-        <section className="panel rounded-xl border border-border p-4 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-foreground">Categories</h3>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowCategoryForm(!showCategoryForm)}
-            >
-              {showCategoryForm ? "Hide" : "Add Category"}
-            </Button>
-          </div>
+                    {/* Category Management */}
+                    <section className="admin-section panel rounded-xl border border-border p-4 mb-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="admin-section-title">Categories</h3>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowCategoryForm(!showCategoryForm)}
+                        >
+                          {showCategoryForm ? "Hide" : "Add Category"}
+                        </Button>
+                      </div>
           {showCategoryForm && (
             <form onSubmit={handleCategorySubmit} className="grid gap-3 sm:grid-cols-2 mb-4">
               <Field label="Name">
@@ -526,12 +526,17 @@ export default function AdminPage() {
                 />
               </Field>
               <div className="sm:col-span-2 flex gap-2">
-                <Button type="submit" variant="primary" disabled={categorySaving}>
-                  {categorySaving ? "Creating…" : "Create Category"}
-                </Button>
-                <Button variant="outline" type="button" onClick={resetCategoryForm} disabled={categorySaving}>
-                  Cancel
-                </Button>
+                <Button
+                              variant="primary"
+                              type="submit"
+                              disabled={categorySaving}
+                              className="w-full sm:w-auto"
+                            >
+                              {categorySaving ? "Creating…" : "Create Category"}
+                            </Button>
+                            <Button variant="outline" type="button" onClick={resetCategoryForm} disabled={categorySaving} className="w-full sm:w-auto">
+                              Cancel
+                            </Button>
               </div>
             </form>
           )}
@@ -551,24 +556,24 @@ export default function AdminPage() {
           </div>
         </section>
 
-      {/* Promotions Management */}
-            <section className="panel rounded-xl border border-border p-4 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-foreground">Promotions</h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setShowPromotionForm(true);
-                    setEditingPromotionId(null);
-                    setPromotionForm(EMPTY_PROMOTION_FORM);
-                    setMsg(null);
-                    setError(null);
-                  }}
-                >
-                  {showPromotionForm ? "Hide form" : "Add Promotion"}
-                </Button>
-              </div>
+                {/* Promotions Management */}
+                <section className="admin-section panel rounded-xl border border-border p-4 mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="admin-section-title">Promotions</h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setShowPromotionForm(true);
+                        setEditingPromotionId(null);
+                        setPromotionForm(EMPTY_PROMOTION_FORM);
+                        setMsg(null);
+                        setError(null);
+                      }}
+                    >
+                      {showPromotionForm ? "Hide form" : "Add Promotion"}
+                    </Button>
+                  </div>
 
               {showPromotionForm && (
                 <form onSubmit={handlePromotionSubmit} className="grid gap-3 sm:grid-cols-2 mb-4">
@@ -666,14 +671,19 @@ export default function AdminPage() {
                       className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
                     />
                   </Field>
-                  <div className="sm:col-span-2 flex gap-2">
-                    <Button type="submit" variant="primary" disabled={promotionSaving}>
-                      {promotionSaving ? "Saving…" : editingPromotionId ? "Update Promotion" : "Create Promotion"}
-                    </Button>
-                    <Button variant="outline" type="button" onClick={resetPromotionForm} disabled={promotionSaving}>
-                      Cancel
-                    </Button>
-                  </div>
+                  <div className="sm:col-span-2 flex flex-col sm:flex-row gap-2">
+                                      <Button
+                                        type="submit"
+                                        variant="primary"
+                                        disabled={promotionSaving}
+                                        className="w-full sm:w-auto"
+                                      >
+                                        {promotionSaving ? "Saving…" : editingPromotionId ? "Update Promotion" : "Create Promotion"}
+                                      </Button>
+                                      <Button variant="outline" type="button" onClick={resetPromotionForm} disabled={promotionSaving} className="w-full sm:w-auto">
+                                        Cancel
+                                      </Button>
+                                    </div>
                 </form>
               )}
 
@@ -738,12 +748,12 @@ export default function AdminPage() {
             </section>
 
       {/* Create / Edit form - hidden when editing inline within a card */}
-            {!inlineEditingId && showProductForm && (
-              <section className="panel rounded-xl border border-border p-6 mb-8">
-              <h3 className="text-sm font-semibold text-foreground mb-4">
-                {editingId ? "Edit product" : "Add product"}
-              </h3>
-              <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {!inlineEditingId && showProductForm && (
+                    <section className="admin-section panel rounded-xl border border-border p-6 mb-8">
+                      <h3 className="admin-section-title mb-4">
+                        {editingId ? "Edit product" : "Add product"}
+                      </h3>
+                      <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <Field
             label="Car (CPM2 catalog)"
             hint={
@@ -979,40 +989,45 @@ export default function AdminPage() {
               <span className="text-sm text-foreground">Visible to customers</span>
             </div>
           </Field>
-          <div className="col-span-2 sm:col-span-2 lg:col-span-3 xl:col-span-4 flex gap-2 flex-wrap">
-                      <Button type="submit" variant="primary" disabled={saving}>
-                        {saving ? "Saving…" : editingId ? "Update product" : "Create product"}
-                      </Button>
-                      <Button variant="outline" type="button" onClick={resetForm} disabled={saving}>
-                        Reset
-                      </Button>
-                    </div>
+          <div className="col-span-2 sm:col-span-2 lg:col-span-3 xl:col-span-4 flex flex-col sm:flex-row gap-2">
+                                <Button
+                                  type="submit"
+                                  variant="primary"
+                                  disabled={saving}
+                                  className="w-full sm:w-auto"
+                                >
+                                  {saving ? "Saving…" : editingId ? "Update product" : "Create product"}
+                                </Button>
+                                <Button variant="outline" type="button" onClick={resetForm} disabled={saving} className="w-full sm:w-auto">
+                                  Reset
+                                </Button>
+                              </div>
                   </form>
                 </section>
-                )}
+                            )}
 
-                {/* Product list */}
-                <section className="space-y-3">
-                  <div className="flex items-baseline justify-between mb-4">
-                    <h3 className="text-sm font-semibold text-foreground">Catalogue</h3>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">{products.length} product{products.length === 1 ? "" : "s"}</span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setShowProductForm(true);
-                          setEditingId(null);
-                          setForm(EMPTY_FORM);
-                          setPickedCar(null);
-                          setMsg(null);
-                          setError(null);
-                        }}
-                      >
-                        {showProductForm ? "Hide form" : "Add product"}
-                      </Button>
-                    </div>
-                  </div>
+                            {/* Product list */}
+                            <section className="admin-section panel rounded-xl border border-border p-4">
+                              <div className="flex items-baseline justify-between mb-4">
+                                <h3 className="admin-section-title">Catalogue</h3>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-muted-foreground">{products.length} product{products.length === 1 ? "" : "s"}</span>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      setShowProductForm(true);
+                                      setEditingId(null);
+                                      setForm(EMPTY_FORM);
+                                      setPickedCar(null);
+                                      setMsg(null);
+                                      setError(null);
+                                    }}
+                                  >
+                                    {showProductForm ? "Hide form" : "Add product"}
+                                  </Button>
+                                </div>
+                              </div>
                   {products.length === 0 ? (
                     <p className="text-muted-foreground">No products yet. Add your first above.</p>
                   ) : (
@@ -1222,11 +1237,11 @@ export default function AdminPage() {
                           <span className="text-sm text-foreground">Visible to customers</span>
                         </div>
                       </Field>
-                      <div className="col-span-2 flex gap-2">
-                        <Button type="submit" variant="primary" disabled={saving}>
-                          {saving ? "Saving…" : "Update product"}
-                        </Button>
-                      </div>
+                      <div className="col-span-2 flex flex-col sm:flex-row gap-2">
+                                              <Button type="submit" variant="primary" disabled={saving} className="w-full sm:w-auto">
+                                                {saving ? "Saving…" : "Update product"}
+                                              </Button>
+                                            </div>
                     </form>
                   </article>
                 );

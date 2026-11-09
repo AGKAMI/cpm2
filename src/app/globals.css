@@ -266,6 +266,12 @@
 * {
   border-color: var(--border);
 }
+
+/* Prevent iOS Safari auto-zoom on input focus (16px minimum) */
+input, textarea, select {
+  font-size: 16px !important;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -1226,8 +1232,19 @@ html {
 #toast { position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 40px); background: #17120a; border: 1px solid var(--primary); color: var(--brand-gold-light); padding: 12px 20px; border-radius: 14px; font-weight: 700; font-size: 13px; opacity: 0; transition: all 350ms; z-index: 99; pointer-events: none; }
 #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
-/* Admin sidebar */
-.admin-sidebar { width: 226px; flex: none; border-right: 1px solid var(--border); padding: 18px 12px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; background: var(--secondary); }
+/* Admin section styling */
+.admin-section {
+  background: var(--color-paper-raised);
+  border: 1px solid var(--border);
+}
+.admin-section-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
 .admin-nav { display: flex; align-items: center; gap: 11px; padding: 9px 12px; border-radius: 11px; font-weight: 600; color: var(--muted-foreground); cursor: pointer; font-size: 12.5px; background: none; border: 0; text-align: left; width: 100%; }
 .admin-nav:hover { background: var(--secondary); color: var(--foreground); }
 .admin-nav.active { background: var(--brand-gold-soft); color: var(--primary); }

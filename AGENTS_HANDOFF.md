@@ -10,6 +10,7 @@
 **Latest Deploy:** `dpl_5uRBeSGTxdnLPfrGW2XXMXyXC4vU` (2026-11-09) — StoreShell fetch hardening, console clean, StoreShell separation
 **Deploy Hook:** `https://api.vercel.com/v1/integrations/deploy/prj_kgMwWJI3lOTBPVmVT0NXvmh6N0ZE/o6UHndNi6D`
 **Why Deploy Hook:** Vercel free tier limits CLI deploys to 100/day. Deploy Hook bypasses this limit — use `curl -X POST "<hook_url>"` to trigger a fresh build from `master` and auto-promote to production. No daily quota impact.
+**Build Cache:** `VERCEL_FORCE_NO_BUILD_CACHE=1` env var in `vercel.json` permanently disables build cache. Do NOT add `generateBuildId` to `next.config.ts` — Vercel rejects dynamic build IDs (causes 500 error).
 
 ---
 
@@ -122,7 +123,8 @@ Root route `/` now shows an app selection screen instead of redirecting to Fleet
 - **Never claim completion without tool output.** Attempted ≠ completed ≠ verified.
 - **PayFast secrets never typed** — only entered via secure env/config mechanism.
 - **Date-stamp discipline** — run `date` before writing any date into an artifact.
-- **Update AGENTS_HANDOFF.md after every run** — read it before every run.
+- **Update AGENTS_HANDOFF.md for every specific change** — once a change has been made, update this doc for THAT specific change immediately: what changed, where, why, gate result, deploy status. Do not wait until end of run, and do not ask the user for something already recorded here. Read it before every run.
+- **Context consolidation** — track only what is currently being worked on. Do not keep a growing log of everything already moved past. The "Next agent to-do" list and any "in-progress" note must be progressively updated: completed items removed, in-progress items updated, new items added. Never append history here — this doc is the live state, not an archive.
 - **Deployed to Vercel production** — re-deploy after any changes via `curl -X POST "https://api.vercel.com/v1/integrations/deploy/prj_kgMwWJI3lOTBPVmVT0NXvmh6N0ZE/o6UHndNi6D"` (Deploy Hook — bypasses 100/day CLI limit).
 
 ---
@@ -135,14 +137,16 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 
 **Next agent to-do (in order)**
 
-1. **Profile page: "Link your Telegram" is now a real button** — `ProfileClient.tsx` replaced placeholder text with a button that calls `POST /api/store/customers/link-telegram`, verifies Telegram initData, auto-creates a customer if none exists, and links the Telegram id to `vanta_platform_identities`. Verified live: `tsc` clean, deployed.
-2. Get PayFast keys from user → set Vercel env vars
-3. Flip `PAYFAST_BASE_URL` to live + set webhook URL on PayFast dashboard
-4. Set `STORE_ADMIN_TELEGRAM_ID` on Vercel
-5. Seed products via `/store/admin`
-6. `git push` → Vercel deploy CPM2
-7. Deploy `vanta.js` to KAMI-Bot (git push + deploy API sync + hard stop/start)
-8. Verify end-to-end: buy a car via Mini App → PayFast → webhook → order confirmed
+1. **Get PayFast keys from user** → set `PAYFAST_MERCHANT_ID`, `PAYFAST_MERCHANT_KEY`, `PAYFAST_PASSPHRASE` on Vercel (waiting on PayFast approval email after KYC upload)
+2. **Flip `PAYFAST_BASE_URL`** to `https://www.payfast.co.za/eng/process` + set webhook URL on PayFast dashboard: `https://cpm2-bay.vercel.app/api/store/payments/payfast/webhook`
+3. **Seed products via `/store/admin`** — zero vehicles in `vanta_products` yet
+4. **Deploy `vanta.js` to KAMI-Bot** — git push + deploy API sync + hard stop/start on bot-hosting.net
+5. **Verify end-to-end**: buy a car via Mini App → PayFast → webhook → order confirmed
+6. **Button borders** — all buttons need visible borders (`Button.tsx` variants, no borderless text-only tap targets)
+7. **Hardcoded car cleanup** — delete 6 seeded products (IDs 19-24, created 2026-11-07) via Admin UI once new build is live
+8. **Consider adding `StoreShell` to all store routes** — `/store`, `/store/profile`, `/store/checkout/[id]`, `/store/categories`, `/store/orders` currently render with no header/nav
+
+Completed (removed from list): Profile "Link your Telegram" button, `STORE_ADMIN_TELEGRAM_ID` on Vercel, `git push` → Vercel deploy (just deployed via Deploy Hook `dpl_...`, job `N5jmsc47W5mhyhVdhS1B`).
 
 ---
 
@@ -225,16 +229,6 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 **Fix:** Both conditions now also exclude `pathname.startsWith("/store")`, so the Fleet Ledger chrome is fully suppressed on store routes. Store routes that need a shell use `StoreShell` (admin/owner already do; profile/checkout/categories/orders render raw clients without a Fleet Ledger header).
 
 **Gates:** tsc clean, lint 0 errors, tests 67/67, build green. Deployed to production and verified live on /store, /store/profile, /store/checkout/19.
-
-**Next agent to-do (in order):**
-1. **Consider adding `StoreShell` to all store routes** — `/store`, `/store/profile`, `/store/checkout/[id]`, `/store/categories`, `/store/orders` currently render with no header/nav at all (Fleet Ledger chrome removed, nothing replacing it). Consistent store-branded shell would improve UX.
-2. Get PayFast keys from user → set Vercel env vars
-3. Flip `PAYFAST_BASE_URL` to live + set webhook URL on PayFast dashboard
-4. Set `STORE_ADMIN_TELEGRAM_ID` on Vercel
-5. Seed products via `/store/admin`
-6. `git push` → Vercel deploy CPM2
-7. Deploy `vanta.js` to KAMI-Bot (git push + deploy API sync + hard stop/start)
-8. Verify end-to-end: buy a car via Mini App → PayFast → webhook → order confirmed
 
 ### 2026-11-09 — Hermes Agent "Zion" (nemotron-3.5-super-vl-120b-a12b) — Owner Dashboard Fix + Promotions System + Fleet Nav Fix
 
@@ -424,38 +418,20 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 
 ---
 
-### 2026-11-08 — Hermes Agent "Zion" (nemotron-3.5-super-vl-120b-a12b) — VANTA GARAGE Admin Page Complete Overhaul
+### 2026-11-09 — Hermes Agent "Kermes" (step-3.7-flash) — Owner Dashboard Add Admin Fix
 
-**What:** Fixed all reported admin page issues per KAMI's feedback from screenshots.
+**What:** Fixed Add admin on Owner Dashboard (`/store/owner`) per KAMI's feedback. Two problems: (1) adding an admin didn't work reliably, (2) naming model was wrong — KAMI wants to give a nickname, while the actual Telegram name must be pulled by the bot from the user's profile via their ID.
 
-**Where:** Core admin files in `C:/Users/ojuni/Documents/GAMES/cpm2`
-
-**Why:** KAMI reported: (1) Unpublishing doesn't work, (2) UI not adaptive to screen size, (3) Creating product fails with generic error, (4) Vehicle catalog shows wrong cars (Golf MK6 vs MK7), (5) Categories selection empty, (6) Image converter preview not persistent, (7) Form doesn't clear after creation, (8) Error handling is useless.
+**Where:** `src/app/store/owner/page.tsx`, `src/lib/store/client.ts`, `src/lib/store/admin-service.ts`, `src/lib/store-db.ts`, `src/lib/store-schema.ts`, `src/app/api/store/admin/admins/route.ts`
 
 **Changes Made:**
 
-| # | Fix | Files | Status |
-|---|-----|-------|--------|
-| **1** | **Fixed unpublish/publish** — uses `vantaApi.updateProductPublish()` with proper Telegram initData auth | `store/client.ts`, `store-admin/page.tsx` | ✅ VERIFIED |
-| **2** | **Responsive grid layout** — `xl:grid-cols-4` for form, `flex-wrap` for buttons, `flex-wrap` for product badges | `store-admin/page.tsx` | ✅ VERIFIED |
-| **3** | **Proper error handling** — uses `vantaApi` client which throws specific error messages from API | `store/client.ts`, `store-admin/page.tsx` | ✅ VERIFIED |
-| **4** | **Category management** — add/create categories inline with slug auto-generation | `store-admin/page.tsx`, `api/store/admin/categories/route.ts` | ✅ VERIFIED |
-| **5** | **Image converter preview persistence** — preview stays visible until user clicks "Use this URL" or closes modal | `store-admin/page.tsx` | ✅ VERIFIED |
-| **6** | **Form clears after creation** — `resetForm()` called on success, clears all fields including picked car | `store-admin/page.tsx` | ✅ VERIFIED |
-| **7** | **Product cards show category badges** — displays category name, exclusivity, New/Sale/Featured tags | `store-admin/page.tsx` | ✅ VERIFIED |
-| **8** | **Added missing API methods** — `createCategory`, `updateProduct`, `updateProductPublish` | `store/client.ts` | ✅ VERIFIED |
-| **9** | **Fixed CategoriesClient PageHeading import** | `CategoriesClient.tsx` | ✅ VERIFIED |
+| # | Fix | Files |
+|---|-----|-------|
+| 1 | **Nickname field (from KAMI) + Telegram-pulled actual name** — replaced optional "Username" input with required "Nickname" (KAMI's name for them). Server always calls `fetchTelegramUser` via Bot API `getChat` to pull the real Telegram name by ID | `page.tsx`, `route.ts`, `client.ts`, `admin-service.ts` |
+| 2 | **`nickname` column on `vanta_admins`** — new column stores KAMI's chosen nickname separately from `telegram_username` (bot-fetched actual name) | `store-schema.ts`, `store-db.ts` (migration) |
+| 3 | **DELETE admin fixed** — server was reading `?id=` search param but client sends ID in path; now reads from URL path segments | `route.ts` |
+| 4 | **Admin list display** — shows nickname first, then `@telegramUsername`, then role | `page.tsx` |
 
-**Gate Results:**
-
-| Gate | Command | Result |
-|------|---------|--------|
-| **TypeScript** | `npx tsc --noEmit` | ✅ **PASS** (via `npm run build`) |
-| **Build** | `npm run build` | ✅ **PASS** — all 21 routes compile |
-| **Tests** | `npm test` | ✅ **67 PASS, 0 FAIL** (theme palette test now passes) |
-| **Lint** | `npm run lint` | ⚠️ 6 pre-existing errors (0 new) |
-| **Live Deploy** | `vercel --prod` | ✅ **PASS** — https://cpm2-bay.vercel.app |
-| **API Verification** | `GET /api/store/products`, `GET /api/store/categories` | ✅ **PASS** |
-
-**Verified by:** **Zion (nemotron-3.5-super-vl-120b-a12b)** — per AGENTS_HANDOFF.md Delegated Judge Protocol.
+**Gate:** tsc ✅, lint 0 new errors (2 pre-existing), tests 67/67 ✅, build ✅. Deployed to production via Deploy Hook (job `N5jmsc47W5mhyhVdhS1B`).
 

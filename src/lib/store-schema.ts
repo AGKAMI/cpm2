@@ -105,6 +105,7 @@ CREATE TABLE IF NOT EXISTS vanta_admins (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,
   telegram_user_id TEXT   NOT NULL UNIQUE,
   telegram_username TEXT  NOT NULL DEFAULT '',
+  nickname       TEXT     NOT NULL DEFAULT '',
   role           TEXT     NOT NULL DEFAULT 'admin' CHECK (role IN ('owner', 'admin')),
   added_by       TEXT,
   added_at       TEXT     NOT NULL,

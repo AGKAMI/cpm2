@@ -26,7 +26,7 @@ export default function OwnerPage() {
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [newId, setNewId] = useState("");
-  const [newName, setNewName] = useState("");
+  const [newNickname, setNewNickname] = useState("");
 
   useEffect(() => {
     loadAdmins();
@@ -52,12 +52,16 @@ export default function OwnerPage() {
       setError("Enter a Telegram user ID.");
       return;
     }
+    if (!newNickname.trim()) {
+      setError("Enter a nickname for this admin.");
+      return;
+    }
     setSaving(true);
     try {
-      await vantaApi.createAdmin({ telegramUserId: newId.trim(), telegramUsername: newName.trim() });
+      await vantaApi.createAdmin({ telegramUserId: newId.trim(), telegramUsername: "", nickname: newNickname.trim() });
       setMsg("Admin added.");
       setNewId("");
-      setNewName("");
+      setNewNickname("");
       await loadAdmins();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add admin.");
@@ -106,8 +110,10 @@ export default function OwnerPage() {
       <section className="panel rounded-xl border border-border p-6 mb-8">
         <h3 className="text-sm font-semibold text-foreground mb-4">Add admin</h3>
         <p className="text-[11px] text-muted-foreground mb-4">
-          Enter the Telegram user ID of someone you want to make an admin. Admins can
-          manage products, pricing, and orders - but cannot add or remove other admins.
+          Enter the Telegram user ID of someone you want to make an admin, plus a
+          nickname for them. Their actual Telegram name is pulled automatically
+          from their profile via their ID. Admins can manage products, pricing, and
+          orders - but cannot add or remove other admins.
         </p>
         <form onSubmit={handleAdd} className="grid gap-3 sm:grid-cols-3">
           <Field label="Telegram user ID" hint="numbers only">
@@ -119,12 +125,12 @@ export default function OwnerPage() {
               className="flex-1"
             />
           </Field>
-          <Field label="Username" hint="optional">
+          <Field label="Nickname" hint="what you call them">
             <TextInput
-              id="new-admin-name"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              placeholder="@handle"
+              id="new-admin-nickname"
+              value={newNickname}
+              onChange={(e) => setNewNickname(e.target.value)}
+              placeholder="e.g. Chief, Madala, Bro"
               className="flex-1"
             />
           </Field>
@@ -157,9 +163,11 @@ export default function OwnerPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  {a.telegramUsername ? `@${a.telegramUsername}` : "-"}
-                  <span className="text-ink-faint">·</span>
-                  {a.role}
+                  {a.nickname ? a.nickname : "-"}
+                  {a.telegramUsername ? (
+                    <span className="text-ink-faint">· @{a.telegramUsername}</span>
+                  ) : null}
+                  <span className="text-ink-faint">· {a.role}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button

@@ -135,7 +135,7 @@ export const vantaApi = {
   // Admin order management
     adminOrders: () => request<{ orders: VantaOrder[] }>("/admin/orders"),
     adminAdmins: () => request<{ admins: VantaAdminRecord[] }>("/admin/admins"),
-    createAdmin: (body: { telegramUserId: string; telegramUsername: string }) =>
+    createAdmin: (body: { telegramUserId: string; telegramUsername: string; nickname: string }) =>
       request<{ admin: VantaAdminRecord }>("/admin/admins", {
         method: "POST",
         body: JSON.stringify(body),
@@ -228,6 +228,7 @@ export type VantaAdminRecord = {
   id: number;
   telegramUserId: string;
   telegramUsername: string;
+  nickname: string;
   role: "owner" | "admin";
   addedBy: string | null;
   addedAt: string;

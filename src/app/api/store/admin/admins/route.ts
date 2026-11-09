@@ -30,28 +30,29 @@ export async function POST(request: Request) {
     }
 
     const body = await readJson(request);
-    const { telegramUserId, telegramUsername } = body as {
+    const { telegramUserId, nickname } = body as {
       telegramUserId?: string;
-      telegramUsername?: string;
+      nickname?: string;
     };
 
     if (!telegramUserId) {
       return fail({ status: 400, body: { error: { code: "missing_telegram_user_id", message: "telegramUserId is required" } } });
     }
 
-    // Auto-fetch username from Telegram if not provided
-    let finalUsername = telegramUsername ?? "";
-    if (!finalUsername) {
-      const userInfo = await fetchTelegramUser(Number(telegramUserId));
-      if (userInfo?.username) {
-        finalUsername = userInfo.username;
-      } else if (userInfo?.first_name) {
-        // Fallback to first_name if no username
-        finalUsername = userInfo.first_name;
-      }
+    if (!nickname || !nickname.trim()) {
+      return fail({ status: 400, body: { error: { code: "missing_nickname", message: "nickname is required" } } });
     }
 
-    const admin = await addAdmin(telegramUserId, finalUsername, status.telegramUserId ?? "");
+    // Always pull the actual Telegram name from the bot via the user ID
+    let telegramUsername = "";
+    const userInfo = await fetchTelegramUser(Number(telegramUserId));
+    if (userInfo?.username) {
+      telegramUsername = userInfo.username;
+    } else if (userInfo?.first_name) {
+      telegramUsername = userInfo.first_name + (userInfo.last_name ? ` ${userInfo.last_name}` : "");
+    }
+
+    const admin = await addAdmin(telegramUserId, telegramUsername, nickname.trim(), status.telegramUserId ?? "");
     return ok({ admin }, 201);
   } catch (err) {
     return fail(err);
@@ -66,9 +67,11 @@ export async function DELETE(request: Request) {
     }
 
     const url = new URL(request.url);
-    const telegramUserId = url.searchParams.get("id");
-    if (!telegramUserId) {
-      return fail({ status: 400, body: { error: { code: "missing_id", message: "id query parameter is required" } } });
+    const pathSegments = url.pathname.split("/").filter(Boolean);
+    // path: /api/store/admin/admins/<telegramUserId>
+    const telegramUserId = pathSegments[pathSegments.length - 1];
+    if (!telegramUserId || telegramUserId === "admins") {
+      return fail({ status: 400, body: { error: { code: "missing_id", message: "admin id is required" } } });
     }
 
     // Prevent removing yourself (owner safety)

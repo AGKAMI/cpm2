@@ -112,6 +112,16 @@ export async function runStoreMigrations(): Promise<void> {
   } catch {
     // Column already exists — safe to ignore
   }
+
+  // Migration: add nickname column to vanta_admins (if missing)
+  try {
+    await store.execute({
+      sql: `ALTER TABLE vanta_admins ADD COLUMN nickname TEXT NOT NULL DEFAULT ''`,
+      args: [],
+    });
+  } catch {
+    // Column already exists — safe to ignore
+  }
 }
 
 export async function closeStoreDb(): Promise<void> {

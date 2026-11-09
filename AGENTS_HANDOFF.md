@@ -417,6 +417,20 @@ Completed (removed from list): Profile "Link your Telegram" button, `STORE_ADMIN
 
 ---
 
+### 2026-11-09 — Profile page settings cleanup
+
+**What:** Fixed two Profile page issues per KAMI's feedback:
+1. Order notifications section was showing even when not linked — now gated behind `customer` (only appears after account is linked via Telegram ID or email/password)
+2. "Manage" link in Settings was a no-op (pointed to `/store/profile`, same page) — removed entirely
+
+**Where:** `src/components/ProfileClient.tsx`
+
+**Gates:** tsc clean, lint 0 errors (pre-existing admin/page.tsx quote errors only), tests 67/67, build green. Deployed to production via Deploy Hook and verified live on /store/profile — Order notifications and Manage link both gone when not linked.
+
+**Verified by:** nemotron-3.5-super-vl-120b-a12b
+
+---
+
 ### 2026-11-09 — Hermes Agent "Kermes" (step-3.7-flash) — Owner Dashboard Add Admin Fix
 
 **What:** Fixed Add admin on Owner Dashboard (`/store/owner`) per KAMI's feedback. Two problems: (1) adding an admin didn't work reliably, (2) naming model was wrong — KAMI wants to give a nickname, while the actual Telegram name must be pulled by the bot from the user's profile via their ID.

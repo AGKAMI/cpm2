@@ -4,7 +4,7 @@
  */
 
 import { ok, fail } from "@/lib/route";
-import { getStoreDb } from "@/lib/store/store-db.ts";
+import { getStoreDb } from "@/lib/store-db";
 
 export const dynamic = "force-dynamic";
 

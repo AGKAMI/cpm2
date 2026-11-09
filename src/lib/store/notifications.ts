@@ -48,6 +48,10 @@ async function sendTelegramMessage(message: TelegramMessage): Promise<boolean> {
   }
 }
 
+export async function sendNotification(chatId: number | string, text: string): Promise<boolean> {
+  return sendTelegramMessage({ chat_id: Number(chatId), text, parse_mode: "HTML", disable_web_page_preview: true });
+}
+
 function formatMessage(event: OrderEvent, order: {
   id: string;
   inGameName: string;

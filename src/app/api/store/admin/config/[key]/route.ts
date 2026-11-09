@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     if (value === undefined) {
       return fail({ status: 400, body: { error: { code: "missing_value", message: "Value required." } } });
     }
-    await setConfig(key, String(value), String(body.type ?? "string"), body.isSensitive ?? false);
+    await setConfig(key, String(value as string), String(body.type ?? "string"), Boolean(body.isSensitive));
     return ok({ key, value: body.value });
   } catch (err) {
     return fail(err);

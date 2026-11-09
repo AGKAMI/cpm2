@@ -5,7 +5,7 @@
 
 import { fail, ok } from "@/lib/route";
 import { requireStoreAdmin } from "@/lib/store/auth";
-import { getStoreDb } from "../../../../../lib/store-db.ts";
+import { getStoreDb } from "@/lib/store-db";
 
 export const dynamic = "force-dynamic";
 

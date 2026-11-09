@@ -27,30 +27,30 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = (await readJson(request)) as Record<string, unknown>;
-    const productId = String(body.productId);
-    const provider = String(body.provider);
-    const providerId = String(body.providerId);
-    const publicUrl = String(body.publicUrl);
-    const originalRef = body.originalRef as string;
-    const fileType = body.fileType as string;
-    const width = body.width as number | undefined;
-    const height = body.height as number | undefined;
-    const fileSize = body.fileSize as number | undefined;
+    const productId = Number(body.productId as string);
+    const provider = String(body.provider ?? "");
+    const providerId = String(body.providerId ?? "");
+    const publicUrl = String(body.publicUrl ?? "");
+    const originalRef = String(body.originalRef ?? "");
+    const fileType = String(body.fileType ?? "image");
+    const width = body.width !== undefined ? Number(body.width as number) : null;
+    const height = body.height !== undefined ? Number(body.height as number) : null;
+    const fileSize = body.fileSize !== undefined ? Number(body.fileSize as number) : null;
 
     if (!productId || !provider || !providerId || !publicUrl) {
       return fail({ status: 400, body: { error: { code: "missing_fields", message: "Missing required fields." } } });
     }
 
     const media = await createMedia(
-      Number(productId),
+      productId,
       provider,
       providerId,
       publicUrl,
-      originalRef ?? "",
-      fileType ?? "image",
-      width ?? null,
-      height ?? null,
-      fileSize ?? null,
+      originalRef,
+      fileType,
+      width,
+      height,
+      fileSize,
     );
 
     return ok({ media });
@@ -62,7 +62,8 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const body = (await readJson(request)) as Record<string, unknown>;
-    const { productId, providerId } = body;
+    const productId = Number(body.productId as string);
+    const providerId = String(body.providerId ?? "");
 
     if (!productId || !providerId) {
       return fail({ status: 400, body: { error: { code: "missing_fields", message: "productId and providerId required." } } });

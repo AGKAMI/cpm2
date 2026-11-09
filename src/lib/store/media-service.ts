@@ -4,7 +4,7 @@
  * Defaults to local file storage; configurable via media provider.
  */
 
-import { getStoreDb } from "./store-db.ts";
+import { getStoreDb } from "../store-db.ts";
 
 export type MediaFile = {
   id: number;

@@ -3,7 +3,7 @@
  * Logs all state-changing operations for audit trail and compliance.
  */
 
-import { getStoreDb } from "./store-db.ts";
+import { getStoreDb } from "../store-db.ts";
 
 export type AuditLogEntry = {
   id: number;

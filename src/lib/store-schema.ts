@@ -217,4 +217,34 @@ CREATE INDEX IF NOT EXISTS idx_vanta_audit_logs_created
   ON vanta_audit_logs (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_vanta_financial_ledger_order
   ON vanta_financial_ledger (order_id);
+
+CREATE TABLE IF NOT EXISTS vanta_support_tickets (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id     INTEGER NOT NULL REFERENCES vanta_customers(id) ON DELETE CASCADE,
+  subject         TEXT    NOT NULL DEFAULT '',
+  message         TEXT    NOT NULL DEFAULT '',
+  status          TEXT    NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'in_progress', 'resolved', 'closed')),
+  priority        TEXT    NOT NULL DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'urgent')),
+  admin_reply     TEXT,
+  resolved_at     TEXT,
+  created_at      TEXT    NOT NULL,
+  updated_at      TEXT    NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS vanta_wishlist (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id INTEGER NOT NULL REFERENCES vanta_customers(id) ON DELETE CASCADE,
+  product_id  INTEGER NOT NULL REFERENCES vanta_products(id) ON DELETE CASCADE,
+  created_at  TEXT    NOT NULL,
+  UNIQUE (customer_id, product_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_vanta_support_tickets_customer
+  ON vanta_support_tickets (customer_id);
+CREATE INDEX IF NOT EXISTS idx_vanta_support_tickets_status
+  ON vanta_support_tickets (status);
+CREATE INDEX IF NOT EXISTS idx_vanta_wishlist_customer
+  ON vanta_wishlist (customer_id);
+CREATE INDEX IF NOT EXISTS idx_vanta_wishlist_product
+  ON vanta_wishlist (product_id);
 `;

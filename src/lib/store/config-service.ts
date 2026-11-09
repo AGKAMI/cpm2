@@ -4,7 +4,7 @@
  * Sensitive values are never exposed via the public API.
  */
 
-import { getStoreDb } from "./store-db.ts";
+import { getStoreDb } from "../store-db.ts";
 
 export type ConfigEntry = {
   key: string;
@@ -72,6 +72,6 @@ export async function listConfigs(includeSensitive: boolean = false): Promise<Co
   const sql = includeSensitive
     ? `SELECT * FROM vanta_system_config ORDER BY key`
     : `SELECT * FROM vanta_system_config WHERE is_sensitive = 0 ORDER BY key`;
-  const result = await db.execute({ sql });
+  const result = await db.execute({ sql, args: [] });
   return result.rows.map(rowToConfig);
 }

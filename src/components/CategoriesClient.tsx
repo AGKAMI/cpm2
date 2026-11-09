@@ -122,10 +122,10 @@ export function CategoriesClient() {
         </div>
       ) : (
         <>
-          <section className="pad mb-4 px-4">
+          <section className="pad mb-6 px-4">
             <span className="eyebrow">Browse the floor</span>
-            <h2 className="serif font-bold text-[30px] leading-none mt-1 mb-3">
-              Categories
+            <h2 className="serif font-bold text-[34px] leading-[0.95] mt-1 mb-4 tracking-tight">
+              CPM2 vehicle catalogue
             </h2>
             <div className="search-input flex items-center gap-2 h-[46px] px-[14px] rounded-[15px] bg-secondary border border-border">
               <span
@@ -287,16 +287,16 @@ export function CategoriesClient() {
             <div id="res" className="carousel px-4">
               <button
                 onClick={() => {
-                  const el = document.getElementById("res");
-                  el?.scrollBy({ left: -340, behavior: "smooth" });
-                }}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-14 w-10 rounded-r-lg bg-[#0a0a0a]/80 border border-border flex items-center justify-center text-gold hover:bg-[#0a0a0a] transition-colors hidden md:flex"
-                aria-label="Scroll left"
-              >
-                <span className="text-[14px]">‹</span>
+                    const el = document.getElementById("res");
+                    el?.scrollBy({ left: -380, behavior: "smooth" });
+                  }}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-16 w-10 rounded-r-full bg-[#0a0a0a]/80 border border-border flex items-center justify-center text-gold hover:bg-[#0a0a0a] transition-colors hidden md:flex"
+                  aria-label="Scroll left"
+                >
+                  <span className="text-[16px]">‹</span>
               </button>
               <div
-                className="flex flex-nowrap gap-4 snap-x snap-mandatory pb-4"
+                className="flex flex-nowrap gap-6 snap-x snap-mandatory pb-6"
                 style={{ scrollPaddingLeft: "16px", scrollPaddingRight: "16px" }}
               >
                 {sorted.length ? (
@@ -304,45 +304,37 @@ export function CategoriesClient() {
                     <Link
                       key={c.id}
                       href={`/store/products/${c.id}`}
-                      className="product-card group cursor-pointer snap-start stagger-item min-w-[320px] max-w-[340px]"
+                      className="product-card group block snap-start stagger-item min-w-[360px] max-w-[400px]"
                       style={{ animationDelay: `${index * 40}ms` }}
                     >
-                      <div className="relative overflow-hidden rounded-[18px] border border-border">
+                      <div className="relative overflow-hidden rounded-[24px] border border-border mb-4">
                         {cardImages[c.id] ? (
                                                       <>
-                                                        <img src={cardImages[c.id]} alt={c.name} className="w-full h-[220px] object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                                                        <img
+                                                          src={cardImages[c.id]}
+                                                          alt={c.name}
+                                                          className="w-full h-[260px] object-cover group-hover:scale-105 transition-transform duration-500"
+                                                          loading="lazy"
+                                                        />
+                                                        </>
+                                                        ) : (
+                                                        <div className="w-full h-[260px] bg-surface-deep relative aspect-[4/5]">
                                                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                                                      </>
-                                                    ) : (
-                                                      <div className="w-full h-[220px] bg-surface-deep relative aspect-[4/3]">
-                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                                                        <span className="absolute bottom-3 left-3 text-[10px] text-white/50 uppercase tracking-[0.2em]">No photo</span>
-                                                      </div>
+                                                        <span className="absolute bottom-4 left-4 text-[10px] text-white/50 uppercase tracking-[0.2em]">No photo</span>
+                                                        </div>
                                                     )}
                         <div className="absolute top-2 left-2 flex flex-col gap-1">
-                          {c.exclusivity !== "standard" && (
-                                                        <span className={`badge-exclusive ${c.exclusivity === "one_of_one" ? "badge-one" : "badge-limited"}`}>
-                                                          {c.exclusivity === "one_of_one" ? "One of One" : "Limited"}
-                                                        </span>
-                                                    )}
-                        {c.isNew && (
-                          <span className="badge-exclusive badge-new">New</span>
-                                                    )}
-                        {c.isSale && (
-                          <span className="badge-exclusive badge-sale">Sale</span>
-                                                    )}
-                        {c.isFeatured && (
-                          <span className="badge-exclusive badge-featured">Featured</span>
-                                                    )}
-                      </div>
+                        </div>
                     </div>
                     <div className="mt-3 px-1">
-                      <h4 className="font-bold text-sm">{c.name}</h4>
-                      <p className="text-[10px] text-muted-foreground mb-1">{c.availabilityState}</p>
-                      <div className="flex items-baseline flex-wrap gap-2">
-                        <span className="price-primary">{formatPrice(c.basePriceCents, c.currency)}</span>
-                        <span className={`stock-indicator ${c.stockQuantity === 0 ? "bad" : c.stockQuantity <= 3 ? "warn" : "ok"}`}>
-                          {c.stockQuantity === 0 ? "Sold out · Waitlist" : c.stockQuantity <= 3 ? `Only ${c.stockQuantity} left` : `In stock · ${c.stockQuantity}`}
+                      <h4 className="font-bold text-sm text-ink leading-snug">{c.name}</h4>
+                      <div className="flex items-baseline flex-wrap gap-2 mt-2">
+                        <span className="price-primary text-base font-bold tabular-nums">
+                          {formatPrice(c.basePriceCents, c.currency)}
+                        </span>
+                        <span
+                          className={`stock-indicator ${c.stockQuantity === 0 ? "bad" : c.stockQuantity <= 3 ? "warn" : "ok"}`}>
+                          {c.stockQuantity === 0 ? "Sold out" : c.stockQuantity <= 3 ? `Only ${c.stockQuantity} left` : `In stock · ${c.stockQuantity}`}
                         </span>
                       </div>
                     </div>
@@ -357,13 +349,13 @@ export function CategoriesClient() {
                 {sorted.length > 0 && (
                   <button
                     onClick={() => {
-                      const el = document.getElementById("res");
-                      el?.scrollBy({ left: 340, behavior: "smooth" });
-                    }}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-14 w-10 rounded-l-lg bg-[#0a0a0a]/80 border border-border flex items-center justify-center text-gold hover:bg-[#0a0a0a] transition-colors hidden md:flex"
-                    aria-label="Scroll right"
-                  >
-                    <span className="text-[14px]">›</span>
+                        const el = document.getElementById("res");
+                        el?.scrollBy({ left: 380, behavior: "smooth" });
+                      }}
+                      className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-16 w-10 rounded-l-full bg-[#0a0a0a]/80 border border-border flex items-center justify-center text-gold hover:bg-[#0a0a0a] transition-colors hidden md:flex"
+                      aria-label="Scroll right"
+                    >
+                      <span className="text-[16px]">›</span>
                   </button>
                 )}
               </div>

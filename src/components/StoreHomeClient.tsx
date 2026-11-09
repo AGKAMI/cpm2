@@ -9,10 +9,8 @@ export function StoreHomeClient() {
   const [featured, setFeatured] = useState<VantaProduct[]>([]);
   const [newArrivals, setNewArrivals] = useState<VantaProduct[]>([]);
   const [onSale, setOnSale] = useState<VantaProduct[]>([]);
-  const [bestSellers, setBestSellers] = useState<VantaProduct[]>([]);
   const [categories, setCategories] = useState<VantaCategory[]>([]);
   const [cardImages, setCardImages] = useState<Record<number, string>>({});
-  const [orders, setOrders] = useState<Array<Record<string, unknown>>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -34,28 +32,11 @@ export function StoreHomeClient() {
         setCustomer(profile.customer);
         setTelegramUser(profile.telegramUser);
 
-        // Fetch active promotions (customizable template cards)
         try {
           const promos = await vantaApi.promotions();
           setPromotions(Array.isArray(promos.promotions) ? promos.promotions : []);
         } catch {
           // Promotions not available — sections stay hidden.
-        }
-
-        // Fetch this customer's orders — used to gate data-dependent sections.
-        if (profile.customer?.playerId) {
-          try {
-            const ordersRes = await fetch(
-              `/api/store/orders?playerId=${encodeURIComponent(profile.customer.playerId)}`,
-              { credentials: "include" },
-            );
-            if (ordersRes.ok) {
-              const ordersData = await ordersRes.json();
-              setOrders(Array.isArray(ordersData.orders) ? ordersData.orders : []);
-            }
-          } catch {
-            // No orders / not authenticated — sections stay hidden.
-          }
         }
 
         // New arrivals = products with isNew flag, fallback to most recent
@@ -123,51 +104,16 @@ export function StoreHomeClient() {
     })();
   }, []);
 
-  const dock = (
-    <div className="dyn gap-4">
-      <div
-        onClick={() => {}}
-        className="rk cursor-pointer"
-        data-a="tab"
-        data-t="orders"
-      >
-        <span className="n gtext">🚛</span>
-        <div>
-          <b>Free delivery slot</b>
-          <small>Saturday · 14:00 SAST</small>
-        </div>
-      </div>
-      <div
-        onClick={() => {}}
-        className="rk cursor-pointer"
-        data-a="promoc"
-      >
-        <span className="n gtext">🏷️</span>
-        <div>
-          <b>Trade-in credit</b>
-          <small>R200 off your second build</small>
-        </div>
-      </div>
-    </div>
-  );
-
-  const content = (
-    <>
-      <section className="hero px-4 pt-4 pb-4 relative">
-        <div className="hero-wm absolute right-0 top-0 opacity-20 pointer-events-none">
-          <div
-            dangerouslySetInnerHTML={{
-              __html: `<svg viewBox="0 0 100 114" width="200" height="228" style="flex:none;display:block"><path d="M12,8H88L94,14V60Q94,90 50,108Q6,90 6,60V14Z" fill="none" stroke="#d4af4f" stroke-width="2" opacity=".15"/></svg>`,
-            }}
-          />
-        </div>
-        <span className="eyebrow">Good evening</span>
-        <span className="eyebrow">Good evening</span>
-        <h1 className="pt font-serif font-bold text-[28px] leading-[1.02] mb-2">
-          Welcome back,<br /> {telegramUser?.displayName || customer?.inGameName || "there"}
+const content = (
+      <>
+      <section className="hero relative px-4 pt-6 pb-8">
+        <span className="eyebrow">VANTA GARAGE</span>
+        <h1 className="font-serif font-bold text-[32px] leading-[1.05] mb-3 tracking-tight">
+          Custom builds on the floor.
         </h1>
-        <p className="text-sm text-ink-soft max-w-[230px]">
-          The showroom is open — <b className="text-foreground">{featured.length}</b> custom builds on the floor, <b className="text-foreground">{featured.filter((c) => c.exclusivity !== "standard").length}</b> exclusive.
+        <p className="text-ink-mid max-w-[30ch]">
+          {featured.length} vehicles ready to drive.{" "}
+          {featured.filter((c) => c.exclusivity !== "standard").length} limited editions.
         </p>
       </section>
 
@@ -187,7 +133,7 @@ export function StoreHomeClient() {
                   <div className="ov absolute inset-0 flex flex-col justify-between p-3 text-white">
                     <div>
                       {c.exclusivity !== "standard" && (
-                        <span className="bd bd-one mb-1 text-[9px] font-bold">{c.exclusivity}</span>
+                        <span className="badge-exclusive text-[9px] font-bold">{c.exclusivity.replace("_", " ")}</span>
                       )}
                     </div>
                     <div className="flex items-end justify-between gap-2">
@@ -203,11 +149,6 @@ export function StoreHomeClient() {
                   </div>
                 </div>
               </Link>
-            ))}
-          </div>
-          <div className="dots justify-center mt-2 gap-2" data-dots="feat">
-            {featured.map((_, i) => (
-              <i key={i} className={`w-2 h-2 rounded-full bg-border transition-all ${i === 0 ? "bg-gold w-5" : ""}`} />
             ))}
           </div>
         </>
@@ -319,7 +260,7 @@ export function StoreHomeClient() {
                   <h4 className="font-bold text-sm">{c.name}</h4>
                   <p className="text-[10px] text-ink-soft">{c.availabilityState}</p>
                   <div className="vc-f mt-1">
-                    <span className="pr font-bold">{formatPrice(c.basePriceCents, c.currency)}</span>
+                    <span className="pr font-bold tabular-nums">{formatPrice(c.basePriceCents, c.currency)}</span>
                   </div>
                 </div>
               </Link>
@@ -356,7 +297,7 @@ export function StoreHomeClient() {
                   <h4 className="font-bold text-sm">{c.name}</h4>
                   <p className="text-[10px] text-ink-soft">{c.availabilityState}</p>
                   <div className="vc-f mt-1">
-                    <span className="pr font-bold">{formatPrice(c.basePriceCents, c.currency)}</span>
+                    <span className="pr font-bold tabular-nums">{formatPrice(c.basePriceCents, c.currency)}</span>
                   </div>
                 </div>
               </Link>
@@ -365,39 +306,7 @@ export function StoreHomeClient() {
         </section>
       )}
 
-      {orders.length > 0 && (
-        <section className="sec mb-6 px-4">
-          <div className="sh flex justify-between items-center mb-3">
-            <div>
-              <span className="eyebrow">This month</span>
-              <h3 className="font-serif font-bold text-[20px] leading-none mt-[6px]">Best sellers</h3>
-            </div>
-          </div>
-        <div className="pad flex flex-col gap-3 px-4">
-          {bestSellers.map((c, i) => (
-            <Link key={c.id} href={`/store/products/${c.id}`} className="rk cursor-pointer">
-              <div className="n gtext w-6 text-center text-[14px]">{i + 1}</div>
-              <div className="media w-20 h-20 rounded-[18px] border border-border flex-shrink-0">
-                {cardImages[c.id] ? (
-                  <img src={cardImages[c.id]} alt={c.name} className="w-full h-full object-cover" loading="lazy" />
-                ) : (
-                  <div className="w-full h-full bg-surface-deep flex items-center justify-center">
-                    <span className="text-[10px] text-ink-faint uppercase tracking-[0.2em]">No photo</span>
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-sm">{c.name}</h4>
-                <p className="text-[10px] text-ink-soft">{c.availabilityState}</p>
-                <span className="pr font-bold">{formatPrice(c.basePriceCents, c.currency)}</span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-      )}
-
-      {customer && orders.length > 0 && (
+      {customer && (
         <section className="sec mb-8 px-4">
         <div className="sh mb-4">
           <div>
@@ -421,7 +330,7 @@ export function StoreHomeClient() {
               <div className="flex-1 min-w-0">
                 <h4 className="font-bold text-sm">{c.name}</h4>
                 <p className="text-[10px] text-ink-soft">{c.availabilityState}</p>
-                <span className="pr font-bold">{formatPrice(c.basePriceCents, c.currency)}</span>
+                <span className="pr font-bold tabular-nums">{formatPrice(c.basePriceCents, c.currency)}</span>
               </div>
               <span className="text-gold text-[14px]">▸</span>
             </Link>
@@ -439,7 +348,7 @@ export function StoreHomeClient() {
 
 const loadingSkeleton = (
     <>
-      <section className="hero px-4 pt-4 pb-4 relative">
+      <section className="hero px-4 pt-6 pb-8 relative">
         <div className="animate-pulse">
           <div className="h-4 w-1/4 bg-surface-deep rounded mb-2" />
           <div className="h-8 w-3/4 bg-surface-deep rounded mb-1" />
@@ -448,7 +357,7 @@ const loadingSkeleton = (
       </section>
       <section className="px-4">
         <div className="animate-pulse">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="product-card">
                 <div className="relative overflow-hidden rounded-[18px] border border-border">
@@ -526,7 +435,7 @@ const loadingSkeleton = (
   );
 
   return (
-    <StoreShell dock={dock}>
+    <StoreShell dock={null}>
       {loaded ? content : loadingSkeleton}
       {error && (
         <div className="p-6 text-center">

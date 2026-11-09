@@ -98,6 +98,8 @@ export default function AdminPage() {
   const [converterResult, setConverterResult] = useState<string | null>(null);
   const [converterLoading, setConverterLoading] = useState(false);
   const [converterError, setConverterError] = useState<string | null>(null);
+  // Toggle for the add/edit product form (behind a button, not always open)
+  const [showProductForm, setShowProductForm] = useState(false);
 
 
   const load = useCallback(async () => {
@@ -321,9 +323,11 @@ export default function AdminPage() {
     const handlePublish = async (id: number, publish: boolean) => {
       setError(null);
       try {
+        const scrollY = window.scrollY;
         await vantaApi.updateProductPublish(id, publish);
         setMsg(publish ? "Published." : "Unpublished.");
         await load();
+        window.scrollTo(0, scrollY);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Couldn't update publish state.");
       }
@@ -437,7 +441,7 @@ export default function AdminPage() {
         </section>
 
       {/* Create / Edit form - hidden when editing inline within a card */}
-            {!inlineEditingId && (
+            {!inlineEditingId && showProductForm && (
               <section className="panel rounded-xl border border-border p-6 mb-8">
               <h3 className="text-sm font-semibold text-foreground mb-4">
                 {editingId ? "Edit product" : "Add product"}
@@ -694,7 +698,23 @@ export default function AdminPage() {
                 <section className="space-y-3">
                   <div className="flex items-baseline justify-between mb-4">
                     <h3 className="text-sm font-semibold text-foreground">Catalogue</h3>
-                    <span className="text-xs text-muted-foreground">{products.length} product{products.length === 1 ? "" : "s"}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">{products.length} product{products.length === 1 ? "" : "s"}</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setShowProductForm(true);
+                          setEditingId(null);
+                          setForm(EMPTY_FORM);
+                          setPickedCar(null);
+                          setMsg(null);
+                          setError(null);
+                        }}
+                      >
+                        {showProductForm ? "Hide form" : "Add product"}
+                      </Button>
+                    </div>
                   </div>
                   {products.length === 0 ? (
                     <p className="text-muted-foreground">No products yet. Add your first above.</p>
@@ -987,10 +1007,13 @@ export default function AdminPage() {
                                                                               onClick={async () => {
                                                                                 if (!window.confirm(`Delete "${p.name}"? This will unpublish and mark unavailable.`)) return;
                                                                                 setError(null);
+                                                                                // Remember scroll position so the page doesn't jump to top after refresh
+                                                                                const scrollY = window.scrollY;
                                                                                 try {
                                                                                   await vantaApi.deleteProduct(p.id);
                                                                                   setMsg("Product deleted (unpublished & marked unavailable).");
-                                                                                  load(); // Refresh the product list
+                                                                                  await load();
+                                                                                  window.scrollTo(0, scrollY);
                                                                                 } catch (err) {
                                                                                   setError(err instanceof Error ? err.message : "Failed to delete product.");
                                                                                 }

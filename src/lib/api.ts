@@ -45,7 +45,7 @@ export function errorPayload(err: unknown): { status: number; body: ErrorBody } 
       body: {
         error: {
           code: "VALIDATION_FAILED",
-          message: "Some fields need attention.",
+          message: "Some fields need fixing.",
           fields,
         },
       },
@@ -55,6 +55,6 @@ export function errorPayload(err: unknown): { status: number; body: ErrorBody } 
   console.error("[cpm2] unexpected error:", err);
   return {
     status: 500,
-    body: { error: { code: "INTERNAL_ERROR", message: "Something went wrong on the server." } },
+    body: { error: { code: "INTERNAL_ERROR", message: "Server error — try again." } },
   };
 }

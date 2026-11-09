@@ -23,7 +23,7 @@ export const emailSchema = z
   .trim()
   .min(3, { error: "Email is required." })
   .max(LIMITS.MAX_EMAIL_LENGTH, {
-    error: `Email must be ${LIMITS.MAX_EMAIL_LENGTH} characters or fewer.`,
+    error: `Email is too long — ${LIMITS.MAX_EMAIL_LENGTH} characters max.`,
   })
   .refine((value) => EMAIL_PATTERN.test(value), { error: "Enter a valid email address." });
 
@@ -31,7 +31,7 @@ export const passwordSchema = z
   .string({ error: "Password is required." })
   .min(LIMITS.MIN_PASSWORD_LENGTH, { error: "Password is required." })
   .max(LIMITS.MAX_PASSWORD_LENGTH, {
-    error: `Password must be ${LIMITS.MAX_PASSWORD_LENGTH} characters or fewer.`,
+    error: `Password is too long — ${LIMITS.MAX_PASSWORD_LENGTH} characters max.`,
   })
   .refine((value) => value.trim().length > 0, { error: "Password cannot be blank." });
 
@@ -65,7 +65,7 @@ export const slotsSchema = z
   });
 
 export const newGarageSchema = z.boolean({
-  error: "The new garage flag must be true or false.",
+  error: "New garage must be true or false.",
 });
 
 export const coinsSpentOnCarsSchema = z
@@ -78,7 +78,7 @@ export const coinsSpentOnCarsSchema = z
 export const notesSchema = z
   .string()
   .max(LIMITS.MAX_NOTES_LENGTH, {
-    error: `Notes must be ${LIMITS.MAX_NOTES_LENGTH} characters or fewer.`,
+    error: `Notes are too long — ${LIMITS.MAX_NOTES_LENGTH} characters max.`,
   })
   .default("");
 
@@ -151,7 +151,7 @@ export const slotPurchaseSchema = z
       .int({ error: "Slot count must be a whole number." })
       .min(1, { error: "Buy at least one slot." })
       .max(LIMITS.MAX_COIN_SLOTS, {
-        error: `You can buy at most ${LIMITS.MAX_COIN_SLOTS} slot at a time.`,
+        error: `You can buy at most ${LIMITS.MAX_COIN_SLOTS} slots.`,
       })
       .default(1),
   })
@@ -213,11 +213,11 @@ export const tradeRatesSchema = z.object({
   randPerCoin: z
     .number({ error: "The coins rate is required." })
     .min(0, { error: "The coins rate cannot be negative." })
-    .max(100_000, { error: "The coins rate looks wrong - check the pack price." }),
+    .max(100_000, { error: "The coins rate looks wrong." }),
   randPerCash: z
     .number({ error: "The cash rate is required." })
     .min(0, { error: "The cash rate cannot be negative." })
-    .max(100_000, { error: "The cash rate looks wrong - check the pack price." }),
+    .max(100_000, { error: "The cash rate looks wrong." }),
 });
 
 export type TradeRatesInput = z.infer<typeof tradeRatesSchema>;
@@ -278,9 +278,9 @@ export const tradeIdentifySchema = z.object({
   imageBase64: z
     .string({ error: "A screenshot is required." })
     .min(50, { error: "That image looks empty." })
-    .max(7_000_000, { error: "Screenshot is too large - keep it under 5MB." }),
+    .max(7_000_000, { error: "Screenshot is too large — keep it under 5MB." }),
   mimeType: z.enum(["image/png", "image/jpeg", "image/webp"], {
-    error: "Screenshot must be a PNG, JPEG or WebP image.",
+    error: "Screenshot must be a PNG, JPEG or WebP.",
   }),
 });
 

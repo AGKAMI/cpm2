@@ -113,7 +113,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
         else if (slots > LIMITS.MAX_COIN_SLOTS) {
           next.slots = `Extra slots cannot exceed ${LIMITS.MAX_COIN_SLOTS} per account.`;
         } else if (account && slots > account.slots) {
-          next.slots = `Extra slots can only be bought (${LIMITS.SLOT_COST_COINS} coins each) - use the "Unlock 21st slot" button.`;
+          next.slots = `Extra slots can only be bought (${LIMITS.SLOT_COST_COINS} coins each) — use the "Unlock 21st slot" button.`;
         }
       }
       if (cars < 0) next.cars = "Cars cannot be negative.";
@@ -126,7 +126,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
         }
       }
       if (password.length > LIMITS.MAX_PASSWORD_LENGTH) {
-        next.password = `Password must be ${LIMITS.MAX_PASSWORD_LENGTH} characters or fewer.`;
+        next.password = `Password is too long — ${LIMITS.MAX_PASSWORD_LENGTH} characters max.`;
       }
       if (Object.keys(next).length > 0) {
         setErrors(next);

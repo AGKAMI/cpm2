@@ -129,7 +129,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
         window.location.href = `/store/orders/${order.id}`;
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Checkout failed. Try again.");
+      setError(err instanceof Error ? err.message : "Checkout failed.");
     } finally {
       setCheckoutBusy(false);
     }

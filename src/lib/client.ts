@@ -54,7 +54,7 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
     response = await fetch(url, { ...init, headers });
   } catch {
     throw new ApiRequestError(
-      "Cannot reach the local database service. Is the dev server still running?",
+      "Cannot reach the server. Is it still running?",
       0,
       "NETWORK_ERROR",
     );
@@ -66,7 +66,7 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
     const body = payload as ApiErrorBody | null;
     const code = body?.error?.code ?? "UNKNOWN_ERROR";
     throw new ApiRequestError(
-      body?.error?.message ?? `Request failed with status ${response.status}.`,
+      body?.error?.message ?? `Request failed — status ${response.status}.`,
       response.status,
       code,
       body?.error?.fields,

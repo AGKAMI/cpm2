@@ -271,7 +271,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         body: JSON.stringify({ password: exportConsentPassword }),
       });
       if (!response.ok) {
-        toast.error("Wrong console password", "Try again.");
+        toast.error("Wrong console password");
         return;
       }
       triggerExport();

@@ -8,6 +8,7 @@
  */
 
 import { fail, ok, readJson } from "@/lib/route";
+import { telegramBotToken } from "@/lib/telegram";
 import { getCustomerByPlayerId, getCustomerByPlatformIdentity, linkPlatformIdentity } from "@/lib/store/customers";
 import { NextResponse } from "next/server";
 
@@ -23,6 +24,27 @@ export async function POST(request: Request) {
         { error: { code: "INVALID_TELEGRAM_ID", message: "Please enter a valid Telegram ID (numbers only)." } },
         { status: 400 },
       );
+    }
+
+    // Verify the Telegram ID exists via Telegram's Bot API (getUser).
+    // This gates manual ID entry on Telegram confirming the user is real.
+    const token = telegramBotToken();
+    if (token) {
+      try {
+        const tgRes = await fetch(
+          `https://api.telegram.org/bot${token}/getUser?user_id=${encodeURIComponent(telegramUserId)}`,
+        );
+        const tgData = await tgRes.json();
+        if (!tgData.ok || !tgData.result) {
+          return NextResponse.json(
+            { error: { code: "TELEGRAM_ID_NOT_FOUND", message: "Telegram ID not found — please check the ID and try again." } },
+            { status: 400 },
+          );
+        }
+      } catch {
+        // If Telegram's API is unreachable, fall through and link anyway
+        // rather than blocking the user on a transient network error.
+      }
     }
 
     // Check if this Telegram ID is already linked to a customer

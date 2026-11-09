@@ -12,6 +12,7 @@ export function StoreHomeClient() {
   const [bestSellers, setBestSellers] = useState<VantaProduct[]>([]);
   const [categories, setCategories] = useState<VantaCategory[]>([]);
   const [cardImages, setCardImages] = useState<Record<number, string>>({});
+  const [orders, setOrders] = useState<Array<Record<string, unknown>>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -31,6 +32,22 @@ export function StoreHomeClient() {
         setCategories(cats.categories);
         setCustomer(profile.customer);
         setTelegramUser(profile.telegramUser);
+
+        // Fetch this customer's orders — used to gate data-dependent sections.
+        if (profile.customer?.playerId) {
+          try {
+            const ordersRes = await fetch(
+              `/api/store/orders?playerId=${encodeURIComponent(profile.customer.playerId)}`,
+              { credentials: "include" },
+            );
+            if (ordersRes.ok) {
+              const ordersData = await ordersRes.json();
+              setOrders(Array.isArray(ordersData.orders) ? ordersData.orders : []);
+            }
+          } catch {
+            // No orders / not authenticated — sections stay hidden.
+          }
+        }
 
         // New arrivals = products with isNew flag, fallback to most recent
         const arrivals = [...all.products]
@@ -74,6 +91,18 @@ export function StoreHomeClient() {
           (c): c is [number, string] => c !== null && c[1] !== undefined,
         );
         setCardImages(Object.fromEntries(entries));
+
+        const productIdsWithImages = new Set(entries.map(([id]) => id));
+
+        // Only show categories that actually have products WITH images assigned.
+        const categoryIdsWithProducts = new Set(
+          all.products
+            .filter((p) => productIdsWithImages.has(p.id))
+            .map((p) => p.categoryId)
+            .filter(Boolean),
+        );
+        setCategories(cats.categories.filter((cat) => categoryIdsWithProducts.has(cat.id)));
+
       } catch (err) {
         setError(err instanceof Error ? err.message : "Couldn't load catalogue.");
       } finally {
@@ -282,13 +311,14 @@ export function StoreHomeClient() {
         </section>
       )}
 
-      <section className="sec mb-6 px-4">
-        <div className="sh flex justify-between items-center mb-3">
-          <div>
-            <span className="eyebrow">This month</span>
-            <h3 className="font-serif font-bold text-[20px] leading-none mt-[6px]">Best sellers</h3>
+      {orders.length > 0 && (
+        <section className="sec mb-6 px-4">
+          <div className="sh flex justify-between items-center mb-3">
+            <div>
+              <span className="eyebrow">This month</span>
+              <h3 className="font-serif font-bold text-[20px] leading-none mt-[6px]">Best sellers</h3>
+            </div>
           </div>
-        </div>
         <div className="pad flex flex-col gap-3 px-4">
           {bestSellers.map((c, i) => (
             <Link key={c.id} href={`/store/products/${c.id}`} className="rk cursor-pointer">
@@ -311,8 +341,10 @@ export function StoreHomeClient() {
           ))}
         </div>
       </section>
+      )}
 
-      <section className="sec mb-8 px-4">
+      {customer && orders.length > 0 && (
+        <section className="sec mb-8 px-4">
         <div className="sh mb-4">
           <div>
             <span className="eyebrow">Personalised</span>
@@ -342,6 +374,7 @@ export function StoreHomeClient() {
           ))}
         </div>
       </section>
+      )}
 
       <div className="foot mb-4 px-4 text-center text-[10px] text-ink-soft tracking-[0.08em]">
         KAMI&rsquo;S VANTA GARAGE · VERIFIED CPM2 BUILDS<br />
@@ -350,9 +383,97 @@ export function StoreHomeClient() {
     </>
   );
 
+const loadingSkeleton = (
+    <>
+      <section className="hero px-4 pt-4 pb-4 relative">
+        <div className="animate-pulse">
+          <div className="h-4 w-1/4 bg-surface-deep rounded mb-2" />
+          <div className="h-8 w-3/4 bg-surface-deep rounded mb-1" />
+          <div className="h-8 w-1/2 bg-surface-deep rounded" />
+        </div>
+      </section>
+      <section className="px-4">
+        <div className="animate-pulse">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="product-card">
+                <div className="relative overflow-hidden rounded-[18px] border border-border">
+                  <div className="w-full h-[220px] bg-surface-deep" />
+                  <div className="absolute bottom-2 left-2 right-2 p-2 bg-black/60">
+                    <div className="h-4 w-3/4 bg-surface-deep rounded mb-1" />
+                    <div className="h-6 w-1/2 bg-gold rounded" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+      <section className="sec mb-6 px-4 animate-pulse">
+        <div className="h-5 w-1/4 bg-surface-deep rounded mb-3" />
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="panel p-4">
+              <div className="h-3 w-1/3 bg-surface-deep rounded mb-1" />
+              <div className="h-5 w-1/2 bg-surface-deep rounded" />
+            </div>
+          ))}
+        </div>
+      </section>
+      <section className="sec mb-6 px-4 animate-pulse">
+        <div className="h-5 w-1/4 bg-surface-deep rounded mb-3" />
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="product-card">
+              <div className="relative overflow-hidden rounded-[18px] border border-border">
+                <div className="w-full h-[220px] bg-surface-deep" />
+                <div className="absolute bottom-2 left-2 right-2 p-2 bg-black/60">
+                  <div className="h-4 w-3/4 bg-surface-deep rounded mb-1" />
+                  <div className="h-6 w-1/2 bg-gold rounded" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+      <section className="sec mb-6 px-4 animate-pulse">
+        <div className="h-5 w-1/4 bg-surface-deep rounded mb-3" />
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="product-card">
+              <div className="relative overflow-hidden rounded-[18px] border border-border">
+                <div className="w-full h-[220px] bg-surface-deep" />
+                <div className="absolute bottom-2 left-2 right-2 p-2 bg-black/60">
+                  <div className="h-4 w-3/4 bg-surface-deep rounded mb-1" />
+                  <div className="h-6 w-1/2 bg-destructive rounded" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+      <section className="sec mb-10 px-4 animate-pulse">
+        <div className="h-5 w-1/4 bg-surface-deep rounded mb-3" />
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="product-card">
+              <div className="relative overflow-hidden rounded-[18px] border border-border">
+                <div className="w-full h-[220px] bg-surface-deep" />
+                <div className="absolute bottom-2 left-2 right-2 p-2 bg-black/60">
+                  <div className="h-4 w-3/4 bg-surface-deep rounded mb-1" />
+                  <div className="h-6 w-1/2 bg-gold rounded" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </>
+  );
+
   return (
     <StoreShell dock={dock}>
-      {loaded ? content : null}
+      {loaded ? content : loadingSkeleton}
       {error && (
         <div className="p-6 text-center">
           <p className="rounded-md border border-destructive bg-background px-4 py-3 text-xs text-destructive">{error}</p>

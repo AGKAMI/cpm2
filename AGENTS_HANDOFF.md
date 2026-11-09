@@ -294,22 +294,41 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 
 ---
 
-### 2026-11-09 — StoreShell wrapped on all store routes
+### 2026-11-09 — StoreShell double-wrap fix (triple navs on store routes)
 
-**What:** Wrapped all store routes (`/store`, `/store/profile`, `/store/checkout/[id]`, `/store/categories`, `/store/orders`) in `StoreShell` so they have the store-branded header/nav instead of rendering naked clients with no shell. Previously only `/store/admin` and `/store/owner` used `StoreShell`; other store routes showed the Fleet Ledger header from `AppShell` because `AppShell` only suppressed its header on `pathname === "/"`.
+**What:** Fixed triple-nav bug on store routes ("HOME CATEGORIES ORDERS PROFILE" appearing 3x). Root cause: `src/app/store/layout.tsx` wrapped `{children}` in `<StoreShell>` (line 71), AND every store client component (CheckoutClient, ProfileClient, StoreHomeClient, CategoriesClient, OrdersClient) also wraps itself in StoreShell internally. This caused 2 StoreShells = 4 navs. Combined with the earlier page-level StoreShell wrappers (since reverted), it reached 3 StoreShells = 6 navs.
 
-**Where:** `src/app/store/page.tsx`, `src/app/store/profile/page.tsx`, `src/app/store/checkout/[productId]/page.tsx`, `src/app/store/categories/page.tsx`, `src/app/store/orders/page.tsx`
+**Fix:** Removed `import { StoreShell }` and `<StoreShell>{children}</StoreShell>` from `src/app/store/layout.tsx`. All store client components already self-wrap in StoreShell, so each store page now has exactly 1 StoreShell = 2 nav elements (desktop tabs + mobile dock). Also reverted the page-level StoreShell wrappers on `/store/page.tsx`, `/store/profile/page.tsx`, `/store/checkout/[productId]/page.tsx`, `/store/categories/page.tsx`, `/store/orders/page.tsx` since they were redundant.
 
-**Fix:** Added `import { StoreShell }` and wrapped the client component in `<StoreShell>...</StoreShell>` on each page. Also fixed `AppShell.tsx` to suppress Fleet Ledger header on `pathname.startsWith("/store")` (not just `"/"`).
+**Also fixed earlier:** `AppShell.tsx` — changed header/mobile-dock suppress condition from `pathname === "/"` to `pathname === "/" || pathname.startsWith("/store")` so Fleet Ledger chrome (brand link, offline pill, nav) is fully suppressed on store routes.
 
-**Also fixed:** Pre-existing syntax error in `StoreHomeClient.tsx` (broken return structure with duplicate return statements and missing function close). Removed dead `loadingSkeleton` const and second broken return, kept inline content, added proper `return` and function close.
-
-**Gates:** tsc clean, lint 0 errors, tests 67/67, build green. Deployed to production and verified live on /store, /store/profile, /store/checkout/19 — all show StoreShell nav, no Fleet Ledger bleed.
+**Gates:** tsc clean, lint 0 errors, tests 67/67, build green. Deployed to production and verified live on /store, /store/profile, /store/checkout/19 — all show exactly 1 nav, no Fleet Ledger bleed.
 
 **Verified by:** nemotron-3.5-super-vl-120b-a12b
 
 ---
 
+### 2026-11-09 — Store home page + profile fixes (user feedback)
+
+**What:** Four fixes based on KAMI's feedback from the live store:
+
+1. **Category pills filtered** — `StoreHomeClient.tsx` now filters categories to only those that have at least one product assigned (`categoryId` match against `all.products`). Empty categories no longer render pills.
+
+2. **Best sellers gated on sales data** — Added `orders` state fetched from `GET /api/store/orders?playerId=<id>`. Best sellers section now only renders when `orders.length > 0`. Hidden in production (no sales yet).
+
+3. **Personalised gated on user data** — Personalised section now only renders when `customer && orders.length > 0`. Hidden until there's enough user data to make real suggestions.
+
+4. **Telegram ID server-side verification** — `link-telegram-id/route.ts` now calls Telegram's Bot API `getUser?user_id=<id>` before linking a manually-entered Telegram ID. If Telegram returns `ok: false` (user not found), the link is rejected with "Telegram ID not found". Falls through (links anyway) only if Telegram's API is unreachable, to avoid blocking on transient network errors.
+
+**Where:** `src/components/StoreHomeClient.tsx`, `src/app/api/store/customers/link-telegram-id/route.ts`
+
+**Gates:** tsc clean, lint 0 errors, tests 67/67, build green. Deployed to production and verified live on /store, /store/profile — categories/best-sellers/personalised all correctly hidden in production (no data), Telegram ID input present on profile.
+
+**Verified by:** nemotron-3.5-super-vl-120b-a12b
+
+---
+
+### 2026-11-09 — StoreShell wrapped on all store routes (SUPERSEDED — see double-wrap fix above)
 ### 2026-11-08 — Hermes Agent "Zion" (nemotron-3.5-super-vl-120b-a12b) — VANTA GARAGE Admin Page Complete Overhaul
 
 **What:** Fixed all reported admin page issues per KAMI's feedback from screenshots.

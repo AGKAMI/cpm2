@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { JetBrains_Mono } from "next/font/google";
 import "@/app/globals.css";
-import { StoreShell } from "@/components/StoreShell";
 import { TelegramBridge } from "@/components/TelegramBridge";
 import { ToastProvider } from "@/components/ui/Toaster";
 import { DEFAULT_PALETTE, PALETTE_IDS } from "@/lib/themes";
@@ -68,7 +67,7 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
           strategy="beforeInteractive"
         />
         <ToastProvider>
-          <StoreShell>{children}</StoreShell>
+          {children}
           <TelegramBridge />
         </ToastProvider>
       </body>

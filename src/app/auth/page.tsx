@@ -6,6 +6,8 @@ import { Field, TextInput } from "@/components/ui/Field";
 
 type Mode = "signin" | "register";
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
 export default function AuthPage() {
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
@@ -14,11 +16,24 @@ export default function AuthPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
+  function validateEmail(value: string): string | null {
+    const trimmed = value.trim();
+    if (!trimmed) return "Email is required.";
+    if (!EMAIL_PATTERN.test(trimmed)) return "Enter a valid email address.";
+    return null;
+  }
+
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setError("");
     setBusy(true);
     try {
+      const emailErr = validateEmail(email);
+      if (emailErr) {
+        setError(emailErr);
+        setBusy(false);
+        return;
+      }
       if (mode === "signin") {
         const response = await fetch("/api/auth/login", {
           method: "POST",

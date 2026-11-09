@@ -431,6 +431,26 @@ Completed (removed from list): Profile "Link your Telegram" button, `STORE_ADMIN
 
 ---
 
+### 2026-11-09 — Profile page settings cleanup + crypto key fix
+
+**What:** Fixed four Profile page issues per KAMI's feedback:
+1. Order notifications section was showing even when not linked — now gated behind `customer` (only appears after account is linked)
+2. "Manage" link in Settings was a no-op (pointed to `/store/profile`, same page) — removed entirely
+3. Wishlist section was showing even when not linked — now gated behind `customer &&`
+4. Profile page shows two option buttons first ("Link Telegram ID", "Create account & log in"), expanding to the relevant form after choice (`linkMode` state)
+
+Also fixed `src/lib/crypto.ts` — `getKey()` was calling `fs.mkdirSync()`/`fs.writeFileSync()` which throws EROFS in Vercel serverless (read-only filesystem) when `CPM2_ENCRYPTION_KEY` env var isn't set. This caused a 500 error on any request that hit `verifySessionToken()` → `sessionKey()` → `getKey()` with a session cookie present. File write is now wrapped in try/catch; key stays in memory only on read-only filesystems.
+
+Also fixed `src/app/api/store/customers/link-telegram-id/route.ts` — Telegram `getUser` verification is now advisory-only (never blocks linking on Telegram API failure).
+
+**Where:** `src/components/ProfileClient.tsx`, `src/lib/crypto.ts`, `src/app/api/store/customers/link-telegram-id/route.ts`
+
+**Gates:** tsc clean, lint 0 errors (pre-existing admin/page.tsx quote errors only), tests 67/67, build green. Deployed to production via Deploy Hook.
+
+**Verified by:** nemotron-3.5-super-vl-120b-a12b
+
+---
+
 ### 2026-11-09 — Hermes Agent "Kermes" (step-3.7-flash) — Owner Dashboard Add Admin Fix
 
 **What:** Fixed Add admin on Owner Dashboard (`/store/owner`) per KAMI's feedback. Two problems: (1) adding an admin didn't work reliably, (2) naming model was wrong — KAMI wants to give a nickname, while the actual Telegram name must be pulled by the bot from the user's profile via their ID.

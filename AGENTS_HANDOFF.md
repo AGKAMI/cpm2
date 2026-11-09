@@ -434,3 +434,18 @@ Completed (removed from list): Profile "Link your Telegram" button, `STORE_ADMIN
 
 **Gate:** tsc ✅, lint 0 new errors (2 pre-existing), tests 67/67 ✅, build ✅. Deployed to production via Deploy Hook (job `N5jmsc47W5mhyhVdhS1B`).
 
+---
+
+### 2026-11-09 — DELETE admin 404 fix — dynamic [id] route
+
+**What:** DELETE `/api/store/admin/admins/<id>` returned 404 because the route lived in `admins/route.ts` which only matches the exact path `/api/store/admin/admins`. Next.js App Router needs a dynamic `[id]/route.ts` for path-parameter DELETE. Created `src/app/api/store/admin/admins/[id]/route.ts` with owner-gated DELETE handler; removed DELETE from `admins/route.ts` (kept GET/POST there).
+
+**Where:** `src/app/api/store/admin/admins/[id]/route.ts` (new), `src/app/api/store/admin/admins/route.ts` (DELETE removed)
+
+**Changes:**
+- `params` typed as `Promise<{ id: string }>` per Next.js 16.4.2 requirement, awaited before reading `id`
+- Owner gate preserved (only `STORE_ADMIN_TELEGRAM_ID` can remove; can't remove self)
+- Same `removeAdmin` service call, same `CANNOT_REMOVE_OWNER` safety check
+
+**Gate:** tsc ✅, build ✅ (local). Deployed to production via Deploy Hook (job `vXP4lwn4vcv4r1ApQTH0`). DELETE now returns 401 (auth required) instead of 404 (route not found) — route is live, auth enforced by Telegram initData + owner gate.
+

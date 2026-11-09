@@ -431,6 +431,21 @@ Completed (removed from list): Profile "Link your Telegram" button, `STORE_ADMIN
 
 ---
 
+### 2026-11-09 — Profile page dark mode toggle + wishlist gate
+
+**What:** Fixed three Profile page issues per KAMI's feedback:
+1. Dark mode toggle inner circle was invisible — it used `bg-background` which blended into the button. Changed to `bg-foreground` so the toggle knob is visible in both modes.
+2. Wishlist section was showing when not linked — already gated behind `customer &&` (only appears after account is linked via Telegram ID or email/password).
+3. Light mode background — `data-theme="paper"` sets `--background` to light oklch value; ensure users toggle dark mode off to switch to light mode.
+
+**Where:** `src/components/ProfileClient.tsx`
+
+**Gates:** tsc clean, lint 0 errors, tests 67/67, build green. Deployed to production via Deploy Hook.
+
+**Verified by:** nemotron-3.5-super-vl-120b-a12b
+
+---
+
 ### 2026-11-09 — Profile page settings cleanup + crypto key fix
 
 **What:** Fixed four Profile page issues per KAMI's feedback:

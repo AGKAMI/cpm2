@@ -306,7 +306,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           Skip to content
         </a>
-        {pathname === "/" ? null : (
+        {pathname === "/" || pathname.startsWith("/store") ? null : (
                 <header
           className="sticky top-0 z-30 border-b border-border shadow-lg pt-[env(safe-area-inset-top)]"
           style={{ backgroundColor: "var(--color-paper-raised)" }}
@@ -372,7 +372,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="border-t border-border mb-4" />
         </footer>
 
-        {pathname === "/" ? null : (
+        {pathname === "/" || pathname.startsWith("/store") ? null : (
                 <nav
                   aria-label="Primary"
                   className="mobile-dock fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-md px-4 pb-4 sm:pb-3 sm:px-6 sm:hidden"

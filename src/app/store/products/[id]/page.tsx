@@ -5,6 +5,8 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   return { title: `Product - VANTA GARAGE` };
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   // Next 16: params is a Promise — must be awaited.
   const { id } = await params;

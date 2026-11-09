@@ -4,9 +4,10 @@
 
 **Project:** CPM2 Next.js app on Vercel/Turso — `C:/Users/ojuni/Documents/GAMES/cpm2`
 **KAMI-Bot:** `C:/Users/ojuni/Downloads/KAMI-Bot-main` (Baileys WhatsApp bot on bot-hosting.net)
-**Status:** Build complete, deployed to production. All 10 routes 200 verified live. PayFast keys pending.
-**Date:** 2026-11-08
+**Status:** Build complete, deployed to production. All routes 200 verified live. PayFast keys pending.
+**Date:** 2026-11-09
 **Live URL:** `https://cpm2-bay.vercel.app` — `/` = app selection, `/store` = VANTA Garage, `/fleet/cpm2` = Fleet Ledger
+**Latest Deploy:** `dpl_5i95QXVe3rYSUDJnwTb3VoFmkFn7` (2026-11-09) — StoreShell fetch hardening, console clean
 
 ---
 

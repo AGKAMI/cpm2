@@ -9,6 +9,8 @@
 
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -420,7 +422,7 @@ export default function AdminPage() {
           )}
           <div className="flex flex-wrap gap-2">
             {categories.length === 0 ? (
-              <span className="text-xs text-muted-foreground">No categories yet. Click "Add Category" to create one.</span>
+              <span className="text-xs text-muted-foreground">No categories yet. Click &quot;Add Category&quot; to create one.</span>
             ) : (
               categories.map((cat) => (
                 <span

@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   description: "Premium CPM2 vehicle storefront. Ready-to-purchase cars, limited editions, One of One builds.",
 };
 
+// Force dynamic rendering so client components hydrate and fetch data
+export const dynamic = "force-dynamic";
+
 export default function HomePage() {
   return <StoreHomeClient />;
 }

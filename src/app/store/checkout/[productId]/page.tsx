@@ -11,6 +11,8 @@ export async function generateMetadata({ params }: { params: Promise<{ productId
   };
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function CheckoutPage({ params }: { params: Promise<{ productId: string }> }) {
   // Next 16: params is a Promise — must be awaited.
   const { productId } = await params;

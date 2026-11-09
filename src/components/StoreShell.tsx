@@ -85,7 +85,10 @@ export function StoreShell({ children, dock }: StoreShellProps) {
     if (initData) headers["X-Telegram-Init-Data"] = initData;
 
     fetch("/api/store/admin/is-admin", { cache: "no-store", headers })
-      .then((r) => r.json().catch(() => ({ isAdmin: false, isOwner: false })))
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then((data) => {
         setIsAdmin(Boolean(data?.isAdmin));
         setIsOwner(Boolean(data?.isOwner));

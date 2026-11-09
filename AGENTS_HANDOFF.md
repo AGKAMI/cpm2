@@ -486,3 +486,18 @@ Completed (removed from list): Profile "Link your Telegram" button, `STORE_ADMIN
 
 **Gate:** tsc ✅, build ✅. Not yet deployed.
 
+---
+
+### 2026-11-09 — Client-side email validation on Auth page
+
+**What:** Added client-side email format validation to the Auth page signin/register form before any API call. Rejects empty emails and garbage strings without a valid `@` + domain structure.
+
+**Where:** `src/app/auth/page.tsx` (email pattern check + inline error before fetch)
+
+**Changes:**
+- `EMAIL_PATTERN` regex (`/^[^\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/`) — same pattern as fleet ledger validation
+- `validateEmail()` helper returns error message or null
+- `submit()` calls `validateEmail()` before any fetch; shows error inline and blocks submission on invalid email
+
+**Gate:** tsc ✅, build ✅. Deployed to production via Deploy Hook (job `AZECvNREbkcfo6kc8kPw`).
+

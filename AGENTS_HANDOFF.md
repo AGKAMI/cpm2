@@ -214,6 +214,26 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 
 ---
 
+### 2026-11-09 — Fleet Ledger header bleed into VANTA Garage store
+
+**What:** `AppShell.tsx` rendered the Fleet Ledger header (`"Fleet Ledger"` brand link, live/offline status pill, nav) on **every** route except `/` — so `/store/*` pages showed "Fleet Ledger Store OFFLINE" inside the garage store.
+
+**Where:** `src/components/AppShell.tsx` — header condition (line ~309) and mobile-dock condition (line ~375) only excluded `pathname === "/"`.
+
+**Fix:** Both conditions now also exclude `pathname.startsWith("/store")`, so the Fleet Ledger chrome is fully suppressed on store routes. Store routes that need a shell use `StoreShell` (admin/owner already do; profile/checkout/categories/orders render raw clients without a Fleet Ledger header).
+
+**Gates:** tsc clean, lint 0 errors, tests 67/67, build green. Deployed to production and verified live on /store, /store/profile, /store/checkout/19.
+
+**Next agent to-do (in order):**
+1. **Consider adding `StoreShell` to all store routes** — `/store`, `/store/profile`, `/store/checkout/[id]`, `/store/categories`, `/store/orders` currently render with no header/nav at all (Fleet Ledger chrome removed, nothing replacing it). Consistent store-branded shell would improve UX.
+2. Get PayFast keys from user → set Vercel env vars
+3. Flip `PAYFAST_BASE_URL` to live + set webhook URL on PayFast dashboard
+4. Set `STORE_ADMIN_TELEGRAM_ID` on Vercel
+5. Seed products via `/store/admin`
+6. `git push` → Vercel deploy CPM2
+7. Deploy `vanta.js` to KAMI-Bot (git push + deploy API sync + hard stop/start)
+8. Verify end-to-end: buy a car via Mini App → PayFast → webhook → order confirmed
+
 ### 2026-11-09 — Hermes Agent "Zion" (nemotron-3.5-super-vl-120b-a12b) — Owner Dashboard Fix + Promotions System + Fleet Nav Fix
 
 **What:** Fixed Owner Dashboard auth, implemented full Promotions system (admin CRUD + public API + home page render), fixed Fleet Ledger nav to exclude Store tab and add back button to app selection.

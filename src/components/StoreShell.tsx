@@ -54,27 +54,33 @@ export function StoreShell({ children, dock }: StoreShellProps) {
   const [customerLoggedIn, setCustomerLoggedIn] = useState<boolean>(false);
   const { mode, toggleTheme } = useTheme();
 
-  useEffect(() => {
-    const initData =
-      typeof window !== "undefined" && typeof window.Telegram !== "undefined"
-        ? window.Telegram.WebApp?.initData ?? ""
-        : "";
-    const headers: HeadersInit = {};
-    if (initData) headers["X-Telegram-Init-Data"] = initData;
+  let adminPoll: ReturnType<typeof setInterval> | null = null;
 
-    fetch("/api/store/admin/is-admin", { cache: "no-store", headers })
-      .then((r) => {
+  useEffect(() => {
+    const fetchAdminStatus = async () => {
+      const initData =
+        typeof window !== "undefined" && typeof window.Telegram !== "undefined"
+          ? window.Telegram.WebApp?.initData ?? ""
+          : "";
+      const headers: HeadersInit = {};
+      if (initData) headers["X-Telegram-Init-Data"] = initData;
+
+      try {
+        const r = await fetch("/api/store/admin/is-admin", { cache: "no-store", headers });
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then((data) => {
+        const data = await r.json();
         setIsAdmin(Boolean(data?.isAdmin));
         setIsOwner(Boolean(data?.isOwner));
-      })
-      .catch(() => {
+      } catch {
         setIsAdmin(false);
         setIsOwner(false);
-      });
+      }
+    };
+
+    fetchAdminStatus();
+    // Poll every 5 seconds so admin/owner tabs appear/disappear live
+    // without needing a page refresh after login or after adding/removing admins.
+    adminPoll = setInterval(fetchAdminStatus, 5000);
 
     // Fetch Telegram profile for avatar
     vantaApi
@@ -91,6 +97,38 @@ export function StoreShell({ children, dock }: StoreShellProps) {
       .catch(() => {
         // Profile fetch is non-fatal
       });
+
+    return () => {
+      if (adminPoll) clearInterval(adminPoll);
+    };
+  }, []);
+
+  // Re-check admin status when the window regains focus (e.g. after logging
+  // in to an admin account in another tab or after adding/removing an admin).
+  useEffect(() => {
+    const onFocus = () => {
+      const initData =
+        typeof window !== "undefined" && typeof window.Telegram !== "undefined"
+          ? window.Telegram.WebApp?.initData ?? ""
+          : "";
+      const headers: HeadersInit = {};
+      if (initData) headers["X-Telegram-Init-Data"] = initData;
+      fetch("/api/store/admin/is-admin", { cache: "no-store", headers })
+        .then((r) => {
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return r.json();
+        })
+        .then((data) => {
+          setIsAdmin(Boolean(data?.isAdmin));
+          setIsOwner(Boolean(data?.isOwner));
+        })
+        .catch(() => {
+          setIsAdmin(false);
+          setIsOwner(false);
+        });
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
   }, []);
 
   // Track login state via localStorage so logout in ProfileClient

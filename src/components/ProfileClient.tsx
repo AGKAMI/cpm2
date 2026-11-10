@@ -535,8 +535,19 @@ export function ProfileClient() {
         )}
 
         <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
-          <span className="text-xs font-medium text-muted-foreground">Theme</span>
-          <span className="text-sm text-foreground">{mode === "night" ? "Dark" : "Light"}</span>
+          <div>
+            <span className="text-sm font-medium text-foreground">Preferred mode</span>
+            <p className="text-[10px] text-ink-soft">Choose between dark and light theme</p>
+          </div>
+          <select
+            value={mode}
+            onChange={(e) => setMode(e.target.value as "night" | "paper")}
+            className="rounded-md border border-border px-2 py-1 text-sm text-foreground bg-background focus:outline-none"
+            aria-label="Preferred display mode"
+          >
+            <option value="night">Dark</option>
+            <option value="paper">Light</option>
+          </select>
         </div>
       </section>
 

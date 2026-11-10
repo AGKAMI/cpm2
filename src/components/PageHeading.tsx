@@ -7,12 +7,12 @@ import Link from "next/link";
  * Dash heading — an accent folio pill, a heavy display title and a hairline rule.
  */
 export function PageHeading({
-  folio,
   title,
   meta,
   backHref,
 }: {
-  folio: string;
+  /** Unused legacy accent label — kept so old call sites still compile; no longer rendered. */
+  folio?: string;
   title: string;
   meta?: ReactNode;
   backHref?: string;
@@ -32,9 +32,6 @@ export function PageHeading({
               </svg>
             </Link>
           )}
-          <span className="num shrink-0 rounded-full bg-racing px-2.5 py-1 text-[9px] tracking-[0.2em] text-background">
-            {folio}
-          </span>
           <h1 className="display-title min-w-0 text-[30px] leading-[0.95] text-ink sm:text-[40px]">
             {title}
           </h1>

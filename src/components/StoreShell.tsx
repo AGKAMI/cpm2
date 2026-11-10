@@ -12,6 +12,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { vantaApi } from "@/lib/store/client";
 import { AdminIcon } from "@/components/ui/admin-icon";
 import { OwnerIcon } from "@/components/ui/owner-icon";
+import SwitchComponent from "@/components/ui/switch8";
 
 type StoreTab = "home" | "categories" | "orders" | "profile" | "admin" | "owner";
 
@@ -165,18 +166,10 @@ export function StoreShell({ children, dock }: StoreShellProps) {
             <Button variant="ghost" size="icon" onClick={() => {}} aria-label="Search">
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              aria-label={mode === "night" ? "Switch to light mode" : "Switch to dark mode"}
-            >
-              {mode === "night" ? (
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-              ) : (
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 008 0z"/></svg>
-              )}
-            </Button>
+            <SwitchComponent
+              checked={mode === "night"}
+              onCheckedChange={() => toggleTheme()}
+            />
             <NotificationBell />
           </div>
         </div>

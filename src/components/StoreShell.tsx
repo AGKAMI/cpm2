@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Dock } from "@/components/ui/dock";
 import { LucideIcon } from "lucide-react";
 import { Home, Grid, List } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useTheme } from "@/hooks/useTheme";
 import { vantaApi } from "@/lib/store/client";
@@ -134,66 +134,64 @@ export function StoreShell({ children, dock }: StoreShellProps) {
 
   return (
     <div className="relative min-h-screen bg-background">
-      {/* Store header — shield logo, gold serif brand, search icon. */}
-      <header
-        className="sticky top-0 z-30 border-b border-border shadow-sm px-4 pt-3 pb-2 sm:px-6"
-        style={{ backgroundColor: "var(--background)" }}
-      >
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            {activeTab !== "profile" && (
-              <div className="relative h-8 w-8 shrink-0">
-                <motion.div
-                  layoutId="vanta-profile-avatar"
-                  transition={{ type: "spring", stiffness: 320, damping: 32 }}
-                  className="h-8 w-8 rounded-full overflow-hidden border-2 border-gold/40"
-                >
-                  {profile?.photoUrl && customerLoggedIn ? (
-                    <img
-                      src={profile.photoUrl}
-                      alt={profile.displayName || "Profile"}
-                      className="h-full w-full object-cover"
-                      loading="eager"
-                    />
-                  ) : (
-                    <svg
-                      className="absolute inset-0 h-full w-full fill-current text-ink-soft"
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                    >
-                      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
-                </motion.div>
-                <div className="absolute inset-0 h-full w-full rounded-full border-2 border-gold/40 animate-pulse-ring" />
-              </div>
-            )}
-            <span className="absolute -inset-0.5 h-[40px] w-[40px] rounded-full border border-gold/40 flex items-center justify-center text-gold/60 text-[10px] pointer-events-none">
-              VANTA
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center h-8 w-8 shrink-0 mx-auto sm:mx-0">
+      {/* Store header — Vanta logo centered, avatar left, controls right. */}
+      <AnimatePresence mode="popLayout">
+        <header
+          className="sticky top-0 z-30 border-b border-border shadow-sm px-4 pt-3 pb-2 sm:px-6"
+          style={{ backgroundColor: "var(--background)" }}
+        >
+          <div className="relative flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 shrink-0">
+              {activeTab !== "profile" && (
+                <div className="relative h-8 w-8 shrink-0">
+                  <motion.div
+                    layoutId="vanta-profile-avatar"
+                    transition={{ type: "spring", stiffness: 320, damping: 32 }}
+                    className="h-8 w-8 rounded-full overflow-hidden border-2 border-gold/40"
+                  >
+                    {profile?.photoUrl && customerLoggedIn ? (
+                      <img
+                        src={profile.photoUrl}
+                        alt={profile.displayName || "Profile"}
+                        className="h-full w-full object-cover"
+                        loading="eager"
+                      />
+                    ) : (
+                      <svg
+                        className="absolute inset-0 h-full w-full fill-current text-ink-soft"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </motion.div>
+                  <div className="absolute inset-0 h-full w-full rounded-full border-2 border-gold/40 animate-pulse-ring" />
+                </div>
+              )}
+            </div>
+            <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center">
               <div className="h-6 w-6 sm:h-8 sm:w-8 flex items-center justify-center" dangerouslySetInnerHTML={{ __html: VANTA_LOCKUP }} />
             </div>
-            <Button variant="ghost" size="icon" onClick={() => router.push("/")} aria-label="Back to app selection">
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-            </Button>
-            <SwitchComponent
-              checked={mode === "night"}
-              onCheckedChange={() => toggleTheme()}
-            />
-            <NotificationBell />
+            <div className="flex items-center gap-2 shrink-0">
+              <Button variant="ghost" size="icon" onClick={() => router.push("/")} aria-label="Back to app selection">
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              </Button>
+              <SwitchComponent
+                checked={mode === "night"}
+                onCheckedChange={() => toggleTheme()}
+              />
+              <NotificationBell />
+            </div>
           </div>
-        </div>
-      </header>
-
-      <main
-        id="store-main"
-        className="relative mx-auto max-w-[1440px] scroll-mt-16 px-4 py-6 sm:px-6 sm:py-8 bg-background pb-28 sm:pb-10"
-      >
-        {children}
-      </main>
+        </header>
+        <main
+          id="store-main"
+          className="relative mx-auto max-w-[1440px] scroll-mt-16 px-4 py-6 sm:px-6 sm:py-8 bg-background pb-28 sm:pb-10"
+        >
+          {children}
+        </main>
+      </AnimatePresence>
 
       <Dock
         items={visibleNav.map((item) => ({

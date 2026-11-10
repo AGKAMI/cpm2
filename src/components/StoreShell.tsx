@@ -129,7 +129,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
       {/* Store header — Vanta logo centered, avatar left, controls right. */}
       <AnimatePresence mode="popLayout">
         <header
-          className="sticky top-0 z-30 border-b border-border shadow-sm px-4 pt-4 pb-4 sm:px-6"
+          className="sticky top-0 z-30 border-b border-border shadow-sm px-4 pt-8 pb-8 sm:px-6"
           style={{ backgroundColor: "var(--background)" }}
         >
           <div className="relative flex items-center justify-between gap-2">
@@ -163,7 +163,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
               )}
             </div>
             <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center">
-              <img src={VANTA_LOCKUP} alt="Vanta Garage" className="h-12 w-12 sm:h-16 sm:w-16" />
+              <img src={VANTA_LOCKUP} alt="Vanta Garage" className="h-24 w-24 sm:h-32 sm:w-32" />
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <Button variant="ghost" size="icon" onClick={() => router.push("/")} aria-label="Back to app selection">

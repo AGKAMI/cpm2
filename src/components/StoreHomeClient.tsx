@@ -162,7 +162,7 @@ const content = (
               className="block cursor-pointer"
             >
               <div
-                className={`relative overflow-hidden rounded-[22px] p-5 border border-[rgba(255,255,255,0.15)]`}
+                className={`promotion-card relative overflow-hidden rounded-[22px] p-5 border border-[rgba(255,255,255,0.15)]`}
                 style={{
                   backgroundColor: promo.backgroundColor || "var(--color-paper-raised)",
                   color: promo.accentColor ? "var(--color-paper-sunken)" : undefined,

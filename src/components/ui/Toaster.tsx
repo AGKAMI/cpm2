@@ -71,7 +71,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       counter.current += 1;
       const id = counter.current;
       setToasts((current) => [...current.slice(-3), { ...toast, id }]);
-      window.setTimeout(() => remove(id), toast.kind === "error" ? 7000 : 4200);
+      window.setTimeout(() => remove(id), toast.kind === "error" ? 5000 : 4200);
     },
     [remove],
   );

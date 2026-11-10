@@ -117,10 +117,9 @@ export default function OwnerPage() {
         {ownerStats && (
           <section className="mb-6">
             <h3 className="text-xs font-semibold text-foreground uppercase tracking-[0.15em] mb-3">Store Stats</h3>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <OwnerStatCard label="Customers" value={String(ownerStats.totalCustomers)} />
               <OwnerStatCard label="Total Orders" value={String(ownerStats.totalOrders)} />
-              <OwnerStatCard label="Revenue" value={formatPrice(ownerStats.totalRevenueCents)} />
               <OwnerStatCard label="Admins" value={String(ownerStats.totalAdmins)} />
               <OwnerStatCard label="Products Live" value={String(ownerStats.totalProducts)} />
               <OwnerStatCard label="Paid Orders" value={String(ownerStats.verifiedOrders)} />

@@ -256,7 +256,10 @@ export default function AdminPage() {
       // Client-side validation (strict input validation)
       const validated = validateProductForm(form);
       if (!validated.ok) {
-        setProductErrors(validated.errors);
+        toast.error(
+          "Fix the following:",
+          Object.values(validated.errors).join(". ")
+        );
         setSaving(false);
         return;
       }
@@ -268,6 +271,12 @@ export default function AdminPage() {
         return;
       }
       const v = validated.data;
+      // Stock guard: creating must be >= 1, editing can be 0
+      if (!editingId && (!v.stockQuantity || parseInt(v.stockQuantity, 10) < 1)) {
+        toast.error("Stock must be at least 1 when creating a product.");
+        setSaving(false);
+        return;
+      }
       try {
         const body = {
           cpm2CarCode: v.cpm2CarCode ? Number(v.cpm2CarCode) : undefined,
@@ -321,7 +330,10 @@ export default function AdminPage() {
         // Client-side validation
         const validated = validateCategoryForm(categoryForm);
         if (!validated.ok) {
-          setCategoryErrors(validated.errors);
+          toast.error(
+            "Fix the following:",
+            Object.values(validated.errors).join(". ")
+          );
           setCategorySaving(false);
           return;
         }
@@ -337,7 +349,10 @@ export default function AdminPage() {
           resetCategoryForm();
           await load();
         } catch (err) {
-          setCategoryErrors({ global: err instanceof Error ? err.message : "Failed to create category." });
+          toast.error(
+            "Category failed",
+            err instanceof Error ? err.message : "Failed to create category."
+          );
         } finally {
           setCategorySaving(false);
         }
@@ -379,7 +394,10 @@ export default function AdminPage() {
       // Client-side validation
       const validated = validatePromotionForm(promotionForm);
       if (!validated.ok) {
-        setPromotionErrors(validated.errors);
+        toast.error(
+          "Fix the following:",
+          Object.values(validated.errors).join(". ")
+        );
         setPromotionSaving(false);
         return;
       }
@@ -419,7 +437,10 @@ export default function AdminPage() {
         resetPromotionForm();
         await load();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to save promotion.");
+        toast.error(
+          "Promotion failed",
+          err instanceof Error ? err.message : "Failed to save promotion."
+        );
       } finally {
         setPromotionSaving(false);
       }
@@ -502,27 +523,7 @@ export default function AdminPage() {
                       </div>
           {showCategoryForm && (
             <form onSubmit={handleCategorySubmit} className="flex flex-col gap-3 mb-4">
-              {(categoryErrors?.global || msg) && (
-                <div
-                  className={`rounded-md border p-3 py-2 mb-3 text-sm font-medium ${
-                    categoryErrors?.global
-                      ? "border-destructive bg-destructive/10 text-destructive"
-                      : "border-primary bg-primary/10 text-primary"
-                  }`}
-                >
-                  {categoryErrors?.global || msg}
-                </div>
-              )}
-              {Object.keys(categoryErrors).length > 0 && (
-                <div className="rounded-md border border-destructive bg-destructive/10 px-3 py-2 mb-3">
-                  <p className="text-xs text-destructive font-bold mb-1">Fix the following:</p>
-                  <ul className="text-[10px] text-destructive list-disc pl-4 space-y-1">
-                    {Object.entries(categoryErrors).map(([field, msg]) => (
-                      <li key={field}>{field}: {msg}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              {/* Errors now shown as floating toasts */}
               <Field label="Name">
                 <TextInput
                   value={categoryForm.name}
@@ -583,6 +584,7 @@ export default function AdminPage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => {
+                      // Single edit button: open category form pre-populated with this category
                       setCategoryForm({
                         name: cat.name,
                         slug: cat.slug,
@@ -590,22 +592,9 @@ export default function AdminPage() {
                         sortOrder: String(cat.sortOrder),
                       });
                       setShowCategoryForm(true);
-                      setEditingId(null);
                     }}
                   >
                     Edit
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      if (window.confirm("Delete this category?")) {
-                        // Category delete would go here
-                        toast.error("Category delete not yet implemented.");
-                      }
-                    }}
-                  >
-                    Delete
                   </Button>
                 </div>
               ))
@@ -634,16 +623,7 @@ export default function AdminPage() {
 
               {showPromotionForm && (
                 <form onSubmit={handlePromotionSubmit} className="flex flex-col gap-3 mb-4">
-                  {Object.keys(promotionErrors).length > 0 && (
-                    <div className="rounded-md border border-destructive bg-destructive/10 px-3 py-2 mb-3">
-                      <p className="text-xs text-destructive font-bold mb-1">Fix the following:</p>
-                      <ul className="text-[10px] text-destructive list-disc pl-4 space-y-1">
-                        {Object.entries(promotionErrors).map(([field, msg]) => (
-                          <li key={field}>{field}: {msg}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                  {/* Errors now shown as floating toasts */}
                   <Field label="Title">
                     <TextInput
                       value={promotionForm.title}
@@ -726,31 +706,36 @@ export default function AdminPage() {
                           try {
                             const dataUrl = await convertFileToDataUrl(file);
                             setConverterResult(dataUrl);
+                            // Auto-convert to URL — no extra click needed
+                            setPromotionForm((f) => ({ ...f, imageUrl: dataUrl }));
+                            setConverterFile(null);
+                            setConverterResult(null);
                           } catch {
                             setConverterError("Failed to read image file.");
                           }
-                        }}
-                      />
-                      <div
-                        onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm text-foreground hover:border-primary transition-colors cursor-pointer"
-                      >
-                        {converterFile ? converterFile.name : "Choose image"}
-                      </div>
-                    </div>
-                    {converterError && <p className="text-xs text-destructive mt-1">{converterError}</p>}
-                    {converterResult && (
-                      <div className="mt-3 border border-input rounded-md p-3 bg-background">
-                        <img src={converterResult} alt="Preview" className="max-w-full max-h-48 rounded-md border border-border object-cover" />
-                        <Button variant="primary" onClick={() => {
-                          setPromotionForm((f) => ({ ...f, imageUrl: converterResult }));
-                          setConverterFile(null);
-                          setConverterResult(null);
-                        }} className="w-full mt-2">
-                          Use this image
-                        </Button>
-                      </div>
-                    )}
+                          }}
+                          />
+                          <div
+                          onClick={() => fileInputRef.current?.click()}
+                          className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${converterFile ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}
+                          >
+                          {converterFile ? (
+                          <>
+                            <span className="text-xs font-bold text-emerald-500">✓</span>
+                            {converterFile.name}
+                          </>
+                          ) : (
+                          "Choose image"
+                          )}
+                          </div>
+                          </div>
+                          {converterError && <p className="text-xs text-destructive mt-1">{converterError}</p>}
+                          {converterResult && (
+                          <div className="mt-3 border border-input rounded-md p-3 bg-background">
+                          <img src={converterResult} alt="Preview" className="max-w-full max-h-48 rounded-md border border-border object-cover" />
+                          <p className="text-[10px] text-ink-soft mt-2">Image preview — URL auto-set</p>
+                          </div>
+                          )}
                   </Field>
                   <Field label="Active">
                     <div className="flex items-center gap-2">
@@ -857,16 +842,7 @@ export default function AdminPage() {
                         {editingId ? "Edit product" : "Add product"}
                       </h3>
                       <form onSubmit={handleSubmit} className="grid gap-4">
-          {Object.keys(productErrors).length > 0 && (
-            <div className="rounded-md border border-destructive bg-destructive/10 px-3 py-2 mb-3">
-              <p className="text-xs text-destructive font-bold mb-1">Fix the following:</p>
-              <ul className="text-[10px] text-destructive list-disc pl-4 space-y-1">
-                {Object.entries(productErrors).map(([field, msg]) => (
-                  <li key={field}>{field}: {msg}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+          {/* Errors now shown as floating toasts */}
           <Field label="Image">
             <div className="relative group cursor-pointer">
               <input
@@ -882,6 +858,10 @@ export default function AdminPage() {
                   try {
                     const dataUrl = await convertFileToDataUrl(file);
                     setConverterResult(dataUrl);
+                    // Auto-convert to URL — no extra click needed
+                    setForm((f) => ({ ...f, imageUrl: dataUrl }));
+                    setConverterFile(null);
+                    setConverterResult(null);
                   } catch {
                     setConverterError("Failed to read image file.");
                   }
@@ -889,7 +869,7 @@ export default function AdminPage() {
               />
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${converterFile ? "border-gold text-gold bg-gold/10" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}
+                className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${converterFile ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}
               >
                 {converterFile ? (
                   <>
@@ -905,9 +885,7 @@ export default function AdminPage() {
             {converterResult && (
               <div className="mt-3 border border-input rounded-md p-3 bg-background">
                 <img src={converterResult} alt="Preview" className="max-w-full max-h-48 rounded-md border border-border object-cover" />
-                <Button variant="primary" onClick={useConverterResult} className="w-full mt-2">
-                  Use this image
-                </Button>
+                <p className="text-[10px] text-ink-soft mt-2">Image preview — URL auto-set</p>
               </div>
             )}
           </Field>
@@ -1292,13 +1270,14 @@ export default function AdminPage() {
                       </Field>
                       <Field
                         label="Stock"
-                        hint="How many available - set to 0 to mark out of stock"
+                        hint={editingId === null ? "Locked at 1 for new products" : "How many available - set to 0 to mark out of stock"}
                       >
                         <input
                           type="number"
                           min={editingId === null ? 1 : 0}
-                          value={form.stockQuantity}
-                          onChange={(e) => handleChange("stockQuantity", e.target.value)}
+                          value={editingId === null ? "1" : form.stockQuantity}
+                          onChange={editingId === null ? undefined : (e) => handleChange("stockQuantity", e.target.value)}
+                          readOnly={editingId === null}
                           className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
                         />
                       </Field>

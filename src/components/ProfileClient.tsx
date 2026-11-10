@@ -53,7 +53,8 @@ export function ProfileClient() {
   const [emailValue, setEmailValue] = useState("");
   const [passwordValue, setPasswordValue] = useState("");
   const [saving, setSaving] = useState(false);
-  const { mode, setMode } = useTheme();
+    const [notificationsEnabled, setNotificationsEnabled] = useState<boolean | null>(null);
+    const { mode, setMode } = useTheme();
   const toast = useToast();
 
   async function checkSession() {
@@ -61,7 +62,10 @@ export function ProfileClient() {
       const res = await fetch("/api/store/profile", { credentials: "include" });
       if (res.ok) {
         const data = await res.json();
-        if (data.customer) setCustomer(data.customer);
+        if (data.customer) {
+          setCustomer(data.customer);
+          setNotificationsEnabled(!!data.customer.notificationsEnabled);
+        }
         if (data.telegramUser) setTelegramUser(data.telegramUser);
 
         // Fetch stats
@@ -183,7 +187,31 @@ export function ProfileClient() {
     } finally {
       setSaving(false);
     }
-  }
+  };
+
+  // --- Notifications toggle ---
+  const toggleNotifications = async () => {
+    if (notificationsEnabled === null || !customer?.id) return;
+    const next = !notificationsEnabled;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/store/customers/${customer.id}/notifications`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ enabled: next }),
+      });
+      if (!res.ok) throw new Error("Failed to update notifications.");
+      setNotificationsEnabled(next);
+      setCustomer((prev) => (prev ? { ...prev, notificationsEnabled: next } : prev));
+      setSuccess(next ? "Notifications on." : "Notifications off.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update notifications.");
+      toast.error("Update failed", err instanceof Error ? err.message : String(err));
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // --- Link Telegram to the logged-in account ---
   const [linkTelegramOpen, setLinkTelegramOpen] = useState(false);
@@ -919,6 +947,24 @@ export function ProfileClient() {
             <option value="night">Dark</option>
             <option value="paper">Light</option>
           </select>
+        </div>
+
+        <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
+          <div>
+            <span className="text-sm font-medium text-foreground">Telegram notifications</span>
+            <p className="text-[10px] text-ink-soft">Get order updates via Telegram bot</p>
+          </div>
+          <button
+            onClick={toggleNotifications}
+            disabled={saving || notificationsEnabled === null}
+            className="relative w-10 h-5 rounded-full border border-border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            aria-pressed={notificationsEnabled === true}
+            aria-label="Toggle Telegram notifications"
+          >
+            <span
+              className={`block pointer-events-none absolute inset-2 w-3 h-3 rounded-full bg-white transition-transform ${notificationsEnabled ? "translate-x-4" : "translate-x-1"}`}
+            />
+          </button>
         </div>
       </section>
 

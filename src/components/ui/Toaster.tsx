@@ -26,36 +26,23 @@ type ToastApi = {
 
 const ToastContext = createContext<ToastApi | null>(null);
 
-const TONES: Record<ToastKind, { accent: string; bar: string; icon: ReactNode }> = {
-  success: {
-    accent: "text-emerald-500",
-    bar: "border-emerald-500",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-        <path d="M4 12.5l5 5L20 6.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  error: {
-    accent: "text-destructive",
-    bar: "border-destructive",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 7.5v5.5M12 16.2v.1" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-  info: {
-    accent: "text-primary",
-    bar: "border-primary",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 11v5.5M12 7.8v.1" strokeLinecap="round" />
-      </svg>
-    ),
-  },
+const ICONS: Record<ToastKind, ReactNode> = {
+  success: (
+    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+    </svg>
+  ),
+  error: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+    </svg>
+  ),
+  info: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M12 12a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" stroke="none" fill="currentColor" />
+    </svg>
+  ),
 };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -92,41 +79,35 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       <div
         aria-live="polite"
         aria-atomic="false"
-        className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-[min(92vw,380px)] flex-col gap-2"
+        className="pointer-events-none fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 w-60 sm:w-72 text-[10px] sm:text-xs"
       >
         {toasts.map((toast) => (
           <div
             key={toast.id}
             role="status"
-            className={`flex items-start gap-3 rounded-md border-l-[3px] bg-background p-4 shadow-lg ${TONES[toast.kind].bar}`}
+            className={`cursor-default flex items-center justify-between w-full h-12 sm:h-14 rounded-lg px-[10px] ${
+              toast.kind === "error" ? "bg-[#232531]" : "bg-[#1a1a20]"
+            }`}
           >
-            <span className={`mt-0.5 shrink-0 ${TONES[toast.kind].accent}`}>{TONES[toast.kind].icon}</span>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-foreground">{toast.title}</p>
-              {toast.detail ? (
-                <p className="mt-1 text-xs leading-snug text-muted-foreground">{toast.detail}</p>
-              ) : null}
-              {toast.action ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    toast.action?.onClick();
-                    remove(toast.id);
-                  }}
-                  className="mt-2 text-xs font-semibold underline-offset-4 hover:underline text-primary"
-                >
-                  {toast.action.label}
-                </button>
-              ) : null}
+            <div className="flex gap-2">
+              <div className="text-[#d65563] bg-white/5 backdrop-blur-xl p-1 rounded-lg">
+                {toast.kind === "error" ? ICONS.error : toast.kind === "success" ? ICONS.success : ICONS.info}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-white">{toast.title}</p>
+                {toast.detail ? (
+                  <p className="text-gray-500">{toast.detail}</p>
+                ) : null}
+              </div>
             </div>
             <button
               type="button"
               onClick={() => remove(toast.id)}
               aria-label="Dismiss notification"
-              className="mr-2 -mt-2 flex h-8 w-8 shrink-0 items-center rounded-md text-muted-foreground hover:border-primary hover:text-primary-foreground transition-colors"
+              className="text-gray-600 hover:bg-white/10 p-1 rounded-md transition-colors ease-linear"
             >
-              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true" className="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>

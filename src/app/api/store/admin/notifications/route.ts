@@ -35,9 +35,9 @@ export async function POST(request: NextRequest) {
     if (body.customerId) {
       targetCustomerIds = [body.customerId];
     } else {
-      // Send to all customers with notifications enabled
+      // Send to ALL customers for the in-app bell (not optional)
       const result = await db.execute({
-        sql: `SELECT c.id FROM vanta_customers c WHERE c.notifications_enabled = 1`,
+        sql: `SELECT c.id FROM vanta_customers c`,
         args: [],
       });
       targetCustomerIds = result.rows.map((row: any) => Number(row.id));
@@ -45,6 +45,18 @@ export async function POST(request: NextRequest) {
 
     const now = new Date().toISOString();
     const created: number[] = [];
+
+    // Get customers with notifications enabled (for Telegram DMs only)
+    const tgResult = await db.execute({
+      sql: `SELECT c.id, p.platform_user_id FROM vanta_customers c
+            LEFT JOIN vanta_platform_identities p ON p.customer_id = c.id AND p.platform = 'telegram'
+            WHERE c.notifications_enabled = 1`,
+      args: [],
+    });
+    const telegramCustomers = new Map<number, number | null>();
+    for (const row of tgResult.rows as any[]) {
+      telegramCustomers.set(Number(row.id), row.platform_user_id ? Number(row.platform_user_id) : null);
+    }
 
     for (const customerId of targetCustomerIds) {
       const insert = await db.execute({
@@ -64,21 +76,17 @@ export async function POST(request: NextRequest) {
       const notificationId = Number(insert.lastInsertRowid);
       created.push(notificationId);
 
-      // Also send Telegram message if customer has linked Telegram
-      try {
-        const identity = await db.execute({
-          sql: `SELECT platform_user_id FROM vanta_platform_identities WHERE customer_id = ? AND platform = 'telegram' LIMIT 1`,
-          args: [customerId],
-        });
-        if (identity.rows.length > 0) {
-          const telegramId = Number(identity.rows[0].platform_user_id);
+      // Send Telegram DM only if customer has notifications enabled AND a linked Telegram
+      const telegramId = telegramCustomers.get(customerId);
+      if (telegramId) {
+        try {
           await sendNotification(
             telegramId,
             `<b>${body.title}</b>\n\n${body.message}`
           );
+        } catch {
+          // Don't fail if Telegram send fails
         }
-      } catch {
-        // Don't fail if Telegram send fails
       }
     }
 

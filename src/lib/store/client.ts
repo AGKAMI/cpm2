@@ -131,6 +131,13 @@ export const vantaApi = {
 
   // Customer profile
   profile: () => request<{ customer: VantaCustomer | null; telegramUser: TelegramUser | null }>("/profile"),
+  notifications: (customerId: number) =>
+    request<{ enabled: boolean }>(`/customers/${encodeURIComponent(customerId)}/notifications`),
+  updateNotifications: (customerId: number, enabled: boolean) =>
+    request<{ enabled: boolean }>(`/customers/${encodeURIComponent(customerId)}/notifications`, {
+      method: "POST",
+      body: JSON.stringify({ enabled }),
+    }),
 
   // Admin order management
     adminOrders: () => request<{ orders: VantaOrder[] }>("/admin/orders"),
@@ -275,6 +282,7 @@ export type VantaCustomer = {
   telegramLinked?: boolean;
   telegramId?: string | null;
   role?: "owner" | "admin" | "customer";
+  notificationsEnabled?: boolean;
   createdAt: string;
   updatedAt: string;
 };

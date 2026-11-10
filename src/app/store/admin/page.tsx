@@ -333,7 +333,7 @@ export default function AdminPage() {
           resetCategoryForm();
           await load();
         } catch (err) {
-          setError(err instanceof Error ? err.message : "Failed to create category.");
+          setCategoryErrors({ global: err instanceof Error ? err.message : "Failed to create category." });
         } finally {
           setCategorySaving(false);
         }
@@ -507,6 +507,17 @@ export default function AdminPage() {
                       </div>
           {showCategoryForm && (
             <form onSubmit={handleCategorySubmit} className="flex flex-col gap-3 mb-4">
+              {(categoryErrors?.global || msg) && (
+                <div
+                  className={`rounded-md border p-3 py-2 mb-3 text-sm font-medium ${
+                    categoryErrors?.global
+                      ? "border-destructive bg-destructive/10 text-destructive"
+                      : "border-primary bg-primary/10 text-primary"
+                  }`}
+                >
+                  {categoryErrors?.global || msg}
+                </div>
+              )}
               {Object.keys(categoryErrors).length > 0 && (
                 <div className="rounded-md border border-destructive bg-destructive/10 px-3 py-2 mb-3">
                   <p className="text-xs text-destructive font-bold mb-1">Fix the following:</p>

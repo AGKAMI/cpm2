@@ -313,7 +313,7 @@ export function ProfileClient() {
             <motion.div
               layoutId="vanta-profile-avatar"
               transition={{ type: "spring", stiffness: 320, damping: 32 }}
-              className="h-32 w-32 rounded-full overflow-hidden border-4 border-gold/40 bg-secondary"
+              className="h-32 w-32 rounded-full overflow-hidden border-4 border-gold bg-secondary"
             >
               {photoUrl ? (
                 <img

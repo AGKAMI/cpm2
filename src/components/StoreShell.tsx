@@ -38,7 +38,7 @@ const ICON_MAP: Record<StoreTab, StoreIcon> = {
   owner: OwnerIcon,
 };
 
-const VANTA_LOCKUP = "/vanta-logo.svg";
+const VANTA_LOCKUP = "/untitled-design.svg";
 
 interface StoreShellProps {
   children: ReactNode;
@@ -139,7 +139,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
                   <motion.div
                     layoutId="vanta-profile-avatar"
                     transition={{ type: "spring", stiffness: 320, damping: 32 }}
-                    className="h-8 w-8 rounded-full overflow-hidden border-2 border-gold/40"
+                    className="h-8 w-8 rounded-full overflow-hidden border-2 border-gold"
                   >
                     {profile?.photoUrl ? (
                       <img
@@ -158,12 +158,12 @@ export function StoreShell({ children, dock }: StoreShellProps) {
                       </svg>
                     )}
                   </motion.div>
-                  <div className="absolute inset-0 h-full w-full rounded-full border-2 border-gold/40 animate-pulse-ring" />
+                  <div className="absolute inset-0 h-full w-full rounded-full border-2 border-gold animate-pulse-ring" />
                 </div>
               )}
             </div>
             <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center">
-              <img src={VANTA_LOCKUP} alt="Vanta Garage" className="h-6 w-6 sm:h-8 sm:w-8" />
+              <img src={VANTA_LOCKUP} alt="Vanta Garage" className="h-8 w-8 sm:h-10 sm:w-10" />
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <Button variant="ghost" size="icon" onClick={() => router.push("/")} aria-label="Back to app selection">

@@ -36,7 +36,8 @@ export async function GET(request: NextRequest) {
       if (telegramLinked) {
         const tgId = String(identity.rows[0].platform_user_id);
         const tgInfo = await fetchTelegramUser(Number(tgId));
-        const username = tgInfo?.username ?? (String(identity.rows[0].platform_username ?? "") || null);
+        const dbUsername = String(identity.rows[0].platform_username ?? "");
+        const username = tgInfo?.username ?? (dbUsername || null);
         const firstName = tgInfo?.first_name ?? null;
         const hasPhoto = (await fetchTelegramPhotoFileId(Number(tgId))) !== null;
         telegramUser = {

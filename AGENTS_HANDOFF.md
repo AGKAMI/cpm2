@@ -1805,3 +1805,23 @@ Each module below includes: **What** (functional spec from plan), **How it works
 - One of One relisting workflow — schema supports it, no admin workflow
 - Notification template library — inline messages only
 - End-to-end testing vs plan Section 25 — not yet executed
+### 2026-11-10 — Hermes Agent "Kermes" (nemotron-3.5-super-vl-120b-a12b) — Admin UI Fixes + STORE_ADMIN_TELEGRAM_ID deployed
+
+**What:** Fixed all remaining admin UI feedback from user + set STORE_ADMIN_TELEGRAM_ID on Vercel production so admin routes work.
+
+**Where:**
+- `src/app/store/admin/page.tsx` — modified (stacked layout, camera image input, promotions cancel, EFT button)
+- Vercel Production env var `STORE_ADMIN_TELEGRAM_ID` = `7036681178`
+
+**Changes:**
+1. **STORE_ADMIN_TELEGRAM_ID deployed** — was not set on Production, causing all admin routes (categories, products, promotions) to return 403. Removed old var, re-added with value `7036681178`, redeployed via `vercel deploy --prod` → `dpl_8F8Uu4MP8BUFdBUcoFf7nwi9Lf11` (READY, aliased to `cpm2-bay.vercel.app`).
+2. **Image input** — removed URL paste field entirely. Camera-icon field (`📷` "Choose image") taps → opens gallery/file picker. Auto-converts to data URL on selection. Preview + "Use this image" restored. Removed dead `convertUrlToDataUrl`, `handleConvertFile`, `resetConverter`, `converterLoading` code (~80 lines).
+3. **Layout** — all admin forms changed from `grid sm:grid-cols-2` side-by-side to `flex flex-col` stacked single-column. One field at a time, no UI breakage on catalog pick. Removed all `col-span-2` grid remnants.
+4. **Promotions Cancel** — `resetPromotionForm()` now calls `setShowPromotionForm(false)` so Cancel actually closes the form (was only clearing data).
+5. **EFT Review** — added `border-2 border-primary bg-primary text-primary-foreground` styling (clear borders + background, not seamless). Moved to top of page above Category Management.
+
+**Gates:** tsc --noEmit exit 0. Build completed on Vercel (`dpl_8F8Uu4MP8BUFdBUcoFf7nwi9Lf11`, READY). Live at `https://cpm2-bay.vercel.app`.
+
+**Verified by:** Kermes (nemotron-3.5-super-vl-120b-a12b)
+
+**Remaining gaps vs VANTA_GARAGE_Plan.txt:** unchanged from previous entry (Phase 0 audit, `.vanta` bot deploy, legal acceptance at checkout, 60-min reservation expiry, One of One relisting, notification template library, end-to-end testing).

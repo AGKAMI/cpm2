@@ -11,8 +11,14 @@ import { fail, ok, readJson } from "@/lib/route";
 import { telegramBotToken } from "@/lib/telegram";
 import { getCustomerByPlayerId, getCustomerByPlatformIdentity, linkPlatformIdentity, updateCustomer } from "@/lib/store/customers";
 import { NextResponse } from "next/server";
+import { createSessionToken, sessionCookieOptions } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
+
+function setSessionCookie(response: NextResponse, customerId: number, request: Request) {
+  const token = createSessionToken(customerId);
+  response.cookies.set("cpm2_session", token, sessionCookieOptions(request));
+}
 
 export async function POST(request: Request) {
   try {
@@ -58,9 +64,7 @@ export async function POST(request: Request) {
       }
 
       // Set cookie for owner/admin tab detection on web
-      const cookie = `vanta_telegram_id=${telegramUserId}; Path=/; Max-Age=2592000; SameSite=Lax`;
-
-      return new NextResponse(
+      const response = new NextResponse(
         JSON.stringify({
           customerId: existing.customer.id,
           inGameName: tgDisplayName ?? existing.customer.inGameName,
@@ -70,10 +74,13 @@ export async function POST(request: Request) {
           status: 200,
           headers: {
             "Content-Type": "application/json",
-            "Set-Cookie": cookie,
           },
         },
       );
+      setSessionCookie(response, existing.customer.id, request);
+      const cookie = `vanta_telegram_id=${telegramUserId}; Path=/; Max-Age=2592000; SameSite=Lax`;
+      response.headers.append("Set-Cookie", cookie);
+      return response;
     }
 
     // Check if there's an existing customer via guest playerId
@@ -90,9 +97,7 @@ export async function POST(request: Request) {
 
     // Set a cookie so the owner/admin tabs show on web (no Telegram WebApp initData).
     // resolveAdminStatus checks this cookie against STORE_ADMIN_TELEGRAM_ID.
-    const cookie = `vanta_telegram_id=${telegramUserId}; Path=/; Max-Age=2592000; SameSite=Lax`;
-
-    return new NextResponse(
+    const response = new NextResponse(
       JSON.stringify({
         customerId: created.id,
         inGameName: created.inGameName,
@@ -102,10 +107,13 @@ export async function POST(request: Request) {
         status: 200,
         headers: {
           "Content-Type": "application/json",
-          "Set-Cookie": cookie,
         },
       },
     );
+    setSessionCookie(response, created.id, request);
+    const cookie = `vanta_telegram_id=${telegramUserId}; Path=/; Max-Age=2592000; SameSite=Lax`;
+    response.headers.append("Set-Cookie", cookie);
+    return response;
   } catch (err) {
     return fail(err);
   }

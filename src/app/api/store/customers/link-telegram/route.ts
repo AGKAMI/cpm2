@@ -9,8 +9,14 @@ import { fail, ok, readJson } from "@/lib/route";
 import { assertTelegramAuth } from "@/lib/telegram";
 import { getCustomerByPlatformIdentity, linkPlatformIdentity } from "@/lib/store/customers";
 import { NextResponse } from "next/server";
+import { createSessionToken, sessionCookieOptions } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
+
+function setSessionCookie(response: NextResponse, customerId: number, request: Request) {
+  const token = createSessionToken(customerId);
+  response.cookies.set("cpm2_session", token, sessionCookieOptions(request));
+}
 
 export async function POST(request: Request) {
   try {
@@ -21,12 +27,14 @@ export async function POST(request: Request) {
 
     const existing = await getCustomerByPlatformIdentity("telegram", String(telegramUserId));
     if (existing) {
-      return ok({
+      const response = NextResponse.json({
         linked: true,
         customerId: existing.customer.id,
         inGameName: existing.customer.inGameName,
         message: "Telegram already linked to this customer.",
       });
+      setSessionCookie(response, existing.customer.id, request);
+      return response;
     }
 
     // Auto-create a customer linked to this Telegram id if none exists yet.
@@ -39,12 +47,14 @@ export async function POST(request: Request) {
     });
     await linkPlatformIdentity(created.id, "telegram", String(telegramUserId), "");
 
-    return ok({
+    const response = NextResponse.json({
       linked: true,
       customerId: created.id,
       inGameName: created.inGameName,
       message: "Telegram linked - your orders and delivery history will appear here.",
     });
+    setSessionCookie(response, created.id, request);
+    return response;
   } catch (err) {
     return fail(err);
   }

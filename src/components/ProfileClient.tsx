@@ -33,6 +33,13 @@ export function ProfileClient() {
   const [orderNotifications, setOrderNotifications] = useState(false);
   const [linkMode, setLinkMode] = useState<"telegram" | "email" | null>(null);
   const toast = useToast();
+
+  // Detect if opened inside Telegram Mini App / WebApp
+  const isTelegram =
+    typeof window !== "undefined" &&
+    typeof window.Telegram !== "undefined" &&
+    Boolean(window.Telegram.WebApp?.initData);
+
   const { mode, setMode } = useTheme();
 
   async function checkSession() {
@@ -314,7 +321,7 @@ export function ProfileClient() {
 
             <div className="mt-4 pt-3 border-t border-border">
               <p className="text-xs text-muted-foreground mb-2">Or link your Telegram:</p>
-              {typeof window !== "undefined" && typeof window.Telegram !== "undefined" && window.Telegram.WebApp?.initData ? (
+              {isTelegram ? (
                 <Button variant="primary" className="w-full" onClick={linkTelegram} disabled={loading}>
                   {loading ? "Linking…" : "Link Telegram"}
                 </Button>
@@ -332,14 +339,16 @@ export function ProfileClient() {
                   Link your Telegram to see your orders and delivery history here.
                 </p>
                 <div className="mt-4 pt-3 border-t border-border space-y-2">
-                  <Button
-                    variant="primary"
-                    className="w-full"
-                    onClick={() => setLinkMode("telegram")}
-                    disabled={loading}
-                  >
-                    {loading ? "Linking…" : "Link Telegram ID"}
-                  </Button>
+                  {!isTelegram && (
+                    <Button
+                      variant="primary"
+                      className="w-full"
+                      onClick={() => setLinkMode("telegram")}
+                      disabled={loading}
+                    >
+                      {loading ? "Linking…" : "Link Telegram ID"}
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     className="w-full"
@@ -348,7 +357,7 @@ export function ProfileClient() {
                   >
                     Create account &amp; log in
                   </Button>
-                  {typeof window !== "undefined" && typeof window.Telegram !== "undefined" && window.Telegram.WebApp?.initData ? (
+                  {isTelegram ? (
                     <Button
                       variant="outline"
                       size="sm"
@@ -367,34 +376,36 @@ export function ProfileClient() {
               </div>
             ) : linkMode === "telegram" ? (
               <div className="space-y-3">
-                <div className="mt-4 pt-3 border-t border-border">
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Or paste your Telegram ID:
-                  </p>
-                  <Field label="Telegram ID" htmlFor="telegram-id" hint="Your Telegram user ID (e.g. from @userinfobot)">
-                    <TextInput
-                      id="telegram-id"
-                      value={telegramId}
-                      onChange={(e) => setTelegramId(e.target.value)}
-                      placeholder="e.g. 7036681178"
-                    />
-                  </Field>
-                  <Button
-                    variant="primary"
-                    className="w-full"
-                    onClick={linkByTelegramId}
-                    disabled={loading || !telegramId}
-                  >
-                    {loading ? "Linking…" : "Link Telegram ID"}
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full" onClick={() => setLinkMode(null)}>
-                    Back
-                  </Button>
-                </div>
-                {typeof window !== "undefined" && typeof window.Telegram !== "undefined" && window.Telegram.WebApp?.initData ? (
+                {!isTelegram && (
                   <div className="mt-4 pt-3 border-t border-border">
                     <p className="text-xs text-muted-foreground mb-2">
-                      Or link via Telegram WebApp:
+                      Or paste your Telegram ID:
+                    </p>
+                    <Field label="Telegram ID" htmlFor="telegram-id" hint="Your Telegram user ID (e.g. from @userinfobot)">
+                      <TextInput
+                        id="telegram-id"
+                        value={telegramId}
+                        onChange={(e) => setTelegramId(e.target.value)}
+                        placeholder="e.g. 7036681178"
+                      />
+                    </Field>
+                    <Button
+                      variant="primary"
+                      className="w-full"
+                      onClick={linkByTelegramId}
+                      disabled={loading || !telegramId}
+                    >
+                      {loading ? "Linking…" : "Link Telegram ID"}
+                    </Button>
+                    <Button variant="outline" size="sm" className="w-full" onClick={() => setLinkMode(null)}>
+                      Back
+                    </Button>
+                  </div>
+                )}
+                {isTelegram && (
+                  <div className="mt-4 pt-3 border-t border-border">
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Link via Telegram WebApp:
                     </p>
                     <Button
                       variant="primary"
@@ -408,10 +419,6 @@ export function ProfileClient() {
                       Open this page inside Telegram to link automatically.
                     </p>
                   </div>
-                ) : (
-                  <p className="text-[10px] text-ink-faint text-center mt-4">
-                    Open this page inside Telegram to link automatically.
-                  </p>
                 )}
               </div>
             ) : (

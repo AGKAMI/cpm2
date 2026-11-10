@@ -78,6 +78,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isOwner, setIsOwner] = useState<boolean | null>(null);
   const [profile, setProfile] = useState<{ photoUrl?: string; displayName?: string; username?: string } | null>(null);
+  const [customerLoggedIn, setCustomerLoggedIn] = useState<boolean>(false);
   const { mode, toggleTheme } = useTheme();
 
   useEffect(() => {
@@ -119,10 +120,27 @@ export function StoreShell({ children, dock }: StoreShellProps) {
       });
   }, []);
 
+  // Track login state via localStorage so logout in ProfileClient
+  // immediately hides admin/owner tabs and profile in this shell.
+  useEffect(() => {
+    const checkLogin = () => {
+      if (typeof window !== "undefined") {
+        setCustomerLoggedIn(Boolean(localStorage.getItem("vanta_customer_id")));
+      }
+    };
+    checkLogin();
+    window.addEventListener("storage", checkLogin);
+    window.addEventListener("focus", checkLogin);
+    return () => {
+      window.removeEventListener("storage", checkLogin);
+      window.removeEventListener("focus", checkLogin);
+    };
+  }, []);
+
   const visibleNav = STORE_NAV.filter(
     (t) =>
-      (t.key !== "admin" || isAdmin === true) &&
-      (t.key !== "owner" || isOwner === true),
+      (t.key !== "admin" || (isAdmin === true && customerLoggedIn)) &&
+      (t.key !== "owner" || (isOwner === true && customerLoggedIn)),
   );
 
   const activeTab: StoreTab | undefined =
@@ -144,7 +162,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
           <div className="flex items-center gap-2">
             <div className="relative h-8 w-8 shrink-0">
               <div className="relative h-8 w-8 rounded-full overflow-hidden border-2 border-gold/40">
-                {profile?.photoUrl ? (
+                {profile?.photoUrl && customerLoggedIn ? (
                   <img
                     src={profile.photoUrl}
                     alt={profile.displayName || "Profile"}

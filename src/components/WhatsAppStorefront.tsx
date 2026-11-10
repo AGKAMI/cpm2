@@ -40,7 +40,7 @@ export function WhatsAppStorefront() {
               <span className="text-xs font-bold uppercase tracking-[0.1em]">{cat.name}</span>
               <span className="text-[10px] text-ink-faint">{cat.count} vehicles</span>
             </div>
-            <span className="text-[20px]">{cat.color.includes("gold") ? "🏆" : cat.color.includes("blue") ? "✨" : cat.color.includes("red") ? "🏷️" : "👑"}</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.1em]">{cat.color.includes("gold") ? "GOLD" : cat.color.includes("blue") ? "BLUE" : cat.color.includes("red") ? "RED" : "OWNER"}</span>
           </Link>
         ))}
       </div>

@@ -350,7 +350,7 @@ export function CategoriesClient() {
                 ))
               ) : (
                 <div className="empty text-center py-10 text-muted-foreground stagger-item">
-                  <span className="text-[28px] mb-2 block">🔍</span>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.1em] mb-2 block">search</span>
                   <p>No vehicles match your filters.</p>
                 </div>
               )}

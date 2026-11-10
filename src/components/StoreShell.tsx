@@ -38,15 +38,7 @@ const ICON_MAP: Record<StoreTab, StoreIcon> = {
   owner: OwnerIcon,
 };
 
-const VANTA_LOCKUP = `
-<svg viewBox="0 0 100 114" width="32" height="36.48" style="flex:none;display:block">
-  <linearGradient id="vgGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f6e3a0"/><stop offset=".5" stop-color="#d4af4f"/><stop offset="1" stop-color="#8f6f26"/></linearGradient>
-  <path d="M12,8H88L94,14V60Q94,90 50,108Q6,90 6,60V14Z" fill="none" stroke="url(#vgGold)" stroke-width="4"/>
-  <path d="M19,28H81V60Q81,80 50,95Q19,80 19,60Z" fill="none" stroke="#d4af4f" stroke-width="2"/>
-  <path d="M25,38 50,86 75,38" fill="none" stroke="#d4af4f" stroke-width="9" stroke-linejoin="miter"/>
-  <path d="M77,38H63Q57,38 57,44V48Q57,53 63,53H72V61H61" fill="none" stroke="#d4af4f" stroke-width="5"/>
-</svg>
-`;
+const VANTA_LOCKUP = "/vanta-logo.svg";
 
 interface StoreShellProps {
   children: ReactNode;
@@ -149,7 +141,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
                     transition={{ type: "spring", stiffness: 320, damping: 32 }}
                     className="h-8 w-8 rounded-full overflow-hidden border-2 border-gold/40"
                   >
-                    {profile?.photoUrl && customerLoggedIn ? (
+                    {profile?.photoUrl ? (
                       <img
                         src={profile.photoUrl}
                         alt={profile.displayName || "Profile"}
@@ -171,7 +163,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
               )}
             </div>
             <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center">
-              <div className="h-6 w-6 sm:h-8 sm:w-8 flex items-center justify-center" dangerouslySetInnerHTML={{ __html: VANTA_LOCKUP }} />
+              <img src={VANTA_LOCKUP} alt="Vanta Garage" className="h-6 w-6 sm:h-8 sm:w-8" />
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <Button variant="ghost" size="icon" onClick={() => router.push("/")} aria-label="Back to app selection">

@@ -68,7 +68,7 @@ function formatMessage(event: OrderEvent, order: {
   switch (event) {
     case "payment_verified":
       return (
-        `✅ <b>Payment Verified</b>\n\n` +
+        `<b>Payment Verified</b>\n\n` +
         `Your EFT payment for <b>${order.productName}</b> has been verified by our team.\n` +
         `Order: <code>${order.id}</code>\n` +
         `Amount: ${formatPrice(order.amountCents, order.currency)}\n\n` +
@@ -77,7 +77,7 @@ function formatMessage(event: OrderEvent, order: {
 
     case "payment_rejected":
       return (
-        `❌ <b>Payment Rejected</b>\n\n` +
+        `<b>Payment Rejected</b>\n\n` +
         `Unfortunately, we couldn't verify your EFT payment for <b>${order.productName}</b>.\n` +
         `Order: <code>${order.id}</code>\n` +
         `Reason: ${order.reason || "Payment proof not valid or not received"}\n\n` +
@@ -86,7 +86,7 @@ function formatMessage(event: OrderEvent, order: {
 
     case "payment_confirmed_payfast":
       return (
-        `✅ <b>Payment Confirmed</b>\n\n` +
+        `<b>Payment Confirmed</b>\n\n` +
         `Your PayFast payment for <b>${order.productName}</b> has been confirmed.\n` +
         `Order: <code>${order.id}</code>\n` +
         `Amount: ${formatPrice(order.amountCents, order.currency)}\n\n` +
@@ -95,7 +95,7 @@ function formatMessage(event: OrderEvent, order: {
 
     case "delivery_scheduled":
       return (
-        `🚚 <b>Delivery Scheduled</b>\n\n` +
+        `<b>Delivery Scheduled</b>\n\n` +
         `Your order <b>${order.productName}</b> is ready for delivery!\n` +
         `Order: <code>${order.id}</code>\n` +
         `Delivery proof: ${order.evidenceUrl || "Available in your orders"}\n\n` +
@@ -104,15 +104,15 @@ function formatMessage(event: OrderEvent, order: {
 
     case "delivery_verified":
       return (
-        `✅ <b>Delivery Complete</b>\n\n` +
+        `<b>Delivery Complete</b>\n\n` +
         `Your order <b>${order.productName}</b> has been successfully delivered.\n` +
         `Order: <code>${order.id}</code>\n\n` +
-        `Enjoy your new ride! 🏎️`
+        `Enjoy your new ride!`
       );
 
     case "order_cancelled":
       return (
-        `⚠️ <b>Order Cancelled</b>\n\n` +
+        `<b>Order Cancelled</b>\n\n` +
         `Your order for <b>${order.productName}</b> has been cancelled.\n` +
         `Order: <code>${order.id}</code>\n` +
         `Reason: ${order.reason || "Payment expired or rejected"}\n\n` +

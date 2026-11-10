@@ -92,12 +92,12 @@ export async function POST(
         if (enabled) {
           await sendNotification(
             telegramId,
-            `<b>🏁 VANTA GARAGE — Notifications On</b>\n\n🔔 You're all set! You'll now get order updates straight to your Telegram.\n\nHere's what you'll be notified about:\n\n✅ <b>Payment Verified</b> — Your EFT or PayFast payment cleared\n❌ <b>Payment Rejected</b> — Payment proof wasn't valid\n🚚 <b>Delivery Scheduled</b> — Your ride is ready for handoff\n✅ <b>Delivery Complete</b> — Order delivered, enjoy the whip\n⚠️ <b>Order Cancelled</b> — Order cancelled, stock released\n\nTurn these off anytime in your profile. Drive safe. 🏎️`
+            `<b>VANTA GARAGE — Notifications On</b>\n\nYou're all set! You'll now get order updates straight to your Telegram.\n\nHere's what you'll be notified about:\n\n<b>Payment Verified</b> — Your EFT or PayFast payment cleared\n<b>Payment Rejected</b> — Payment proof wasn't valid\n<b>Delivery Scheduled</b> — Your ride is ready for handoff\n<b>Delivery Complete</b> — Order delivered, enjoy the whip\n<b>Order Cancelled</b> — Order cancelled, stock released\n\nTurn these off anytime in your profile. Drive safe.`
           );
         } else {
           await sendNotification(
             telegramId,
-            `<b>🔕 VANTA GARAGE — Notifications Off</b>\n\nYou will no longer receive order update notifications from Vanta Garage on Telegram.\n\nYou won't be alerted about payments, deliveries, or cancellations anymore.\n\nTurn notifications back on anytime in your profile.`
+            `<b>VANTA GARAGE — Notifications Off</b>\n\nYou will no longer receive order update notifications from Vanta Garage on Telegram.\n\nYou won't be alerted about payments, deliveries, or cancellations anymore.\n\nTurn notifications back on anytime in your profile.`
           );
         }
       }

@@ -11,7 +11,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { carByCode, searchCars, type CarEntry } from "@/lib/car-catalog";
@@ -142,6 +142,7 @@ export default function AdminPage() {
   const [converterFile, setConverterFile] = useState<File | null>(null);
   const [converterResult, setConverterResult] = useState<string | null>(null);
   const [converterError, setConverterError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   // Toggle for the add/edit product form (behind a button, not always open)
   const [showProductForm, setShowProductForm] = useState(false);
 
@@ -752,7 +753,7 @@ export default function AdminPage() {
                         <div className="flex items-center gap-1 mt-1">
                           <span className="text-[10px] text-ink-faint">bg: {p.backgroundColor}</span>
                           <span className="text-[10px] text-ink-faint">accent: {p.accentColor}</span>
-                          {p.imageUrl && <span className="text-[10px] text-ink-faint">🖼️ image</span>}
+                          {p.imageUrl && <span className="text-[10px] text-ink-faint">image</span>}
                         </div>
                       </div>
                       <div className="flex gap-1">
@@ -795,6 +796,43 @@ export default function AdminPage() {
               </ul>
             </div>
           )}
+          <Field label="Image">
+            <div className="relative group cursor-pointer">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0] ?? null;
+                  if (!file) return;
+                  setConverterFile(file);
+                  setConverterError(null);
+                  try {
+                    const dataUrl = await convertFileToDataUrl(file);
+                    setConverterResult(dataUrl);
+                  } catch {
+                    setConverterError("Failed to read image file.");
+                  }
+                }}
+              />
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm text-foreground hover:border-primary transition-colors cursor-pointer"
+              >
+                {converterFile ? converterFile.name : "Choose image"}
+              </div>
+            </div>
+            {converterError && <p className="text-xs text-destructive mt-1">{converterError}</p>}
+            {converterResult && (
+              <div className="mt-3 border border-input rounded-md p-3 bg-background">
+                <img src={converterResult} alt="Preview" className="max-w-full max-h-48 rounded-md border border-border object-cover" />
+                <Button variant="primary" onClick={useConverterResult} className="w-full mt-2">
+                  Use this image
+                </Button>
+              </div>
+            )}
+          </Field>
           <Field
             label="Car (CPM2 catalog)"
             hint={
@@ -860,7 +898,7 @@ export default function AdminPage() {
                 />
                 {carOpen && (carMatches.length > 0 ? (
                   <div
-                    className="absolute z-20 mt-1 w-full max-h-64 overflow-y-auto border border-border rounded-md bg-card shadow-lg"
+                    className="absolute z-20 mt-1 w-full max-h-64 overflow-y-auto border border-border rounded-md bg-background/95 shadow-lg backdrop-blur-sm"
                     onMouseDown={(e) => e.preventDefault()}
                   >
                     {carMatches.map((car) => (
@@ -868,51 +906,17 @@ export default function AdminPage() {
                         key={car.code}
                         type="button"
                         onClick={() => pickCar(car)}
-                        className="block w-full text-left px-3 py-2 text-sm bg-card hover:bg-background hover:border-primary border-b border-border last:border-b-0"
+                        className="block w-full text-left px-3 py-2 text-sm bg-background/95 hover:bg-background hover:border-primary border-b border-border last:border-b-0"
                       >
                         <span className="text-foreground">{car.name}</span>
                       </button>
                     ))}
                   </div>
                 ) : (
-                  <div className="absolute z-20 mt-1 w-full border border-border rounded-md bg-card px-3 py-2 text-sm text-muted-foreground">
+                  <div className="absolute z-20 mt-1 w-full border border-border rounded-md bg-background/95 backdrop-blur-sm px-3 py-2 text-sm text-muted-foreground">
                     No car in the CPM2 catalog matches &quot;{carQuery}&quot;.
                   </div>
                 ))}
-              </div>
-            )}
-          </Field>
-          <Field label="Image">
-            <div className="relative group cursor-pointer">
-              <input
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0] ?? null;
-                  if (!file) return;
-                  setConverterFile(file);
-                  setConverterError(null);
-                  try {
-                    const dataUrl = await convertFileToDataUrl(file);
-                    setConverterResult(dataUrl);
-                  } catch {
-                    setConverterError("Failed to read image file.");
-                  }
-                }}
-              />
-              <div className="flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm text-foreground hover:border-primary transition-colors">
-                <span className="text-xl">📷</span>
-                {converterFile ? converterFile.name : "Choose image file (gallery / camera)"}
-              </div>
-            </div>
-            {converterError && <p className="text-xs text-destructive mt-1">{converterError}</p>}
-            {converterResult && (
-              <div className="mt-3 border border-input rounded-md p-3 bg-background">
-                <img src={converterResult} alt="Preview" className="max-w-full max-h-48 rounded-md border border-border object-cover" />
-                <Button variant="primary" onClick={useConverterResult} className="w-full mt-2">
-                  Use this image
-                </Button>
               </div>
             )}
           </Field>
@@ -937,7 +941,7 @@ export default function AdminPage() {
           </Field>
           <Field
             label="Stock"
-            hint={editingId === null ? "Must be at least 1 when adding a new car" : "How many available - set to 0 to mark out of stock"}
+            hint="How many available - set to 0 to mark out of stock"
           >
             <input
               id="stock"
@@ -1161,7 +1165,7 @@ export default function AdminPage() {
                             />
                             {carOpen && (carMatches.length > 0 ? (
                               <div
-                                className="absolute z-20 mt-1 w-full max-h-64 overflow-y-auto border border-border rounded-md bg-card shadow-lg"
+                                className="absolute z-20 mt-1 w-full max-h-64 overflow-y-auto border border-border rounded-md bg-background/95 shadow-lg backdrop-blur-sm"
                                 onMouseDown={(e) => e.preventDefault()}
                               >
                                 {carMatches.map((car) => (
@@ -1169,14 +1173,14 @@ export default function AdminPage() {
                                     key={car.code}
                                     type="button"
                                     onClick={() => pickCar(car)}
-                                    className="block w-full text-left px-3 py-2 text-sm bg-card hover:bg-background hover:border-primary border-b border-border last:border-b-0"
+                                    className="block w-full text-left px-3 py-2 text-sm bg-background/95 hover:bg-background hover:border-primary border-b border-border last:border-b-0"
                                   >
                                     <span className="text-foreground">{car.name}</span>
                                   </button>
                                 ))}
                               </div>
                             ) : (
-                              <div className="absolute z-20 mt-1 w-full border border-border rounded-md bg-card px-3 py-2 text-sm text-muted-foreground">
+                              <div className="absolute z-20 mt-1 w-full border border-border rounded-md bg-background/95 backdrop-blur-sm px-3 py-2 text-sm text-muted-foreground">
                                 No car in the CPM2 catalog matches &quot;{carQuery}&quot;.
                               </div>
                             ))}
@@ -1203,7 +1207,7 @@ export default function AdminPage() {
                       </Field>
                       <Field
                         label="Stock"
-                        hint={editingId === null ? "Must be at least 1 when adding a new car" : "How many available - set to 0 to mark out of stock"}
+                        hint="How many available - set to 0 to mark out of stock"
                       >
                         <input
                           type="number"

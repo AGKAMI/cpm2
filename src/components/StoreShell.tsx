@@ -12,6 +12,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { vantaApi } from "@/lib/store/client";
 import { AdminIcon } from "@/components/ui/admin-icon";
 import { OwnerIcon } from "@/components/ui/owner-icon";
+import { ProfileIcon } from "@/components/ui/profile-icon";
 import SwitchComponent from "@/components/ui/switch8";
 
 type StoreTab = "home" | "categories" | "orders" | "profile" | "admin" | "owner";
@@ -22,7 +23,7 @@ const STORE_NAV: { key: StoreTab; href: string; label: string; icon: StoreIcon }
   { key: "home", href: "/store", label: "HOME", icon: Home },
   { key: "categories", href: "/store/categories", label: "CATEGORIES", icon: Grid },
   { key: "orders", href: "/store/orders", label: "ORDERS", icon: List },
-  { key: "profile", href: "/store/profile", label: "PROFILE", icon: User },
+  { key: "profile", href: "/store/profile", label: "PROFILE", icon: ProfileIcon },
   { key: "admin", href: "/store/admin", label: "ADMIN", icon: AdminIcon },
   { key: "owner", href: "/store/owner", label: "OWNER", icon: OwnerIcon },
 ];
@@ -31,7 +32,7 @@ const ICON_MAP: Record<StoreTab, StoreIcon> = {
   home: Home,
   categories: Grid,
   orders: List,
-  profile: User,
+  profile: ProfileIcon,
   admin: AdminIcon,
   owner: OwnerIcon,
 };

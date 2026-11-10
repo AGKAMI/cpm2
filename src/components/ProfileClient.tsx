@@ -491,7 +491,7 @@ export function ProfileClient() {
               }
               return (
                 <span
-                  className={`absolute -bottom-2 left-1/2 -translate-x-1/2 z-10 overflow-hidden rounded-2xl px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] border-2 border-background metallic-silver text-ink-soft`}
+                  className={`absolute -bottom-2 left-1/2 -translate-x-1/2 z-10 overflow-hidden rounded-2xl px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] border-2 border-background metallic-silver text-white`}
                 >
                   Customer
                   <span

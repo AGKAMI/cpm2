@@ -331,7 +331,7 @@ export function ProfileClient() {
               if (role === "owner" || role === "admin") {
                 return (
                   <span
-                    className={`absolute -bottom-2 left-1/2 -translate-x-1/2 z-10 overflow-hidden rounded-2xl px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] border-2 border-background ${role === "owner" ? "metallic-gold text-black" : "bg-indigo-600 text-white"}`}
+                    className={`absolute -bottom-2 left-1/2 -translate-x-1/2 z-10 overflow-hidden rounded-2xl px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] border-2 border-background ${role === "owner" ? "metallic-gold text-black" : "metallic-indigo text-white"}`}
                   >
                     {role}
                     <span

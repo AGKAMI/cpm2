@@ -65,7 +65,7 @@ export function WhatsAppOrder({ orderId }: { orderId?: string }) {
         <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Order #{order.id}</h3>
         <span
           className={`text-xs font-bold uppercase tracking-[0.1em] px-2 py-0.5 rounded ${
-            order.state === "Pending payment" ? "border-gold bg-black/60 text-gold" : "border-gold bg-black/60 text-gold"
+            order.state === "Pending payment" ? "border-gold bg-background text-foreground" : "border-gold bg-background text-foreground"
           }`}
         >
           {order.state}

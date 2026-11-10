@@ -122,11 +122,11 @@ const content = (
                   {cardImages[c.id] ? (
                     <img src={cardImages[c.id]} alt={c.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
                   ) : (
-                    <div className="w-full h-full bg-surface-deep flex items-center justify-center">
-                      <span className="text-[10px] text-ink-faint uppercase tracking-[0.2em]">No photo</span>
+                    <div className="w-full h-full bg-paper-raised flex items-center justify-center">
+                      <span className="text-[10px] text-ink-soft uppercase tracking-[0.2em]">No photo</span>
                     </div>
                   )}
-                  <div className="ov absolute inset-0 flex flex-col justify-between p-3 text-white">
+                  <div className="ov absolute inset-0 flex flex-col justify-between p-3 text-ink">
                     <div>
                       {c.exclusivity !== "standard" && (
                         <span className="badge-exclusive text-[9px] font-bold">{c.exclusivity.replace("_", " ")}</span>
@@ -134,14 +134,14 @@ const content = (
                     </div>
                     <div className="flex items-end justify-between gap-2">
                       <div>
-                        <small className="text-white/80 uppercase tracking-[0.06em]">{c.name.toUpperCase()}</small>
+                        <small className="text-ink/80 uppercase tracking-[0.06em]">{c.name.toUpperCase()}</small>
                         <h3 className="font-serif font-bold text-xl leading-none mt-1">{c.name}</h3>
                         <div className="mt-2 font-bold tabular-nums text-lg">
                           <HeartToggle productId={c.id} />
                           {formatPrice(c.basePriceCents, c.currency)}
                         </div>
                       </div>
-                      <div className="go w-10 h-10 rounded-full bg-gold flex items-center justify-center text-ink">
+                      <div className="go w-10 h-10 rounded-full bg-gold flex items-center justify-center text-primary-foreground">
                         <span className="text-[12px]">▸</span>
                       </div>
                     </div>
@@ -164,8 +164,8 @@ const content = (
               <div
                 className={`relative overflow-hidden rounded-[22px] p-5 border border-[rgba(255,255,255,0.15)]`}
                 style={{
-                  backgroundColor: promo.backgroundColor || "#1c1c1f",
-                  color: promo.accentColor ? "#ffffff" : undefined,
+                  backgroundColor: promo.backgroundColor || "var(--color-paper-raised)",
+                  color: promo.accentColor ? "var(--color-paper-sunken)" : undefined,
                 }}
               >
                 {promo.imageUrl && (
@@ -221,7 +221,7 @@ const content = (
           <div className="hs px-4 gap-3" style={{ scrollPaddingLeft: "16px" }}>
             {categories.slice(0, 8).map((cat) => (
               <Link key={cat.id} href={`/store/categories?category=${cat.slug}`} className="circ cursor-pointer">
-                <div className="media w-18 h-18 rounded-full border border-border flex-shrink-0 relative overflow-hidden bg-surface-deep">
+                <div className="media w-18 h-18 rounded-full border border-border flex-shrink-0 relative overflow-hidden bg-paper-raised">
                   <span className="text-[11px] font-bold text-center text-ink-soft absolute inset-0 flex items-center justify-center">{cat.name.charAt(0)}</span>
                 </div>
                 <span className="mt-1 block text-[10px] font-bold text-center">{cat.name}</span>
@@ -248,8 +248,8 @@ const content = (
                     {cardImages[c.id] ? (
                       <img src={cardImages[c.id]} alt={c.name} className="w-full h-full object-cover" loading="lazy" />
                     ) : (
-                      <div className="w-full h-full bg-surface-deep flex items-center justify-center">
-                        <span className="text-[10px] text-ink-faint uppercase tracking-[0.2em]">No photo</span>
+                      <div className="w-full h-full bg-paper-raised flex items-center justify-center">
+                        <span className="text-[10px] text-ink-soft uppercase tracking-[0.2em]">No photo</span>
                       </div>
                     )}
                     <div className="tl absolute top-2 left-2">
@@ -286,8 +286,8 @@ const content = (
                     {cardImages[c.id] ? (
                       <img src={cardImages[c.id]} alt={c.name} className="w-full h-full object-cover" loading="lazy" />
                     ) : (
-                      <div className="w-full h-full bg-surface-deep flex items-center justify-center">
-                        <span className="text-[10px] text-ink-faint uppercase tracking-[0.2em]">No photo</span>
+                      <div className="w-full h-full bg-paper-raised flex items-center justify-center">
+                        <span className="text-[10px] text-ink-soft uppercase tracking-[0.2em]">No photo</span>
                       </div>
                     )}
                     <div className="tl absolute top-2 left-2">
@@ -323,8 +323,8 @@ const content = (
                 {cardImages[c.id] ? (
                   <img src={cardImages[c.id]} alt={c.name} className="w-full h-full object-cover" loading="lazy" />
                 ) : (
-                  <div className="w-full h-full bg-surface-deep flex items-center justify-center">
-                    <span className="text-[10px] text-ink-faint uppercase tracking-[0.2em]">No photo</span>
+                  <div className="w-full h-full bg-paper-raised flex items-center justify-center">
+                    <span className="text-[10px] text-ink-soft uppercase tracking-[0.2em]">No photo</span>
                   </div>
                 )}
               </div>
@@ -351,9 +351,9 @@ const loadingSkeleton = (
     <>
       <section className="hero px-4 pt-6 pb-8 relative">
         <div className="animate-pulse">
-          <div className="h-4 w-1/4 bg-surface-deep rounded mb-2" />
-          <div className="h-8 w-3/4 bg-surface-deep rounded mb-1" />
-          <div className="h-8 w-1/2 bg-surface-deep rounded" />
+          <div className="h-4 w-1/4 bg-paper-raised rounded mb-2" />
+          <div className="h-8 w-3/4 bg-paper-raised rounded mb-1" />
+          <div className="h-8 w-1/2 bg-paper-raised rounded" />
         </div>
       </section>
       <section className="px-4">
@@ -362,9 +362,9 @@ const loadingSkeleton = (
             {[...Array(4)].map((_, i) => (
               <div key={i} className="product-card">
                 <div className="relative overflow-hidden rounded-[18px] border border-border">
-                  <div className="w-full h-[220px] bg-surface-deep" />
-                  <div className="absolute bottom-2 left-2 right-2 p-2 bg-black/60">
-                    <div className="h-4 w-3/4 bg-surface-deep rounded mb-1" />
+                  <div className="w-full h-[220px] bg-paper-raised" />
+                  <div className="absolute bottom-2 left-2 right-2 p-2 bg-ink/60">
+                    <div className="h-4 w-3/4 bg-paper-raised rounded mb-1" />
                     <div className="h-6 w-1/2 bg-gold rounded" />
                   </div>
                 </div>
@@ -374,25 +374,25 @@ const loadingSkeleton = (
         </div>
       </section>
       <section className="sec mb-6 px-4 animate-pulse">
-        <div className="h-5 w-1/4 bg-surface-deep rounded mb-3" />
+        <div className="h-5 w-1/4 bg-paper-raised rounded mb-3" />
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="panel p-4">
-              <div className="h-3 w-1/3 bg-surface-deep rounded mb-1" />
-              <div className="h-5 w-1/2 bg-surface-deep rounded" />
+              <div className="h-3 w-1/3 bg-paper-raised rounded mb-1" />
+              <div className="h-5 w-1/2 bg-paper-raised rounded" />
             </div>
           ))}
         </div>
       </section>
       <section className="sec mb-6 px-4 animate-pulse">
-        <div className="h-5 w-1/4 bg-surface-deep rounded mb-3" />
+        <div className="h-5 w-1/4 bg-paper-raised rounded mb-3" />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="product-card">
               <div className="relative overflow-hidden rounded-[18px] border border-border">
-                <div className="w-full h-[220px] bg-surface-deep" />
-                <div className="absolute bottom-2 left-2 right-2 p-2 bg-black/60">
-                  <div className="h-4 w-3/4 bg-surface-deep rounded mb-1" />
+                <div className="w-full h-[220px] bg-paper-raised" />
+                <div className="absolute bottom-2 left-2 right-2 p-2 bg-ink/60">
+                  <div className="h-4 w-3/4 bg-paper-raised rounded mb-1" />
                   <div className="h-6 w-1/2 bg-gold rounded" />
                 </div>
               </div>
@@ -401,14 +401,14 @@ const loadingSkeleton = (
         </div>
       </section>
       <section className="sec mb-6 px-4 animate-pulse">
-        <div className="h-5 w-1/4 bg-surface-deep rounded mb-3" />
+        <div className="h-5 w-1/4 bg-paper-raised rounded mb-3" />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="product-card">
               <div className="relative overflow-hidden rounded-[18px] border border-border">
-                <div className="w-full h-[220px] bg-surface-deep" />
-                <div className="absolute bottom-2 left-2 right-2 p-2 bg-black/60">
-                  <div className="h-4 w-3/4 bg-surface-deep rounded mb-1" />
+                <div className="w-full h-[220px] bg-paper-raised" />
+                <div className="absolute bottom-2 left-2 right-2 p-2 bg-ink/60">
+                  <div className="h-4 w-3/4 bg-paper-raised rounded mb-1" />
                   <div className="h-6 w-1/2 bg-destructive rounded" />
                 </div>
               </div>
@@ -417,14 +417,14 @@ const loadingSkeleton = (
         </div>
       </section>
       <section className="sec mb-10 px-4 animate-pulse">
-        <div className="h-5 w-1/4 bg-surface-deep rounded mb-3" />
+        <div className="h-5 w-1/4 bg-paper-raised rounded mb-3" />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {[...Array(3)].map((_, i) => (
             <div key={i} className="product-card">
               <div className="relative overflow-hidden rounded-[18px] border border-border">
-                <div className="w-full h-[220px] bg-surface-deep" />
-                <div className="absolute bottom-2 left-2 right-2 p-2 bg-black/60">
-                  <div className="h-4 w-3/4 bg-surface-deep rounded mb-1" />
+                <div className="w-full h-[220px] bg-paper-raised" />
+                <div className="absolute bottom-2 left-2 right-2 p-2 bg-ink/60">
+                  <div className="h-4 w-3/4 bg-paper-raised rounded mb-1" />
                   <div className="h-6 w-1/2 bg-gold rounded" />
                 </div>
               </div>

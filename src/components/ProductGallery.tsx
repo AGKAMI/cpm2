@@ -71,7 +71,7 @@ export function ProductGallery({ productId }: { productId: number }) {
         </div>
         {/* Thumbnail strip */}
         {media.length > 1 && (
-          <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/80 flex gap-2 overflow-x-auto">
+          <div className="absolute bottom-0 left-0 right-0 p-2 bg-background/80 flex gap-2 overflow-x-auto">
             {media.map((m) => (
               <button
                 key={m.publicUrl}

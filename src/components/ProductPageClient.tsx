@@ -111,7 +111,7 @@ export function ProductPageClient({ productId }: { productId: string }) {
             <>
               <button
                 onClick={() => setActiveImage((a) => (a > 0 ? a - 1 : media.length - 1))}
-                className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-black/80 transition-colors"
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-ink/60 flex items-center justify-center text-ink hover:bg-ink/80 transition-colors"
                 aria-label="Previous image"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -120,7 +120,7 @@ export function ProductPageClient({ productId }: { productId: string }) {
               </button>
               <button
                 onClick={() => setActiveImage((a) => (a < media.length - 1 ? a + 1 : 0))}
-                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-black/80 transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/60 flex items-center justify-center text-foreground hover:bg-background/80 transition-colors"
                 aria-label="Next image"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -132,7 +132,7 @@ export function ProductPageClient({ productId }: { productId: string }) {
                   <button
                     key={i}
                     onClick={() => setActiveImage(i)}
-                    className={`w-2 h-2 rounded-full transition-colors ${i === activeImage ? "bg-gold w-5" : "bg-white/30"}`}
+                    className={`w-2 h-2 rounded-full transition-colors ${i === activeImage ? "bg-gold w-5" : "bg-background/30"}`}
                     aria-label={`Image ${i + 1}`}
                   />
                 ))}
@@ -141,27 +141,27 @@ export function ProductPageClient({ productId }: { productId: string }) {
           )}
           <div className="absolute top-4 left-4 z-10 flex flex-col gap-1">
             {isExclusive && (
-                          <span className="rounded-full px-3 py-1.5 border border-gold bg-black/60 text-gold text-[10px] font-bold uppercase tracking-[0.15em]">
+                          <span className="rounded-full px-3 py-1.5 border border-gold bg-background text-foreground text-[10px] font-bold uppercase tracking-[0.15em]">
                             {exclusivityLabel}
                           </span>
                         )}
                         {product.isNew && (
-                          <span className="rounded-full px-3 py-1.5 border border-blue-500 bg-black/60 text-blue-400 text-[10px] font-bold uppercase tracking-[0.15em]">
+                          <span className="rounded-full px-3 py-1.5 border border-blue-500 bg-background text-foreground text-[10px] font-bold uppercase tracking-[0.15em]">
                             New
                           </span>
                         )}
                         {product.isSale && (
-                          <span className="rounded-full px-3 py-1.5 border border-red-500 bg-black/60 text-red-400 text-[10px] font-bold uppercase tracking-[0.15em]">
+                          <span className="rounded-full px-3 py-1.5 border border-red-500 bg-background text-foreground text-[10px] font-bold uppercase tracking-[0.15em]">
                             Sale
                           </span>
                         )}
                         {product.isFeatured && (
-                          <span className="rounded-full px-3 py-1.5 border border-gold bg-black/60 text-gold text-[10px] font-bold uppercase tracking-[0.15em]">
+                          <span className="rounded-full px-3 py-1.5 border border-gold bg-background text-foreground text-[10px] font-bold uppercase tracking-[0.15em]">
                             Featured
                           </span>
                         )}
                         {product.stockQuantity === 0 && (
-              <span className="rounded-full px-3 py-1.5 border border-destructive bg-black/60 text-destructive text-[10px] font-bold uppercase tracking-[0.15em]">
+              <span className="rounded-full px-3 py-1.5 border border-destructive bg-background text-foreground text-[10px] font-bold uppercase tracking-[0.15em]">
                 Sold out
               </span>
             )}

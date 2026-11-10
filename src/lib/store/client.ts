@@ -269,6 +269,7 @@ export type VantaCustomer = {
   currencyPref: string;
   telegramLinked?: boolean;
   telegramId?: string | null;
+  role?: "owner" | "admin" | "customer";
   createdAt: string;
   updatedAt: string;
 };

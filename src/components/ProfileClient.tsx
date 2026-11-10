@@ -221,9 +221,18 @@ export function ProfileClient() {
   };
 
   // --- Sign in / Create account (email + password, web) ---
-  const [authEmail, setAuthEmail] = useState("");
+  // Remember the last email used so the browser/password manager can autofill.
+  const [authEmail, setAuthEmail] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("vanta_owner_email") ?? "" : ""
+  );
   const [authPassword, setAuthPassword] = useState("");
   const [authBusy, setAuthBusy] = useState(false);
+
+  const rememberEmail = (emailVal: string) => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("vanta_owner_email", emailVal);
+    window.localStorage.setItem("vanta_customer_id", String(customer?.id ?? ""));
+  };
 
   const submitAuth = async (mode: "login" | "create") => {
     const emailVal = authEmail.trim();
@@ -249,7 +258,7 @@ export function ProfileClient() {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error?.message || (mode === "login" ? "Login failed." : "Could not create the account."));
       }
-      setAuthEmail("");
+      rememberEmail(emailVal);
       setAuthPassword("");
       setSuccess(mode === "login" ? "Logged in." : "Account created — you're logged in.");
       await checkSession();
@@ -315,6 +324,29 @@ export function ProfileClient() {
             <span className={`absolute bottom-0 right-0 flex items-center justify-center w-8 h-8 rounded-full border-2 border-background ${isActive ? "bg-racing text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
               <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
             </span>
+
+            {/* Role badge — pinned to the avatar's bottom edge */}
+            {(() => {
+              const role = customer?.role ?? "customer";
+              if (role === "owner" || role === "admin") {
+                return (
+                  <span
+                    className={`absolute -bottom-2 left-1/2 -translate-x-1/2 z-10 overflow-hidden rounded-2xl px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] border-2 border-background ${role === "owner" ? "bg-gold text-black" : "bg-indigo-600 text-white"}`}
+                  >
+                    {role}
+                    <span
+                      aria-hidden="true"
+                      className="pointer-events-none absolute top-0 h-full w-[60%] -skew-x-[22deg] bg-gradient-to-r from-transparent via-white/45 to-transparent shine-sweep"
+                    />
+                  </span>
+                );
+              }
+              return (
+                <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 z-10 rounded-2xl border-2 border-background bg-secondary px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-ink-soft">
+                  Customer
+                </span>
+              );
+            })()}
           </div>
 
           <h1 className="text-2xl font-bold text-foreground tracking-tight">
@@ -391,6 +423,7 @@ export function ProfileClient() {
             <Field label="Email">
               <TextInput
                 type="email"
+                name="email"
                 value={authEmail}
                 onChange={(e) => setAuthEmail(e.target.value)}
                 placeholder="you@example.com"
@@ -400,6 +433,7 @@ export function ProfileClient() {
             <Field label="Password">
               <TextInput
                 type="password"
+                name="password"
                 value={authPassword}
                 onChange={(e) => setAuthPassword(e.target.value)}
                 placeholder="••••••••"

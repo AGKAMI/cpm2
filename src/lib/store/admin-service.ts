@@ -6,6 +6,7 @@
 
 import { getStoreDb } from "../store-db.ts";
 import { assertTelegramAuth } from "../telegram";
+import { currentUserId } from "../auth.ts";
 
 export type AdminRecord = {
   id: number;
@@ -110,6 +111,37 @@ export async function resolveAdminStatus(request: Request): Promise<{
     }
 
     return { isAdmin: false, isOwner: false, telegramUserId: String(telegramUserId), role: null };
+  }
+
+  // Web session fallback: a customer logged in via email/password whose
+  // account has a linked Telegram identity resolves through that identity.
+  const sessionUserId = currentUserId(request);
+  if (sessionUserId) {
+    const db = await getStoreDb();
+    const identity = await db.execute({
+      sql: `SELECT platform_user_id FROM vanta_platform_identities WHERE platform = 'telegram' AND customer_id = ? LIMIT 1`,
+      args: [sessionUserId],
+    });
+    if (identity.rows.length > 0) {
+      const tgId = String(identity.rows[0].platform_user_id);
+      const ownerIdRaw = process.env.STORE_ADMIN_TELEGRAM_ID ?? "";
+      const ownerId = ownerIdRaw ? Number(ownerIdRaw) : null;
+      if (ownerId !== null && Number(tgId) === ownerId) {
+        return { isAdmin: true, isOwner: true, telegramUserId: tgId, role: "owner" };
+      }
+      const result = await db.execute({
+        sql: `SELECT role FROM vanta_admins WHERE telegram_user_id = ? AND is_active = 1 LIMIT 1`,
+        args: [tgId],
+      });
+      if (result.rows.length > 0) {
+        return {
+          isAdmin: true,
+          isOwner: false,
+          telegramUserId: tgId,
+          role: String(result.rows[0].role ?? "admin") as "admin",
+        };
+      }
+    }
   }
 
   // Web fallback: check X-Owner-Email header against STORE_OWNER_EMAIL env var

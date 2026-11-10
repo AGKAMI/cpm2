@@ -129,6 +129,18 @@
 [data-theme="night"] {
   --background: oklch(0.1286 0.0000 89.88);
   --foreground: oklch(0.9530 0.0156 86.43);
+  /* Keep the destructive red identical to light mode */
+  --destructive: oklch(0.504 0.176 20.7);
+  --destructive-foreground: oklch(0.985 0.004 255);
+}
+
+/* Role badge shine sweep (admin / owner) */
+@keyframes shine {
+  0% { left: -140%; }
+  60%, 100% { left: 150%; }
+}
+.shine-sweep {
+  animation: shine 2.2s ease-in-out infinite;
 }
 
 /* Daylight variant — not used, night is the only theme */

@@ -2,8 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCustomerByPlatformIdentity } from "@/lib/store/customers";
 import { getStoreDb } from "@/lib/store-db";
 import { verifySessionToken, readRequestCookie, SESSION_COOKIE } from "@/lib/auth";
+import { resolveAdminStatus } from "@/lib/store/admin-service";
+import { telegramBotToken } from "@/lib/telegram";
 
 export async function GET(request: NextRequest) {
+  const adminStatus = await resolveAdminStatus(request);
+  const role: "owner" | "admin" | "customer" = adminStatus.role ?? "customer";
+
   // 1. Try session cookie (web login)
   const sessionToken = readRequestCookie(request, SESSION_COOKIE);
   const sessionUserId = verifySessionToken(sessionToken);
@@ -18,10 +23,39 @@ export async function GET(request: NextRequest) {
       const c = customer.rows[0];
       // Telegram link status for the logged-in customer
       const identity = await db.execute({
-        sql: `SELECT platform_user_id FROM vanta_platform_identities WHERE platform = 'telegram' AND customer_id = ? LIMIT 1`,
+        sql: `SELECT platform_user_id, platform_username FROM vanta_platform_identities WHERE platform = 'telegram' AND customer_id = ? LIMIT 1`,
         args: [sessionUserId],
       });
       const telegramLinked = identity.rows.length > 0;
+
+      // Resolve the Telegram display identity (username / first name) so the
+      // profile header shows the Telegram name instead of the email prefix.
+      let telegramUser: { id: number; username?: string; firstName?: string; displayName: string } | null = null;
+      if (telegramLinked) {
+        const tgId = String(identity.rows[0].platform_user_id);
+        let username: string | null = String(identity.rows[0].platform_username ?? "") || null;
+        let firstName: string | null = null;
+        const token = telegramBotToken();
+        if (token) {
+          try {
+            const tgRes = await fetch(`https://api.telegram.org/bot${token}/getUser?user_id=${encodeURIComponent(tgId)}`);
+            const tgData = await tgRes.json();
+            if (tgData.ok && tgData.result) {
+              username = tgData.result.username ?? username;
+              firstName = tgData.result.first_name ?? null;
+            }
+          } catch {
+            // Advisory only — fall back to the stored username.
+          }
+        }
+        telegramUser = {
+          id: Number(tgId),
+          username: username ?? undefined,
+          firstName: firstName ?? undefined,
+          displayName: username || firstName || String(c.in_game_name ?? "") || "there",
+        };
+      }
+
       return NextResponse.json({ 
         customer: {
           id: Number(c.id),
@@ -31,8 +65,9 @@ export async function GET(request: NextRequest) {
           currencyPref: String(c.currency_pref ?? "ZAR"),
           telegramLinked,
           telegramId: telegramLinked ? String(identity.rows[0].platform_user_id) : null,
+          role,
         }, 
-        telegramUser: null 
+        telegramUser 
       });
     }
   }
@@ -61,7 +96,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ 
-      customer, 
+      customer: customer ? { ...customer, role } : null, 
       telegramUser: telegramUser ? {
         id: telegramUser.id,
         username: telegramUser.username,
@@ -73,5 +108,5 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  return NextResponse.json({ customer: null, telegramUser: null });
+  return NextResponse.json({ customer: null, telegramUser: null, role: "customer" });
 }

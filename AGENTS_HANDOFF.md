@@ -1855,3 +1855,30 @@ Each module below includes: **What** (functional spec from plan), **How it works
 - Profile linking: don't show manual ID paste if in Telegram; don't show WebApp link if outside Telegram
 - Logout gate: top bar should hide admin/owner tabs and profile circle after logout
 - Stay logged in: once linked in Telegram, don't auto-logout
+
+### 2026-11-10 — Hermes Agent "Kermes" — Logout Gate + Stay Logged In + Telegram Platform Detection
+
+**What:** Fixed three user-flagged issues around profile linking and logout behavior.
+
+**Where:**
+- `src/components/StoreShell.tsx` — logout gate
+- `src/components/ProfileClient.tsx` — Telegram platform detection
+- `src/app/api/store/customers/link-telegram/route.ts` — set session cookie on link
+- `src/app/api/store/customers/link-telegram-id/route.ts` — set session cookie on link
+
+**Changes:**
+1. **Logout gate** — StoreShell now tracks `customerLoggedIn` via `vanta_customer_id` in localStorage. After logout (which clears localStorage), the shell:
+   - Hides admin and owner tabs from the nav dock
+   - Hides the profile photo circle (shows default SVG icon)
+   - Listens to `storage` events (cross-tab logout) and `focus` events to react immediately
+
+2. **Stay logged in** — Both Telegram linking routes now set the `cpm2_session` cookie after successful linking. Previously linking via Telegram WebApp or manual ID didn't set a session cookie, so reloading the app logged the user out. Now the session persists for 30 days (matching web login).
+
+3. **Telegram platform detection** — ProfileClient detects `isTelegram` (WebApp initData present):
+   - Inside Telegram: shows "Link via Telegram WebApp" button, hides manual ID paste field
+   - Outside Telegram: shows manual ID paste field, hides WebApp link button
+   - No more showing both options at once
+
+**Gates:** tsc --noEmit exit 0. Build completed on Vercel (`dpl_GahAXn1A4W1Y3RYCZdfLdJ67zFnN`, READY). Live at `https://cpm2-bay.vercel.app`.
+
+**Verified by:** Kermes (nemotron-3.5-super-vl-120b-a12b)

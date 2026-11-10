@@ -33,10 +33,10 @@ export const productFormSchema = z.object({
     .min(2, { error: "Name must be at least 2 characters." })
     .max(100, { error: "Name must be 100 characters or fewer." }),
   description: z
-    .string({ error: "Description is required." })
+    .string()
     .trim()
-    .min(5, { error: "Description must be at least 5 characters." })
-    .max(500, { error: "Description must be 500 characters or fewer." }),
+    .max(500, { error: "Description must be 500 characters or fewer." })
+    .optional(),
   basePriceCents: z
     .string({ error: "Price is required." })
     .trim()
@@ -50,11 +50,11 @@ export const productFormSchema = z.object({
     .trim()
     .min(1, { error: "Select a currency." }),
   stockQuantity: z
-    .string({ error: "Stock is required." })
+    .string()
     .trim()
-    .min(1, { error: "Enter stock quantity." })
-    .refine((v) => /^\d+$/.test(v), { error: "Stock must be a whole number." })
-    .refine((v) => parseInt(v, 10) >= 0, { error: "Stock cannot be negative." }),
+    .optional()
+    .refine((v) => !v || /^\d+$/.test(v), { error: "Stock must be a whole number." })
+    .refine((v) => !v || parseInt(v, 10) >= 0, { error: "Stock cannot be negative." }),
   imageUrl: z
     .string()
     .trim()

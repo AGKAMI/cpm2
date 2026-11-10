@@ -144,6 +144,11 @@ export const vantaApi = {
       request<{ deleted: boolean }>(`/admin/admins/${encodeURIComponent(telegramUserId)}`, {
         method: "DELETE",
       }),
+    notifyAdminPromoted: (body: { telegramUserId: string; promotedBy: string }) =>
+      request<{ success: boolean }>("/admin/notify-admin-promoted", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
     adminDashboardStats: () =>
     request<DashboardStats>("/admin/dashboard/stats"),
   adminDashboardAlerts: () =>

@@ -15,17 +15,18 @@ import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Field";
 import { vantaApi, formatPrice, type VantaAdminRecord } from "@/lib/store/client";
+import { notifyAdminPromoted } from "@/lib/store/notifications";
+import { useToast } from "@/components/ui/Toaster";
+import { Toast } from "@/components/ui/Toast";
 
 type AdminRow = VantaAdminRecord & { formattedId: string };
 
 export default function OwnerPage() {
   const router = useRouter();
+  const toast = useToast();
   const [admins, setAdmins] = useState<AdminRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [msg, setMsg] = useState<string | null>(null);
-  const [removeError, setRemoveError] = useState<string | null>(null);
   const [newId, setNewId] = useState("");
   const [newNickname, setNewNickname] = useState("");
   const [ownerStats, setOwnerStats] = useState<{
@@ -56,9 +57,8 @@ export default function OwnerPage() {
     try {
       const res = await vantaApi.adminAdmins();
       setAdmins((res.admins ?? []).map((a: VantaAdminRecord) => ({ ...a, formattedId: `tg_${a.telegramUserId}` })));
-      setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load admins.");
+      toast.error("Failed to load admins.", err instanceof Error ? err.message : undefined);
     } finally {
       setLoading(false);
     }
@@ -66,20 +66,25 @@ export default function OwnerPage() {
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
     if (!newId.trim()) {
-      setError("Enter a Telegram user ID.");
+      toast.error("Enter a Telegram user ID.");
       return;
     }
     setSaving(true);
     try {
       await vantaApi.createAdmin({ telegramUserId: newId.trim(), telegramUsername: "", nickname: newNickname.trim() });
-      setMsg("Admin added.");
+      // Notify the new admin via Telegram DM
+      try {
+        await notifyAdminPromoted(Number(newId.trim()), "the owner");
+        toast.success("Admin added.", "They’ve been notified via Telegram.");
+      } catch {
+        toast.success("Admin added.", "Could not send Telegram notification.");
+      }
       setNewId("");
       setNewNickname("");
       await loadAdmins();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to add admin.");
+      toast.error("Failed to add admin.", err instanceof Error ? err.message : undefined);
     } finally {
       setSaving(false);
     }
@@ -88,13 +93,12 @@ export default function OwnerPage() {
   async function handleRemove(telegramUserId: string) {
     if (!window.confirm("Remove this admin?")) return;
     setSaving(true);
-    setRemoveError(null);
     try {
       await vantaApi.deleteAdmin(telegramUserId);
-      setMsg("Admin removed.");
+      toast.success("Admin removed.");
       await loadAdmins();
     } catch (err) {
-      setRemoveError(err instanceof Error ? err.message : "Failed to remove admin.");
+      toast.error("Failed to remove admin.", err instanceof Error ? err.message : undefined);
     } finally {
       setSaving(false);
     }
@@ -123,107 +127,94 @@ export default function OwnerPage() {
             </div>
           </section>
         )}
-        {msg && (
-        <p className="mb-4 rounded-md border border-primary bg-primary px-3 py-2 text-xs text-primary">
-          {msg}
-        </p>
-      )}
 
-      {/* Add admin */}
-      <section className="panel rounded-xl border border-border p-6 mb-8">
-        <h3 className="text-sm font-semibold text-foreground mb-4">Add admin</h3>
-        <p className="text-[11px] text-muted-foreground mb-4">
-          Enter the Telegram user ID of someone you want to make an admin, plus a
-          nickname for them. Their actual Telegram name is pulled automatically
-          from their profile via their ID. Admins can manage products, pricing, and
-          orders - but cannot add or remove other admins.
-        </p>
-        <form onSubmit={handleAdd} className="grid gap-3 sm:grid-cols-3">
-          {error && (
-            <p className="col-span-3 rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-xs text-destructive">
-              {error}
-            </p>
-          )}
-          <Field label="Telegram user ID" hint="numbers only">
-            <TextInput
-              id="new-admin-id"
-              value={newId}
-              onChange={(e) => setNewId(e.target.value)}
-              placeholder="e.g. 123456789"
-              className="flex-1"
-            />
-          </Field>
-          <Field label="Nickname" hint="what you call them">
-            <TextInput
-              id="new-admin-nickname"
-              value={newNickname}
-              onChange={(e) => setNewNickname(e.target.value)}
-              placeholder="e.g. Chief, Madala, Bro"
-              className="flex-1"
-            />
-          </Field>
-          <Button type="submit" variant="primary" disabled={saving || !newId.trim()}>
-            {saving ? "Adding…" : "Add admin"}
-          </Button>
-        </form>
-      </section>
-
-      {/* Admin list */}
-      <section className="space-y-3">
-        {removeError && (
-          <p className="rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-xs text-destructive">
-            {removeError}
+        {/* Add admin */}
+        <section className="panel rounded-xl border border-border p-6 mb-8">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Add admin</h3>
+          <p className="text-[11px] text-muted-foreground mb-4">
+            Enter the Telegram user ID of someone you want to make an admin, plus a
+            nickname for them. Their actual Telegram name is pulled automatically
+            from their profile via their ID. Admins can manage products, pricing, and
+            orders - but cannot add or remove other admins.
           </p>
-        )}
-        <div className="flex items-baseline justify-between mb-4">
-          <h3 className="text-sm font-semibold text-foreground">Admins</h3>
-          <span className="text-xs text-muted-foreground">{admins.length}</span>
-        </div>
+          <form onSubmit={handleAdd} className="grid gap-3 sm:grid-cols-3">
+            <Field label="Telegram user ID" hint="numbers only">
+              <TextInput
+                id="new-admin-id"
+                value={newId}
+                onChange={(e) => setNewId(e.target.value)}
+                placeholder="e.g. 123456789"
+                className="flex-1"
+              />
+            </Field>
+            <Field label="Nickname" hint="optional">
+              <TextInput
+                id="new-admin-nickname"
+                value={newNickname}
+                onChange={(e) => setNewNickname(e.target.value)}
+                placeholder="e.g. Chief, Madala, Bro"
+                className="flex-1"
+              />
+            </Field>
+            <Button type="submit" variant="primary" disabled={saving || !newId.trim()}>
+              {saving ? "Adding…" : "Add admin"}
+            </Button>
+          </form>
+        </section>
 
-        {admins.length === 0 ? (
-          <p className="text-muted-foreground">No admins yet. You are the only owner.</p>
-        ) : (
-          <div className="grid gap-2">
-            {admins.map((a) => (
-              <article
-                key={a.id}
-                className="panel rounded-xl border border-border p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-mono text-muted-foreground">{a.formattedId}</span>
-                  {a.role === "owner" && (
-                    <span className="text-[10px] uppercase tracking-[0.15em] text-primary border border-primary px-2 py-0.5 rounded">owner</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  {a.nickname ? a.nickname : "-"}
-                  {a.telegramUsername ? (
-                    <span className="text-ink-faint">· @{a.telegramUsername}</span>
-                  ) : null}
-                  <span className="text-ink-faint">· {a.role}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleRemove(a.telegramUserId)}
-                    disabled={saving || a.role === "owner"}
-                  >
-                    Remove
-                  </Button>
-                </div>
-              </article>
-            ))}
+        {/* Admin list */}
+        <section className="space-y-3">
+          <div className="flex items-baseline justify-between mb-4">
+            <h3 className="text-sm font-semibold text-foreground">Admins</h3>
+            <span className="text-xs text-muted-foreground">{admins.length}</span>
           </div>
-        )}
-      </section>
 
-      <div className="mt-8">
-        <Button variant="outline" onClick={() => router.push("/store/admin")}>
-          Back to admin
-        </Button>
-      </div>
-    </StoreShell>
+          {admins.length === 0 ? (
+            <p className="text-muted-foreground">No admins yet. You are the only owner.</p>
+          ) : (
+            <div className="grid gap-2">
+              {admins.map((a) => (
+                <article
+                  key={a.id}
+                  className="panel rounded-xl border border-border p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-mono text-muted-foreground">{a.formattedId}</span>
+                    {a.role === "owner" && (
+                      <span className="text-[10px] uppercase tracking-[0.15em] text-primary border border-primary px-2 py-0.5 rounded">owner</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    {a.nickname ? a.nickname : "-"}
+                    {a.telegramUsername ? (
+                      <span className="text-ink-faint">· @{a.telegramUsername}</span>
+                    ) : null}
+                    <span className="text-ink-faint">· {a.role}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRemove(a.telegramUserId)}
+                      disabled={saving || a.role === "owner"}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <Toast />
+
+        <div className="mt-8">
+          <Button variant="outline" onClick={() => router.push("/store/admin")}>
+            Back to admin
+          </Button>
+        </div>
+      </StoreShell>
   );
 }
 

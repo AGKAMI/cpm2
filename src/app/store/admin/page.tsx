@@ -20,6 +20,8 @@ import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Field";
+import { Toast } from "@/components/ui/Toast";
+import { useToast } from "@/components/ui/Toaster";
 import {
   validateProductForm,
   validateCategoryForm,
@@ -54,7 +56,7 @@ const EMPTY_FORM: ProductForm = {
   description: "",
   basePriceCents: "",
   currency: "ZAR",
-  stockQuantity: "1",
+  stockQuantity: "",
   airSuspension: false,
   unlockedBodykits: false,
   hdLogo: false,
@@ -121,6 +123,7 @@ export default function AdminPage() {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [msg, setMsg] = useState<string | null>(null);
+    const toast = useToast();
     // Form validation errors (field-level)
     const [productErrors, setProductErrors] = useState<Record<string, string>>({});
     const [categoryErrors, setCategoryErrors] = useState<Record<string, string>>({});
@@ -260,7 +263,7 @@ export default function AdminPage() {
       // Catalog guard (mirrors the server-side check): a typed/hand-edited code
       // that isn't a real CPM2 catalog car never reaches the API.
       if (form.cpm2CarCode && !carByCode(Number(form.cpm2CarCode), "cpm2")) {
-        setError(`CPM2 catalog has no car #${form.cpm2CarCode}. Pick a car from the catalog search.`);
+        toast.error("Invalid car code.", "Pick a car from the catalog search.");
         setSaving(false);
         return;
       }
@@ -270,10 +273,10 @@ export default function AdminPage() {
           cpm2CarCode: v.cpm2CarCode ? Number(v.cpm2CarCode) : undefined,
           imageUrl: v.imageUrl || undefined,
           name: v.name,
-          description: v.description,
+          description: v.description || undefined,
           basePriceCents: Math.round(parseFloat(v.basePriceCents) * 100), // Rands → cents
           currency: v.currency,
-          stockQuantity: parseInt(v.stockQuantity, 10),
+          stockQuantity: v.stockQuantity ? parseInt(v.stockQuantity, 10) : 0,
           airSuspension: form.airSuspension,
           unlockedBodykits: form.unlockedBodykits,
           hdLogo: form.hdLogo,
@@ -285,6 +288,7 @@ export default function AdminPage() {
         };
         if (editingId) {
           await vantaApi.updateProduct(editingId, body);
+          toast.success("Product updated.");
         } else {
           await vantaApi.createProduct(body);
           // Notify all customers about new vehicle
@@ -298,12 +302,12 @@ export default function AdminPage() {
               type: "new_product",
             }),
           });
+          toast.success("Product created.");
         }
-        setMsg(editingId ? "Product updated." : "Product created.");
         resetForm();
         await load();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Save failed.");
+        toast.error("Save failed.", err instanceof Error ? err.message : undefined);
       } finally {
         setSaving(false);
       }
@@ -472,16 +476,7 @@ export default function AdminPage() {
     return (
           <StoreShell>
             <PageHeading folio="AD" title="Admin - Product Manager" backHref="/store" />
-            {error && (
-                      <p className="mb-4 rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-xs text-destructive">
-                        {error}
-                      </p>
-                    )}
-                    {msg && (
-                      <p className="mb-4 rounded-md border border-primary bg-primary/10 px-3 py-2 text-xs text-primary">
-                        {msg}
-                      </p>
-                    )}
+            <Toast />
 
                     {/* Top actions — EFT review with clear borders and background */}
                     <div className="mb-6 flex items-center gap-2">
@@ -535,7 +530,7 @@ export default function AdminPage() {
                   placeholder="e.g. Sports Cars"
                 />
               </Field>
-              <Field label="Slug" hint="Auto-generated from name, used in URLs">
+              <Field label="URL slug" hint="Auto-generated from category name">
                 <TextInput
                   value={categoryForm.slug}
                   onChange={(e) => handleCategoryChange("slug", e.target.value)}
@@ -578,12 +573,41 @@ export default function AdminPage() {
               <span className="text-xs text-muted-foreground">No categories yet. Click &quot;Add Category&quot; to create one.</span>
             ) : (
               categories.map((cat) => (
-                <span
-                  key={cat.id}
-                  className="text-xs px-2 py-1 rounded-full border border-border bg-background text-foreground"
-                >
-                  {cat.name} ({cat.slug})
-                </span>
+                <div key={cat.id} className="flex items-center gap-2">
+                  <span
+                    className="text-xs px-2 py-1 rounded-full border border-border bg-background text-foreground"
+                  >
+                    {cat.name} ({cat.slug})
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setCategoryForm({
+                        name: cat.name,
+                        slug: cat.slug,
+                        description: cat.description,
+                        sortOrder: String(cat.sortOrder),
+                      });
+                      setShowCategoryForm(true);
+                      setEditingId(null);
+                    }}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (window.confirm("Delete this category?")) {
+                        // Category delete would go here
+                        toast.error("Category delete not yet implemented.");
+                      }
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </div>
               ))
             )}
           </div>
@@ -689,11 +713,44 @@ export default function AdminPage() {
                     />
                   </Field>
                   <Field label="Image URL (optional background image)">
-                    <TextInput
-                      value={promotionForm.imageUrl}
-                      onChange={(e) => setPromotionForm((f) => ({ ...f, imageUrl: e.target.value }))}
-                      placeholder="https://..."
-                    />
+                    <div className="relative group cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="sr-only"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0] ?? null;
+                          if (!file) return;
+                          setConverterFile(file);
+                          setConverterError(null);
+                          try {
+                            const dataUrl = await convertFileToDataUrl(file);
+                            setConverterResult(dataUrl);
+                          } catch {
+                            setConverterError("Failed to read image file.");
+                          }
+                        }}
+                      />
+                      <div
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm text-foreground hover:border-primary transition-colors cursor-pointer"
+                      >
+                        {converterFile ? converterFile.name : "Choose image"}
+                      </div>
+                    </div>
+                    {converterError && <p className="text-xs text-destructive mt-1">{converterError}</p>}
+                    {converterResult && (
+                      <div className="mt-3 border border-input rounded-md p-3 bg-background">
+                        <img src={converterResult} alt="Preview" className="max-w-full max-h-48 rounded-md border border-border object-cover" />
+                        <Button variant="primary" onClick={() => {
+                          setPromotionForm((f) => ({ ...f, imageUrl: converterResult }));
+                          setConverterFile(null);
+                          setConverterResult(null);
+                        }} className="w-full mt-2">
+                          Use this image
+                        </Button>
+                      </div>
+                    )}
                   </Field>
                   <Field label="Active">
                     <div className="flex items-center gap-2">
@@ -737,7 +794,7 @@ export default function AdminPage() {
                   promotions.map((p) => (
                     <div
                       key={p.id}
-                      className="flex items-center justify-between gap-2 px-3 py-2 rounded-md border border-border bg-surface-deep"
+                      className={`promotion-card flex items-center justify-between gap-2 px-3 py-2 rounded-md border border-border`}
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1">
@@ -771,7 +828,10 @@ export default function AdminPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => selectPromotion(p)}
+                          onClick={() => {
+                            setShowPromotionForm(true);
+                            selectPromotion(p);
+                          }}
                         >
                           Edit
                         </Button>
@@ -829,9 +889,16 @@ export default function AdminPage() {
               />
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm text-foreground hover:border-primary transition-colors cursor-pointer"
+                className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${converterFile ? "border-gold text-gold bg-gold/10" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}
               >
-                {converterFile ? converterFile.name : "Choose image"}
+                {converterFile ? (
+                  <>
+                    <span className="text-xs font-bold">✓</span>
+                    {converterFile.name}
+                  </>
+                ) : (
+                  "Choose image"
+                )}
               </div>
             </div>
             {converterError && <p className="text-xs text-destructive mt-1">{converterError}</p>}
@@ -959,7 +1026,14 @@ export default function AdminPage() {
               type="number"
               min={editingId === null ? 1 : 0}
               value={form.stockQuantity}
-              onChange={(e) => handleChange("stockQuantity", e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === "") {
+                  setForm((f) => ({ ...f, stockQuantity: v }));
+                  return;
+                }
+                setForm((f) => ({ ...f, stockQuantity: v }));
+              }}
               className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
             />
           </Field>

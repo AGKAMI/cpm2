@@ -172,7 +172,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
         >
           <div className="relative flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 shrink-0">
-              {activeTab !== "profile" && (
+              {activeTab === "profile" && (
                 <div className="relative h-8 w-8 shrink-0">
                   <motion.div
                     layoutId="vanta-profile-avatar"

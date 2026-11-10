@@ -7,7 +7,7 @@
 **Status:** Build complete, deployed to production. All routes 200 verified live. PayFast keys pending.
 **Date:** 2026-11-09
 **Live URL:** `https://cpm2-bay.vercel.app` — `/` = app selection, `/store` = VANTA Garage, `/fleet/cpm2` = Fleet Ledger
-**Latest Deploy:** `dpl_75o9WUSGZwKqexzAJFR9HnMQMteY` — Admin design polish, input font-size fix, build cache permanently disabled
+**Latest Deploy:** `78ba776` — Floating error toasts with custom design, profile dropdown hover state fix, promo text contrast fix, custom logo
 **Deploy Hook:** `https://api.vercel.com/v1/integrations/deploy/prj_kgMwWJI3lOTBPVmVT0NXvmh6N0ZE/o6UHndNi6D`
 **Build Cache:** `VERCEL_FORCE_NO_BUILD_CACHE=1` env var in `vercel.json` permanently disables build cache. Do NOT add `generateBuildId` to `next.config.ts` — Vercel rejects dynamic build IDs (causes 500 error).
 

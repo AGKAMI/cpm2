@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
           username: username ?? undefined,
           firstName: firstName ?? undefined,
           photoUrl: hasPhoto ? `/api/store/telegram-avatar?v=${tgId}` : undefined,
-          displayName: username || firstName || String(c.in_game_name ?? "") || "there",
+          displayName: username || firstName || String(c.in_game_name ?? "") || "user",
         };
       }
 
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
         firstName: telegramUser.first_name,
         lastName: telegramUser.last_name,
         photoUrl: telegramUser.photo_url,
-        displayName: telegramUser.username || telegramUser.first_name || "there"
+        displayName: telegramUser.username || telegramUser.first_name || "user"
       } : null
     });
   }

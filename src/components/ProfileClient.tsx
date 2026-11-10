@@ -465,7 +465,7 @@ export function ProfileClient() {
     telegramUser?.firstName ||
     telegramUser?.username ||
     customer?.inGameName ||
-    "there";
+    "user";
   const tgId = telegramUser?.id ?? null;
   const username = telegramUser?.username ?? null;
   const photoUrl = telegramUser?.photoUrl ?? null;

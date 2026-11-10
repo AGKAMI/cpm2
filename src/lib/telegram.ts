@@ -196,3 +196,58 @@ export async function fetchTelegramUser(userId: number): Promise<{
     return null;
   }
 }
+
+/** Photo file_id for a Telegram user (via getUserProfilePhotos).
+ *  Only works for users the bot "knows" (e.g. opened the Mini App).
+ *  Cached 10 min — profile photos rarely change. */
+const photoFileIdCache = new Map<number, { fileId: string; expires: number }>();
+
+export async function fetchTelegramPhotoFileId(userId: number): Promise<string | null> {
+  const cached = photoFileIdCache.get(userId);
+  if (cached && cached.expires > Date.now()) return cached.fileId;
+  const token = telegramBotToken();
+  if (!token) return null;
+  try {
+    const resp = await fetch(`https://api.telegram.org/bot${token}/getUserProfilePhotos`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: userId, limit: 1 }),
+    });
+    const data = await resp.json();
+    const sizes = data?.ok ? data.result?.photos?.[0] : null;
+    if (!Array.isArray(sizes) || sizes.length === 0) return null;
+    const fileId = String(sizes[sizes.length - 1].file_id); // largest size
+    photoFileIdCache.set(userId, { fileId, expires: Date.now() + 10 * 60 * 1000 });
+    return fileId;
+  } catch {
+    return null;
+  }
+}
+
+/** Resolve a photo file_id to a downloadable URL (getFile). The URL embeds
+ *  the bot token — serve it through /api/store/telegram-avatar, never to the
+ *  client directly. file_path is valid >=1h; cached 30 min. */
+const photoPathCache = new Map<string, { url: string; expires: number }>();
+
+export async function fetchTelegramPhotoUrl(userId: number): Promise<string | null> {
+  const fileId = await fetchTelegramPhotoFileId(userId);
+  if (!fileId) return null;
+  const cached = photoPathCache.get(fileId);
+  if (cached && cached.expires > Date.now()) return cached.url;
+  const token = telegramBotToken();
+  if (!token) return null;
+  try {
+    const resp = await fetch(`https://api.telegram.org/bot${token}/getFile`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ file_id: fileId }),
+    });
+    const data = await resp.json();
+    if (!data.ok || !data.result?.file_path) return null;
+    const url = `https://api.telegram.org/file/bot${token}/${data.result.file_path}`;
+    photoPathCache.set(fileId, { url, expires: Date.now() + 30 * 60 * 1000 });
+    return url;
+  } catch {
+    return null;
+  }
+}

@@ -3,7 +3,7 @@ import { getCustomerByPlatformIdentity } from "@/lib/store/customers";
 import { getStoreDb } from "@/lib/store-db";
 import { verifySessionToken, readRequestCookie, SESSION_COOKIE } from "@/lib/auth";
 import { resolveAdminStatus } from "@/lib/store/admin-service";
-import { telegramBotToken } from "@/lib/telegram";
+import { fetchTelegramUser, fetchTelegramPhotoFileId } from "@/lib/telegram";
 
 export async function GET(request: NextRequest) {
   const adminStatus = await resolveAdminStatus(request);
@@ -28,30 +28,22 @@ export async function GET(request: NextRequest) {
       });
       const telegramLinked = identity.rows.length > 0;
 
-      // Resolve the Telegram display identity (username / first name) so the
-      // profile header shows the Telegram name instead of the email prefix.
-      let telegramUser: { id: number; username?: string; firstName?: string; displayName: string } | null = null;
+      // Resolve the Telegram display identity (username / first name / avatar)
+      // so the profile header shows the Telegram identity instead of the email
+      // prefix. fetchTelegramUser uses getChat (getUser does not exist in the
+      // Bot API); the avatar is proxied so the bot token stays server-side.
+      let telegramUser: { id: number; username?: string; firstName?: string; photoUrl?: string; displayName: string } | null = null;
       if (telegramLinked) {
         const tgId = String(identity.rows[0].platform_user_id);
-        let username: string | null = String(identity.rows[0].platform_username ?? "") || null;
-        let firstName: string | null = null;
-        const token = telegramBotToken();
-        if (token) {
-          try {
-            const tgRes = await fetch(`https://api.telegram.org/bot${token}/getUser?user_id=${encodeURIComponent(tgId)}`);
-            const tgData = await tgRes.json();
-            if (tgData.ok && tgData.result) {
-              username = tgData.result.username ?? username;
-              firstName = tgData.result.first_name ?? null;
-            }
-          } catch {
-            // Advisory only — fall back to the stored username.
-          }
-        }
+        const tgInfo = await fetchTelegramUser(Number(tgId));
+        const username = tgInfo?.username ?? (String(identity.rows[0].platform_username ?? "") || null);
+        const firstName = tgInfo?.first_name ?? null;
+        const hasPhoto = (await fetchTelegramPhotoFileId(Number(tgId))) !== null;
         telegramUser = {
           id: Number(tgId),
           username: username ?? undefined,
           firstName: firstName ?? undefined,
+          photoUrl: hasPhoto ? `/api/store/telegram-avatar?v=${tgId}` : undefined,
           displayName: username || firstName || String(c.in_game_name ?? "") || "there",
         };
       }

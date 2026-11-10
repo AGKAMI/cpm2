@@ -85,6 +85,7 @@ export function ProfileClient() {
     });
     return () => {
       alive = false;
+      if (pollTimer) clearInterval(pollTimer);
     };
   }, []);
 
@@ -180,6 +181,11 @@ export function ProfileClient() {
   const [linkTelegramOpen, setLinkTelegramOpen] = useState(false);
   const [telegramIdInput, setTelegramIdInput] = useState("");
   const [linkingTg, setLinkingTg] = useState(false);
+  // Verification gate states
+  const [linkPreview, setLinkPreview] = useState<{ telegramUserId: string; username: string | null; firstName: string | null; lastName: string | null; displayName: string; photoUrl: string | null; hasPhoto: boolean; firstLetter: string; color: string } | null>(null);
+  const [verificationStage, setVerificationStage] = useState<"input" | "preview" | "sending" | "pending" | "confirmed" | "rejected" | "expired">("input");
+  const [verificationId, setVerificationId] = useState<number | null>(null);
+  const [verificationCountdown, setVerificationCountdown] = useState(0);
 
   const isTelegramWebApp =
     typeof window !== "undefined" &&
@@ -231,6 +237,127 @@ export function ProfileClient() {
     } finally {
       setLinkingTg(false);
     }
+  };
+
+  // --- Verification gate: preview ---
+  const fetchLinkPreview = async () => {
+    const id = telegramIdInput.trim();
+    if (!id || !/^\d+$/.test(id)) {
+      setError("Enter a valid Telegram ID (numbers only).");
+      return;
+    }
+    setLinkingTg(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/store/customers/link-telegram-preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ telegramId: id }),
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error?.message || "Could not look up that Telegram ID.");
+      }
+      const data = await res.json();
+      setLinkPreview(data);
+      setVerificationStage("preview");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to load preview.";
+      setError(msg);
+      toast.error("Preview failed", msg);
+    } finally {
+      setLinkingTg(false);
+    }
+  };
+
+  // --- Verification gate: send bot DM with Yes/No buttons ---
+  const startLinkVerification = async () => {
+    if (!linkPreview) return;
+    setLinkingTg(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/store/customers/link-telegram-verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          telegramId: linkPreview.telegramUserId,
+          customerId: customer?.id,
+        }),
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error?.message || "Could not start verification.");
+      }
+      const data = await res.json();
+      setVerificationId(data.verificationId);
+      setVerificationStage("sending");
+      // Start polling after a short delay
+      setTimeout(() => {
+        setVerificationStage("pending");
+        setVerificationCountdown(120);
+        startCountdown();
+        pollLinkVerification();
+      }, 1500);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to start verification.";
+      setError(msg);
+      toast.error("Verification failed", msg);
+    } finally {
+      setLinkingTg(false);
+    }
+  };
+
+  let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+  const pollLinkVerification = async () => {
+    if (!verificationId) return;
+    try {
+      const res = await fetch(`/api/store/customers/link-telegram-check?verificationId=${verificationId}`, {
+        credentials: "include",
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.status === "confirmed") {
+        setVerificationStage("confirmed");
+        if (pollTimer) clearInterval(pollTimer);
+        setLinkTelegramOpen(false);
+        setTelegramIdInput("");
+        setLinkPreview(null);
+        setVerificationId(null);
+        setSuccess("Telegram linked to your account.");
+        await checkSession();
+      } else if (data.status === "rejected" || data.status === "expired") {
+        setVerificationStage(data.status);
+        if (pollTimer) clearInterval(pollTimer);
+      }
+    } catch {
+      // Non-fatal, keep polling
+    }
+  };
+
+  const startCountdown = () => {
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(() => {
+      setVerificationCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(pollTimer!);
+          pollTimer = null;
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const cancelLinkVerification = () => {
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = null;
+    setVerificationStage("input");
+    setVerificationId(null);
+    setLinkPreview(null);
+    setVerificationCountdown(0);
   };
 
   // --- Sign in / Create account (email + password, web) ---
@@ -363,8 +490,14 @@ export function ProfileClient() {
                 );
               }
               return (
-                <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 z-10 rounded-2xl border-2 border-background bg-secondary px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-ink-soft">
+                <span
+                  className={`absolute -bottom-2 left-1/2 -translate-x-1/2 z-10 overflow-hidden rounded-2xl px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] border-2 border-background metallic-silver text-ink-soft`}
+                >
                   Customer
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute top-0 h-full w-[60%] -skew-x-[22deg] bg-gradient-to-r from-transparent via-white/45 to-transparent shine-sweep"
+                  />
                 </span>
               );
             })()}
@@ -536,25 +669,178 @@ export function ProfileClient() {
                   </>
                 ) : (
                   <>
-                    <Field
-                      label="Telegram ID"
-                      hint="Your numeric Telegram user ID (e.g. from @userinfobot)"
-                    >
-                      <TextInput
-                        value={telegramIdInput}
-                        onChange={(e) => setTelegramIdInput(e.target.value)}
-                        placeholder="e.g. 7036681178"
-                        inputMode="numeric"
-                      />
-                    </Field>
-                    <Button variant="primary" onClick={linkTelegramToAccount} className="w-full" disabled={linkingTg || !telegramIdInput.trim()}>
-                      {linkingTg ? "Linking…" : "Link Telegram ID"}
-                    </Button>
+                    {/* Verification gate UI */}
+                    {verificationStage === "input" && (
+                      <>
+                        <Field
+                          label="Telegram ID"
+                          hint="Your numeric Telegram user ID (e.g. from @userinfobot)"
+                        >
+                          <TextInput
+                            value={telegramIdInput}
+                            onChange={(e) => setTelegramIdInput(e.target.value)}
+                            placeholder="e.g. 7036681178"
+                            inputMode="numeric"
+                          />
+                        </Field>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={fetchLinkPreview}
+                            disabled={linkingTg || !telegramIdInput.trim()}
+                            className="flex-1"
+                          >
+                            Preview
+                          </Button>
+                          <Button
+                            variant="primary"
+                            onClick={fetchLinkPreview}
+                            disabled={linkingTg || !telegramIdInput.trim()}
+                            className="flex-1"
+                          >
+                            Preview &amp; Link
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                    {verificationStage === "preview" && linkPreview && (
+                      <>
+                        <p className="text-xs text-muted-foreground text-center mb-2">
+                          Is this your Telegram profile?
+                        </p>
+                        <div className="flex items-center justify-center gap-3 mb-3">
+                          {linkPreview.hasPhoto ? (
+                            <img
+                              src={linkPreview.photoUrl!}
+                              alt={linkPreview.displayName}
+                              className="w-16 h-16 rounded-full border-2 border-gold/40 object-cover bg-secondary"
+                              loading="eager"
+                            />
+                          ) : (
+                            <div
+                              className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-lg"
+                              style={{
+                                backgroundColor: linkPreview.color,
+                                fontFamily: '"Georgia", "Times New Roman", serif',
+                              }}
+                            >
+                              {linkPreview.firstLetter}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-center mb-3">
+                          <p className="text-sm font-medium text-foreground">{linkPreview.displayName}</p>
+                          {linkPreview.username && <span className="text-[10px] text-ink-soft">@{linkPreview.username}</span>}
+                          {linkPreview.firstName && <span className="text-[10px] text-ink-soft ml-2">{linkPreview.firstName}</span>}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setVerificationStage("input");
+                              setLinkPreview(null);
+                            }}
+                            className="flex-1"
+                          >
+                            Different ID
+                          </Button>
+                          <Button
+                            variant="primary"
+                            onClick={startLinkVerification}
+                            disabled={linkingTg}
+                            className="flex-1"
+                          >
+                            {linkingTg ? "Sending…" : "Yes, send verification"}
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                    {verificationStage === "sending" && (
+                      <>
+                        <div className="flex flex-col items-center justify-center py-4">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gold mb-2"></div>
+                          <p className="text-xs text-muted-foreground text-center">Sending verification to your Telegram…</p>
+                        </div>
+                      </>
+                    )}
+                    {verificationStage === "pending" && verificationId && (
+                      <>
+                        <p className="text-xs text-muted-foreground text-center mb-2">
+                          Verification sent to Telegram ID{" "}
+                          <span className="font-mono">{linkPreview?.telegramUserId}</span>
+                        </p>
+                        <div className="flex items-center justify-center gap-3 mb-3">
+                          <div className="w-12 h-12 rounded-full border-4 border-gold/40 relative">
+                            <div className="absolute inset-0 rounded-full border-t-4 border-gold animate-spin"></div>
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-ink-soft text-center mb-3">
+                          Open your Telegram and tap <b>Yes, it's me</b> or <b>No, it's not me</b>. Expires in{" "}
+                          <span className="font-mono text-sm text-foreground">{verificationCountdown}s</span>
+                        </p>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={cancelLinkVerification}
+                            className="flex-1"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                    {verificationStage === "confirmed" && (
+                      <>
+                        <div className="flex flex-col items-center justify-center py-4">
+                          <div className="w-12 h-12 rounded-full bg-racing flex items-center justify-center mb-2">
+                            <span className="text-2xl">✓</span>
+                          </div>
+                          <p className="text-xs font-medium text-racing text-center">Telegram linked successfully!</p>
+                        </div>
+                      </>
+                    )}
+                    {verificationStage === "rejected" && (
+                      <>
+                        <div className="flex flex-col items-center justify-center py-4">
+                          <div className="w-12 h-12 rounded-full bg-destructive flex items-center justify-center mb-2">
+                            <span className="text-2xl">✗</span>
+                          </div>
+                          <p className="text-xs font-medium text-destructive text-center">Verification rejected.</p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={cancelLinkVerification}
+                            className="mt-2 w-full"
+                          >
+                            Try again
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                    {verificationStage === "expired" && (
+                      <>
+                        <div className="flex flex-col items-center justify-center py-4">
+                          <div className="w-12 h-12 rounded-full bg-destructive flex items-center justify-center mb-2">
+                            <span className="text-2xl">⏰</span>
+                          </div>
+                          <p className="text-xs font-medium text-destructive text-center">Verification expired.</p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={cancelLinkVerification}
+                            className="mt-2 w-full"
+                          >
+                            Try again
+                          </Button>
+                        </div>
+                      </>
+                    )}
                   </>
+
                 )}
-                <Button variant="outline" size="sm" onClick={() => setLinkTelegramOpen(false)} className="w-full" disabled={linkingTg}>
-                  Cancel
-                </Button>
               </div>
             )}
 

@@ -112,6 +112,17 @@ CREATE TABLE IF NOT EXISTS vanta_admins (
   is_active      INTEGER  NOT NULL DEFAULT 1
 );
 
+CREATE TABLE IF NOT EXISTS vanta_telegram_verifications (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id     INTEGER NOT NULL REFERENCES vanta_customers(id) ON DELETE CASCADE,
+  telegram_user_id TEXT    NOT NULL,
+  verification_code TEXT   NOT NULL UNIQUE,
+  status          TEXT     NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'rejected', 'expired')),
+  expires_at      TEXT     NOT NULL,
+  created_at      TEXT     NOT NULL,
+  confirmed_at    TEXT
+);
+
 CREATE TABLE IF NOT EXISTS vanta_promotions (
   id              INTEGER PRIMARY KEY AUTOINCREMENT,
   title           TEXT    NOT NULL,

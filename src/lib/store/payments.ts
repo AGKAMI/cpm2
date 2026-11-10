@@ -19,7 +19,7 @@ export type PaymentRecord = {
   updatedAt: string;
 };
 
-function rowToPayment(row: Record<string, unknown>): PaymentRecord {
+export function rowToPayment(row: Record<string, unknown>): PaymentRecord {
   return {
     id: Number(row.id),
     orderId: String(row.order_id),

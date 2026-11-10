@@ -364,8 +364,8 @@ html {
   inset: 0;
   background: radial-gradient(
     circle at 50% 30%,
-    #09090a,
-    #070707
+    var(--color-paper-raised),
+    var(--background)
   );
 }
 
@@ -791,7 +791,7 @@ html {
   border-radius: 20px;
   overflow: hidden;
   border: 1px solid var(--brand-border);
-  background: #070707;
+  background: var(--background);
 }
 .hero-banner img {
   width: 100%;
@@ -822,7 +822,7 @@ html {
   margin-top: 1rem;
   border-radius: 16px;
   border: 1px solid var(--brand-gold-soft);
-  background: linear-gradient(135deg, #09090a, #131315);
+  background: linear-gradient(135deg, var(--color-paper-raised), var(--color-paper-sunken));
   padding: 1rem 1.25rem;
   display: flex;
   flex-direction: column;
@@ -957,8 +957,8 @@ html {
 
 /* Solid surfaces only — no transparency */
 .solid-surface {
-  background: #09090a !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
+  background: var(--color-paper-raised) !important;
+  border-color: var(--border) !important;
 }
 
 /* Phone shell for Telegram Mini App feel */
@@ -967,7 +967,7 @@ html {
   width: 100%;
   max-width: 390px;
   margin: 0 auto;
-  background: linear-gradient(150deg, #52525a, #121214 35%, #2e2e33 70%, #0c0c0d);
+  background: linear-gradient(150deg, var(--color-paper-raised), var(--color-paper-sunken) 35%, var(--color-surface-deep) 70%, var(--background));
   border-radius: 56px;
   padding: 11px;
   box-shadow: 0 0 0 1.5px #000, 0 40px 70px -24px rgba(0, 0, 0, 0.85), 0 0 70px -20px rgba(216, 180, 90, 0.18);
@@ -979,8 +979,8 @@ html {
   min-height: 100vh;
   border-radius: 45px;
   overflow: hidden;
-  background: #070707;
-  color: #f4efe4;
+  background: var(--background);
+  color: var(--foreground);
   display: flex;
   flex-direction: column;
 }

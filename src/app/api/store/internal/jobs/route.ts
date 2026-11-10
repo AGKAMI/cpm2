@@ -17,8 +17,8 @@ export async function POST(request: Request) {
     // Admin-only: requires valid Telegram initData
     await requireStoreAdmin(request);
 
-    const body = (await readJson(request)) ?? {};
-    const limit = typeof body.limit === "number" ? body.limit : 50;
+    const body = (await readJson(request)) as { limit?: number };
+    const limit = body.limit ?? 50;
 
     const result = await processJobs();
 

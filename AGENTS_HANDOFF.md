@@ -1825,3 +1825,33 @@ Each module below includes: **What** (functional spec from plan), **How it works
 **Verified by:** Kermes (nemotron-3.5-super-vl-120b-a12b)
 
 **Remaining gaps vs VANTA_GARAGE_Plan.txt:** unchanged from previous entry (Phase 0 audit, `.vanta` bot deploy, legal acceptance at checkout, 60-min reservation expiry, One of One relisting, notification template library, end-to-end testing).
+
+### 2026-11-10 — Hermes Agent "Kermes" — Real Notification System for Customers
+
+**What:** Built a real backend notification system so customers see real unread counts and admins can notify them about new products, promotions, order updates, etc.
+
+**Where:**
+- `src/lib/store-schema.ts` — added `vanta_notifications` table
+- `src/app/api/store/customers/[id]/notifications/list/route.ts` — GET list notifications
+- `src/app/api/store/customers/[id]/notifications/[nid]/read/route.ts` — PATCH mark as read
+- `src/app/api/store/customers/[id]/notifications/read-all/route.ts` — PATCH mark all as read
+- `src/app/api/store/admin/notifications/route.ts` — POST admin create notification (admin-gated)
+- `src/components/NotificationBell.tsx` — rewritten to fetch from API instead of dummy localStorage
+- `src/components/ProfileClient.tsx` — saves `vanta_customer_id` to localStorage on login/link/register, clears on logout
+- `src/app/store/admin/page.tsx` — auto-notifies all customers when new product or promotion is created
+
+**Changes:**
+1. **Notifications table** — `vanta_notifications` with customer_id, type, title, message, is_read, related_product_id, related_order_id, timestamps
+2. **NotificationBell** — fetches unread count from `/api/store/customers/[id]/notifications/list`, marks all read via `/read-all`, shows loading spinner, falls back to localStorage if API down
+3. **Admin can broadcast** — `POST /api/store/admin/notifications` sends to all customers with notifications enabled, plus Telegram message to linked customers
+4. **Auto-notify on product/promotion** — when admin creates a new product or promotion, all customers get an in-app notification + Telegram message
+5. **Customer ID persistence** — `vanta_customer_id` saved to localStorage on login/link/register, cleared on logout
+
+**Gates:** tsc --noEmit exit 0. Deployed to production (build completed, ready).
+
+**Verified by:** Kermes (nemotron-3.5-super-vl-120b-a12b)
+
+**Remaining issues user flagged (not yet coded):**
+- Profile linking: don't show manual ID paste if in Telegram; don't show WebApp link if outside Telegram
+- Logout gate: top bar should hide admin/owner tabs and profile circle after logout
+- Stay logged in: once linked in Telegram, don't auto-logout

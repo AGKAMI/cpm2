@@ -1,34 +1,36 @@
 "use client";
 
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
+import { Dock } from "@/components/ui/dock";
+import { LucideIcon } from "lucide-react";
+import { Home, Grid, List, User } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useTheme } from "@/hooks/useTheme";
 import { vantaApi } from "@/lib/store/client";
+import { AdminIcon } from "@/components/ui/admin-icon";
+import { OwnerIcon } from "@/components/ui/owner-icon";
 
 type StoreTab = "home" | "categories" | "orders" | "profile" | "admin" | "owner";
 
-const STORE_NAV: { key: StoreTab; href: string; label: string; icon: string }[] = [
-  { key: "home", href: "/store", label: "HOME", icon: "home" },
-  { key: "categories", href: "/store/categories", label: "CATEGORIES", icon: "grid" },
-  { key: "orders", href: "/store/orders", label: "ORDERS", icon: "list" },
-  { key: "profile", href: "/store/profile", label: "PROFILE", icon: "person" },
-  { key: "admin", href: "/store/admin", label: "ADMIN", icon: "admin" },
-  { key: "owner", href: "/store/owner", label: "OWNER", icon: "owner" },
+type StoreIcon = React.ComponentType<{ className?: string }>;
+
+const STORE_NAV: { key: StoreTab; href: string; label: string; icon: StoreIcon }[] = [
+  { key: "home", href: "/store", label: "HOME", icon: Home },
+  { key: "profile", href: "/store/profile", label: "PROFILE", icon: User },
+  { key: "admin", href: "/store/admin", label: "ADMIN", icon: AdminIcon },
+  { key: "owner", href: "/store/owner", label: "OWNER", icon: OwnerIcon },
 ];
 
-const ICONS: Record<string, string> = {
-  home: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
-  grid: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1" ry="1"/><rect x="14" y="3" width="7" height="7" rx="1" ry="1"/><rect x="14" y="14" width="7" height="7" rx="1" ry="1"/><rect x="3" y="14" width="7" height="7" rx="1" ry="1"/></svg>`,
-  list: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,
-  person: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"><circle cx="12" cy="7" r="4"/></path></svg>`,
-  admin: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>`,
-  owner: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15l1 2L16 6l2 1.4V19c0 .55-.45 1-1 1h-5z"/></svg>`,
-  dots: `<circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/>`,
-  bell: `<path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10 20a2 2 0 0 0 4 0"/>`,
+const ICON_MAP: Record<StoreTab, StoreIcon> = {
+  home: Home,
+  categories: Grid,
+  orders: List,
+  profile: User,
+  admin: AdminIcon,
+  owner: OwnerIcon,
 };
 
 const VANTA_LOCKUP = `
@@ -40,32 +42,6 @@ const VANTA_LOCKUP = `
   <path d="M77,38H63Q57,38 57,44V48Q57,53 63,53H72V61H61" fill="none" stroke="#d4af4f" stroke-width="5"/>
 </svg>
 `;
-
-export function StoreNavItem({ item, active }: { item: typeof STORE_NAV[number]; active: boolean }) {
-  return (
-    <Link
-      href={item.href}
-      className={cn(
-        "flex flex-col items-center gap-1 px-2 py-1 text-[9px] uppercase tracking-[0.15em] whitespace-nowrap cursor-pointer font-bold",
-        active ? "text-gold" : "text-ink-soft",
-      )}
-      aria-current={active ? "page" : undefined}
-      role="tab"
-      aria-selected={active ? "true" : "false"}
-    >
-      <span
-        className="flex items-center justify-center w-6 h-6 shrink-0"
-        dangerouslySetInnerHTML={{ __html: ICONS[item.icon] }}
-      />
-      <span className={cn("leading-none", active ? "font-extrabold" : "font-normal")}>
-        {item.label}
-      </span>
-      {active && (
-        <span className="tab-indicator absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-gold-gradient rounded-full" />
-      )}
-    </Link>
-  );
-}
 
 interface StoreShellProps {
   children: ReactNode;
@@ -139,8 +115,8 @@ export function StoreShell({ children, dock }: StoreShellProps) {
 
   const visibleNav = STORE_NAV.filter(
     (t) =>
-      (t.key !== "admin" || (isAdmin === true && customerLoggedIn)) &&
-      (t.key !== "owner" || (isOwner === true && customerLoggedIn)),
+      (t.key !== "admin" || isAdmin === true) &&
+      (t.key !== "owner" || isOwner === true),
   );
 
   const activeTab: StoreTab | undefined =
@@ -213,16 +189,14 @@ export function StoreShell({ children, dock }: StoreShellProps) {
         {children}
       </main>
 
-      <nav
-        aria-label="Store"
-        className="store-dock fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-md px-4 pb-4 sm:pb-3 sm:px-6"
-      >
-        <div className="mx-auto flex max-w-[340px] items-center justify-center gap-2 overflow-x-auto whitespace-nowrap border border-border rounded-full px-3 py-2 shadow-lg" style={{ backgroundColor: "var(--background)" }}>
-          {visibleNav.map((item) => (
-            <StoreNavItem key={item.href} item={item} active={activeTab === item.key} />
-          ))}
-        </div>
-      </nav>
+      <Dock
+        items={visibleNav.map((item) => ({
+          icon: ICON_MAP[item.key],
+          label: item.label.charAt(0).toUpperCase() + item.label.slice(1),
+          href: item.href,
+          active: activeTab === item.key,
+        }))}
+      />
     </div>
   );
 }

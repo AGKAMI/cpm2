@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStoreDb } from "@/lib/store-db";
 import { verifySessionToken, readRequestCookie, SESSION_COOKIE } from "@/lib/auth";
+import { sendNotification } from "@/lib/store/notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +41,16 @@ export async function GET(
     });
   }
 
-  export async function POST(
+async function getCustomerTelegramId(db: Awaited<ReturnType<typeof getStoreDb>>, customerId: number): Promise<number | null> {
+  const result = await db.execute({
+    sql: `SELECT platform_user_id FROM vanta_platform_identities WHERE customer_id = ? AND platform = 'telegram' LIMIT 1`,
+    args: [customerId],
+  });
+  if (result.rows.length === 0) return null;
+  return Number(result.rows[0].platform_user_id);
+}
+
+export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -74,6 +84,21 @@ export async function GET(
       sql: `UPDATE vanta_customers SET notifications_enabled = ?, updated_at = ? WHERE id = ?`,
       args: [enabled ? 1 : 0, new Date().toISOString(), customerId],
     });
+
+    // Send confirmation message when notifications are turned ON
+    if (enabled) {
+      try {
+        const telegramId = await getCustomerTelegramId(db, customerId);
+        if (telegramId) {
+          await sendNotification(
+            telegramId,
+            `<b>🏁 Vanta Garage — Notifications On</b>\n\n🔔 You're all set! You'll now get order updates straight to your Telegram.\n\nHere's what you'll be notified about:\n\n✅ <b>Payment Verified</b> — Your EFT or PayFast payment cleared\n❌ <b>Payment Rejected</b> — Payment proof wasn't valid\n🚚 <b>Delivery Scheduled</b> — Your ride is ready for handoff\n✅ <b>Delivery Complete</b> — Order delivered, enjoy the whip\n⚠️ <b>Order Cancelled</b> — Order cancelled, stock released\n\nTurn these off anytime in your profile. Drive safe. 🏎️`
+          );
+        }
+      } catch {
+        // Don't fail the toggle if the confirmation message fails to send
+      }
+    }
 
     return NextResponse.json({ enabled });
   } catch {

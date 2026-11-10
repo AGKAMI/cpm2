@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { NotificationBell } from "@/components/NotificationBell";
+import { vantaApi } from "@/lib/store/client";
 
 type StoreTab = "home" | "categories" | "orders" | "profile" | "admin" | "owner";
 
@@ -75,6 +76,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isOwner, setIsOwner] = useState<boolean | null>(null);
+  const [profile, setProfile] = useState<{ photoUrl?: string; displayName?: string; username?: string } | null>(null);
 
   useEffect(() => {
     const initData =
@@ -96,6 +98,22 @@ export function StoreShell({ children, dock }: StoreShellProps) {
       .catch(() => {
         setIsAdmin(false);
         setIsOwner(false);
+      });
+
+    // Fetch Telegram profile for avatar
+    vantaApi
+      .profile()
+      .then((data) => {
+        if (data.telegramUser) {
+          setProfile({
+            photoUrl: data.telegramUser.photoUrl,
+            displayName: data.telegramUser.displayName,
+            username: data.telegramUser.username,
+          });
+        }
+      })
+      .catch(() => {
+        // Profile fetch is non-fatal
       });
   }, []);
 
@@ -123,14 +141,25 @@ export function StoreShell({ children, dock }: StoreShellProps) {
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <div className="relative h-8 w-8 shrink-0">
-              <svg
-                className="absolute inset-0 h-full w-full fill-current"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <div className="absolute -bottom-1 -left-1 h-3 w-3 rounded-full bg-brand-gold" />
+              <div className="relative h-8 w-8 rounded-full overflow-hidden border-2 border-gold/40">
+                {profile?.photoUrl ? (
+                  <img
+                    src={profile.photoUrl}
+                    alt={profile.displayName || "Profile"}
+                    className="h-8 w-8 object-cover"
+                    loading="eager"
+                  />
+                ) : (
+                  <svg
+                    className="absolute inset-0 h-full w-full fill-current text-ink-soft"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+                <div className="absolute -inset-px h-full w-full rounded-full border-2 border-gold/40 animate-pulse-ring" />
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-1">

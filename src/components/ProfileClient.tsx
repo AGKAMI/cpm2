@@ -19,6 +19,18 @@ type Order = {
   createdAt: string;
 };
 
+const ShowIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+    <path d="M9.61 9.607C8.055 10.455 7 12.104 7 14C7 16.761 9.239 19 12 19C13.897 19 15.547 17.944 16.394 16.388M21 14C21 9.029 16.971 5 12 5C11.558 5 11.124 5.032 10.699 5.093M3 14C3 11.007 4.461 8.355 6.709 6.719M3 3L21 21" />
+  </svg>
+);
+
+const HideIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+    <path d="M3 14C3 9.029 7.029 5 12 5C16.971 5 21 9.029 21 14M17 14C17 16.761 14.761 19 12 19C9.239 19 7 16.761 7 14C7 11.239 9.239 9 12 9C14.761 9 17 11.239 17 14Z" />
+  </svg>
+);
+
 export function ProfileClient() {
   const [customer, setCustomer] = useState<VantaCustomer | null>(null);
   const [telegramUser, setTelegramUser] = useState<TelegramUser | null>(null);
@@ -227,7 +239,9 @@ export function ProfileClient() {
     typeof window !== "undefined" ? localStorage.getItem("vanta_owner_email") ?? "" : ""
   );
   const [authPassword, setAuthPassword] = useState("");
-  const [authBusy, setAuthBusy] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginBusy, setLoginBusy] = useState(false);
+  const [createBusy, setCreateBusy] = useState(false);
 
   const rememberEmail = (emailVal: string) => {
     if (typeof window === "undefined") return;
@@ -241,7 +255,9 @@ export function ProfileClient() {
       setError("Enter an email and password.");
       return;
     }
-    setAuthBusy(true);
+    const isLogin = mode === "login";
+    setLoginBusy(isLogin);
+    setCreateBusy(!isLogin);
     setError(null);
     setSuccess(null);
     try {
@@ -268,7 +284,8 @@ export function ProfileClient() {
       setError(msg);
       toast.error(mode === "login" ? "Login failed" : "Sign-up failed", msg);
     } finally {
-      setAuthBusy(false);
+      setLoginBusy(false);
+      setCreateBusy(false);
     }
   };
 
@@ -438,30 +455,41 @@ export function ProfileClient() {
               />
             </Field>
             <Field label="Password">
-              <TextInput
-                type="password"
-                name="password"
-                value={authPassword}
-                onChange={(e) => setAuthPassword(e.target.value)}
-                placeholder="••••••••"
-                autoComplete="current-password"
-              />
+              <div className="relative">
+                <TextInput
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-ink-soft hover:text-foreground"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <HideIcon /> : <ShowIcon />}
+                </button>
+              </div>
             </Field>
             <Button
               variant="primary"
               className="w-full"
               onClick={() => submitAuth("login")}
-              disabled={authBusy || !authEmail.trim() || !authPassword}
+              disabled={loginBusy || !authEmail.trim() || !authPassword}
             >
-              {authBusy ? "Working…" : "Log in"}
+              {loginBusy ? "Working…" : "Log in"}
             </Button>
             <Button
               variant="outline"
               className="w-full"
               onClick={() => submitAuth("create")}
-              disabled={authBusy || !authEmail.trim() || !authPassword}
+              disabled={createBusy || !authEmail.trim() || !authPassword}
             >
-              {authBusy ? "Working…" : "Create account"}
+              {createBusy ? "Working…" : "Create account"}
             </Button>
             <p className="text-[10px] text-ink-faint text-center">
               Inside Telegram? Open the store in the app to link automatically — or log in here and link your Telegram ID after.
@@ -554,13 +582,23 @@ export function ProfileClient() {
                   />
                 </Field>
                 <Field label="New password (optional)">
-                  <TextInput
-                    type="password"
-                    value={passwordValue}
-                    onChange={(e) => setPasswordValue(e.target.value)}
-                    placeholder="••••••••"
-                    className="flex-1"
-                  />
+                  <div className="relative">
+                    <TextInput
+                      type={showPassword ? "text" : "password"}
+                      value={passwordValue}
+                      onChange={(e) => setPasswordValue(e.target.value)}
+                      placeholder="••••••••"
+                      className="flex-1 pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-ink-soft hover:text-foreground"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <HideIcon /> : <ShowIcon />}
+                    </button>
+                  </div>
                 </Field>
                 <div className="flex gap-2">
                   <Button type="submit" variant="primary" disabled={saving} className="flex-1">

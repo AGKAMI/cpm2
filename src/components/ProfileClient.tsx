@@ -5,6 +5,7 @@ import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Field";
+import { useTheme } from "@/hooks/useTheme";
 import { useToast } from "@/components/ui/Toaster";
 
 type VantaCustomer = {
@@ -29,12 +30,10 @@ export function ProfileClient() {
   const [playerId, setPlayerId] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("vanta_player_id") ?? "" : ""
   );
-  const [darkMode, setDarkMode] = useState(() =>
-    typeof window !== "undefined" ? localStorage.getItem("vanta_dark_mode") === "true" : true
-  );
   const [orderNotifications, setOrderNotifications] = useState(false);
   const [linkMode, setLinkMode] = useState<"telegram" | "email" | null>(null);
   const toast = useToast();
+  const { mode, setMode } = useTheme();
 
   async function checkSession() {
     try {
@@ -65,15 +64,6 @@ export function ProfileClient() {
       alive = false;
     };
   }, []);
-
-  // Dark mode effect
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const theme = darkMode ? "night" : "paper";
-      document.documentElement.setAttribute("data-theme", theme);
-      localStorage.setItem("vanta_dark_mode", String(darkMode));
-    }
-  }, [darkMode]);
 
   // Load order notifications preference from profile
   useEffect(() => {
@@ -493,13 +483,13 @@ export function ProfileClient() {
               <p className="text-[10px] text-ink-soft">Choose between dark and light theme</p>
             </div>
             <select
-              value={darkMode ? "dark" : "light"}
-              onChange={(e) => setDarkMode(e.target.value === "dark")}
+              value={mode}
+              onChange={(e) => setMode(e.target.value as "night" | "paper")}
               className="rounded-md border border-border px-2 py-1 text-sm text-foreground bg-background focus:outline-none"
               aria-label="Preferred display mode"
             >
-              <option value="dark">Dark</option>
-              <option value="light">Light</option>
+              <option value="night">Dark</option>
+              <option value="paper">Light</option>
             </select>
           </div>
           {customer && (

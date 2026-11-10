@@ -102,7 +102,7 @@ const EMPTY_PROMOTION_FORM: PromotionForm = {
   discountCode: "",
   ctaText: "Shop now",
   ctaLink: "/store/categories",
-  backgroundColor: "#1c1c1f",
+  backgroundColor: "var(--color-paper-raised)",
   accentColor: "#d4af4f",
   imageUrl: "",
   isActive: true,

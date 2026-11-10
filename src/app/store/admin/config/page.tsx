@@ -256,7 +256,7 @@ function ModalEdit({
   onCancel: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-sm">
       <div className="panel rounded-xl border border-border p-6 w-full max-w-md">
         <h3 className="text-sm font-semibold text-foreground mb-4">
           Edit {entry.key}

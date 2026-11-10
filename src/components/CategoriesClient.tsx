@@ -297,7 +297,7 @@ export function CategoriesClient() {
                     const el = document.getElementById("res");
                     el?.scrollBy({ left: -380, behavior: "smooth" });
                   }}
-                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-16 w-10 rounded-r-full bg-[#0a0a0a]/80 border border-border flex items-center justify-center text-gold hover:bg-[#0a0a0a] transition-colors hidden md:flex"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-16 w-10 rounded-r-full bg-ink/80 border border-border flex items-center justify-center text-gold hover:bg-ink/80 transition-colors hidden md:flex"
                   aria-label="Scroll left"
                 >
                   <span className="text-[16px]">‹</span>
@@ -360,7 +360,7 @@ export function CategoriesClient() {
                         const el = document.getElementById("res");
                         el?.scrollBy({ left: 380, behavior: "smooth" });
                       }}
-                      className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-16 w-10 rounded-l-full bg-[#0a0a0a]/80 border border-border flex items-center justify-center text-gold hover:bg-[#0a0a0a] transition-colors hidden md:flex"
+                      className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-16 w-10 rounded-l-full bg-ink/80 border border-border flex items-center justify-center text-gold hover:bg-ink/80 transition-colors hidden md:flex"
                       aria-label="Scroll right"
                     >
                       <span className="text-[16px]">›</span>

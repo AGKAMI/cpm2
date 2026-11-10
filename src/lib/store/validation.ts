@@ -140,7 +140,7 @@ export const promotionFormSchema = z.object({
     .string({ error: "Background color is required." })
     .trim()
     .refine((v) => HEX_COLOR_PATTERN.test(v), {
-      error: "Enter a valid hex color (e.g. #1c1c1f).",
+      error: "Enter a valid hex color.",
     }),
   accentColor: z
     .string({ error: "Accent color is required." })

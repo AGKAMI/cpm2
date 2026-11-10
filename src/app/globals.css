@@ -453,13 +453,13 @@ html {
   /* ── Tabs sliding (16-tabs-sliding.md) ───────────────────────── */
   --tabs-dur: 250ms;
   --tabs-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --tabs-bar-bg: #09090a;
-  --tabs-pill-bg: #d4af4f;
+  --tabs-bar-bg: var(--color-paper-raised);
+  --tabs-pill-bg: var(--brand-gold);
 
   --brand-gold: #d4af4f;
   --brand-gold-soft: rgba(212, 175, 79, 0.12);
-  --brand-paper: #070707;
-  --brand-raised: #09090a;
+  --brand-paper: var(--background);
+  --brand-raised: var(--color-paper-raised);
   --brand-ink: #f4efe4;
   --brand-ink-soft: #8f8b80;
   --brand-border: rgba(255, 255, 255, 0.08);
@@ -807,7 +807,7 @@ html {
 .hero-banner .hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, transparent 0%, transparent 75%, #070707 100%);
+  background: linear-gradient(to bottom, transparent 0%, transparent 75%, var(--background) 100%);
 }
 .hero-banner .hero-title {
   position: absolute;
@@ -938,8 +938,8 @@ html {
 .bg-gold { background-color: var(--brand-gold) !important; }
 .border-gold { border-color: var(--brand-gold) !important; }
 .bg-gold-deep { background-color: var(--brand-gold-deep) !important; }
-.bg-surface-deep { background-color: #1c1c1f !important; }
-.text-surface-deep { color: #1c1c1f !important; }
+.bg-surface-deep { background-color: var(--color-paper-raised) !important; }
+.text-surface-deep { color: var(--color-paper-raised) !important; }
 
 /* Font utility classes */
 .font-serif { font-family: var(--font-display) !important; }

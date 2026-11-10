@@ -26,7 +26,7 @@ const promotionSchema = z.object({
   discountCode: z.string().optional(),
   ctaText: z.string().default("Shop now"),
   ctaLink: z.string().default("/store/categories"),
-  backgroundColor: z.string().default("#1c1c1f"),
+  backgroundColor: z.string().default("var(--color-paper-raised)"),
   accentColor: z.string().default("#d4af4f"),
   imageUrl: z.string().url().optional(),
   isActive: z.boolean().default(true),

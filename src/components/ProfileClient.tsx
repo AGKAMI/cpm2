@@ -345,9 +345,6 @@ export function ProfileClient() {
                 </div>
               )}
             </motion.div>
-            <span className={`absolute top-0 right-0 flex items-center justify-center w-8 h-8 rounded-full border-2 border-background ${isActive ? "bg-racing text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
-              <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
-            </span>
 
             {/* Role badge — pinned to the avatar's bottom edge */}
             {(() => {

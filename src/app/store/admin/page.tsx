@@ -129,9 +129,11 @@ export default function AdminPage() {
     const [categoryErrors, setCategoryErrors] = useState<Record<string, string>>({});
     const [promotionErrors, setPromotionErrors] = useState<Record<string, string>>({});
   // Category management state
-  const [showCategoryForm, setShowCategoryForm] = useState(false);
-  const [categoryForm, setCategoryForm] = useState<CategoryForm>(EMPTY_CATEGORY_FORM);
-  const [categorySaving, setCategorySaving] = useState(false);
+    const [showCategoryForm, setShowCategoryForm] = useState(false);
+    const [categoryForm, setCategoryForm] = useState<CategoryForm>(EMPTY_CATEGORY_FORM);
+    const [categorySaving, setCategorySaving] = useState(false);
+    const [showCategoryEditSelect, setShowCategoryEditSelect] = useState(false);
+    const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
   // Promotion management state
   const [showPromotionForm, setShowPromotionForm] = useState(false);
   const [editingPromotionId, setEditingPromotionId] = useState<number | null>(null);
@@ -571,33 +573,69 @@ export default function AdminPage() {
           )}
           <div className="flex flex-wrap gap-2">
             {categories.length === 0 ? (
-              <span className="text-xs text-muted-foreground">No categories yet. Click &quot;Add Category&quot; to create one.</span>
+              <span className="text-xs text-muted-foreground">No categories yet. Click "Add Category" to create one.</span>
             ) : (
-              categories.map((cat) => (
-                <div key={cat.id} className="flex items-center gap-2">
+              <>
+                {categories.map((cat) => (
                   <span
+                    key={cat.id}
                     className="text-xs px-2 py-1 rounded-full border border-border bg-background text-foreground"
                   >
                     {cat.name} ({cat.slug})
                   </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      // Single edit button: open category form pre-populated with this category
-                      setCategoryForm({
-                        name: cat.name,
-                        slug: cat.slug,
-                        description: cat.description,
-                        sortOrder: String(cat.sortOrder),
-                      });
-                      setShowCategoryForm(true);
-                    }}
-                  >
-                    Edit
-                  </Button>
-                </div>
-              ))
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    // Single edit button: open select to pick which category to edit
+                    setEditingCategoryId(null);
+                    setShowCategoryEditSelect(true);
+                  }}
+                >
+                  Edit Category
+                </Button>
+              </>
+            )}
+            {showCategoryEditSelect && categories.length > 0 && (
+              <div className="mt-2 flex items-center gap-2">
+                <select
+                  value={editingCategoryId ?? ""}
+                  onChange={(e) => setEditingCategoryId(Number(e.target.value))}
+                  className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
+                >
+                  <option value="">Pick a category to edit…</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={String(cat.id)}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    if (!editingCategoryId) return;
+                    const cat = categories.find((c) => c.id === editingCategoryId);
+                    if (!cat) return;
+                    setCategoryForm({
+                      name: cat.name,
+                      slug: cat.slug,
+                      description: cat.description,
+                      sortOrder: String(cat.sortOrder),
+                    });
+                    setShowCategoryForm(true);
+                    setShowCategoryEditSelect(false);
+                    setEditingCategoryId(null);
+                  }}
+                  disabled={!editingCategoryId}
+                >
+                  Edit
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowCategoryEditSelect(false)}>
+                  Cancel
+                </Button>
+              </div>
             )}
           </div>
         </section>
@@ -617,7 +655,7 @@ export default function AdminPage() {
                         setError(null);
                       }}
                     >
-                      {showPromotionForm ? "Hide form" : "Add Promotion"}
+                      "Add Promotion"
                     </Button>
                   </div>
 

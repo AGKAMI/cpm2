@@ -113,7 +113,7 @@ export default function OwnerPage() {
 
   return (
       <StoreShell>
-        <PageHeading folio="OW" title="Owner Dashboard" backHref="/store/admin" meta={ownerStats ? formatPrice(ownerStats.totalRevenueCents) : undefined} />
+        <PageHeading folio="OW" title="Owner Dashboard" backHref="/store/admin" />
         {ownerStats && (
           <section className="mb-6">
             <h3 className="text-xs font-semibold text-foreground uppercase tracking-[0.15em] mb-3">Store Stats</h3>

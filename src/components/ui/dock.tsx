@@ -53,7 +53,7 @@ const DockIconButton = React.forwardRef<
           if (href) window.location.href = href;
         }}
       >
-        <Icon className={cn("w-5 h-5", active ? "text-primary-foreground" : "text-foreground")} />
+        <Icon className={cn("w-5 h-5", active ? "text-white" : "text-foreground")} />
         <span
           className={cn(
             "absolute -top-8 left-1/2 -translate-x-1/2 z-20",

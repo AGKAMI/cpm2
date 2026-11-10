@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { vantaApi, formatPrice, type VantaProduct, type VantaCategory, type VantaCustomer, type VantaPromotion, type TelegramUser } from "@/lib/store/client";
 import { StoreShell } from "@/components/StoreShell";
 import { HeartToggle } from "@/components/HeartToggle";
@@ -162,7 +162,7 @@ const content = (
               className="block cursor-pointer"
             >
               <div
-                className={`promotion-card relative overflow-hidden rounded-[22px] p-5 border border-[rgba(255,255,255,0.15)]`}
+                className={`promotion-card relative overflow-hidden rounded-[22px] p-5 border border-border bg-raised shadow-sm hover:shadow-md transition-shadow duration-200 ease-out`}
                 style={{
                   backgroundColor: promo.backgroundColor || "var(--color-paper-raised)",
                   color: promo.accentColor ? "var(--color-paper-sunken)" : undefined,

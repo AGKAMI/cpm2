@@ -51,6 +51,27 @@ export async function addAdmin(
 ): Promise<AdminRecord> {
   const db = await getStoreDb();
   const now = new Date().toISOString();
+  // If this Telegram ID is already an admin (even inactive), reactivate instead of duplicating
+  const existing = await db.execute({
+    sql: `SELECT id FROM vanta_admins WHERE telegram_user_id = ? LIMIT 1`,
+    args: [telegramUserId],
+  });
+  if (existing.rows.length > 0) {
+    await db.execute({
+      sql: `UPDATE vanta_admins SET is_active = 1, role = 'admin', added_by = ?, added_at = ? WHERE telegram_user_id = ?`,
+      args: [addedBy, now, telegramUserId],
+    });
+    return rowToAdmin({
+      id: Number(existing.rows[0].id),
+      telegram_user_id: telegramUserId,
+      telegram_username: telegramUsername,
+      nickname,
+      role: "admin",
+      added_by: addedBy,
+      added_at: now,
+      is_active: true,
+    });
+  }
   const result = await db.execute({
     sql: `INSERT INTO vanta_admins (telegram_user_id, telegram_username, nickname, role, added_by, added_at, is_active)
           VALUES (?, ?, ?, 'admin', ?, ?, 1)`,

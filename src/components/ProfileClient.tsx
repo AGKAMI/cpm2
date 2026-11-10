@@ -489,18 +489,18 @@ export function ProfileClient() {
         <div className="space-y-4">
           <div className="flex items-center justify-between p-3 rounded-md border border-border">
             <div>
-              <span className="text-sm font-medium text-foreground">Dark mode</span>
-              <p className="text-[10px] text-ink-soft">Premium dark showroom theme</p>
+              <span className="text-sm font-medium text-foreground">Preferred mode</span>
+              <p className="text-[10px] text-ink-soft">Choose between dark and light theme</p>
             </div>
-            <button
-              className={`w-10 h-5 rounded-full relative transition-colors ${darkMode ? "bg-primary" : "bg-border"}`}
-              onClick={() => setDarkMode(!darkMode)}
-              aria-label={darkMode ? "Disable dark mode" : "Enable dark mode"}
+            <select
+              value={darkMode ? "dark" : "light"}
+              onChange={(e) => setDarkMode(e.target.value === "dark")}
+              className="rounded-md border border-border px-2 py-1 text-sm text-foreground bg-background focus:outline-none"
+              aria-label="Preferred display mode"
             >
-              <span
-                className={`absolute top-1 w-3 h-3 bg-foreground rounded-full transition-transform ${darkMode ? "right-1" : "left-1"}`}
-              />
-            </button>
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+            </select>
           </div>
           {customer && (
             <div className="flex items-center justify-between p-3 rounded-md border border-border">

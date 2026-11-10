@@ -61,3 +61,4 @@ scripts/apply-prices.cjs
 .env*.local
 .env*
 .vercel
+dev.log

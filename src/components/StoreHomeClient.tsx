@@ -271,7 +271,7 @@ const [activeIndex, setActiveIndex] = useState(0);
                     {promo.title}
                   </h3>
                   {promo.description && (
-                    <p className="text-[11px] text-ink-soft mb-3">
+                    <p className="text-[11px] text-ink mb-3">
                       {promo.description}
                     </p>
                   )}

@@ -1882,3 +1882,28 @@ Each module below includes: **What** (functional spec from plan), **How it works
 **Gates:** tsc --noEmit exit 0. Build completed on Vercel (`dpl_GahAXn1A4W1Y3RYCZdfLdJ67zFnN`, READY). Live at `https://cpm2-bay.vercel.app`.
 
 **Verified by:** Kermes (nemotron-3.5-super-vl-120b-a12b)
+
+### 2026-11-10 — Hermes Agent "Kermes" — Featured Vehicle Carousel + Hydration Fix + Stable Server
+
+**What:** Replaced incomplete horizontal product row on store home page with a proper featured vehicle carousel; fixed React hydration mismatch from inline SSR script; confirmed stable local server via `next start`.
+
+**Where:**
+- `src/components/StoreHomeClient.tsx` — carousel section replaced vertical product row
+- `src/app/globals.css` — added `.featured-carousel`, `.featured-carousel-item`, `.featured-nav`, `.featured-prev`, `.featured-next`, `.featured-pagination`, `.featured-dot` CSS
+- `src/components/TelegramInit.tsx` — NEW client component setting `touch-action` post-hydration
+- `src/app/store/layout.tsx` — removed inline SSR `<script dangerouslySetInnerHTML>` touch-action block; added `<TelegramInit />`; added `suppressHydrationWarning` to themeScript
+
+**Changes:**
+1. **Featured vehicle carousel** — horizontal scroll with `scroll-snap-type: x mandatory`, prev/next navigation arrows (SVG chevrons, disabled at boundaries), pagination dots (active state highlights current position), partial previews of adjacent cards, native touch/swipe on mobile, manual-only (no autoplay), accessible ARIA labels, scroll-to-index on dot click
+2. **Vehicle cards** — reuse existing card design: image dominant (`object-cover`), name, price, exclusivity badge, HeartToggle wishlist, gold CTA button (▸), links to `/store/products/[id]`, "No photo" fallback preserved
+3. **Admin integration** — uses existing `isFeatured` flag via `vantaApi.products({ featured: true })`; admin product form already has `isFeatured` toggle; no separate carousel-management system
+4. **Hydration fix** — removed inline SSR `<script>` that set `touch-action` during server render (caused React hydration mismatch); moved to client-side `useEffect` in new `TelegramInit.tsx`; added `suppressHydrationWarning` to themeScript
+5. **Stable local server** — ⚠️ DO NOT run `npx next dev` (with or without `--turbo`) — it crashes silently on this machine after serving requests (ports 3001, 3005, turbo and non-turbo, all fail). Stable solution: `npx next build && npx next start -H 127.0.0.1 --port 3001`. Built clean, server started on **http://127.0.0.1:3001**, served `/store` with HTTP 200, no crashes.
+
+**Gates:** `tsc --noEmit` exit 0. `next build` clean. `/api/store/products?featured=1` returns HTTP 200. Empty state (0 featured products) correctly hides carousel section. Old inline SSR script verified gone from DOM; `TelegramInit` script loads; `touch-action` set client-side only.
+
+**Deploy status:** Not deployed. Working tree only. Re-deploy via Deploy Hook or `vercel deploy --prod` when approved.
+
+**Remaining gaps:** Isolated dev database needed for populated-carousel visual verification (only production Turso configured; no `.env.local`). No test data inserted into live catalogue.
+
+**Verified by:** Kermes (nemotron-3.5-super-vl-120b-a12b)

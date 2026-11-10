@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
@@ -309,18 +310,24 @@ export function ProfileClient() {
       <section className="mb-8 px-4">
         <div className="flex flex-col items-center gap-4">
           <div className="relative group">
-            {photoUrl ? (
-              <img
-                src={photoUrl}
-                alt={displayName}
-                className="w-32 h-32 rounded-full border-4 border-gold/40 object-cover bg-secondary object-center"
-                loading="eager"
-              />
-            ) : (
-              <div className="w-32 h-32 rounded-full border-4 border-gold/40 bg-secondary flex items-center justify-center text-ink-soft text-2xl font-bold select-none">
-                {displayName.charAt(0).toUpperCase()}
-              </div>
-            )}
+            <motion.div
+              layoutId="vanta-profile-avatar"
+              transition={{ type: "spring", stiffness: 320, damping: 32 }}
+              className="h-32 w-32 rounded-full overflow-hidden border-4 border-gold/40 bg-secondary"
+            >
+              {photoUrl ? (
+                <img
+                  src={photoUrl}
+                  alt={displayName}
+                  className="h-full w-full object-cover object-center"
+                  loading="eager"
+                />
+              ) : (
+                <div className="h-full w-full flex items-center justify-center text-ink-soft text-2xl font-bold select-none">
+                  {displayName.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </motion.div>
             <span className={`absolute top-0 right-0 flex items-center justify-center w-8 h-8 rounded-full border-2 border-background ${isActive ? "bg-racing text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
               <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
             </span>

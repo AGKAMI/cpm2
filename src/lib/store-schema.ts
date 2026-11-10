@@ -143,6 +143,38 @@ CREATE TABLE IF NOT EXISTS vanta_audit_logs (
   created_at  TEXT    NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS vanta_alerts (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  type          TEXT    NOT NULL,
+  title         TEXT    NOT NULL DEFAULT '',
+  message       TEXT    NOT NULL DEFAULT '',
+  severity      TEXT    NOT NULL DEFAULT 'medium' CHECK (severity IN ('low', 'medium', 'high', 'critical')),
+  entity_type   TEXT    NOT NULL DEFAULT '',
+  entity_id     TEXT,
+  related_order_id TEXT,
+  is_read       INTEGER NOT NULL DEFAULT 0,
+  created_at    TEXT    NOT NULL,
+  updated_at    TEXT    NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_vanta_alerts_created ON vanta_alerts (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_vanta_alerts_unread ON vanta_alerts (is_read, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS vanta_jobs (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  type          TEXT    NOT NULL,
+  payload       TEXT    NOT NULL DEFAULT '{}',
+  status        TEXT    NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed', 'dead_letter')),
+  attempts      INTEGER NOT NULL DEFAULT 0,
+  max_attempts  INTEGER NOT NULL DEFAULT 3,
+  next_run_at   TEXT    NOT NULL,
+  created_at    TEXT    NOT NULL,
+  updated_at    TEXT    NOT NULL,
+  error         TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_vanta_jobs_status_next ON vanta_jobs (status, next_run_at);
+
 CREATE TABLE IF NOT EXISTS vanta_financial_ledger (
   id               INTEGER PRIMARY KEY AUTOINCREMENT,
   order_id         TEXT,

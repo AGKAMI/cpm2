@@ -5,6 +5,12 @@
 
 import { createHash } from "node:crypto";
 import type { Order } from "../store-types";
+import { getStoreDb } from "../store-db.ts";
+import { rowToPayment, getPaymentsForOrder } from "./payments.ts";
+import { updatePaymentState, updateOrderState, getOrder } from "./checkout.ts";
+import { recordPayment } from "./payments.ts";
+import { ledgerEntry } from "./ledger.ts";
+import { notifyCustomer } from "./notifications.ts";
 
 const PAYFAST_MERCHANT_ID = process.env.PAYFAST_MERCHANT_ID ?? "";
 const PAYFAST_MERCHANT_KEY = process.env.PAYFAST_MERCHANT_KEY ?? "";
@@ -63,4 +69,75 @@ export function buildPayFastCheckoutUrl(
 
 export function getPayFastBaseUrl(): string {
   return process.env.PAYFAST_BASE_URL ?? PAYFAST_BASE;
+}
+
+/**
+ * Retry a failed or pending webhook by re-verifying with PayFast.
+ * Sec 20.1: background job retry mechanism.
+ */
+export async function retryWebhook(paymentId: string): Promise<void> {
+  const db = await getStoreDb();
+  const result = await db.execute({
+    sql: `SELECT * FROM vanta_payments WHERE id = ?`,
+    args: [paymentId],
+  });
+  if (result.rows.length === 0) throw new Error("Payment not found");
+
+  const payment = rowToPayment(result.rows[0]);
+  if (payment.status === "verified") return; // already processed — idempotent
+
+  const order = await getOrder(payment.orderId);
+  if (!order) throw new Error("Order not found for payment");
+  if (order.paymentState === "verified") return; // order already confirmed
+
+  // Re-query PayFast for the transaction status if configured
+  if (isPayFastConfigured() && payment.providerRef) {
+    try {
+      const pfQuery = await fetch(
+        `https://sandbox.payfast.co.za/eng/query_transactions?merchant_id=${encodeURIComponent(PAYFAST_MERCHANT_ID)}&merchant_key=${encodeURIComponent(PAYFAST_MERCHANT_KEY)}&payment_id=${encodeURIComponent(payment.providerRef)}`,
+      );
+      if (pfQuery.ok) {
+        const text = await pfQuery.text();
+        // PayFast returns key=value pairs separated by &
+        const params: Record<string, string> = {};
+        for (const pair of text.split("&")) {
+          const [k, v] = pair.split("=");
+          if (k && v !== undefined) params[k] = v;
+        }
+        if (params.payment_status === "COMPLETED") {
+          await recordPayment({
+            orderId: payment.orderId,
+            provider: "payfast",
+            providerRef: payment.providerRef,
+            amountCents: payment.amountCents,
+            currency: payment.currency,
+            status: "verified",
+          });
+          await updatePaymentState(payment.orderId, "verified");
+          await updateOrderState(payment.orderId, "payment_confirmed");
+          await ledgerEntry({
+            orderId: payment.orderId,
+            type: "payment",
+            amountCents: payment.amountCents,
+            currency: payment.currency,
+            relatedPaymentId: payment.providerRef,
+          });
+          await notifyCustomer(order.customerId, "payment_confirmed_payfast", {
+            id: order.id,
+            productId: order.productId,
+            amountCents: order.amountCents,
+            currency: order.currency,
+            inGameName: order.inGameName,
+            playerId: order.playerId,
+          }).catch((err) => console.error("Notification failed:", err));
+          return;
+        }
+      }
+    } catch {
+      // PayFast query failed — job will retry via exponential backoff
+    }
+  }
+
+  // If PayFast not configured or query returned no result, leave for manual review
+  // The job queue will handle retries via exponential backoff
 }

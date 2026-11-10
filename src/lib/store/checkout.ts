@@ -38,6 +38,22 @@ export type CreateOrderResult = {
 export async function createOrder(input: CreateOrderInput): Promise<CreateOrderResult> {
   const db = await getStoreDb();
 
+  // Always fetch the product for exclusivity enforcement and stock seeding
+  const product = await getProduct(input.productId);
+  if (!product) throw new ApiError(404, "PRODUCT_NOT_FOUND", "Product not found.");
+
+  // One-of-One exclusivity enforcement — Sec 8 / Rule 7: never permit duplicate
+  // purchases of exclusive stock.
+  if (product.exclusivity === "one_of_one") {
+    const existing = await db.execute({
+      sql: `SELECT id FROM vanta_orders WHERE product_id = ? AND order_state NOT IN ('cancelled', 'refunded') LIMIT 1`,
+      args: [input.productId],
+    });
+    if (existing.rows.length > 0) {
+      throw new ApiError(400, "EXCLUSIVE_STOCK_UNAVAILABLE", "This exclusive vehicle has already been purchased.");
+    }
+  }
+
   // Idempotency: if an order with this key already exists, return it instead of duplicating
   const existing = await db.execute({
     sql: `SELECT id FROM vanta_orders WHERE idempotency_key = ? LIMIT 1`,
@@ -52,8 +68,6 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   // Ensure inventory exists for this product (auto-seed from product stock)
   const existingInventory = await getInventory(input.productId);
   if (!existingInventory) {
-    const product = await getProduct(input.productId);
-    if (!product) throw new ApiError(404, "PRODUCT_NOT_FOUND", "Product not found.");
     await createInventory(input.productId, product.stockQuantity);
   }
 

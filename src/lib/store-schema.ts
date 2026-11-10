@@ -279,4 +279,19 @@ CREATE INDEX IF NOT EXISTS idx_vanta_wishlist_customer
   ON vanta_wishlist (customer_id);
 CREATE INDEX IF NOT EXISTS idx_vanta_wishlist_product
   ON vanta_wishlist (product_id);
+
+CREATE TABLE IF NOT EXISTS vanta_notifications (
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id       INTEGER NOT NULL REFERENCES vanta_customers(id) ON DELETE CASCADE,
+  type              TEXT    NOT NULL DEFAULT 'general',
+  title             TEXT    NOT NULL DEFAULT '',
+  message           TEXT    NOT NULL DEFAULT '',
+  is_read           INTEGER NOT NULL DEFAULT 0,
+  related_product_id INTEGER,
+  related_order_id  TEXT,
+  created_at        TEXT    NOT NULL,
+  updated_at        TEXT    NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_vanta_notifications_customer ON vanta_notifications (customer_id);
+CREATE INDEX IF NOT EXISTS idx_vanta_notifications_unread ON vanta_notifications (customer_id, is_read, created_at DESC);
 `;

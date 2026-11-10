@@ -286,6 +286,17 @@ export default function AdminPage() {
           await vantaApi.updateProduct(editingId, body);
         } else {
           await vantaApi.createProduct(body);
+          // Notify all customers about new vehicle
+          await fetch("/api/store/admin/notifications", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              title: "New Vehicle Added",
+              message: `A new ${body.name} has been added to the catalog. Check it out now!`,
+              type: "new_product",
+            }),
+          });
         }
         setMsg(editingId ? "Product updated." : "Product created.");
         resetForm();
@@ -387,6 +398,17 @@ export default function AdminPage() {
           await vantaApi.updatePromotion(editingPromotionId, body);
         } else {
           await vantaApi.createPromotion(body);
+          // Notify all customers about new promotion
+          await fetch("/api/store/admin/notifications", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              title: "New Promotion",
+              message: `New promotion: ${body.title}. ${body.description || ""}`,
+              type: "promotion",
+            }),
+          });
         }
         setMsg(editingPromotionId ? "Promotion updated." : "Promotion created.");
         resetPromotionForm();

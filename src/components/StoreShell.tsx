@@ -160,8 +160,8 @@ export function StoreShell({ children, dock }: StoreShellProps) {
                     <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 )}
-                <div className="absolute -inset-px h-full w-full rounded-full border-2 border-gold/40 animate-pulse-ring" />
               </div>
+              <div className="absolute inset-0 h-full w-full rounded-full border-2 border-gold/40 animate-pulse-ring" />
             </div>
           </div>
           <div className="flex items-center gap-1">

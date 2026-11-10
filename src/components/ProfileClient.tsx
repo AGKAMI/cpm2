@@ -97,6 +97,9 @@ export function ProfileClient() {
 
       const data = await res.json();
       setCustomer({ id: data.customerId, inGameName: data.inGameName, playerId: "", email: "", currencyPref: "ZAR" });
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("vanta_customer_id", String(data.customerId));
+      }
       setError(null);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Link failed — try again.";
@@ -125,6 +128,9 @@ export function ProfileClient() {
 
       const data = await res.json();
       setCustomer({ id: data.customerId, inGameName: data.inGameName, playerId: "", email: "", currencyPref: "ZAR" });
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("vanta_customer_id", String(data.customerId));
+      }
       setTelegramId("");
       setError(null);
     } catch (err) {
@@ -157,6 +163,7 @@ export function ProfileClient() {
       setCustomer(data.customer);
       if (typeof window !== "undefined") {
         window.localStorage.setItem("vanta_owner_email", emailVal);
+        window.localStorage.setItem("vanta_customer_id", String(data.customer.id));
         setEmail(emailVal);
       }
 
@@ -190,6 +197,9 @@ export function ProfileClient() {
 
       const data = await res.json();
       setCustomer(data.customer);
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("vanta_customer_id", String(data.customer.id));
+      }
       setSuccess("Logged in successfully!");
       setError(null);
     } catch (err) {
@@ -207,6 +217,10 @@ export function ProfileClient() {
     try {
       await fetch("/api/store/auth/logout", { method: "POST", credentials: "include" });
       setCustomer(null);
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem("vanta_customer_id");
+        window.localStorage.removeItem("vanta_owner_email");
+      }
       setSuccess("Logged out.");
     } catch {
       setError("Logout failed.");

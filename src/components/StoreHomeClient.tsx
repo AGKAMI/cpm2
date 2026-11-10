@@ -19,6 +19,8 @@ export function StoreHomeClient() {
   const [customer, setCustomer] = useState<VantaCustomer | null>(null);
   const [telegramUser, setTelegramUser] = useState<TelegramUser | null>(null);
   const [promotions, setPromotions] = useState<VantaPromotion[]>([]);
+const carouselRef = useRef<HTMLDivElement>(null);
+const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -100,7 +102,42 @@ export function StoreHomeClient() {
     })();
   }, []);
 
-const content = (
+  // --- Featured carousel handlers ---
+  const handleScroll = useCallback(() => {
+    const el = carouselRef.current;
+    if (!el || featured.length === 0) return;
+    const items = el.querySelectorAll('.featured-carousel-item');
+    if (items.length === 0) return;
+    const firstItem = items[0] as HTMLElement;
+    const itemWidth = firstItem.offsetWidth;
+    if (itemWidth === 0) return;
+    const index = Math.round(el.scrollLeft / itemWidth);
+    setActiveIndex(Math.max(0, Math.min(index, featured.length - 1)));
+  }, [featured.length]);
+
+  const goTo = useCallback((index: number) => {
+    const el = carouselRef.current;
+    if (!el) return;
+    const items = el.querySelectorAll('.featured-carousel-item');
+    const target = items[index] as HTMLElement;
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', inline: 'start' });
+    }
+  }, [featured]);
+
+  const scrollPrev = useCallback(() => {
+    if (activeIndex > 0) {
+      goTo(activeIndex - 1);
+    }
+  }, [activeIndex, goTo]);
+
+  const scrollNext = useCallback(() => {
+    if (activeIndex < featured.length - 1) {
+      goTo(activeIndex + 1);
+    }
+  }, [activeIndex, featured.length, goTo]);
+
+  const content = (
       <>
       <section className="hero relative px-4 pt-6 pb-8">
         <span className="eyebrow">VANTA GARAGE</span>
@@ -114,10 +151,46 @@ const content = (
       </section>
 
       {featured.length > 0 && (
-        <>
-          <div className="hs mb-4 px-4" data-sc="feat">
+        <section className="mb-6 px-4 sm:px-6" aria-label="Featured vehicles">
+          <div className="sh flex justify-between items-end mb-3">
+            <div>
+              <span className="eyebrow">Featured</span>
+              <h3 className="font-serif font-bold text-[20px] leading-none mt-[6px]">Featured Vehicles</h3>
+            </div>
+          </div>
+          <div className="relative">
+            <div className="featured-nav">
+              <button
+                onClick={scrollPrev}
+                disabled={activeIndex === 0}
+                aria-label="Previous featured vehicle"
+                className="featured-prev"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                onClick={scrollNext}
+                disabled={activeIndex >= featured.length - 1}
+                aria-label="Next featured vehicle"
+                className="featured-next"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+            <div
+              ref={carouselRef}
+              className="featured-carousel"
+              onScroll={handleScroll}
+              role="region"
+              aria-label="Featured vehicles"
+            >
             {featured.map((c) => (
-              <Link key={c.id} href={`/store/products/${c.id}`} className="fc group cursor-pointer">
+              <div key={c.id} className="featured-carousel-item group cursor-pointer">
+                <Link href={`/store/products/${c.id}`} className="block h-full">
                 <div className="media r1611 relative overflow-hidden rounded-[24px] border border-border">
                   {cardImages[c.id] ? (
                     <img src={cardImages[c.id]} alt={c.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
@@ -148,9 +221,21 @@ const content = (
                   </div>
                 </div>
               </Link>
+              </div>
             ))}
+            </div>
+            <div className="featured-pagination">
+              {featured.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => goTo(i)}
+                  aria-label={`Slide to featured vehicle ${i + 1}`}
+                  className={`featured-dot ${activeIndex === i ? "active" : ""}`}
+                />
+              ))}
+            </div>
           </div>
-        </>
+        </section>
       )}
 
       {promotions.length > 0 && (

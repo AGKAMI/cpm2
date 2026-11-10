@@ -1069,84 +1069,84 @@ export default function AdminPage() {
             </select>
           </Field>
           <Field label="Air suspension install" hint="This design includes air suspension installation">
-            <div className="flex items-center gap-2">
+            <label className="custom-checkbox">
               <input
                 type="checkbox"
                 id="air-suspension"
                 checked={form.airSuspension}
                 onChange={(e) => handleChange("airSuspension", e.target.checked)}
-                className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
               />
+              <div className="checkmark"></div>
               <span className="text-sm text-foreground">Include air suspension</span>
-            </div>
+            </label>
           </Field>
           <Field label="Unlocked bodykits" hint="This design unlocks bodykits">
-            <div className="flex items-center gap-2">
+            <label className="custom-checkbox">
               <input
                 type="checkbox"
                 id="unlocked-bodykits"
                 checked={form.unlockedBodykits}
                 onChange={(e) => handleChange("unlockedBodykits", e.target.checked)}
-                className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
               />
+              <div className="checkmark"></div>
               <span className="text-sm text-foreground">Include unlocked bodykits</span>
-            </div>
+            </label>
           </Field>
           <Field label="HD Logo" hint="This design includes a high-definition logo">
-            <div className="flex items-center gap-2">
+            <label className="custom-checkbox">
               <input
                 type="checkbox"
                 id="hd-logo"
                 checked={form.hdLogo}
                 onChange={(e) => handleChange("hdLogo", e.target.checked)}
-                className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
               />
+              <div className="checkmark"></div>
               <span className="text-sm text-foreground">Include HD logo</span>
-            </div>
+            </label>
           </Field>
           <Field label="Featured">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={form.isFeatured}
-                          onChange={(e) => handleChange("isFeatured", e.target.checked)}
-                          className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
-                        />
-                        <span className="text-sm text-foreground">Featured on home page</span>
-                      </div>
-                    </Field>
-                    <Field label="New Arrival">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={form.isNew}
-                          onChange={(e) => handleChange("isNew", e.target.checked)}
-                          className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
-                        />
-                        <span className="text-sm text-foreground">Show &quot;New&quot; badge</span>
-                      </div>
-                    </Field>
-                    <Field label="Sale">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={form.isSale}
-                          onChange={(e) => handleChange("isSale", e.target.checked)}
-                          className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
-                        />
-                        <span className="text-sm text-foreground">Show &quot;Sale&quot; badge</span>
-                      </div>
-                    </Field>
-                    <Field label="Published">
-            <div className="flex items-center gap-2">
+            <label className="custom-checkbox">
+              <input
+                type="checkbox"
+                checked={form.isFeatured}
+                onChange={(e) => handleChange("isFeatured", e.target.checked)}
+              />
+              <div className="checkmark"></div>
+              <span className="text-sm text-foreground">Featured on home page</span>
+            </label>
+          </Field>
+          <Field label="New Arrival">
+            <label className="custom-checkbox">
+              <input
+                type="checkbox"
+                checked={form.isNew}
+                onChange={(e) => handleChange("isNew", e.target.checked)}
+              />
+              <div className="checkmark"></div>
+              <span className="text-sm text-foreground">Show &quot;New&quot; badge</span>
+            </label>
+          </Field>
+          <Field label="Sale">
+            <label className="custom-checkbox">
+              <input
+                type="checkbox"
+                checked={form.isSale}
+                onChange={(e) => handleChange("isSale", e.target.checked)}
+              />
+              <div className="checkmark"></div>
+              <span className="text-sm text-foreground">Show &quot;Sale&quot; badge</span>
+            </label>
+          </Field>
+          <Field label="Published">
+            <label className="custom-checkbox">
               <input
                 type="checkbox"
                 checked={form.isPublished}
                 onChange={(e) => handleChange("isPublished", e.target.checked)}
-                className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
               />
+              <div className="checkmark"></div>
               <span className="text-sm text-foreground">Visible to customers</span>
-            </div>
+            </label>
           </Field>
           <div className="flex flex-col gap-2">
                                 <Button
@@ -1332,70 +1332,70 @@ export default function AdminPage() {
                         </select>
                       </Field>
                       <Field label="Air suspension install">
-                        <div className="flex items-center gap-2">
+                        <label className="custom-checkbox">
                           <input
                             type="checkbox"
                             checked={form.airSuspension}
                             onChange={(e) => handleChange("airSuspension", e.target.checked)}
-                            className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
                           />
+                          <div className="checkmark"></div>
                           <span className="text-sm text-foreground">Include air suspension</span>
-                        </div>
+                        </label>
                       </Field>
                       <Field label="Unlocked bodykits">
-                        <div className="flex items-center gap-2">
+                        <label className="custom-checkbox">
                           <input
                             type="checkbox"
                             checked={form.unlockedBodykits}
                             onChange={(e) => handleChange("unlockedBodykits", e.target.checked)}
-                            className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
                           />
+                          <div className="checkmark"></div>
                           <span className="text-sm text-foreground">Include unlocked bodykits</span>
-                        </div>
+                        </label>
                       </Field>
                       <Field label="HD Logo">
-                                              <div className="flex items-center gap-2">
-                                                <input
-                                                  type="checkbox"
-                                                  checked={form.hdLogo}
-                                                  onChange={(e) => handleChange("hdLogo", e.target.checked)}
-                                                  className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
-                                                />
-                                                <span className="text-sm text-foreground">Include HD logo</span>
-                                              </div>
-                                            </Field>
-                                            <Field label="New Arrival">
-                                              <div className="flex items-center gap-2">
-                                                <input
-                                                  type="checkbox"
-                                                  checked={form.isNew}
-                                                  onChange={(e) => handleChange("isNew", e.target.checked)}
-                                                  className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
-                                                />
-                                                <span className="text-sm text-foreground">Show &quot;New&quot; badge</span>
-                                              </div>
-                                            </Field>
-                                            <Field label="Sale">
-                                              <div className="flex items-center gap-2">
-                                                <input
-                                                  type="checkbox"
-                                                  checked={form.isSale}
-                                                  onChange={(e) => handleChange("isSale", e.target.checked)}
-                                                  className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
-                                                />
-                                                <span className="text-sm text-foreground">Show &quot;Sale&quot; badge</span>
-                                              </div>
-                                            </Field>
-                                            <Field label="Published">
-                        <div className="flex items-center gap-2">
+                        <label className="custom-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={form.hdLogo}
+                            onChange={(e) => handleChange("hdLogo", e.target.checked)}
+                          />
+                          <div className="checkmark"></div>
+                          <span className="text-sm text-foreground">Include HD logo</span>
+                        </label>
+                      </Field>
+                      <Field label="New Arrival">
+                        <label className="custom-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={form.isNew}
+                            onChange={(e) => handleChange("isNew", e.target.checked)}
+                          />
+                          <div className="checkmark"></div>
+                          <span className="text-sm text-foreground">Show &quot;New&quot; badge</span>
+                        </label>
+                      </Field>
+                      <Field label="Sale">
+                        <label className="custom-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={form.isSale}
+                            onChange={(e) => handleChange("isSale", e.target.checked)}
+                          />
+                          <div className="checkmark"></div>
+                          <span className="text-sm text-foreground">Show &quot;Sale&quot; badge</span>
+                        </label>
+                      </Field>
+                      <Field label="Published">
+                        <label className="custom-checkbox">
                           <input
                             type="checkbox"
                             checked={form.isPublished}
                             onChange={(e) => handleChange("isPublished", e.target.checked)}
-                            className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
                           />
+                          <div className="checkmark"></div>
                           <span className="text-sm text-foreground">Visible to customers</span>
-                        </div>
+                        </label>
                       </Field>
                       <div className="flex flex-col gap-2">
                                               <Button type="submit" variant="primary" disabled={saving} className="w-full sm:w-auto">

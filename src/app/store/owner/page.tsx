@@ -14,7 +14,7 @@ import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Field";
-import { vantaApi, formatPrice, type VantaAdminRecord } from "@/lib/store/client";
+import { vantaApi, type VantaAdminRecord } from "@/lib/store/client";
 import { notifyAdminPromoted } from "@/lib/store/notifications";
 import { useToast } from "@/components/ui/Toaster";
 import { Toast } from "@/components/ui/Toast";

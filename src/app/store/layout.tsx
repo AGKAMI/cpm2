@@ -3,6 +3,7 @@ import Script from "next/script";
 import { JetBrains_Mono } from "next/font/google";
 import "@/app/globals.css";
 import { TelegramBridge } from "@/components/TelegramBridge";
+import { TelegramInit } from "@/components/TelegramInit";
 import { ToastProvider } from "@/components/ui/Toaster";
 import { DEFAULT_PALETTE, PALETTE_IDS } from "@/lib/themes";
 
@@ -36,32 +37,12 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
           content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
         />
         <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){
-              var d=document.documentElement,b=document.body;
-              var waited=0;
-              var poll=setInterval(function(){
-                var w=window.Telegram?.WebApp;
-                if(w){
-                  clearInterval(poll);
-                  try{
-                    w.ready?.();w.expand?.();
-                    d.style.touchAction='manipulation';
-                    if(b){
-                      b.style.touchAction='manipulation';
-                    }
-                  }catch(e){}
-                  return;
-                }
-                waited+=50;
-                if(waited>=30000) clearInterval(poll);
-              },50);
-            })()`,
-          }}
+          dangerouslySetInnerHTML={{ __html: themeScript }}
+          suppressHydrationWarning
         />
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className={`min-h-screen antialiased bg-background ${mono.variable}`}>
+        <TelegramInit />
         <Script
           src="https://telegram.org/js/telegram-web-app.js"
           strategy="beforeInteractive"

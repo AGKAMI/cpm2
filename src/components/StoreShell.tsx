@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { NotificationBell } from "@/components/NotificationBell";
+import { useTheme } from "@/hooks/useTheme";
 import { vantaApi } from "@/lib/store/client";
 
 type StoreTab = "home" | "categories" | "orders" | "profile" | "admin" | "owner";
@@ -77,6 +78,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isOwner, setIsOwner] = useState<boolean | null>(null);
   const [profile, setProfile] = useState<{ photoUrl?: string; displayName?: string; username?: string } | null>(null);
+  const { mode, toggleTheme } = useTheme();
 
   useEffect(() => {
     const initData =
@@ -132,11 +134,11 @@ export function StoreShell({ children, dock }: StoreShellProps) {
     })?.key;
 
   return (
-    <div className="relative min-h-screen bg-[#0a0a0a]">
+    <div className="relative min-h-screen bg-background">
       {/* Store header — shield logo, gold serif brand, search icon. */}
       <header
         className="sticky top-0 z-30 border-b border-border shadow-sm px-4 pt-3 pb-2 sm:px-6"
-        style={{ backgroundColor: "#0a0a0a" }}
+        style={{ backgroundColor: "var(--background)" }}
       >
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -169,6 +171,18 @@ export function StoreShell({ children, dock }: StoreShellProps) {
             <Button variant="ghost" size="icon" onClick={() => {}} aria-label="Search">
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
             </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              aria-label={mode === "night" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {mode === "night" ? (
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+              ) : (
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 008 0z"/></svg>
+              )}
+            </Button>
             <NotificationBell />
           </div>
         </div>
@@ -176,7 +190,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
 
       <main
         id="store-main"
-        className="relative mx-auto max-w-[1440px] scroll-mt-16 px-4 py-6 sm:px-6 sm:py-8 bg-[#0a0a0a] pb-28 sm:pb-10"
+        className="relative mx-auto max-w-[1440px] scroll-mt-16 px-4 py-6 sm:px-6 sm:py-8 bg-background pb-28 sm:pb-10"
       >
         {children}
       </main>
@@ -185,7 +199,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
         aria-label="Store"
         className="store-dock fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-md px-4 pb-4 sm:pb-3 sm:px-6"
       >
-        <div className="mx-auto flex max-w-[340px] items-center justify-center gap-2 overflow-x-auto whitespace-nowrap border border-border rounded-full px-3 py-2 shadow-lg" style={{ backgroundColor: "#0a0a0a" }}>
+        <div className="mx-auto flex max-w-[340px] items-center justify-center gap-2 overflow-x-auto whitespace-nowrap border border-border rounded-full px-3 py-2 shadow-lg" style={{ backgroundColor: "var(--background)" }}>
           {visibleNav.map((item) => (
             <StoreNavItem key={item.href} item={item} active={activeTab === item.key} />
           ))}

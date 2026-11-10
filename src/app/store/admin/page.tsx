@@ -20,7 +20,6 @@ import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Field";
-import { Modal } from "@/components/ui/Modal";
 import {
   validateProductForm,
   validateCategoryForm,
@@ -139,12 +138,9 @@ export default function AdminPage() {
   const [carQuery, setCarQuery] = useState("");
   const [carOpen, setCarOpen] = useState(false);
   const [pickedCar, setPickedCar] = useState<CarEntry | null>(null);
-  // Image URL converter state
-  const [converterOpen, setConverterOpen] = useState(false);
-  const [converterInput, setConverterInput] = useState("");
+  // Image picker state
   const [converterFile, setConverterFile] = useState<File | null>(null);
   const [converterResult, setConverterResult] = useState<string | null>(null);
-  const [converterLoading, setConverterLoading] = useState(false);
   const [converterError, setConverterError] = useState<string | null>(null);
   // Toggle for the add/edit product form (behind a button, not always open)
   const [showProductForm, setShowProductForm] = useState(false);
@@ -193,19 +189,6 @@ export default function AdminPage() {
     setForm((f) => ({ ...f, cpm2CarCode: "", name: "" }));
   };
 
-  // --- Image URL converter ---
-  const convertUrlToDataUrl = async (url: string): Promise<string> => {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`Failed to fetch image (${response.status})`);
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = () => reject(new Error("Failed to read image data"));
-      reader.readAsDataURL(blob);
-    });
-  };
-
   const convertFileToDataUrl = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -215,57 +198,13 @@ export default function AdminPage() {
     });
   };
 
-  const handleConvertUrl = async () => {
-    if (!converterInput.trim()) {
-      setConverterError("Please paste an image URL.");
-      return;
-    }
-    setConverterLoading(true);
-    setConverterError(null);
-    try {
-      const dataUrl = await convertUrlToDataUrl(converterInput.trim());
-      setConverterResult(dataUrl);
-    } catch (err) {
-      setConverterError(err instanceof Error ? err.message : "Conversion failed.");
-    } finally {
-      setConverterLoading(false);
-    }
-  };
-
-  const handleConvertFile = async () => {
-    if (!converterFile) {
-      setConverterError("Please select an image file.");
-      return;
-    }
-    setConverterLoading(true);
-    setConverterError(null);
-    try {
-      const dataUrl = await convertFileToDataUrl(converterFile);
-      setConverterResult(dataUrl);
-    } catch (err) {
-      setConverterError(err instanceof Error ? err.message : "Conversion failed.");
-    } finally {
-      setConverterLoading(false);
-    }
-  };
-
   const useConverterResult = () => {
       if (converterResult) {
         setForm((f) => ({ ...f, imageUrl: converterResult }));
-        // Keep converter open with preview visible until user closes modal
-        setConverterInput("");
         setConverterFile(null);
+        setConverterResult(null);
         setConverterError(null);
-        setConverterLoading(false);
       }
-    };
-
-    const resetConverter = () => {
-      setConverterInput("");
-      setConverterFile(null);
-      setConverterResult(null);
-      setConverterError(null);
-      setConverterLoading(false);
     };
 
     const resetForm = () => {
@@ -393,6 +332,7 @@ export default function AdminPage() {
     const resetPromotionForm = () => {
       setPromotionForm(EMPTY_PROMOTION_FORM);
       setEditingPromotionId(null);
+      setShowPromotionForm(false);
       setMsg(null);
     };
 
@@ -520,6 +460,16 @@ export default function AdminPage() {
                       </p>
                     )}
 
+                    {/* Top actions — EFT review with clear borders and background */}
+                    <div className="mb-6 flex items-center gap-2">
+                      <Link href="/store/admin/eft" className="inline-flex items-center gap-2 px-4 py-2 text-[9px] uppercase tracking-[0.15em] whitespace-nowrap cursor-pointer font-bold border-2 border-primary bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+                        EFT Review
+                      </Link>
+                      <Button variant="outline" onClick={() => router.push("/store")} size="sm">
+                        Back to store
+                      </Button>
+                    </div>
+
                     {/* Category Management */}
                     <section className="admin-section panel rounded-xl border border-border p-4 mb-6">
                       <div className="flex items-center justify-between mb-4">
@@ -533,9 +483,9 @@ export default function AdminPage() {
                         </Button>
                       </div>
           {showCategoryForm && (
-            <form onSubmit={handleCategorySubmit} className="grid gap-3 sm:grid-cols-2 mb-4">
+            <form onSubmit={handleCategorySubmit} className="flex flex-col gap-3 mb-4">
               {Object.keys(categoryErrors).length > 0 && (
-                <div className="col-span-2 rounded-md border border-destructive bg-destructive/10 px-3 py-2 mb-3">
+                <div className="rounded-md border border-destructive bg-destructive/10 px-3 py-2 mb-3">
                   <p className="text-xs text-destructive font-bold mb-1">Fix the following:</p>
                   <ul className="text-[10px] text-destructive list-disc pl-4 space-y-1">
                     {Object.entries(categoryErrors).map(([field, msg]) => (
@@ -563,7 +513,7 @@ export default function AdminPage() {
                               value={categoryForm.description}
                               onChange={(e) => handleCategoryChange("description", e.target.value)}
                               placeholder="Optional description"
-                              className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground min-h-[60px] resize-y sm:col-span-2"
+                              className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground min-h-[60px] resize-y"
                             />
                           </Field>
               <Field label="Sort Order" hint="Lower numbers appear first">
@@ -574,7 +524,7 @@ export default function AdminPage() {
                   className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
                 />
               </Field>
-              <div className="sm:col-span-2 flex gap-2">
+              <div className="flex gap-2">
                 <Button
                               variant="primary"
                               type="submit"
@@ -625,9 +575,9 @@ export default function AdminPage() {
                   </div>
 
               {showPromotionForm && (
-                <form onSubmit={handlePromotionSubmit} className="grid gap-3 sm:grid-cols-2 mb-4">
+                <form onSubmit={handlePromotionSubmit} className="flex flex-col gap-3 mb-4">
                   {Object.keys(promotionErrors).length > 0 && (
-                    <div className="col-span-2 rounded-md border border-destructive bg-destructive/10 px-3 py-2 mb-3">
+                    <div className="rounded-md border border-destructive bg-destructive/10 px-3 py-2 mb-3">
                       <p className="text-xs text-destructive font-bold mb-1">Fix the following:</p>
                       <ul className="text-[10px] text-destructive list-disc pl-4 space-y-1">
                         {Object.entries(promotionErrors).map(([field, msg]) => (
@@ -730,7 +680,7 @@ export default function AdminPage() {
                       className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
                     />
                   </Field>
-                  <div className="sm:col-span-2 flex flex-col sm:flex-row gap-2">
+                  <div className="flex flex-col gap-2">
                                       <Button
                                         type="submit"
                                         variant="primary"
@@ -812,9 +762,9 @@ export default function AdminPage() {
                       <h3 className="admin-section-title mb-4">
                         {editingId ? "Edit product" : "Add product"}
                       </h3>
-                      <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                      <form onSubmit={handleSubmit} className="grid gap-4">
           {Object.keys(productErrors).length > 0 && (
-            <div className="col-span-2 rounded-md border border-destructive bg-destructive/10 px-3 py-2 mb-3">
+            <div className="rounded-md border border-destructive bg-destructive/10 px-3 py-2 mb-3">
               <p className="text-xs text-destructive font-bold mb-1">Fix the following:</p>
               <ul className="text-[10px] text-destructive list-disc pl-4 space-y-1">
                 {Object.entries(productErrors).map(([field, msg]) => (
@@ -910,26 +860,39 @@ export default function AdminPage() {
               </div>
             )}
           </Field>
-          <Field label="Image URL" hint="Direct link to the car image, or use Convert to turn a URL/file into a data URL">
-            <div className="flex gap-2">
-              <TextInput
-                id="image-url"
-                value={form.imageUrl}
-                onChange={(e) => handleChange("imageUrl", e.target.value)}
-                placeholder="https://..."
-                className="flex-1"
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  resetConverter();
-                  setConverterOpen(true);
+          <Field label="Image">
+            <div className="relative group cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0] ?? null;
+                  if (!file) return;
+                  setConverterFile(file);
+                  setConverterError(null);
+                  try {
+                    const dataUrl = await convertFileToDataUrl(file);
+                    setConverterResult(dataUrl);
+                  } catch {
+                    setConverterError("Failed to read image file.");
+                  }
                 }}
-              >
-                Convert image
-              </Button>
+              />
+              <div className="flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm text-foreground hover:border-primary transition-colors">
+                <span className="text-xl">📷</span>
+                {converterFile ? converterFile.name : "Choose image file (gallery / camera)"}
+              </div>
             </div>
+            {converterError && <p className="text-xs text-destructive mt-1">{converterError}</p>}
+            {converterResult && (
+              <div className="mt-3 border border-input rounded-md p-3 bg-background">
+                <img src={converterResult} alt="Preview" className="max-w-full max-h-48 rounded-md border border-border object-cover" />
+                <Button variant="primary" onClick={useConverterResult} className="w-full mt-2">
+                  Use this image
+                </Button>
+              </div>
+            )}
           </Field>
           <Field label="Name" hint='Auto-filled from the catalog pick above - edit for custom design names (e.g. "GOLF GTI III - Midnight Chrome")'>
             <TextInput
@@ -1058,7 +1021,7 @@ export default function AdminPage() {
               <span className="text-sm text-foreground">Visible to customers</span>
             </div>
           </Field>
-          <div className="col-span-2 sm:col-span-2 lg:col-span-3 xl:col-span-4 flex flex-col sm:flex-row gap-2">
+          <div className="flex flex-col gap-2">
                                 <Button
                                   type="submit"
                                   variant="primary"
@@ -1116,7 +1079,7 @@ export default function AdminPage() {
                                   Cancel
                                 </Button>
                               </div>
-                              <form onSubmit={(e) => { e.preventDefault(); handleSubmit(e); }} className="grid gap-3 sm:grid-cols-2">
+                              <form onSubmit={(e) => { e.preventDefault(); handleSubmit(e); }} className="flex flex-col gap-3">
                       <Field
                         label="Car (CPM2 catalog)"
                         hint={carLocked ? "Car code is locked - set once at creation" : "Pick a car from the catalog - name auto-fills below"}
@@ -1306,7 +1269,7 @@ export default function AdminPage() {
                           <span className="text-sm text-foreground">Visible to customers</span>
                         </div>
                       </Field>
-                      <div className="col-span-2 flex flex-col sm:flex-row gap-2">
+                      <div className="flex flex-col gap-2">
                                               <Button type="submit" variant="primary" disabled={saving} className="w-full sm:w-auto">
                                                 {saving ? "Saving…" : "Update product"}
                                               </Button>
@@ -1411,124 +1374,6 @@ export default function AdminPage() {
                           )}
                         </section>
 
-                        <div className="mt-6 flex gap-2 flex-wrap">
-                          <Button variant="outline" onClick={() => router.push("/store")}>
-                            Back to store
-                          </Button>
-                          <Link href="/store/admin/eft" className="flex items-center gap-2 px-4 py-2 text-[9px] uppercase tracking-[0.15em] whitespace-nowrap cursor-pointer font-bold text-ink-soft">
-                            EFT Review
-                          </Link>
-                        </div>
-
-      {/* Image URL converter modal */}
-      <Modal
-        open={converterOpen}
-        onClose={() => setConverterOpen(false)}
-        title="Image URL Converter"
-        subtitle="Convert an image URL or file into a data URL you can paste as the product image"
-        width="max-w-lg"
-      >
-        <div className="space-y-4">
-          <div>
-            <p className="text-xs font-medium text-foreground mb-2">Option 1: Image URL</p>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={converterInput}
-                onChange={(e) => setConverterInput(e.target.value)}
-                placeholder="https://example.com/image.jpg"
-                className="flex-1 border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              />
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleConvertUrl}
-                disabled={converterLoading || !converterInput.trim()}
-              >
-                {converterLoading ? "Converting…" : "Convert URL"}
-              </Button>
-            </div>
-          </div>
-
-          <div className="pt-3 border-t border-border">
-            <p className="text-xs font-medium text-foreground mb-2">Option 2: Upload image file</p>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files?.[0] ?? null;
-                setConverterFile(file);
-                if (file) setConverterInput(""); // clear URL when file selected
-              }}
-              className="block w-full text-sm text-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary"
-            />
-            {converterFile && (
-              <p className="text-xs text-muted-foreground mt-1">
-                {converterFile.name} ({Math.round(converterFile.size / 1024)} KB)
-              </p>
-            )}
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleConvertFile}
-              disabled={converterLoading || !converterFile}
-              className="mt-2"
-            >
-              {converterLoading ? "Converting…" : "Convert file"}
-            </Button>
-          </div>
-
-          {converterError && (
-            <p className="text-xs text-destructive">{converterError}</p>
-          )}
-
-          {converterResult && (
-            <div className="pt-3 border-t border-border space-y-3">
-              <p className="text-xs font-medium text-foreground">Result</p>
-              <div className="relative group">
-                <img
-                  src={converterResult}
-                  alt="Preview"
-                  className="max-w-full max-h-48 rounded-md border border-border object-cover"
-                />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded border border-primary-foreground">
-                    Click to copy
-                  </span>
-                </div>
-              </div>
-              <textarea
-                value={converterResult}
-                readOnly
-                rows={3}
-                className="w-full border border-input bg-background px-3 py-2 rounded-md text-xs font-mono text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                onClick={async (e) => {
-                  const ta = e.target as HTMLTextAreaElement;
-                  ta.select();
-                  try {
-                    await navigator.clipboard.writeText(converterResult!);
-                  } catch {
-                    document.execCommand("copy");
-                  }
-                }}
-              />
-              <Button
-                variant="primary"
-                onClick={useConverterResult}
-                disabled={converterLoading}
-                className="w-full"
-              >
-                Use this URL
-              </Button>
-            </div>
-          )}
-        </div>
-        <footer>
-          <Button variant="outline" onClick={() => setConverterOpen(false)} size="sm">
-            Cancel
-          </Button>
-        </footer>
-      </Modal>
     </StoreShell>
   );
 }

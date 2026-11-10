@@ -166,6 +166,11 @@
   --border: oklch(0.927 0.006 255);
   --input: oklch(0.927 0.006 255);
   --ring: oklch(0.405 0.026 230.0);
+
+  --surface-raised: oklch(0.988 0.003 250);
+  --surface-elevated: oklch(0.963 0.004 250);
+  --color-ink-mid: oklch(0.46 0.015 257);
+  --color-surface-deep: oklch(0.927 0.006 255);
 }
 
 /* Accent palettes — keep in sync with src/lib/themes.ts */

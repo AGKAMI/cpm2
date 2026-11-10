@@ -38,7 +38,7 @@ const ICON_MAP: Record<StoreTab, StoreIcon> = {
   owner: OwnerIcon,
 };
 
-const VANTA_LOCKUP = "/untitled-design.svg";
+const VANTA_LOCKUP = "/vanta-logo.svg";
 
 interface StoreShellProps {
   children: ReactNode;

@@ -909,7 +909,7 @@ export default function AdminPage() {
                 />
                 {carOpen && (carMatches.length > 0 ? (
                   <div
-                    className="absolute z-20 mt-1 w-full max-h-64 overflow-y-auto border border-border rounded-md bg-background/95 shadow-lg backdrop-blur-sm"
+                    className="absolute z-20 mt-1 w-full max-h-64 overflow-y-auto border border-border rounded-md bg-background shadow-lg"
                     onMouseDown={(e) => e.preventDefault()}
                   >
                     {carMatches.map((car) => (
@@ -924,7 +924,7 @@ export default function AdminPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="absolute z-20 mt-1 w-full border border-border rounded-md bg-background/95 backdrop-blur-sm px-3 py-2 text-sm text-muted-foreground">
+                  <div className="absolute z-20 mt-1 w-full border border-border rounded-md bg-background px-3 py-2 text-sm text-muted-foreground">
                     No car in the CPM2 catalog matches &quot;{carQuery}&quot;.
                   </div>
                 ))}
@@ -1176,7 +1176,7 @@ export default function AdminPage() {
                             />
                             {carOpen && (carMatches.length > 0 ? (
                               <div
-                                className="absolute z-20 mt-1 w-full max-h-64 overflow-y-auto border border-border rounded-md bg-background/95 shadow-lg backdrop-blur-sm"
+                                className="absolute z-20 mt-1 w-full max-h-64 overflow-y-auto border border-border rounded-md bg-background shadow-lg"
                                 onMouseDown={(e) => e.preventDefault()}
                               >
                                 {carMatches.map((car) => (
@@ -1191,7 +1191,7 @@ export default function AdminPage() {
                                 ))}
                               </div>
                             ) : (
-                              <div className="absolute z-20 mt-1 w-full border border-border rounded-md bg-background/95 backdrop-blur-sm px-3 py-2 text-sm text-muted-foreground">
+                              <div className="absolute z-20 mt-1 w-full border border-border rounded-md bg-background px-3 py-2 text-sm text-muted-foreground">
                                 No car in the CPM2 catalog matches &quot;{carQuery}&quot;.
                               </div>
                             ))}

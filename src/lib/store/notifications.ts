@@ -25,6 +25,40 @@ interface TelegramMessage {
   disable_web_page_preview?: boolean;
 }
 
+/** WhatsApp channel (newsletter) JID for broadcasting notifications. */
+const WHATSAPP_CHANNEL_ID = "0029Vb9MVBOGpLHVobbY3e0s@newsletter";
+
+/** KAMI-Bot webhook URL on bot-hosting.net — set via env in Vercel/dashboard. */
+const VANTA_WHATSAPP_WEBHOOK_URL = process.env.VANTA_WHATSAPP_WEBHOOK_URL || "";
+const VANTA_WHATSAPP_WEBHOOK_SECRET = process.env.VANTA_WHATSAPP_WEBHOOK_SECRET || "";
+
+async function broadcastToWhatsAppBot(text: string): Promise<void> {
+  if (!VANTA_WHATSAPP_WEBHOOK_URL) {
+    console.warn("VANTA_WHATSAPP_WEBHOOK_URL not set — skipping WhatsApp bot broadcast");
+    return;
+  }
+  try {
+    const res = await fetch(VANTA_WHATSAPP_WEBHOOK_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(VANTA_WHATSAPP_WEBHOOK_SECRET
+          ? { Authorization: `Bearer ${VANTA_WHATSAPP_WEBHOOK_SECRET}` }
+          : {}),
+      },
+      body: JSON.stringify({
+        message: text,
+        jid: WHATSAPP_CHANNEL_ID,
+      }),
+    });
+    if (!res.ok) {
+      console.warn("WhatsApp bot broadcast failed:", res.status);
+    }
+  } catch {
+    // Don't fail the Telegram notification if WhatsApp bot is down
+  }
+}
+
 async function sendTelegramMessage(message: TelegramMessage): Promise<boolean> {
   const token = telegramBotToken();
   if (!token) {
@@ -223,7 +257,7 @@ export async function notifyCustomer(
   // Get product name
   const productName = await getProductName(order.productId);
 
-  // Build and send message
+  // Build and send Telegram DM to customer
   const message = formatMessage(event, { ...order, productName });
   await sendTelegramMessage({
     chat_id: telegramId,
@@ -231,6 +265,11 @@ export async function notifyCustomer(
     parse_mode: "HTML",
     disable_web_page_preview: true,
   });
+  // Broadcast marketing events to WhatsApp channel (new vehicle, new promotion)
+  // Order/payment/delivery updates stay as Telegram DMs only — channel is for marketing
+  if (event === "new_product" || event === "promotion") {
+    await broadcastToWhatsAppBot(message);
+  }
 }
 
 /** Notify a Telegram user that they've been promoted to admin. */
@@ -249,4 +288,5 @@ export async function notifyAdminPromoted(telegramUserId: number, promotedBy: st
     parse_mode: "HTML",
     disable_web_page_preview: true,
   });
+  // Admin promotion is a staff DM — channel is for marketing only
 }

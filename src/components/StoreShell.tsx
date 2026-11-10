@@ -54,85 +54,15 @@ export function StoreShell({ children, dock }: StoreShellProps) {
   const [customerLoggedIn, setCustomerLoggedIn] = useState<boolean>(false);
   const { mode, toggleTheme } = useTheme();
 
-  let adminPoll: ReturnType<typeof setInterval> | null = null;
+  // Explicit admin login gate — admin/owner buttons only show after the user
+  // has actively logged in as admin/owner. Telegram auto-detection is NOT used
+  // to surface these buttons (Telegram shares your ID with Mini Apps
+  // automatically — that is not a login).
+  const adminSessionActive = () =>
+    typeof window !== "undefined" &&
+    localStorage.getItem("vanta_admin_session") === "true";
 
-  useEffect(() => {
-    const fetchAdminStatus = async () => {
-      const initData =
-        typeof window !== "undefined" && typeof window.Telegram !== "undefined"
-          ? window.Telegram.WebApp?.initData ?? ""
-          : "";
-      const headers: HeadersInit = {};
-      if (initData) headers["X-Telegram-Init-Data"] = initData;
-
-      try {
-        const r = await fetch("/api/store/admin/is-admin", { cache: "no-store", headers });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const data = await r.json();
-        setIsAdmin(Boolean(data?.isAdmin));
-        setIsOwner(Boolean(data?.isOwner));
-      } catch {
-        setIsAdmin(false);
-        setIsOwner(false);
-      }
-    };
-
-    fetchAdminStatus();
-    // Poll every 5 seconds so admin/owner tabs appear/disappear live
-    // without needing a page refresh after login or after adding/removing admins.
-    adminPoll = setInterval(fetchAdminStatus, 5000);
-
-    // Fetch Telegram profile for avatar
-    vantaApi
-      .profile()
-      .then((data) => {
-        if (data.telegramUser) {
-          setProfile({
-            photoUrl: data.telegramUser.photoUrl,
-            displayName: data.telegramUser.displayName,
-            username: data.telegramUser.username,
-          });
-        }
-      })
-      .catch(() => {
-        // Profile fetch is non-fatal
-      });
-
-    return () => {
-      if (adminPoll) clearInterval(adminPoll);
-    };
-  }, []);
-
-  // Re-check admin status when the window regains focus (e.g. after logging
-  // in to an admin account in another tab or after adding/removing an admin).
-  useEffect(() => {
-    const onFocus = () => {
-      const initData =
-        typeof window !== "undefined" && typeof window.Telegram !== "undefined"
-          ? window.Telegram.WebApp?.initData ?? ""
-          : "";
-      const headers: HeadersInit = {};
-      if (initData) headers["X-Telegram-Init-Data"] = initData;
-      fetch("/api/store/admin/is-admin", { cache: "no-store", headers })
-        .then((r) => {
-          if (!r.ok) throw new Error(`HTTP ${r.status}`);
-          return r.json();
-        })
-        .then((data) => {
-          setIsAdmin(Boolean(data?.isAdmin));
-          setIsOwner(Boolean(data?.isOwner));
-        })
-        .catch(() => {
-          setIsAdmin(false);
-          setIsOwner(false);
-        });
-    };
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
-  }, []);
-
-  // Track login state via localStorage so logout in ProfileClient
-  // immediately hides admin/owner tabs and profile in this shell.
+  // Track customer login state via localStorage
   useEffect(() => {
     const checkLogin = () => {
       if (typeof window !== "undefined") {
@@ -148,10 +78,28 @@ export function StoreShell({ children, dock }: StoreShellProps) {
     };
   }, []);
 
+  // Fetch Telegram profile for avatar (non-admin, just for profile picture)
+  useEffect(() => {
+    vantaApi
+      .profile()
+      .then((data) => {
+        if (data.telegramUser) {
+          setProfile({
+            photoUrl: data.telegramUser.photoUrl,
+            displayName: data.telegramUser.displayName,
+            username: data.telegramUser.username,
+          });
+        }
+      })
+      .catch(() => {
+        // Profile fetch is non-fatal
+      });
+  }, []);
+
   const visibleNav = STORE_NAV.filter(
     (t) =>
-      (t.key !== "admin" || isAdmin === true) &&
-      (t.key !== "owner" || isOwner === true),
+      (t.key !== "admin" || (isAdmin === true && adminSessionActive())) &&
+      (t.key !== "owner" || (isOwner === true && adminSessionActive())),
   );
 
   const activeTab: StoreTab | undefined =
@@ -212,6 +160,30 @@ export function StoreShell({ children, dock }: StoreShellProps) {
                 onCheckedChange={() => toggleTheme()}
               />
               <NotificationBell />
+              {!adminSessionActive() ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push("/store/admin-login")}
+                  className="hidden sm:flex"
+                >
+                  Admin Login
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    localStorage.removeItem("vanta_admin_session");
+                    setIsAdmin(false);
+                    setIsOwner(false);
+                    router.push("/store");
+                  }}
+                  className="hidden sm:flex"
+                >
+                  Admin Logout
+                </Button>
+              )}
             </div>
           </div>
         </header>

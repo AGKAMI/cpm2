@@ -20,6 +20,8 @@ type StoreIcon = React.ComponentType<{ className?: string }>;
 
 const STORE_NAV: { key: StoreTab; href: string; label: string; icon: StoreIcon }[] = [
   { key: "home", href: "/store", label: "HOME", icon: Home },
+  { key: "categories", href: "/store/categories", label: "CATEGORIES", icon: Grid },
+  { key: "orders", href: "/store/orders", label: "ORDERS", icon: List },
   { key: "profile", href: "/store/profile", label: "PROFILE", icon: User },
   { key: "admin", href: "/store/admin", label: "ADMIN", icon: AdminIcon },
   { key: "owner", href: "/store/owner", label: "OWNER", icon: OwnerIcon },

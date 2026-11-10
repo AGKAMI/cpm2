@@ -9,7 +9,7 @@ import { fail, ok, readJson } from "@/lib/route";
 import { assertTelegramAuth } from "@/lib/telegram";
 import { getCustomerByPlatformIdentity, linkPlatformIdentity } from "@/lib/store/customers";
 import { NextResponse } from "next/server";
-import { createSessionToken, sessionCookieOptions } from "@/lib/auth";
+import { createSessionToken, sessionCookieOptions, currentUserId } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +26,32 @@ export async function POST(request: Request) {
     }
 
     const existing = await getCustomerByPlatformIdentity("telegram", String(telegramUserId));
+
+    // Session-aware: a customer logged in via email/password attaches this
+    // Telegram identity to their EXISTING account instead of creating or
+    // switching to the Telegram-linked customer.
+    const sessionUserId = currentUserId(request);
+    if (sessionUserId) {
+      if (existing && existing.customer.id !== sessionUserId) {
+        return NextResponse.json(
+          { error: { code: "TELEGRAM_ALREADY_LINKED", message: "This Telegram ID is already linked to a different account." } },
+          { status: 409 },
+        );
+      }
+      const alreadyLinked = Boolean(existing && existing.customer.id === sessionUserId);
+      if (!alreadyLinked) {
+        await linkPlatformIdentity(sessionUserId, "telegram", String(telegramUserId), existing?.identity.platformUsername ?? "");
+      }
+      const response = NextResponse.json({
+        linked: true,
+        customerId: sessionUserId,
+        inGameName: alreadyLinked && existing ? existing.customer.inGameName : "",
+        message: alreadyLinked ? "Telegram already linked to this account." : "Telegram linked to your account.",
+      });
+      setSessionCookie(response, sessionUserId, request);
+      return response;
+    }
+
     if (existing) {
       const response = NextResponse.json({
         linked: true,

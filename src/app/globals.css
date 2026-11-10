@@ -1348,6 +1348,7 @@ html {
 .timeline li.done i { background: var(--brand-gold-gradient); border: 0; }
 .timeline li.current i { border-color: var(--primary); box-shadow: 0 0 0 4px var(--brand-gold-soft); animation: pulse-ring 1.8s infinite; }
 @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 var(--pulse-ring-color); } 70% { box-shadow: 0 0 0 8px rgba(212, 175, 79, 0); } 100% { box-shadow: 0 0 0 0 var(--pulse-ring-color); } }
+.animate-pulse-ring { animation: pulse-ring 1.8s infinite; }
 .timeline b { font-size: 12.5px; display: block; line-height: 1.2; }
 .timeline small { font-size: 10.5px; color: var(--muted-foreground); }
 .timeline li:not(.done):not(.current) b { color: var(--muted-foreground); }

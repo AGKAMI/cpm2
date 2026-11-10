@@ -11,7 +11,7 @@ import { fail, ok, readJson } from "@/lib/route";
 import { telegramBotToken } from "@/lib/telegram";
 import { getCustomerByPlayerId, getCustomerByPlatformIdentity, linkPlatformIdentity, updateCustomer } from "@/lib/store/customers";
 import { NextResponse } from "next/server";
-import { createSessionToken, sessionCookieOptions } from "@/lib/auth";
+import { createSessionToken, sessionCookieOptions, currentUserId } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +56,42 @@ export async function POST(request: Request) {
 
     // Check if this Telegram ID is already linked to a customer
     const existing = await getCustomerByPlatformIdentity("telegram", telegramUserId);
+
+    // Session-aware linking: a customer already logged in via email/password
+    // attaches this Telegram ID to their EXISTING account. No new customer is
+    // created, and an ID belonging to a different account is refused.
+    const sessionUserId = currentUserId(request);
+    if (sessionUserId) {
+      if (existing && existing.customer.id !== sessionUserId) {
+        return NextResponse.json(
+          { error: { code: "TELEGRAM_ALREADY_LINKED", message: "This Telegram ID is already linked to a different account." } },
+          { status: 409 },
+        );
+      }
+
+      const alreadyLinked = Boolean(existing && existing.customer.id === sessionUserId);
+      if (!alreadyLinked) {
+        await linkPlatformIdentity(sessionUserId, "telegram", telegramUserId, tgDisplayName ?? "");
+      }
+
+      const response = new NextResponse(
+        JSON.stringify({
+          customerId: sessionUserId,
+          inGameName: alreadyLinked && existing ? existing.customer.inGameName : (tgDisplayName ?? ""),
+          message: alreadyLinked ? "Telegram already linked to this account." : "Telegram linked to your account.",
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+      setSessionCookie(response, sessionUserId, request);
+      const cookie = `vanta_telegram_id=${telegramUserId}; Path=/; Max-Age=2592000; SameSite=Lax`;
+      response.headers.append("Set-Cookie", cookie);
+      return response;
+    }
 
     if (existing) {
       // If they linked before with a placeholder tg_XXX name, update to real name

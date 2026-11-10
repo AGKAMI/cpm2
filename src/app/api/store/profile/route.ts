@@ -16,6 +16,12 @@ export async function GET(request: NextRequest) {
     });
     if (customer.rows.length > 0) {
       const c = customer.rows[0];
+      // Telegram link status for the logged-in customer
+      const identity = await db.execute({
+        sql: `SELECT platform_user_id FROM vanta_platform_identities WHERE platform = 'telegram' AND customer_id = ? LIMIT 1`,
+        args: [sessionUserId],
+      });
+      const telegramLinked = identity.rows.length > 0;
       return NextResponse.json({ 
         customer: {
           id: Number(c.id),
@@ -23,6 +29,8 @@ export async function GET(request: NextRequest) {
           playerId: String(c.player_id ?? ""),
           email: String(c.email ?? ""),
           currencyPref: String(c.currency_pref ?? "ZAR"),
+          telegramLinked,
+          telegramId: telegramLinked ? String(identity.rows[0].platform_user_id) : null,
         }, 
         telegramUser: null 
       });

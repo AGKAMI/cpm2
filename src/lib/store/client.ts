@@ -265,7 +265,10 @@ export type VantaCustomer = {
   id: number;
   inGameName: string;
   playerId: string;
+  email: string;
   currencyPref: string;
+  telegramLinked?: boolean;
+  telegramId?: string | null;
   createdAt: string;
   updatedAt: string;
 };

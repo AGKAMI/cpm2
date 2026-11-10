@@ -39,10 +39,6 @@ export async function POST(request: Request) {
       return fail({ status: 400, body: { error: { code: "missing_telegram_user_id", message: "telegramUserId is required" } } });
     }
 
-    if (!nickname || !nickname.trim()) {
-      return fail({ status: 400, body: { error: { code: "missing_nickname", message: "nickname is required" } } });
-    }
-
     // Always pull the actual Telegram name from the bot via the user ID
     let telegramUsername = "";
     const userInfo = await fetchTelegramUser(Number(telegramUserId));
@@ -52,7 +48,7 @@ export async function POST(request: Request) {
       telegramUsername = userInfo.first_name + (userInfo.last_name ? ` ${userInfo.last_name}` : "");
     }
 
-    const admin = await addAdmin(telegramUserId, telegramUsername, nickname.trim(), status.telegramUserId ?? "");
+    const admin = await addAdmin(telegramUserId, telegramUsername, nickname?.trim() ?? "", status.telegramUserId ?? "");
     return ok({ admin }, 201);
   } catch (err) {
     return fail(err);

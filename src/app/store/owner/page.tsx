@@ -25,6 +25,7 @@ export default function OwnerPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [removeError, setRemoveError] = useState<string | null>(null);
   const [newId, setNewId] = useState("");
   const [newNickname, setNewNickname] = useState("");
   const [ownerStats, setOwnerStats] = useState<{
@@ -70,10 +71,6 @@ export default function OwnerPage() {
       setError("Enter a Telegram user ID.");
       return;
     }
-    if (!newNickname.trim()) {
-      setError("Enter a nickname for this admin.");
-      return;
-    }
     setSaving(true);
     try {
       await vantaApi.createAdmin({ telegramUserId: newId.trim(), telegramUsername: "", nickname: newNickname.trim() });
@@ -91,12 +88,13 @@ export default function OwnerPage() {
   async function handleRemove(telegramUserId: string) {
     if (!window.confirm("Remove this admin?")) return;
     setSaving(true);
+    setRemoveError(null);
     try {
       await vantaApi.deleteAdmin(telegramUserId);
       setMsg("Admin removed.");
       await loadAdmins();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to remove admin.");
+      setRemoveError(err instanceof Error ? err.message : "Failed to remove admin.");
     } finally {
       setSaving(false);
     }
@@ -125,12 +123,7 @@ export default function OwnerPage() {
             </div>
           </section>
         )}
-        {error && (
-        <p className="mb-4 rounded-md border border-destructive bg-destructive px-3 py-2 text-xs text-destructive">
-          {error}
-        </p>
-      )}
-      {msg && (
+        {msg && (
         <p className="mb-4 rounded-md border border-primary bg-primary px-3 py-2 text-xs text-primary">
           {msg}
         </p>
@@ -146,6 +139,11 @@ export default function OwnerPage() {
           orders - but cannot add or remove other admins.
         </p>
         <form onSubmit={handleAdd} className="grid gap-3 sm:grid-cols-3">
+          {error && (
+            <p className="col-span-3 rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              {error}
+            </p>
+          )}
           <Field label="Telegram user ID" hint="numbers only">
             <TextInput
               id="new-admin-id"
@@ -172,6 +170,11 @@ export default function OwnerPage() {
 
       {/* Admin list */}
       <section className="space-y-3">
+        {removeError && (
+          <p className="rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            {removeError}
+          </p>
+        )}
         <div className="flex items-baseline justify-between mb-4">
           <h3 className="text-sm font-semibold text-foreground">Admins</h3>
           <span className="text-xs text-muted-foreground">{admins.length}</span>

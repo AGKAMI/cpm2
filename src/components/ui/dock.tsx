@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 interface DockProps {
   className?: string;
+  mode?: "night" | "paper";
   items: {
     icon: React.ComponentType<{ className?: string }>;
     label: string;
@@ -19,6 +20,7 @@ interface DockIconButtonProps {
   label: string;
   href: string;
   active?: boolean;
+  mode?: "night" | "paper";
   className?: string;
 }
 
@@ -38,7 +40,7 @@ const DockIconButton = React.forwardRef<
   HTMLButtonElement,
   DockIconButtonProps
 >(
-  ({ icon: Icon, label, href, active, className }, ref) => {
+  ({ icon: Icon, label, href, active, mode, className }, ref) => {
     return (
       <motion.button
         ref={ref}
@@ -53,7 +55,16 @@ const DockIconButton = React.forwardRef<
           if (href) window.location.href = href;
         }}
       >
-        <Icon className={cn("w-5 h-5", active ? "text-white" : "text-foreground")} />
+        <Icon
+          className={cn(
+            "w-5 h-5",
+            active
+              ? mode === "night"
+                ? "text-black"
+                : "text-white"
+              : "text-foreground"
+          )}
+        />
         <span
           className={cn(
             "absolute -top-8 left-1/2 -translate-x-1/2 z-20",
@@ -72,7 +83,7 @@ const DockIconButton = React.forwardRef<
 DockIconButton.displayName = "DockIconButton";
 
 const Dock = React.forwardRef<HTMLDivElement, DockProps>(
-  ({ items, className }, ref) => {
+  ({ items, className, mode }, ref) => {
     return (
       <div ref={ref} className={cn("fixed bottom-3 left-1/2 -translate-x-1/2 z-50 w-full flex items-center justify-center p-2 pointer-events-none", className)}>
         <div className="w-full max-w-4xl flex items-center justify-center relative pointer-events-none">
@@ -96,6 +107,7 @@ const Dock = React.forwardRef<HTMLDivElement, DockProps>(
                   label={item.label}
                   href={item.href}
                   active={item.active}
+                  mode={mode}
                 />
               );
             })}

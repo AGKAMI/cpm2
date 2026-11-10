@@ -1,7 +1,7 @@
 /**
  * VANTA GARAGE — Telegram notifications.
  * Sends order status updates and admin promotion notices via Telegram Bot API.
- * All messages are emojified.
+ * All messages use box-drawing and special unicode characters.
  */
 
 import { getStoreDb } from "@/lib/store-db";
@@ -60,6 +60,11 @@ function formatPrice(cents: number, currency = "ZAR") {
   return new Intl.NumberFormat("en-ZA", { style: "currency", currency }).format(cents / 100);
 }
 
+function header(title: string): string {
+  const line = "═".repeat(title.length);
+  return `${line}\n${title}\n${line}\n\n`;
+}
+
 function formatMessage(event: OrderEvent, order: {
   id: string;
   inGameName: string;
@@ -73,83 +78,89 @@ function formatMessage(event: OrderEvent, order: {
   switch (event) {
     case "payment_verified":
       return (
-        `✅ <b>Payment Verified</b>\n\n` +
-        `Your EFT payment for <b>${order.productName}</b> has been verified by our team.\n` +
-        `Order: <code>${order.id}</code>\n` +
-        `Amount: ${formatPrice(order.amountCents, order.currency)}\n\n` +
-        `Your order is now confirmed and being prepared for delivery. 🚗`
+        header("PAYMENT VERIFIED") +
+        `✦ Payment Verified ✦\n` +
+        `▸ ${order.productName}\n` +
+        `▸ Order: ${order.id}\n` +
+        `▸ ${formatPrice(order.amountCents, order.currency)}\n\n` +
+        `▶ Confirmed — being prepared for delivery.`
       );
 
     case "payment_rejected":
       return (
-        `❌ <b>Payment Rejected</b>\n\n` +
-        `Unfortunately, we couldn't verify your EFT payment for <b>${order.productName}</b>.\n` +
-        `Order: <code>${order.id}</code>\n` +
-        `Reason: ${order.reason || "Payment proof not valid or not received"}\n\n` +
-        `Your stock reservation has been released. Please try again or contact support. ⚠️`
+        header("PAYMENT REJECTED") +
+        `✗ Payment Rejected ✗\n` +
+        `▸ ${order.productName}\n` +
+        `▸ Order: ${order.id}\n` +
+        `▸ ${order.reason || "Payment proof not valid or not received"}\n\n` +
+        `⚠ Stock released — try again or contact support.`
       );
 
     case "payment_confirmed_payfast":
       return (
-        `✅ <b>Payment Confirmed</b>\n\n` +
-        `Your PayFast payment for <b>${order.productName}</b> has been confirmed.\n` +
-        `Order: <code>${order.id}</code>\n` +
-        `Amount: ${formatPrice(order.amountCents, order.currency)}\n\n` +
-        `Your order is now confirmed and being prepared for delivery. 🚗`
+        header("PAYMENT CONFIRMED") +
+        `✦ Payment Confirmed ✦\n` +
+        `▸ ${order.productName}\n` +
+        `▸ Order: ${order.id}\n` +
+        `▸ ${formatPrice(order.amountCents, order.currency)}\n\n` +
+        `▶ Confirmed — being prepared for delivery.`
       );
 
     case "delivery_scheduled":
       return (
-        `🚚 <b>Delivery Scheduled</b>\n\n` +
-        `Your order <b>${order.productName}</b> is ready for delivery!\n` +
-        `Order: <code>${order.id}</code>\n` +
-        `Delivery proof: ${order.evidenceUrl || "Available in your orders"}\n\n` +
-        `Our team will contact you in-game to arrange the handoff.`
+        header("DELIVERY SCHEDULED") +
+        `▸ Delivery Scheduled ▸\n` +
+        `▸ ${order.productName}\n` +
+        `▸ Order: ${order.id}\n\n` +
+        `▶ We'll contact you in-game to arrange handoff.`
       );
 
     case "delivery_verified":
       return (
-        `✅ <b>Delivery Complete</b>\n\n` +
-        `Your order <b>${order.productName}</b> has been successfully delivered.\n` +
-        `Order: <code>${order.id}</code>\n\n` +
-        `Enjoy your new ride! 🏎️`
+        header("DELIVERY COMPLETE") +
+        `✦ Delivery Complete ✦\n` +
+        `▸ ${order.productName}\n` +
+        `▸ Order: ${order.id}\n\n` +
+        `▶ Enjoy your new ride!`
       );
 
     case "order_cancelled":
       return (
-        `⚠️ <b>Order Cancelled</b>\n\n` +
-        `Your order for <b>${order.productName}</b> has been cancelled.\n` +
-        `Order: <code>${order.id}</code>\n` +
-        `Reason: ${order.reason || "Payment expired or rejected"}\n\n` +
-        `If you have questions, please contact support.`
+        header("ORDER CANCELLED") +
+        `⚠ Order Cancelled ⚠\n` +
+        `▸ ${order.productName}\n` +
+        `▸ Order: ${order.id}\n` +
+        `▸ ${order.reason || "Payment expired or rejected"}\n\n` +
+        `▶ Questions? Contact support.`
       );
 
     case "new_product":
       return (
-        `🆕 <b>New Vehicle Added</b>\n\n` +
-        `A new <b>${order.productName}</b> has been added to the catalog. Check it out now!\n` +
-        `Order: <code>${order.id}</code>\n\n` +
-        `Tap below to browse the store.`
+        header("NEW VEHICLE") +
+        `✦ New Vehicle Added ✦\n` +
+        `▸ ${order.productName}\n` +
+        `▸ Order: ${order.id}\n\n` +
+        `▶ Browse the store.`
       );
 
     case "promotion":
       return (
-        `📢 <b>New Promotion</b>\n\n` +
-        `${order.productName}\n` +
-        `${order.reason || ""}\n\n` +
-        `Check it out in the store!`
+        header("NEW PROMOTION") +
+        `▸ ${order.productName}\n` +
+        `${order.reason ? `▸ ${order.reason}\n` : ``}` +
+        `\n` +
+        `▶ Check it out in the store!`
       );
 
     case "admin_promoted":
       return (
-        `👑 <b>You've been promoted to Admin!</b>\n\n` +
-        `KAMI has promoted you to admin on VANTA GARAGE.\n` +
-        `You now have access to:\n` +
-        `• Product management (add/edit vehicles)\n` +
-        `• Pricing and stock control\n` +
-        `• Order management and verification\n` +
-        `• Promotion creation\n\n` +
-        `Log in to the store admin panel to get started. 🚀`
+        header("ADMIN PROMOTED") +
+        `✦ You are now an Admin ✦\n` +
+        `▸ Add & edit vehicles\n` +
+        `▸ Control pricing & stock\n` +
+        `▸ Verify orders & payments\n` +
+        `▸ Create promotions\n\n` +
+        `▶ Log in to the admin panel.`
       );
 
     default:

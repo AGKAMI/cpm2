@@ -224,6 +224,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
       </AnimatePresence>
 
       <Dock
+        mode={mode}
         items={visibleNav.map((item) => ({
           icon: ICON_MAP[item.key],
           label: item.label.charAt(0).toUpperCase() + item.label.slice(1),

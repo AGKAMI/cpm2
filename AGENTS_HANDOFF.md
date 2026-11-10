@@ -1907,3 +1907,87 @@ Each module below includes: **What** (functional spec from plan), **How it works
 **Remaining gaps:** Isolated dev database needed for populated-carousel visual verification (only production Turso configured; no `.env.local`). No test data inserted into live catalogue.
 
 **Verified by:** Kermes (nemotron-3.5-super-vl-120b-a12b)
+
+### 2026-11-10 — Hermes Agent "Kermes" — Dock Active Icon Theme-Aware Color
+
+**What:** Dock active page icon now switches color based on theme mode — black in dark mode, white in light mode. Previously hardcoded to `text-white` (invisible on light theme, wrong on dark theme).
+
+**Where:**
+- `src/components/ui/dock.tsx` — added `mode` prop to `DockProps` and `DockIconButtonProps`; active icon color resolves as `text-black` (night) / `text-white` (paper); inactive icons stay `text-foreground`
+- `src/components/StoreShell.tsx` — passes `mode={mode}` (from `useTheme()`) to `<Dock />`
+
+**Changes:**
+1. **Dock active icon color** — `mode === "night"` → `text-black`, `mode === "paper"` → `text-white`
+2. **No other dock behavior changed** — hover, tap, labels, floating animation all unchanged
+
+**Gates:** `tsc --noEmit` exit 0. `next build` clean.
+
+**Deploy status:** Not deployed. Working tree only.
+
+**Verified by:** Kermes (nemotron-3.5-super-vl-120b-a12b)
+
+### 2026-11-10 — Hermes Agent "Kermes" — App Selection Page: Animated Theme Cards
+
+**What:** Replaced static Fleet Ledger / VANTA Garage selection cards on the root page with animated Uiverse.io blob-bounce cards. Colours match each app's theme — garage gets gold outline + gold blob; fleet ledger uses active theme palette colours (primary/deep based on current mode+palette).
+
+**Where:**
+- `src/components/AppSelection.tsx` — rewritten with `ThemeAppCard` component; uses `useTheme()` for mode; garage card = brand-gold colours; fleet card = theme palette classes (`border-primary`, `bg-primary/10`, `bg-primary` blob)
+- `src/app/globals.css` — added `@keyframes blob-bounce`, `.animate-blob-bounce`, `.app-card`, `.app-card__bg`, `.app-card__blob`, `.app-card__content` CSS
+
+**Changes:**
+1. **Animated cards** — each card has a blurred background, bouncing blob (5s infinite ease), and content layer on top (z-indexed)
+2. **Garage card** — gold border (`border-brand-gold`), gold blob (`bg-brand-gold`), gold icon/text (`text-brand-gold`), gold hover border
+3. **Fleet Ledger card** — theme palette colours; border/blob/icon resolve from current `[data-theme][data-palette]` CSS variables (`border-primary`, `bg-primary`, etc.)
+4. **Layout** — kept `flex flex-col gap-4 sm:flex-row` two-card layout; brand mark unchanged
+
+**Gates:** `tsc --noEmit` exit 0. `next build` clean.
+
+**Deploy status:** Not deployed. Working tree only.
+
+**Verified by:** Kermes (nemotron-3.5-super-vl-120b-a12b)
+
+### 2026-11-10 — Hermes Agent "Kermes" — Admin Page Full Fix (All Issues)
+
+**What:** Fixed all identified issues in `src/app/store/admin/page.tsx` plus supporting CSS and state.
+
+**Where:**
+- `src/app/store/admin/page.tsx` — admin product/category/promotion manager
+- `src/app/globals.css` — added oxblood color tokens + utility classes
+
+**Changes:**
+1. **Dead code removed** — `useConverterResult()` was defined but never called; deleted
+2. **Split converter state** — `converterFile/Result/Error` was shared between Product and Promotion forms; split into `productConverter*` and `promotionConverter*` so uploading in one form doesn't bleed into the other
+3. **`resetForm` clears converter state** — previously left stale image data after reset; now clears `productConverterFile/Result/Error`
+4. **HTML entities fixed** — `&quot;` replaced with `"` in "No car matches" messages (both main and inline edit forms)
+5. **Emoji removed** — `✕` clear button replaced with "Clear" text (both main and inline edit forms)
+6. **Inline validation errors wired** — `productErrors`, `categoryErrors`, `promotionErrors` states were captured but never displayed; now passed as `error={...}` prop to `Field` components and set in submit handlers
+7. **Checkbox labels bold** — all checkbox field labels changed from `text-sm text-foreground` to `text-base font-bold text-foreground` (main form + inline edit form + promotion form)
+8. **Image field added to inline edit form** — was missing entirely; now has file picker + preview + converter state
+9. **Delete button added to inline edit form** — was missing; now has confirmation dialog + delete API call + scroll preservation + exit inline mode
+10. **Oxblood CSS added** — `--oxblood`, `--oxblood-soft` tokens + `.text-oxblood`, `.bg-oxblood`, `.border-oxblood`, `.bg-oxblood/5` utility classes for out-of-stock product styling
+
+**Gates:** `tsc --noEmit` exit 0. `next build` clean.
+
+**Deploy status:** Not deployed. Working tree only.
+
+**Verified by:** Kermes (nemotron-3.5-super-vl-120b-a12b)
+
+### 2026-11-10 — Hermes Agent "Kermes" — Notifications Toggle: Green → Garage Gold
+
+**What:** Changed the Telegram notifications toggle on the profile page from green (`#21cc4c`) to garage metallic gold (`--brand-gold: #d4af4f`).
+
+**Where:**
+- `src/app/globals.css` — added `.switch`/`.slider` CSS block; `:checked` track uses `var(--brand-gold)`, focus ring uses `var(--brand-gold-deep)`
+- `src/components/ProfileClient.tsx` — replaced inline Tailwind button toggle with `.switch`/`.slider` markup (label + hidden checkbox + slider span)
+
+**Changes:**
+1. Added `.switch`, `.slider`, `.slider:before`, `.switch input:checked + .slider`, `.switch input:focus + .slider`, `.switch input:checked + .slider:before` CSS to globals.css
+2. `:checked` track background: `#21cc4c` → `var(--brand-gold)` (garage metallic gold, matches owner profile badge)
+3. Focus ring: `#2196F3` → `var(--brand-gold-deep)`
+4. ProfileClient toggle now uses semantic `<label className="switch">` + `<input type="checkbox">` + `<span className="slider">` instead of a `<button>` with inline Tailwind transform classes
+
+**Gates:** `tsc --noEmit` exit 0. `next build` clean. Server running at http://127.0.0.1:3001 (HTTP 200 on /store/profile).
+
+**Deploy status:** Not deployed. Working tree only.
+
+**Verified by:** Kermes (nemotron-3.5-super-vl-120b-a12b)

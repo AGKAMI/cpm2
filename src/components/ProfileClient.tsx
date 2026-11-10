@@ -954,17 +954,17 @@ export function ProfileClient() {
             <span className="text-sm font-medium text-foreground">Telegram notifications</span>
             <p className="text-[10px] text-ink-soft">Get order updates via Telegram bot</p>
           </div>
-          <button
-            onClick={toggleNotifications}
-            disabled={saving || notificationsEnabled === null}
-            className="relative w-10 h-5 rounded-full border border-border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            aria-pressed={notificationsEnabled === true}
-            aria-label="Toggle Telegram notifications"
-          >
-            <span
-              className={`block pointer-events-none absolute inset-2 w-3 h-3 rounded-full bg-white transition-transform ${notificationsEnabled ? "translate-x-4" : "translate-x-1"}`}
+          <label className="switch">
+            <input
+              type="checkbox"
+              checked={notificationsEnabled === true}
+              onChange={toggleNotifications}
+              disabled={saving || notificationsEnabled === null}
+              aria-pressed={notificationsEnabled === true}
+              aria-label="Toggle Telegram notifications"
             />
-          </button>
+            <span className="slider" />
+          </label>
         </div>
       </section>
 

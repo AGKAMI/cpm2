@@ -94,7 +94,7 @@ export function AccountTable({
             {accounts.map((account, index) => (
               <tr
                 key={account.id}
-                className={`group border-b border-border ${busyId === account.id ? "bg-background" : ""}`}
+                className={`group border-b border-border ${selectedIds.includes(account.id) ? "fleet-row-selected" : ""} ${busyId === account.id ? "bg-background" : ""}`}
               >
                 {selectable ? (
                   <td className="px-2.5 py-3">
@@ -215,8 +215,11 @@ export function AccountTable({
         {accounts.map((account) => (
           <article
             key={account.id}
-            className={`panel-tight rounded-[20px] p-4 border border-border group ${busyId === account.id ? "bg-background" : ""}`}
+            className={`panel-tight rounded-[20px] p-4 border border-border group ${selectedIds.includes(account.id) ? "fleet-row-selected" : ""} ${busyId === account.id ? "bg-background" : ""}`}
           >
+            {selectedIds.includes(account.id) && (
+              <div className="fleet-gold-shine" aria-hidden="true" />
+            )}
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <Link href={`/accounts/${account.id}`} className="inline-block hover:border-primary hover:text-primary-foreground">

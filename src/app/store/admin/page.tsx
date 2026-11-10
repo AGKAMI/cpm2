@@ -143,10 +143,12 @@ export default function AdminPage() {
   const [carQuery, setCarQuery] = useState("");
   const [carOpen, setCarOpen] = useState(false);
   const [pickedCar, setPickedCar] = useState<CarEntry | null>(null);
-  // Image picker state
-  const [converterFile, setConverterFile] = useState<File | null>(null);
-  const [converterResult, setConverterResult] = useState<string | null>(null);
-  const [converterError, setConverterError] = useState<string | null>(null);
+  const [productConverterFile, setProductConverterFile] = useState<File | null>(null);
+  const [productConverterResult, setProductConverterResult] = useState<string | null>(null);
+  const [productConverterError, setProductConverterError] = useState<string | null>(null);
+  const [promotionConverterFile, setPromotionConverterFile] = useState<File | null>(null);
+  const [promotionConverterResult, setPromotionConverterResult] = useState<string | null>(null);
+  const [promotionConverterError, setPromotionConverterError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Toggle for the add/edit product form (behind a button, not always open)
   const [showProductForm, setShowProductForm] = useState(false);
@@ -204,23 +206,17 @@ export default function AdminPage() {
     });
   };
 
-  const useConverterResult = () => {
-      if (converterResult) {
-        setForm((f) => ({ ...f, imageUrl: converterResult }));
-        setConverterFile(null);
-        setConverterResult(null);
-        setConverterError(null);
-      }
-    };
-
-    const resetForm = () => {
-      setForm(EMPTY_FORM);
-      setPickedCar(null);
-      setEditingId(null);
-      setInlineEditingId(null);
-      setError(null);
-      setMsg(null);
-    };
+  const resetForm = () => {
+    setForm(EMPTY_FORM);
+    setPickedCar(null);
+    setEditingId(null);
+    setInlineEditingId(null);
+    setError(null);
+    setMsg(null);
+    setProductConverterFile(null);
+    setProductConverterResult(null);
+    setProductConverterError(null);
+  };
 
     const resetCategoryForm = () => {
       setCategoryForm(EMPTY_CATEGORY_FORM);
@@ -233,7 +229,7 @@ export default function AdminPage() {
         imageUrl: "",
         name: p.name,
         description: p.description,
-        basePriceCents: String(p.basePriceCents / 100), // display in Rands
+        basePriceCents: String(p.basePriceCents / 100),
         currency: p.currency,
         stockQuantity: String(p.stockQuantity),
         airSuspension: p.airSuspension,
@@ -258,6 +254,7 @@ export default function AdminPage() {
       // Client-side validation (strict input validation)
       const validated = validateProductForm(form);
       if (!validated.ok) {
+        setProductErrors(validated.errors);
         toast.error(
           "Fix the following:",
           Object.values(validated.errors).join(". ")
@@ -332,6 +329,7 @@ export default function AdminPage() {
         // Client-side validation
         const validated = validateCategoryForm(categoryForm);
         if (!validated.ok) {
+          setCategoryErrors(validated.errors);
           toast.error(
             "Fix the following:",
             Object.values(validated.errors).join(". ")
@@ -396,6 +394,7 @@ export default function AdminPage() {
       // Client-side validation
       const validated = validatePromotionForm(promotionForm);
       if (!validated.ok) {
+        setPromotionErrors(validated.errors);
         toast.error(
           "Fix the following:",
           Object.values(validated.errors).join(". ")
@@ -526,21 +525,21 @@ export default function AdminPage() {
           {showCategoryForm && (
             <form onSubmit={handleCategorySubmit} className="flex flex-col gap-3 mb-4">
               {/* Errors now shown as floating toasts */}
-              <Field label="Name">
+              <Field label="Name" error={categoryErrors.name}>
                 <TextInput
                   value={categoryForm.name}
                   onChange={(e) => handleCategoryChange("name", e.target.value)}
                   placeholder="e.g. Sports Cars"
                 />
               </Field>
-              <Field label="URL slug" hint="Auto-generated from category name">
+              <Field label="URL slug" error={categoryErrors.slug} hint="Auto-generated from category name">
                 <TextInput
                   value={categoryForm.slug}
                   onChange={(e) => handleCategoryChange("slug", e.target.value)}
                   placeholder="sports-cars"
                 />
               </Field>
-              <Field label="Description" hint="Optional description">
+              <Field label="Description" error={categoryErrors.description} hint="Optional description">
                             <textarea
                               value={categoryForm.description}
                               onChange={(e) => handleCategoryChange("description", e.target.value)}
@@ -548,7 +547,7 @@ export default function AdminPage() {
                               className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground min-h-[60px] resize-y"
                             />
                           </Field>
-              <Field label="Sort Order" hint="Lower numbers appear first">
+              <Field label="Sort Order" error={categoryErrors.sortOrder} hint="Lower numbers appear first">
                 <input
                   type="number"
                   value={categoryForm.sortOrder}
@@ -662,7 +661,7 @@ export default function AdminPage() {
               {showPromotionForm && (
                 <form onSubmit={handlePromotionSubmit} className="flex flex-col gap-3 mb-4">
                   {/* Errors now shown as floating toasts */}
-                  <Field label="Title">
+                  <Field label="Title" error={promotionErrors.title}>
                     <TextInput
                       value={promotionForm.title}
                       onChange={(e) => setPromotionForm((f) => ({ ...f, title: e.target.value }))}
@@ -676,7 +675,7 @@ export default function AdminPage() {
                       placeholder="Special offer"
                     />
                   </Field>
-                  <Field label="Description">
+                  <Field label="Description" error={promotionErrors.description}>
                     <TextInput
                       value={promotionForm.description}
                       onChange={(e) => setPromotionForm((f) => ({ ...f, description: e.target.value }))}
@@ -739,38 +738,38 @@ export default function AdminPage() {
                         onChange={async (e) => {
                           const file = e.target.files?.[0] ?? null;
                           if (!file) return;
-                          setConverterFile(file);
-                          setConverterError(null);
+                          setPromotionConverterFile(file);
+                          setPromotionConverterError(null);
                           try {
                             const dataUrl = await convertFileToDataUrl(file);
-                            setConverterResult(dataUrl);
+                            setPromotionConverterResult(dataUrl);
                             // Auto-convert to URL — no extra click needed
                             setPromotionForm((f) => ({ ...f, imageUrl: dataUrl }));
-                            setConverterFile(null);
-                            setConverterResult(null);
+                            setPromotionConverterFile(null);
+                            setPromotionConverterResult(null);
                           } catch {
-                            setConverterError("Failed to read image file.");
+                            setPromotionConverterError("Failed to read image file.");
                           }
                           }}
                           />
                           <div
                           onClick={() => fileInputRef.current?.click()}
-                          className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${converterFile ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}
+                          className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${promotionConverterFile ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}
                           >
-                          {converterFile ? (
+                          {promotionConverterFile ? (
                           <>
                             <span className="text-xs font-bold text-emerald-500">✓</span>
-                            {converterFile.name}
+                            {promotionConverterFile.name}
                           </>
                           ) : (
                           "Choose image"
                           )}
                           </div>
                           </div>
-                          {converterError && <p className="text-xs text-destructive mt-1">{converterError}</p>}
-                          {converterResult && (
+                          {promotionConverterError && <p className="text-xs text-destructive mt-1">{promotionConverterError}</p>}
+                          {promotionConverterResult && (
                           <div className="mt-3 border border-input rounded-md p-3 bg-background">
-                          <img src={converterResult} alt="Preview" className="max-w-full max-h-48 rounded-md border border-border object-cover" />
+                          <img src={promotionConverterResult} alt="Preview" className="max-w-full max-h-48 rounded-md border border-border object-cover" />
                           <p className="text-[10px] text-ink-soft mt-2">Image preview — URL auto-set</p>
                           </div>
                           )}
@@ -783,7 +782,7 @@ export default function AdminPage() {
                         onChange={(e) => setPromotionForm((f) => ({ ...f, isActive: e.target.checked }))}
                         className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
                       />
-                      <span className="text-sm text-foreground">Show on home page</span>
+                      <span className="text-base font-bold text-foreground">Show on home page</span>
                     </div>
                   </Field>
                   <Field label="Sort Order">
@@ -881,7 +880,7 @@ export default function AdminPage() {
                       </h3>
                       <form onSubmit={handleSubmit} className="grid gap-4">
           {/* Errors now shown as floating toasts */}
-          <Field label="Image">
+          <Field label="Image" error={productErrors.imageUrl}>
             <div className="relative group cursor-pointer">
               <input
                 ref={fileInputRef}
@@ -891,44 +890,45 @@ export default function AdminPage() {
                 onChange={async (e) => {
                   const file = e.target.files?.[0] ?? null;
                   if (!file) return;
-                  setConverterFile(file);
-                  setConverterError(null);
+                  setProductConverterFile(file);
+                  setProductConverterError(null);
                   try {
                     const dataUrl = await convertFileToDataUrl(file);
-                    setConverterResult(dataUrl);
+                    setProductConverterResult(dataUrl);
                     // Auto-convert to URL — no extra click needed
                     setForm((f) => ({ ...f, imageUrl: dataUrl }));
-                    setConverterFile(null);
-                    setConverterResult(null);
+                    setProductConverterFile(null);
+                    setProductConverterResult(null);
                   } catch {
-                    setConverterError("Failed to read image file.");
+                    setProductConverterError("Failed to read image file.");
                   }
                 }}
               />
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${converterFile ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}
+                className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${productConverterFile ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}
               >
-                {converterFile ? (
+                {productConverterFile ? (
                   <>
                     <span className="text-xs font-bold">✓</span>
-                    {converterFile.name}
+                    {productConverterFile.name}
                   </>
                 ) : (
                   "Choose image"
                 )}
               </div>
             </div>
-            {converterError && <p className="text-xs text-destructive mt-1">{converterError}</p>}
-            {converterResult && (
+            {productConverterError && <p className="text-xs text-destructive mt-1">{productConverterError}</p>}
+            {productConverterResult && (
               <div className="mt-3 border border-input rounded-md p-3 bg-background">
-                <img src={converterResult} alt="Preview" className="max-w-full max-h-48 rounded-md border border-border object-cover" />
+                <img src={productConverterResult} alt="Preview" className="max-w-full max-h-48 rounded-md border border-border object-cover" />
                 <p className="text-[10px] text-ink-soft mt-2">Image preview — URL auto-set</p>
               </div>
             )}
           </Field>
           <Field
             label="Car (CPM2 catalog)"
+            error={productErrors.cpm2CarCode}
             hint={
               carLocked
                 ? "Locked - car codes are set once at creation and cannot be changed"
@@ -960,7 +960,7 @@ export default function AdminPage() {
                     onClick={clearPickedCar}
                     aria-label="Clear picked car"
                   >
-                    ✕
+                    Clear
                   </Button>
                 </div>
                 <div className="border border-input rounded-md px-2 py-1 bg-background">
@@ -1008,13 +1008,13 @@ export default function AdminPage() {
                   </div>
                 ) : (
                   <div className="absolute z-20 mt-1 w-full border border-border rounded-md bg-background px-3 py-2 text-sm text-muted-foreground">
-                    No car in the CPM2 catalog matches &quot;{carQuery}&quot;.
+                    No car in the CPM2 catalog matches "{carQuery}".
                   </div>
                 ))}
               </div>
             )}
           </Field>
-          <Field label="Name" hint='Auto-filled from the catalog pick above - edit for custom design names (e.g. "GOLF GTI III - Midnight Chrome")'>
+          <Field label="Name" error={productErrors.name} hint='Auto-filled from the catalog pick above - edit for custom design names (e.g. "GOLF GTI III - Midnight Chrome")'>
             <TextInput
               id="name"
               value={form.name}
@@ -1022,7 +1022,7 @@ export default function AdminPage() {
               placeholder="Toyota Supra MK4"
             />
           </Field>
-          <Field label="Price (ZAR)" hint="Enter price in Rands, e.g. 60.00">
+          <Field label="Price (ZAR)" error={productErrors.basePriceCents} hint="Enter price in Rands, e.g. 60.00">
             <input
               id="price"
               type="number"
@@ -1035,6 +1035,7 @@ export default function AdminPage() {
           </Field>
           <Field
             label="Stock"
+            error={productErrors.stockQuantity}
             hint="How many available - set to 0 to mark out of stock"
           >
             <input
@@ -1077,7 +1078,7 @@ export default function AdminPage() {
                 onChange={(e) => handleChange("airSuspension", e.target.checked)}
               />
               <div className="checkmark"></div>
-              <span className="text-sm text-foreground">Include air suspension</span>
+              <span className="text-base font-bold text-foreground">Include air suspension</span>
             </label>
           </Field>
           <Field label="Unlocked bodykits" hint="This design unlocks bodykits">
@@ -1089,7 +1090,7 @@ export default function AdminPage() {
                 onChange={(e) => handleChange("unlockedBodykits", e.target.checked)}
               />
               <div className="checkmark"></div>
-              <span className="text-sm text-foreground">Include unlocked bodykits</span>
+              <span className="text-base font-bold text-foreground">Include unlocked bodykits</span>
             </label>
           </Field>
           <Field label="HD Logo" hint="This design includes a high-definition logo">
@@ -1101,7 +1102,7 @@ export default function AdminPage() {
                 onChange={(e) => handleChange("hdLogo", e.target.checked)}
               />
               <div className="checkmark"></div>
-              <span className="text-sm text-foreground">Include HD logo</span>
+              <span className="text-base font-bold text-foreground">Include HD logo</span>
             </label>
           </Field>
           <Field label="Featured">
@@ -1112,7 +1113,7 @@ export default function AdminPage() {
                 onChange={(e) => handleChange("isFeatured", e.target.checked)}
               />
               <div className="checkmark"></div>
-              <span className="text-sm text-foreground">Featured on home page</span>
+              <span className="text-base font-bold text-foreground">Featured on home page</span>
             </label>
           </Field>
           <Field label="New Arrival">
@@ -1123,7 +1124,7 @@ export default function AdminPage() {
                 onChange={(e) => handleChange("isNew", e.target.checked)}
               />
               <div className="checkmark"></div>
-              <span className="text-sm text-foreground">Show &quot;New&quot; badge</span>
+              <span className="text-base font-bold text-foreground">Show &quot;New&quot; badge</span>
             </label>
           </Field>
           <Field label="Sale">
@@ -1134,7 +1135,7 @@ export default function AdminPage() {
                 onChange={(e) => handleChange("isSale", e.target.checked)}
               />
               <div className="checkmark"></div>
-              <span className="text-sm text-foreground">Show &quot;Sale&quot; badge</span>
+              <span className="text-base font-bold text-foreground">Show &quot;Sale&quot; badge</span>
             </label>
           </Field>
           <Field label="Published">
@@ -1145,7 +1146,7 @@ export default function AdminPage() {
                 onChange={(e) => handleChange("isPublished", e.target.checked)}
               />
               <div className="checkmark"></div>
-              <span className="text-sm text-foreground">Visible to customers</span>
+              <span className="text-base font-bold text-foreground">Visible to customers</span>
             </label>
           </Field>
           <div className="flex flex-col gap-2">
@@ -1207,8 +1208,54 @@ export default function AdminPage() {
                                 </Button>
                               </div>
                               <form onSubmit={(e) => { e.preventDefault(); handleSubmit(e); }} className="flex flex-col gap-3">
+                      <Field label="Image" error={productErrors.imageUrl}>
+                        <div className="relative group cursor-pointer">
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="sr-only"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0] ?? null;
+                              if (!file) return;
+                              setProductConverterFile(file);
+                              setProductConverterError(null);
+                              try {
+                                const dataUrl = await convertFileToDataUrl(file);
+                                setProductConverterResult(dataUrl);
+                                setForm((f) => ({ ...f, imageUrl: dataUrl }));
+                                setProductConverterFile(null);
+                                setProductConverterResult(null);
+                              } catch {
+                                setProductConverterError("Failed to read image file.");
+                              }
+                            }}
+                          />
+                          <div
+                            onClick={() => fileInputRef.current?.click()}
+                            className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${productConverterFile ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}
+                          >
+                            {productConverterFile ? (
+                              <>
+                                <span className="text-xs font-bold">✓</span>
+                                {productConverterFile.name}
+                              </>
+                            ) : (
+                              "Choose image"
+                            )}
+                          </div>
+                        </div>
+                        {productConverterError && <p className="text-xs text-destructive mt-1">{productConverterError}</p>}
+                        {productConverterResult && (
+                          <div className="mt-3 border border-input rounded-md p-3 bg-background">
+                            <img src={productConverterResult} alt="Preview" className="max-w-full max-h-48 rounded-md border border-border object-cover" />
+                            <p className="text-[10px] text-ink-soft mt-2">Image preview — URL auto-set</p>
+                          </div>
+                        )}
+                      </Field>
                       <Field
                         label="Car (CPM2 catalog)"
+                        error={productErrors.cpm2CarCode}
                         hint={carLocked ? "Car code is locked - set once at creation" : "Pick a car from the catalog - name auto-fills below"}
                       >
                         {carLocked ? (
@@ -1233,8 +1280,8 @@ export default function AdminPage() {
                                 size="sm"
                                 onClick={clearPickedCar}
                                 aria-label="Clear picked car"
-                              >
-                                ✕
+                                >
+                                Clear
                               </Button>
                             </div>
                             <div className="border border-input rounded-md px-2 py-1 bg-background">
@@ -1282,13 +1329,13 @@ export default function AdminPage() {
                               </div>
                             ) : (
                               <div className="absolute z-20 mt-1 w-full border border-border rounded-md bg-background px-3 py-2 text-sm text-muted-foreground">
-                                No car in the CPM2 catalog matches &quot;{carQuery}&quot;.
+                                No car in the CPM2 catalog matches "{carQuery}".
                               </div>
                             ))}
                           </div>
                         )}
                       </Field>
-                      <Field label="Name" hint='Auto-filled from the catalog pick above - edit for custom design names (e.g. "GOLF GTI III - Midnight Chrome")'>
+                      <Field label="Name" error={productErrors.name} hint='Auto-filled from the catalog pick above - edit for custom design names (e.g. "GOLF GTI III - Midnight Chrome")'>
                         <TextInput
                           id="name"
                           value={form.name}
@@ -1296,7 +1343,7 @@ export default function AdminPage() {
                           placeholder="Toyota Supra MK4"
                         />
                       </Field>
-                      <Field label="Price (ZAR)">
+                      <Field label="Price (ZAR)" error={productErrors.basePriceCents}>
                         <input
                           type="number"
                           step="0.01"
@@ -1308,6 +1355,7 @@ export default function AdminPage() {
                       </Field>
                       <Field
                         label="Stock"
+                        error={productErrors.stockQuantity}
                         hint={editingId === null ? "Locked at 1 for new products" : "How many available - set to 0 to mark out of stock"}
                       >
                         <input
@@ -1339,7 +1387,7 @@ export default function AdminPage() {
                             onChange={(e) => handleChange("airSuspension", e.target.checked)}
                           />
                           <div className="checkmark"></div>
-                          <span className="text-sm text-foreground">Include air suspension</span>
+                          <span className="text-base font-bold text-foreground">Include air suspension</span>
                         </label>
                       </Field>
                       <Field label="Unlocked bodykits">
@@ -1350,7 +1398,7 @@ export default function AdminPage() {
                             onChange={(e) => handleChange("unlockedBodykits", e.target.checked)}
                           />
                           <div className="checkmark"></div>
-                          <span className="text-sm text-foreground">Include unlocked bodykits</span>
+                          <span className="text-base font-bold text-foreground">Include unlocked bodykits</span>
                         </label>
                       </Field>
                       <Field label="HD Logo">
@@ -1361,7 +1409,7 @@ export default function AdminPage() {
                             onChange={(e) => handleChange("hdLogo", e.target.checked)}
                           />
                           <div className="checkmark"></div>
-                          <span className="text-sm text-foreground">Include HD logo</span>
+                          <span className="text-base font-bold text-foreground">Include HD logo</span>
                         </label>
                       </Field>
                       <Field label="New Arrival">
@@ -1372,7 +1420,7 @@ export default function AdminPage() {
                             onChange={(e) => handleChange("isNew", e.target.checked)}
                           />
                           <div className="checkmark"></div>
-                          <span className="text-sm text-foreground">Show &quot;New&quot; badge</span>
+                          <span className="text-base font-bold text-foreground">Show &quot;New&quot; badge</span>
                         </label>
                       </Field>
                       <Field label="Sale">
@@ -1383,7 +1431,7 @@ export default function AdminPage() {
                             onChange={(e) => handleChange("isSale", e.target.checked)}
                           />
                           <div className="checkmark"></div>
-                          <span className="text-sm text-foreground">Show &quot;Sale&quot; badge</span>
+                          <span className="text-base font-bold text-foreground">Show &quot;Sale&quot; badge</span>
                         </label>
                       </Field>
                       <Field label="Published">
@@ -1394,12 +1442,28 @@ export default function AdminPage() {
                             onChange={(e) => handleChange("isPublished", e.target.checked)}
                           />
                           <div className="checkmark"></div>
-                          <span className="text-sm text-foreground">Visible to customers</span>
+                          <span className="text-base font-bold text-foreground">Visible to customers</span>
                         </label>
                       </Field>
                       <div className="flex flex-col gap-2">
                                               <Button type="submit" variant="primary" disabled={saving} className="w-full sm:w-auto">
                                                 {saving ? "Saving…" : "Update product"}
+                                              </Button>
+                                              <Button variant="destructive" type="button" size="sm" onClick={async () => {
+                                                if (!window.confirm(`Delete "${p.name}"? This will unpublish and mark unavailable.`)) return;
+                                                setError(null);
+                                                const scrollY = window.scrollY;
+                                                try {
+                                                  await vantaApi.deleteProduct(p.id);
+                                                  setMsg("Product deleted (unpublished & marked unavailable).");
+                                                  await load();
+                                                  window.scrollTo(0, scrollY);
+                                                  setInlineEditingId(null);
+                                                } catch (err) {
+                                                  setError(err instanceof Error ? err.message : "Failed to delete product.");
+                                                }
+                                              }} className="w-full sm:w-auto">
+                                                Delete
                                               </Button>
                                             </div>
                     </form>

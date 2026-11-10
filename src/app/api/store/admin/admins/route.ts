@@ -9,6 +9,7 @@ import { fail, ok, readJson } from "@/lib/route";
 import { requireStoreAdmin } from "@/lib/store/auth";
 import { listAdmins, addAdmin } from "@/lib/store/admin-service";
 import { fetchTelegramUser } from "@/lib/telegram";
+import { notifyAdminPromoted } from "@/lib/store/notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,12 @@ export async function POST(request: Request) {
     }
 
     const admin = await addAdmin(telegramUserId, telegramUsername, nickname?.trim() ?? "", status.telegramUserId ?? "");
+    // Send Telegram DM to the newly promoted admin
+    try {
+      await notifyAdminPromoted(Number(telegramUserId), status.telegramUserId ?? "the owner");
+    } catch {
+      // Don't fail the admin addition if the DM fails
+    }
     return ok({ admin }, 201);
   } catch (err) {
     return fail(err);

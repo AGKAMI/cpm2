@@ -2,16 +2,23 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTheme } from "@/hooks/useTheme";
+import { cn } from "@/lib/utils";
 
 /**
  * App selection screen — Fleet Ledger vs VANTA Garage.
  *
- * Full-screen dark showroom. Two cards, one per app, nothing else.
+ * Full-screen dark showroom. Two animated cards, one per app, nothing else.
  * Tapping a card opens that app; each app shell carries a "back to
  * selection" control so you can switch without using the browser back button.
+ *
+ * Card animation: Uiverse.io blob-bounce. Colours match each app's theme:
+ *   - VANTA Garage   → gold outline + gold blob
+ *   - Fleet Ledger   → active theme palette colours (primary / deep)
  */
 export function AppSelection() {
   const router = useRouter();
+  const { mode } = useTheme();
 
   const open = (href: string) => {
     router.push(href);
@@ -26,65 +33,120 @@ export function AppSelection() {
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:gap-6 w-full max-w-[640px]">
-        {/* Fleet Ledger card - blue racing accent. */}
-        <Link
+        {/* Fleet Ledger card - theme palette colours */}
+        <ThemeAppCard
+          app="fleet"
+          mode={mode}
+          title="Fleet Ledger"
+          subtitle="CPM1 • CPM2 accounts • balances • garage"
+          description="Track every account, every balance, every car. Two games, two registers."
+          label="Open register"
           href="/fleet/cpm2"
-          onClick={() => open("/fleet/cpm2")}
-          className="flex flex-col gap-3 rounded-[28px] border border-border bg-background p-8 sm:p-10 shadow-xl hover:border-primary hover:text-primary-foreground transition-colors duration-200 group"
-          aria-label="Open Fleet Ledger"
-        >
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-[18px] border border-racing bg-racing flex items-center justify-center">
-              <svg className="h-5 w-5 text-racing" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <rect x="2" y="2" width="20" height="20" rx="2" ry="2" />
-                <path d="M16 6v8M8 12h8" />
-              </svg>
-            </div>
-            <div>
-              <span className="block text-[16px] font-semibold text-foreground">Fleet Ledger</span>
-              <span className="text-[10px] uppercase tracking-[0.15em] text-ink-faint">CPM1 &bull; CPM2 accounts &bull; balances &bull; garage</span>
-            </div>
-          </div>
-          <p className="text-[11px] leading-relaxed text-ink-soft">
-            Track every account, every balance, every car. Two games, two registers.
-          </p>
-          <span className="mt-auto inline-flex items-center gap-1 text-[10px] font-semibold text-racing group-hover:text-racing">
-            Open register &rarr;
-          </span>
-        </Link>
+          icon={
+            <svg
+              className="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="2" y="2" width="20" height="20" rx="2" ry="2" />
+              <path d="M16 6v8M8 12h8" />
+            </svg>
+          }
+        />
 
-        {/* VANTA Garage card - gold premium accent. */}
-        <Link
+        {/* VANTA Garage card - gold */}
+        <ThemeAppCard
+          app="garage"
+          mode={mode}
+          title="VANTA Garage"
+          subtitle="real cars • real ZAR • Telegram Mini App"
+          description="Premium vehicle storefront. Buy cars in-game, pay ZAR via EFT or PayFast."
+          label="Open store"
           href="/store"
-          onClick={() => open("/store")}
-          className="flex flex-col gap-3 rounded-[28px] border border-border bg-background p-8 sm:p-10 shadow-xl hover:border-brand-gold hover:text-primary-foreground transition-colors duration-200 group"
-          aria-label="Open VANTA Garage"
-        >
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-[18px] border border-brand-gold bg-brand-gold flex items-center justify-center">
-              <svg className="h-5 w-5 text-brand-paper" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-              </svg>
-            </div>
-            <div>
-              <span className="block text-[16px] font-semibold text-foreground">VANTA Garage</span>
-              <span className="text-[10px] uppercase tracking-[0.15em] text-ink-faint">real cars &bull; real ZAR &bull; Telegram Mini App</span>
-            </div>
-          </div>
-          <p className="text-[11px] leading-relaxed text-ink-soft">
-            Premium vehicle storefront. Buy cars in-game, pay ZAR via EFT or PayFast.
-          </p>
-          <span className="mt-auto inline-flex items-center gap-1 text-[10px] font-semibold text-brand-gold group-hover:text-brand-gold">
-            Open store &rarr;
-          </span>
-        </Link>
+          icon={
+            <svg
+              className="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+            </svg>
+          }
+        />
       </div>
 
       <div className="w-full max-w-[640px] mt-8">
         <p className="text-[9px] uppercase tracking-[0.25em] text-ink-faint text-center">
-          CPM2 &middot; Fleet Ledger + VANTA Garage
+          CPM2 · Fleet Ledger + VANTA Garage
         </p>
       </div>
     </div>
+  );
+}
+
+interface ThemeAppCardProps {
+  app: "fleet" | "garage";
+  mode: "night" | "paper";
+  title: string;
+  subtitle: string;
+  description: string;
+  label: string;
+  href: string;
+  icon: React.ReactNode;
+}
+
+function ThemeAppCard({ app, mode, title, subtitle, description, label, href, icon }: ThemeAppCardProps) {
+  const isGarage = app === "garage";
+
+  // Garage always uses brand-gold. Fleet uses theme palette classes.
+  const borderCls = isGarage ? "border-brand-gold" : "border-primary";
+  const bgCls = isGarage ? "bg-brand-gold/10" : "bg-primary/10";
+  const blobCls = isGarage ? "bg-brand-gold" : "bg-primary";
+  const iconCls = isGarage ? "text-brand-gold" : "text-primary";
+  const labelCls = isGarage ? "text-brand-gold" : "text-primary";
+  const hoverBorderCls = isGarage ? "hover:border-brand-gold" : "hover:border-primary";
+
+  return (
+    <Link
+      href={href}
+      onClick={() => open(href)}
+      className={cn(
+        "relative group",
+        hoverBorderCls,
+        "transition-colors duration-200"
+      )}
+      aria-label={`Open ${title}`}
+    >
+      {/* Animated card surface */}
+      <div className="app-card">
+        <div className="app-card__bg bg-background/95 backdrop-blur-md border border-border/50" />
+        <div className={`app-card__blob animate-blob-bounce ${blobCls}`} />
+        <div className="app-card__content">
+          <div className="flex items-center gap-3 mb-6">
+            <div className={cn("h-10 w-10 rounded-[18px] flex items-center justify-center", bgCls)}>
+              {icon}
+            </div>
+            <div>
+              <span className={cn("block text-[16px] font-semibold text-foreground", labelCls)}>{title}</span>
+              <span className="text-[10px] uppercase tracking-[0.15em] text-ink-faint">{subtitle}</span>
+            </div>
+          </div>
+          <p className="text-[11px] leading-relaxed text-ink-soft mb-6">{description}</p>
+          <span className="mt-auto inline-flex items-center gap-1 text-[10px] font-semibold">
+            {label} →
+          </span>
+        </div>
+      </div>
+    </Link>
   );
 }

@@ -321,7 +321,7 @@ export function ProfileClient() {
                 {displayName.charAt(0).toUpperCase()}
               </div>
             )}
-            <span className={`absolute bottom-0 right-0 flex items-center justify-center w-8 h-8 rounded-full border-2 border-background ${isActive ? "bg-racing text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
+            <span className={`absolute top-0 right-0 flex items-center justify-center w-8 h-8 rounded-full border-2 border-background ${isActive ? "bg-racing text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
               <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
             </span>
 
@@ -331,7 +331,7 @@ export function ProfileClient() {
               if (role === "owner" || role === "admin") {
                 return (
                   <span
-                    className={`absolute -bottom-2 left-1/2 -translate-x-1/2 z-10 overflow-hidden rounded-2xl px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] border-2 border-background ${role === "owner" ? "bg-gold text-black" : "bg-indigo-600 text-white"}`}
+                    className={`absolute -bottom-2 left-1/2 -translate-x-1/2 z-10 overflow-hidden rounded-2xl px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] border-2 border-background ${role === "owner" ? "metallic-gold text-black" : "bg-indigo-600 text-white"}`}
                   >
                     {role}
                     <span

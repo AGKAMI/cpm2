@@ -129,7 +129,7 @@ function ThemeAppCard({ app, mode, title, subtitle, description, label, href, ic
     >
       {/* Animated card surface */}
       <div className="app-card">
-        <div className="app-card__bg bg-background backdrop-blur-md border border-border/50" />
+        <div className={`app-card__bg bg-background backdrop-blur-md border ${borderCls}`} />
         <div className={`app-card__blob ${blobCls}`} />
         <div className="app-card__content">
           <div className="flex items-center gap-3 mb-6">

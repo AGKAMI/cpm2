@@ -30,8 +30,8 @@
   --brand-gold-gradient: linear-gradient(135deg, #f6e3a0 0%, #d4af4f 45%, #9b7a2a 100%);
 
   /* Animated border gradients — app card shine */
-  --border-gradient-fleet: linear-gradient(45deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 70%, black) 25%, var(--primary) 50%, color-mix(in srgb, var(--primary) 70%, white) 75%, var(--primary) 100%);
-  --border-gradient-garage: linear-gradient(45deg, #f6e3a0 0%, #d4af4f 25%, #8f6f26 50%, #d4af4f 75%, #f6e3a0 100%);
+  --border-gradient-fleet: linear-gradient(45deg, #ffffff 0%, #e0e0e0 25%, #ffffff 50%, #e0e0e0 75%, #ffffff 100%);
+  --border-gradient-garage: linear-gradient(45deg, #404040 0%, #2a2a2a 25%, #404040 50%, #2a2a2a 75%, #404040 100%);
 
   /* Oxblood — out-of-stock / alert accent */
   --oxblood: #712a2a;

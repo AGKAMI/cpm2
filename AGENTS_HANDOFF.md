@@ -1992,6 +1992,51 @@ Each module below includes: **What** (functional spec from plan), **How it works
 
 **Verified by:** Kermes (nemotron-3.5-super-vl-120b-a12b)
 
+### 2026-11-10 — Hermes Agent "Kermes" — Quick Login Button: emoji removal, owner gold/admin purple, metallic button bg, actual authentication
+
+**What:** Fixed all user-flagged issues on the Quick Login button on `/store/profile`:
+- Removed `⚡` emoji from button text — now just "Quick Login"
+- Owner = gold metallic button (`metallic-gold text-black`), Admin = purple metallic button (`metallic-indigo text-white`) — matches the role badge colors
+- Metallic material look on the **button background**, not just a CSS-class opacity hack
+- Shine sweep animation now sweeps across the **full button background**, not just the text width (moved `relative overflow-hidden` to the `<Button>` itself, shine span is now a direct child absolute-positioned over the full button)
+- `quickLogin()` now actually authenticates — after passing admin validation it calls `checkSession()` to fetch the customer profile via Telegram initData, so the user sees their customer state and the profile reflects login
+
+**Where:** `src/components/ProfileClient.tsx` (lines 674-689)
+
+**Changes:**
+1. Button text: `"⚡ Quick Login"` → `"Quick Login"` (no emoji)
+2. Button className: always-gold opacity → role-aware `.metallic-gold` / `.metallic-indigo` CSS classes matching the role badge
+3. `relative overflow-hidden` moved from inner span to `<Button>` so the shine sweep covers the full button width
+4. Shine span moved to be a direct child of `<Button>` (not nested inside the text span)
+5. `quickLogin()` added `await checkSession()` after admin validation to actually set customer state
+6. `checkSession()` now sends `X-Telegram-Init-Data` header on `/api/store/profile` so Telegram users are auto-recognized on page load
+
+**Gates:** `tsc --noEmit` exit 0. `next build` clean. Server running at `http://127.0.0.1:3001` (HTTP 200 on `/store/profile`).
+
+**Deploy status:** Not deployed. Working tree only (committed locally as `b51788a`).
+
+**Verified by:** Kermes (nemotron-3.5-super-vl-120b-a12b)
+
+---
+
+### 2026-11-10 — Hermes Agent "Kermes" — App Selection: slide-up CTA button on card hover
+
+**What:** Replaced static inline label on app selection cards with a slide-up call-to-action button that appears on hover. Garage card gets gold CTA, Fleet Ledger gets primary CTA.
+
+**Where:** `src/components/AppSelection.tsx`, `src/app/globals.css`
+
+**Changes:**
+1. `globals.css` — `.app-card` overflow changed from `hidden` to `visible` so the CTA can slide up outside the card bounds. Added `.app-card__cta` (absolute bottom button, slides up on hover, `active:scale(0.96)`).
+2. `AppSelection.tsx` — label element changed to `<button className="app-card__cta">` with garage gold bg (`bg-gold text-black`) or primary bg (`bg-primary text-primary-foreground`). CTA stops click propagation so it doesn't trigger the card link.
+
+**Gates:** `tsc --noEmit` exit 0. `next build` clean.
+
+**Deploy status:** Not deployed. Working tree only (committed locally as `a8645d7`).
+
+**Verified by:** Kermes (nemotron-3.5-super-vl-120b-a12b)
+
+---
+
 ### 2026-11-10 — Hermes Agent "Kermes" — Admin Image Upload Fix
 
 **What:** Fixed the broken "Choose image" upload on the add product card. Previously, picking a file converted it to a base64 data URL which failed Zod URL validation (`http://` or `https://` required), so the product was never created.

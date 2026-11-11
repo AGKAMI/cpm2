@@ -670,8 +670,8 @@ export function ProfileClient() {
             {isActive ? "Active buyer" : "No orders yet — browse the catalogue"}
           </p>
 
-          {/* Quick login for owner/admin — skip email/password */ }
-          {isAdminOrOwner && (
+          {/* Quick login for owner/admin — skip email/password */}
+          {!customer && isAdminOrOwner && (
             <Button
               variant="outline"
               onClick={quickLogin}

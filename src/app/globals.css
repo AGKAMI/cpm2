@@ -1793,15 +1793,15 @@ html {
   display: inline-block;
   background: linear-gradient(
     90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.9) 50%,
-    transparent 100%
+    rgba(255, 255, 255, 0.35) 0%,
+    rgba(255, 255, 255, 1) 50%,
+    rgba(255, 255, 255, 0.35) 100%
   );
   background-size: 200% 100%;
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
-  animation: text-shine 6s ease-in-out infinite;
+  animation: text-shine 6s linear infinite;
 }
 @keyframes text-shine {
   0% { background-position: 200% 0; }

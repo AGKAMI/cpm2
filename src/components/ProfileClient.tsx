@@ -677,15 +677,15 @@ export function ProfileClient() {
               variant="outline"
               onClick={quickLogin}
               disabled={quickLoginBusy}
-              className={`mt-4 w-full flex items-center justify-center gap-2 border-2 border-background transition-all ${adminRole === "owner" ? "metallic-gold text-black" : "metallic-indigo text-white"}`}
+              className={`relative overflow-hidden mt-4 w-full flex items-center justify-center gap-2 border-2 border-background transition-all ${adminRole === "owner" ? "metallic-gold text-black" : "metallic-indigo text-white"}`}
             >
-              <span className="relative overflow-hidden">
+              <span className="relative z-10">
                 {quickLoginBusy ? "Logging in…" : "Quick Login"}
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute top-0 h-full w-[60%] -skew-x-[22deg] bg-gradient-to-r from-transparent via-white/50 to-transparent shine-sweep"
-                />
               </span>
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute top-0 h-full w-[60%] -skew-x-[22deg] bg-gradient-to-r from-transparent via-white/50 to-transparent shine-sweep"
+              />
             </Button>
           )}
         </div>

@@ -143,9 +143,16 @@ function ThemeAppCard({ app, mode, title, subtitle, description, label, href, ic
             </div>
           </div>
           <p className="text-[11px] leading-relaxed text-ink-soft mb-6">{description}</p>
-          <span className="mt-auto inline-flex items-center gap-1 text-[10px] font-semibold">
+          <button
+            className={`app-card__cta ${isGarage ? "bg-gold text-black" : "bg-primary text-primary-foreground"}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              open(href);
+            }}
+            aria-label={`Open ${title}`}
+          >
             {label} →
-          </span>
+          </button>
         </div>
       </div>
     </Link>

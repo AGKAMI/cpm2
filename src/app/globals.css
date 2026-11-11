@@ -1743,7 +1743,7 @@ html {
 
 .animate-blob-bounce { animation: blob-bounce 5s infinite ease; }
 
-.app-card { position: relative; width: 100%; max-width: 280px; height: 320px; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1111; box-shadow: none; }
+.app-card { position: relative; width: 100%; max-width: 280px; height: 320px; border-radius: 14px; overflow: visible; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1111; box-shadow: none; }
 .app-card__bg { position: absolute; top: 5px; left: 5px; width: calc(100% - 10px); height: calc(100% - 10px); z-index: 2; border-radius: 10px; overflow: hidden; }
 .app-card__blob { position: absolute; z-index: 1; top: 0; left: 0; width: 100%; height: 100%; border-radius: 10px; opacity: 1; filter: blur(12px); pointer-events: none; }
 .app-card:hover .app-card__blob { animation: blob-bounce 5s infinite ease; }
@@ -1786,6 +1786,34 @@ html {
   animation: border-shine 2s linear infinite;
   pointer-events: none;
   z-index: 4;
+}
+
+/* App card action button - slides up from below card on hover, matches border color */
+.app-card__cta {
+  position: absolute;
+  bottom: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 34px;
+  padding: 0 20px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 120ms ease;
+  border: none;
+  white-space: nowrap;
+  opacity: 0;
+  z-index: 5;
+}
+.app-card:hover .app-card__cta {
+  bottom: 0;
+  opacity: 1;
+}
+.app-card__cta:active {
+  transform: translateX(-50%) scale(0.96);
 }
 
 /* Text shine sweep — applied to subtitle text on app cards */

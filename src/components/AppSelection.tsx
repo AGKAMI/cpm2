@@ -114,7 +114,6 @@ function ThemeAppCard({ app, mode, title, subtitle, description, label, href, ic
   const blobCls = isGarage ? "bg-gold" : "bg-primary";
   const iconCls = isGarage ? "text-gold" : "text-primary";
   const labelCls = isGarage ? "text-gold" : "text-primary";
-  const hoverBorderCls = isGarage ? "hover:border-gold" : "hover:border-primary";
 
   return (
     <Link
@@ -122,16 +121,14 @@ function ThemeAppCard({ app, mode, title, subtitle, description, label, href, ic
       onClick={() => open(href)}
       className={cn(
         "relative group",
-        hoverBorderCls,
         "transition-colors duration-200"
       )}
       aria-label={`Open ${title}`}
     >
-      {/* Animated card surface */}
+      {/* Card surface — matches reference structure: overflow hidden, no white backdrop */}
       <div className="app-card">
-        <div className={`app-card__bg bg-background backdrop-blur-md ${isGarage ? "" : `border ${borderCls}`}`} />
+        <div className={`app-card__bg bg-background border ${borderCls}`} />
         <div className={`app-card__blob ${blobCls}`} />
-        {isGarage && <div className="app-card__border-garage" />}
         <div className="app-card__content">
           <div className="flex items-center gap-3 mb-6">
             <div className={cn("h-10 w-10 rounded-[18px] flex items-center justify-center", bgCls)}>

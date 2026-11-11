@@ -191,15 +191,7 @@ export function ProductPageClient({ productId }: { productId: string }) {
                 {product.stockQuantity === 0 ? "Sold out" : `${product.stockQuantity} left`}
               </span>
             </div>
-            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-3">Specs</h3>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              {SPEC_ROWS.map((row) => (
-                <div key={String(row.key)} className="flex justify-between pb-2 border-b border-border/50 last:border-0">
-                  <span className="text-ink-soft">{row.label}</span>
-                  <span className="text-foreground font-medium">{row.fmt(product)}</span>
-                </div>
-              ))}
-            </div>
+
           </section>
 
           {product.description && (

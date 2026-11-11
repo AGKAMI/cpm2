@@ -210,11 +210,17 @@ export function CheckoutClient({ productId }: { productId: number }) {
               className={
                 playerIdError
                   ? "border-destructive"
-                  : playerId.trim() && !validatePlayerId(playerId)
+                  : playerId.trim().length === 0
                     ? "border-destructive"
-                    : playerId.trim()
-                      ? "border-ok"
-                      : "border-destructive"
+                    : playerId.trim().length <= 2
+                      ? "border-destructive"
+                      : playerId.trim().length <= 4
+                        ? "border-yellow"
+                        : playerId.trim().length <= 6
+                          ? "border-orange"
+                          : playerId.trim().length >= 8 && !validatePlayerId(playerId)
+                            ? "border-ok"
+                            : "border-ok"
               }
             />
             {playerIdError && (
@@ -295,7 +301,10 @@ export function CheckoutClient({ productId }: { productId: number }) {
             <section className="panel rounded-xl border border-primary bg-primary/5 p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">EFT Bank Details</h3>
-                <Button variant="ghost" size="sm" onClick={() => setEftDetailsOpen(!eftDetailsOpen)}>
+                <Button variant="ghost" size="sm" onClick={(e) => {
+                  e.preventDefault();
+                  setEftDetailsOpen(!eftDetailsOpen);
+                }}>
                   {eftDetailsOpen ? "Hide details" : "Show details"}
                 </Button>
               </div>

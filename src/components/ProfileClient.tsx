@@ -57,6 +57,7 @@ export function ProfileClient() {
     const { mode, setMode } = useTheme();
   const toast = useToast();
   const [quickLoginBusy, setQuickLoginBusy] = useState(false);
+  const [isAdminOrOwner, setIsAdminOrOwner] = useState(false);
 
   async function checkSession() {
     try {
@@ -100,6 +101,34 @@ export function ProfileClient() {
       alive = false;
       if (pollTimer) clearInterval(pollTimer);
     };
+  }, []);
+
+  // Detect admin/owner via Telegram ID — no login required.
+  // If your Telegram ID matches the owner or an admin, the Quick Login button shows.
+  useEffect(() => {
+    const detectAdmin = async () => {
+      const initData =
+        typeof window !== "undefined" && typeof window.Telegram !== "undefined"
+          ? window.Telegram.WebApp?.initData ?? ""
+          : "";
+      const headers: HeadersInit = {};
+      if (initData) headers["X-Telegram-Init-Data"] = initData;
+      try {
+        const r = await fetch("/api/store/admin/is-admin", {
+          cache: "no-store",
+          headers,
+        });
+        if (!r.ok) {
+          setIsAdminOrOwner(false);
+          return;
+        }
+        const data = await r.json();
+        setIsAdminOrOwner(Boolean(data?.isAdmin || data?.isOwner));
+      } catch {
+        setIsAdminOrOwner(false);
+      }
+    };
+    detectAdmin();
   }, []);
 
   // --- CPM2 ID edit ---
@@ -215,9 +244,8 @@ export function ProfileClient() {
   };
 
   // --- Quick login: skip email/password, log in via linked Telegram ID ---
-  // Only shown to owner/admin customers who have their Telegram linked.
+  // Only shown to owner/admin customers detected via Telegram ID.
   const quickLogin = async () => {
-    if (!customer?.id || !customer.telegramLinked) return;
     setQuickLoginBusy(true);
     setError(null);
     setSuccess(null);
@@ -643,24 +671,22 @@ export function ProfileClient() {
           </p>
 
           {/* Quick login for owner/admin — skip email/password */ }
-          {customer &&
-            (customer.role === "owner" || customer.role === "admin") &&
-            customer.telegramLinked && (
-              <Button
-                variant="outline"
-                onClick={quickLogin}
-                disabled={quickLoginBusy}
-                className="mt-4 w-full flex items-center justify-center gap-2 border-2 border-gold/50 bg-metallic-gold/10 hover:bg-metallic-gold/20 transition-all"
-              >
-                <span className="relative overflow-hidden">
-                  {quickLoginBusy ? "Logging in…" : "⚡ Quick Login"}
-                  <span
-                    aria-hidden="true"
-                    className="pointer-events-none absolute top-0 h-full w-[60%] -skew-x-[22deg] bg-gradient-to-r from-transparent via-white/50 to-transparent shine-sweep"
-                  />
-                </span>
-              </Button>
-            )}
+          {isAdminOrOwner && (
+            <Button
+              variant="outline"
+              onClick={quickLogin}
+              disabled={quickLoginBusy}
+              className="mt-4 w-full flex items-center justify-center gap-2 border-2 border-gold/50 bg-metallic-gold/10 hover:bg-metallic-gold/20 transition-all"
+            >
+              <span className="relative overflow-hidden">
+                {quickLoginBusy ? "Logging in…" : "⚡ Quick Login"}
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute top-0 h-full w-[60%] -skew-x-[22deg] bg-gradient-to-r from-transparent via-white/50 to-transparent shine-sweep"
+                />
+              </span>
+            </Button>
+          )}
         </div>
       </section>
 

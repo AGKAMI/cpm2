@@ -30,11 +30,11 @@
   --brand-gold-gradient: linear-gradient(135deg, #f6e3a0 0%, #d4af4f 45%, #9b7a2a 100%);
 
   /* Animated border gradients — app card shine (moving thin = dark grey) */
-  --border-gradient-fleet: linear-gradient(45deg, #404040 0%, #2a2a2a 25%, #404040 50%, #2a2a2a 75%, #404040 100%);
-  --border-gradient-garage: linear-gradient(45deg, #404040 0%, #2a2a2a 25%, #404040 50%, #2a2a2a 75%, #404040 100%);
+  --border-gradient-fleet: linear-gradient(45deg, #5a5a5a 0%, #333333 25%, #5a5a5a 50%, #333333 75%, #5a5a5a 100%);
+  --border-gradient-garage: linear-gradient(45deg, #5a5a5a 0%, #333333 25%, #5a5a5a 50%, #333333 75%, #5a5a5a 100%);
 
   /* Grey — used for blob and inner borders */
-  --bg-grey: #2a2a2a;
+  --color-grey: #2a2a2a;
 
   /* Oxblood — out-of-stock / alert accent */
   --oxblood: #712a2a;
@@ -1473,7 +1473,7 @@ html {
 .card-border-shine:hover {
   position: relative;
 }
-.card-border-shine:hover::before {
+.card-border-shine::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -1493,6 +1493,7 @@ html {
   -webkit-mask-composite: destination-out;
   mask-composite: exclude;
   pointer-events: none;
+  animation: border-shine 2s linear infinite;
 }
 @keyframes border-shine {
   0% { transform: translateX(-100%); }
@@ -1543,13 +1544,8 @@ html {
     transparent
   );
   transform: skewX(-22deg);
-  opacity: 0;
-  transition: opacity 200ms ease, left 0.6s ease;
-}
-.card-hover-gold:hover .card-gold-shine {
   opacity: 1;
-  left: -140%;
-  transition: opacity 200ms ease;
+  animation: shine 2.2s ease-in-out infinite;
 }
 
 /* Fleet Ledger selected-card gold highlight */

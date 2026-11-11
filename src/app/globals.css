@@ -29,6 +29,10 @@
   --brand-gold-deep: #8f6f26;
   --brand-gold-gradient: linear-gradient(135deg, #f6e3a0 0%, #d4af4f 45%, #9b7a2a 100%);
 
+  /* Animated border gradients — app card shine */
+  --border-gradient-fleet: linear-gradient(45deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 70%, black) 25%, var(--primary) 50%, color-mix(in srgb, var(--primary) 70%, white) 75%, var(--primary) 100%);
+  --border-gradient-garage: linear-gradient(45deg, #f6e3a0 0%, #d4af4f 25%, #8f6f26 50%, #d4af4f 75%, #f6e3a0 100%);
+
   /* Oxblood — out-of-stock / alert accent */
   --oxblood: #712a2a;
   --oxblood-soft: rgba(113, 42, 42, 0.12);
@@ -1733,6 +1737,9 @@ html {
 @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 var(--pulse-ring-color); } 70% { box-shadow: 0 0 0 8px rgba(212, 175, 79, 0); } 100% { box-shadow: 0 0 0 0 var(--pulse-ring-color); } }
 .animate-pulse-ring { animation: pulse-ring 1.8s infinite; }
 
+.app-card { position: relative; width: 190px; height: 254px; border-radius: 10px; overflow: hidden; z-index: 1111; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 0 15px; background: linear-gradient(0deg, #000, #272727); border: none; color: white; font-weight: 900; cursor: pointer; transition-duration: 0.2s; box-shadow: none; }
+.app-card__bg { position: absolute; top: 5px; left: 5px; width: calc(100% - 10px); height: calc(100% - 10px); z-index: 2; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+.app-card__blob { position: absolute; z-index: 1; top: 50%; left: 50%; width: 150px; height: 150px; border-radius: 50%; opacity: 1; filter: blur(12px); animation: blob-bounce 5s infinite ease; pointer-events: none; }
 @keyframes blob-bounce {
   0% { transform: translate(-100%, -100%) translate3d(0, 0, 0); }
   25% { transform: translate(-100%, -100%) translate3d(100%, 0, 0); }
@@ -1740,7 +1747,40 @@ html {
   75% { transform: translate(-100%, -100%) translate3d(0, 100%, 0); }
   100% { transform: translate(-100%, -100%) translate3d(0, 0, 0); }
 }
-.app-card__content { position: relative; z-index: 3; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; }
+.app-card__content { position: relative; z-index: 3; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0; }
+
+/* Animated border gradient — matches reference structure, our colours */
+.app-card::before, .app-card::after {
+  content: "";
+  position: absolute;
+  left: -2px;
+  top: -2px;
+  border-radius: 10px;
+  background-size: 400%;
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+  z-index: -1;
+  animation: steam 20s linear infinite;
+}
+.app-card::before {
+  background: var(--border-gradient-fleet);
+}
+.app-card--garage::before {
+  background: var(--border-gradient-garage);
+}
+.app-card::after {
+  background: var(--border-gradient-fleet);
+  filter: blur(100px);
+}
+.app-card--garage::after {
+  background: var(--border-gradient-garage);
+  filter: blur(100px);
+}
+@keyframes steam {
+  0% { background-position: 0 0; }
+  50% { background-position: 400% 0; }
+  100% { background-position: 0 0; }
+}
 
 /* Text shine sweep — applied to subtitle text on app cards */
 .text-shine {

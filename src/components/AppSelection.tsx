@@ -5,17 +5,6 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "@/hooks/useTheme";
 import { cn } from "@/lib/utils";
 
-/**
- * App selection screen — Fleet Ledger vs VANTA Garage.
- *
- * Full-screen dark showroom. Two animated cards, one per app, nothing else.
- * Tapping a card opens that app; each app shell carries a "back to
- * selection" control so you can switch without using the browser back button.
- *
- * Card animation: Uiverse.io blob-bounce. Colours match each app's theme:
- *   - VANTA Garage   → gold outline + gold blob
- *   - Fleet Ledger   → active theme palette colours (primary / deep)
- */
 export function AppSelection() {
   const router = useRouter();
   const { mode } = useTheme();
@@ -42,21 +31,7 @@ export function AppSelection() {
           description="Track every account, every balance, every car. Two games, two registers."
           label="Open register"
           href="/fleet/cpm2"
-          icon={
-            <svg
-              className="h-5 w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <rect x="2" y="2" width="20" height="20" rx="2" ry="2" />
-              <path d="M16 6v8M8 12h8" />
-            </svg>
-          }
+          iconSrc="/app/icon.svg"
         />
 
         {/* VANTA Garage card - gold */}
@@ -68,20 +43,7 @@ export function AppSelection() {
           description="Premium vehicle storefront. Buy cars in-game, pay ZAR via EFT or PayFast."
           label="Open store"
           href="/store"
-          icon={
-            <svg
-              className="h-5 w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-            </svg>
-          }
+          iconSrc="/kami-vanta-logo-no-wings.svg"
         />
       </div>
 
@@ -102,43 +64,35 @@ interface ThemeAppCardProps {
   description: string;
   label: string;
   href: string;
-  icon: React.ReactNode;
+  iconSrc: string;
 }
 
-function ThemeAppCard({ app, mode, title, subtitle, description, label, href, icon }: ThemeAppCardProps) {
+function ThemeAppCard({ app, mode, title, subtitle, description, label, href, iconSrc }: ThemeAppCardProps) {
   const isGarage = app === "garage";
-
-  // Garage always uses brand-gold. Fleet uses theme palette classes.
-  const borderCls = isGarage ? "border-gold" : "border-primary";
-  const bgCls = isGarage ? "bg-gold/10" : "bg-primary/10";
-  const blobCls = isGarage ? "bg-gold" : "bg-primary";
-  const iconCls = isGarage ? "text-gold" : "text-primary";
-  const labelCls = isGarage ? "text-gold" : "text-primary";
 
   return (
     <Link
       href={href}
       onClick={() => open(href)}
-      className={cn(
-        "relative group",
-        "transition-colors duration-200"
-      )}
+      className="relative group transition-colors duration-200"
       aria-label={`Open ${title}`}
     >
       {/* Card surface — matches reference structure: overflow hidden, no white backdrop */}
-      <div className="app-card">
-        <div className={`app-card__bg bg-background border ${borderCls}`} />
-        <div className={`app-card__blob ${blobCls}`} />
+      <div className={`app-card ${isGarage ? "app-card--garage" : "app-card--fleet"}`}>
+        <div className="app-card__bg bg-background border border-primary" />
+        <div className="app-card__blob bg-primary" />
         <div className="app-card__content">
           <div className="flex items-center gap-3 mb-6">
-            <div className={cn("h-10 w-10 rounded-[18px] flex items-center justify-center", bgCls)}>
-              {icon}
-            </div>
-            <div>
-              <span className={cn("block text-[16px] font-semibold text-foreground", labelCls)}>{title}</span>
-              <span className={cn("text-[10px] uppercase tracking-[0.15em] text-ink-faint text-shine", isGarage ? "text-gold" : "text-primary")}>{subtitle}</span>
-            </div>
+            <img
+              src={iconSrc}
+              alt={title}
+              className="h-10 w-10 rounded-[18px] object-cover object-center"
+            />
           </div>
+          <span className="block text-[16px] font-semibold text-foreground">{title}</span>
+          <span className={cn("text-[10px] uppercase tracking-[0.15em] text-ink-faint text-shine", isGarage ? "text-gold" : "text-primary")}>
+            {subtitle}
+          </span>
           <p className="text-[11px] leading-relaxed text-ink-soft mb-6">{description}</p>
           <span className="mt-auto inline-flex items-center gap-1 text-[10px] font-semibold">
             {label} →

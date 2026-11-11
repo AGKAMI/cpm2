@@ -1744,7 +1744,8 @@ html {
 .animate-blob-bounce { animation: blob-bounce 5s infinite ease; }
 
 .app-card { position: relative; width: 100%; max-width: 280px; height: 320px; border-radius: 14px; overflow: visible; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1111; box-shadow: none; }
-.app-card__bg { position: absolute; top: 5px; left: 5px; width: calc(100% - 10px); height: calc(100% - 10px); z-index: 2; border-radius: 10px; overflow: hidden; }
+.app-card__bg { position: absolute; top: 5px; left: 5px; width: calc(100% - 10px); height: calc(100% - 10px); z-index: 2; border-radius: 10px; overflow: hidden; transition: background-color 300ms ease; }
+.app-card:hover .app-card__bg { background: color-mix(in srgb, var(--background) 70%, transparent); }
 .app-card__blob { position: absolute; z-index: 1; top: 0; left: 0; width: 100%; height: 100%; border-radius: 10px; opacity: 1; filter: blur(12px); pointer-events: none; }
 .app-card:hover .app-card__blob { animation: blob-bounce 5s infinite ease; }
 .app-card__content { position: relative; z-index: 3; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; }
@@ -1794,8 +1795,8 @@ html {
   bottom: -60px;
   left: 50%;
   transform: translateX(-50%);
+  width: 85%;
   height: 34px;
-  padding: 0 20px;
   border-radius: 10px;
   font-size: 10px;
   font-weight: 600;

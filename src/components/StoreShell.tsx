@@ -54,13 +54,68 @@ export function StoreShell({ children, dock }: StoreShellProps) {
   const [customerLoggedIn, setCustomerLoggedIn] = useState<boolean>(false);
   const { mode, toggleTheme } = useTheme();
 
-  // Explicit admin login gate — admin/owner buttons only show after the user
-  // has actively logged in as admin/owner. Telegram auto-detection is NOT used
-  // to surface these buttons (Telegram shares your ID with Mini Apps
-  // automatically — that is not a login).
-  const adminSessionActive = () =>
-    typeof window !== "undefined" &&
-    localStorage.getItem("vanta_admin_session") === "true";
+  // Lightweight admin status check on mount — shows/hides admin/owner dock
+  // buttons based on whether the linked Telegram ID is admin or owner.
+  // The "login" happens on the Profile page (link your Telegram ID there).
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const initData =
+        typeof window !== "undefined" && typeof window.Telegram !== "undefined"
+          ? window.Telegram.WebApp?.initData ?? ""
+          : "";
+      const headers: HeadersInit = {};
+      if (initData) headers["X-Telegram-Init-Data"] = initData;
+      try {
+        const r = await fetch("/api/store/admin/is-admin", {
+          cache: "no-store",
+          headers,
+        });
+        if (!r.ok) {
+          setIsAdmin(false);
+          setIsOwner(false);
+          return;
+        }
+        const data = await r.json();
+        setIsAdmin(Boolean(data?.isAdmin));
+        setIsOwner(Boolean(data?.isOwner));
+      } catch {
+        setIsAdmin(false);
+        setIsOwner(false);
+      }
+    };
+    checkAdmin();
+  }, []);
+
+  // Re-check when window regains focus (e.g. after linking Telegram on profile)
+  useEffect(() => {
+    const onFocus = () => {
+      const initData =
+        typeof window !== "undefined" && typeof window.Telegram !== "undefined"
+          ? window.Telegram.WebApp?.initData ?? ""
+          : "";
+      const headers: HeadersInit = {};
+      if (initData) headers["X-Telegram-Init-Data"] = initData;
+      fetch("/api/store/admin/is-admin", { cache: "no-store", headers })
+        .then((r) => {
+          if (!r.ok) {
+            setIsAdmin(false);
+            setIsOwner(false);
+            return;
+          }
+          return r.json();
+        })
+        .then((data) => {
+          setIsAdmin(Boolean(data?.isAdmin));
+          setIsOwner(Boolean(data?.isOwner));
+        })
+        .catch(() => {
+          setIsAdmin(false);
+          setIsOwner(false);
+        });
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, []);
 
   // Track customer login state via localStorage
   useEffect(() => {
@@ -98,8 +153,8 @@ export function StoreShell({ children, dock }: StoreShellProps) {
 
   const visibleNav = STORE_NAV.filter(
     (t) =>
-      (t.key !== "admin" || (isAdmin === true && adminSessionActive())) &&
-      (t.key !== "owner" || (isOwner === true && adminSessionActive())),
+      (t.key !== "admin" || isAdmin === true) &&
+      (t.key !== "owner" || isOwner === true),
   );
 
   const activeTab: StoreTab | undefined =
@@ -160,30 +215,6 @@ export function StoreShell({ children, dock }: StoreShellProps) {
                 onCheckedChange={() => toggleTheme()}
               />
               <NotificationBell />
-              {!adminSessionActive() ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => router.push("/store/admin-login")}
-                  className="hidden sm:flex"
-                >
-                  Admin Login
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    localStorage.removeItem("vanta_admin_session");
-                    setIsAdmin(false);
-                    setIsOwner(false);
-                    router.push("/store");
-                  }}
-                  className="hidden sm:flex"
-                >
-                  Admin Logout
-                </Button>
-              )}
             </div>
           </div>
         </header>

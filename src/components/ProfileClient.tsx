@@ -62,7 +62,13 @@ export function ProfileClient() {
 
   async function checkSession() {
     try {
-      const res = await fetch("/api/store/profile", { credentials: "include" });
+      const initData =
+        typeof window !== "undefined" && typeof window.Telegram !== "undefined"
+          ? window.Telegram.WebApp?.initData ?? ""
+          : "";
+      const headers: HeadersInit = {};
+      if (initData) headers["X-Telegram-Init-Data"] = initData;
+      const res = await fetch("/api/store/profile", { credentials: "include", headers });
       if (res.ok) {
         const data = await res.json();
         if (data.customer) {
@@ -73,8 +79,8 @@ export function ProfileClient() {
 
         // Fetch stats
         const [ordersRes, wishlistRes] = await Promise.all([
-          fetch("/api/store/orders", { credentials: "include" }),
-          fetch("/api/store/wishlist", { credentials: "include" }),
+          fetch("/api/store/orders", { credentials: "include", headers }),
+          fetch("/api/store/wishlist", { credentials: "include", headers }),
         ]);
 
         if (ordersRes.ok) {
@@ -273,6 +279,9 @@ export function ProfileClient() {
       localStorage.setItem("vanta_admin_session", "true");
       // Tell the shell to re-check admin status
       window.dispatchEvent(new Event("focus"));
+
+      // Refresh profile so the customer state reflects the Telegram login
+      await checkSession();
 
       setSuccess(
         data.isOwner

@@ -1548,8 +1548,8 @@ html {
 }
 .card-hover-gold:hover .card-gold-shine {
   opacity: 1;
-  left: 150%;
-  transition: left 2.2s ease-in-out, opacity 200ms ease;
+  left: -140%;
+  transition: opacity 200ms ease;
 }
 
 /* Fleet Ledger selected-card gold highlight */
@@ -2013,11 +2013,10 @@ html {
   content: "";
   position: absolute;
   top: 0;
-  left: -100%;
+  left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.55) 50%, transparent 100%);
-  animation: promotionShine 3s infinite linear;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.15) 50%, transparent 100%);
 }
 
 .promotion-card:hover::after {

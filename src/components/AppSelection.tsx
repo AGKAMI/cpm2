@@ -111,7 +111,7 @@ function ThemeAppCard({ app, mode, title, subtitle, description, label, href, ic
   // Garage always uses brand-gold. Fleet uses theme palette classes.
   const borderCls = isGarage ? "border-gold" : "border-primary";
   const bgCls = isGarage ? "bg-gold/10" : "bg-primary/10";
-  const blobCls = isGarage ? "bg-gold" : "bg-gold";
+  const blobCls = isGarage ? "bg-gold" : "bg-primary";
   const iconCls = isGarage ? "text-gold" : "text-primary";
   const labelCls = isGarage ? "text-gold" : "text-primary";
   const hoverBorderCls = isGarage ? "hover:border-gold" : "hover:border-primary";

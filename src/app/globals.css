@@ -1454,6 +1454,41 @@ html {
   box-shadow: 0 8px 24px rgba(212, 175, 79, 0.25);
 }
 
+/* Animated border shine on store card hover */
+.card-border-shine {
+  position: relative;
+  overflow: hidden;
+}
+.card-border-shine:hover {
+  position: relative;
+}
+.card-border-shine:hover::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(212, 175, 79, 0.9) 25%,
+    rgba(212, 175, 79, 0.5) 50%,
+    transparent 75%,
+    transparent 100%
+  );
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: border-shine 2s linear infinite;
+}
+@keyframes border-shine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
 /* Gold hover effect on store cards — metallic fill + shine sweep on hover */
 .card-hover-gold {
   position: relative;

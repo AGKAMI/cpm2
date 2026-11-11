@@ -189,7 +189,7 @@ const [activeIndex, setActiveIndex] = useState(0);
               aria-label="Featured vehicles"
             >
             {featured.map((c) => (
-              <div key={c.id} className="featured-carousel-item group cursor-pointer card-hover-gold">
+              <div key={c.id} className="featured-carousel-item group cursor-pointer card-hover-gold card-border-shine">
                 <Link href={`/store/products/${c.id}`} className="block h-full">
                 <div className="media r1611 relative overflow-hidden rounded-[24px] border border-border card-gold-shine-wrap">
                     <div className="card-gold-shine" aria-hidden="true" />
@@ -328,7 +328,7 @@ const [activeIndex, setActiveIndex] = useState(0);
           </div>
           <div className="hs px-4 gap-4" style={{ scrollPaddingLeft: "16px" }}>
             {newArrivals.map((c) => (
-              <Link key={c.id} href={`/store/products/${c.id}`} className="nc cursor-pointer card-hover-gold">
+              <Link key={c.id} href={`/store/products/${c.id}`} className="nc cursor-pointer card-hover-gold card-border-shine">
                 <div className="relative card-gold-shine-wrap">
                     <div className="card-gold-shine" aria-hidden="true" />
                   <div className="media r43 rounded-[18px] border border-border overflow-hidden">
@@ -367,7 +367,7 @@ const [activeIndex, setActiveIndex] = useState(0);
           </div>
           <div className="hs px-4 gap-4" style={{ scrollPaddingLeft: "16px" }}>
             {onSale.map((c) => (
-              <Link key={c.id} href={`/store/products/${c.id}`} className="nc cursor-pointer card-hover-gold">
+              <Link key={c.id} href={`/store/products/${c.id}`} className="nc cursor-pointer card-hover-gold card-border-shine">
                 <div className="relative card-gold-shine-wrap">
                     <div className="card-gold-shine" aria-hidden="true" />
                   <div className="media r43 rounded-[18px] border border-border overflow-hidden">
@@ -406,7 +406,7 @@ const [activeIndex, setActiveIndex] = useState(0);
         <p className="text-[11px] text-ink-soft mt-[-4px] mb-3 px-4">Because you viewed the featured builds</p>
         <div className="pad flex flex-col gap-3 px-4">
           {featured.slice(0, 4).map((c) => (
-            <Link key={c.id} href={`/store/products/${c.id}`} className="rk cursor-pointer card-hover-gold">
+            <Link key={c.id} href={`/store/products/${c.id}`} className="rk cursor-pointer card-hover-gold card-border-shine">
               <div className="media w-16 h-16 rounded-[16px] border border-border flex-shrink-0 card-gold-shine-wrap">
                   <div className="card-gold-shine" aria-hidden="true" />
                 {cardImages[c.id] ? (

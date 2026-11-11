@@ -32,7 +32,7 @@ export function AppSelection() {
         <span className="text-[11px] uppercase tracking-[0.3em] text-ink-soft">choose your app</span>
       </div>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:gap-6 w-full max-w-[640px]">
+      <div className="flex flex-col gap-4 sm:flex-row sm:gap-6 mx-auto w-auto max-w-[640px]">
         {/* Fleet Ledger card - theme palette colours */}
         <ThemeAppCard
           app="fleet"
@@ -139,7 +139,7 @@ function ThemeAppCard({ app, mode, title, subtitle, description, label, href, ic
             </div>
             <div>
               <span className={cn("block text-[16px] font-semibold text-foreground", labelCls)}>{title}</span>
-              <span className="text-[10px] uppercase tracking-[0.15em] text-ink-faint">{subtitle}</span>
+              <span className={cn("text-[10px] uppercase tracking-[0.15em] text-ink-faint text-shine", isGarage ? "text-gold" : "text-primary")}>{subtitle}</span>
             </div>
           </div>
           <p className="text-[11px] leading-relaxed text-ink-soft mb-6">{description}</p>

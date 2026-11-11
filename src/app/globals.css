@@ -1493,7 +1493,6 @@ html {
   -webkit-mask-composite: destination-out;
   mask-composite: exclude;
   pointer-events: none;
-  animation: border-shine 2s linear infinite;
 }
 @keyframes border-shine {
   0% { transform: translateX(-100%); }
@@ -2031,7 +2030,6 @@ html {
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: destination-out;
   mask-composite: exclude;
-  animation: borderShine 3s linear infinite;
   pointer-events: none;
   z-index: 5;
 }

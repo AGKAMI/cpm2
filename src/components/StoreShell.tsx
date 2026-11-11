@@ -85,6 +85,12 @@ export function StoreShell({ children, dock }: StoreShellProps) {
         const data = await r.json();
         setIsAdmin(Boolean(data?.isAdmin));
         setIsOwner(Boolean(data?.isOwner));
+        // If Telegram (via cookie or initData) confirms admin/owner status,
+        // set the session flag so dock buttons appear without requiring
+        // a separate "Quick Login" click.
+        if (data?.isAdmin || data?.isOwner) {
+          localStorage.setItem("vanta_admin_session", "true");
+        }
       } catch {
         setIsAdmin(false);
         setIsOwner(false);
@@ -114,6 +120,9 @@ export function StoreShell({ children, dock }: StoreShellProps) {
         .then((data) => {
           setIsAdmin(Boolean(data?.isAdmin));
           setIsOwner(Boolean(data?.isOwner));
+          if (data?.isAdmin || data?.isOwner) {
+            localStorage.setItem("vanta_admin_session", "true");
+          }
         })
         .catch(() => {
           setIsAdmin(false);

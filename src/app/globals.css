@@ -1790,31 +1790,22 @@ html {
 
 /* Text shine sweep — applied to subtitle text on app cards */
 .text-shine {
-  position: relative;
   display: inline-block;
-  overflow: hidden;
-}
-.text-shine::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -140%;
-  width: 60%;
-  height: 100%;
   background: linear-gradient(
     90deg,
-    transparent,
-    rgba(255, 255, 255, 0.6),
-    transparent
+    transparent 0%,
+    rgba(255, 255, 255, 0.9) 50%,
+    transparent 100%
   );
-  transform: skewX(-22deg);
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
   animation: text-shine 3s ease-in-out infinite;
-  pointer-events: none;
 }
 @keyframes text-shine {
-  0% { left: -140%; }
-  20% { left: 140%; }
-  100% { left: 140%; }
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 .timeline b { font-size: 12.5px; display: block; line-height: 1.2; }

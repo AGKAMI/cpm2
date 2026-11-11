@@ -57,7 +57,8 @@ export function ProfileClient() {
     const { mode, setMode } = useTheme();
   const toast = useToast();
   const [quickLoginBusy, setQuickLoginBusy] = useState(false);
-  const [isAdminOrOwner, setIsAdminOrOwner] = useState(false);
+  const [adminRole, setAdminRole] = useState<"owner" | "admin" | null>(null);
+  const [notificationsSaving, setNotificationsSaving] = useState(false);
 
   async function checkSession() {
     try {
@@ -119,13 +120,13 @@ export function ProfileClient() {
           headers,
         });
         if (!r.ok) {
-          setIsAdminOrOwner(false);
+          setAdminRole(null);
           return;
         }
         const data = await r.json();
-        setIsAdminOrOwner(Boolean(data?.isAdmin || data?.isOwner));
+        setAdminRole(data?.isOwner ? "owner" : data?.isAdmin ? "admin" : null);
       } catch {
-        setIsAdminOrOwner(false);
+        setAdminRole(null);
       }
     };
     detectAdmin();
@@ -223,7 +224,7 @@ export function ProfileClient() {
   const toggleNotifications = async () => {
     if (notificationsEnabled === null || !customer?.id) return;
     const next = !notificationsEnabled;
-    setSaving(true);
+    setNotificationsSaving(true);
     try {
       const res = await fetch(`/api/store/customers/${customer.id}/notifications`, {
         method: "POST",
@@ -239,7 +240,7 @@ export function ProfileClient() {
       setError(err instanceof Error ? err.message : "Failed to update notifications.");
       toast.error("Update failed", err instanceof Error ? err.message : String(err));
     } finally {
-      setSaving(false);
+      setNotificationsSaving(false);
     }
   };
 
@@ -671,15 +672,15 @@ export function ProfileClient() {
           </p>
 
           {/* Quick login for owner/admin — skip email/password */}
-          {!customer && isAdminOrOwner && (
+          {!customer && adminRole && (
             <Button
               variant="outline"
               onClick={quickLogin}
               disabled={quickLoginBusy}
-              className="mt-4 w-full flex items-center justify-center gap-2 border-2 border-gold/50 bg-metallic-gold/10 hover:bg-metallic-gold/20 transition-all"
+              className={`mt-4 w-full flex items-center justify-center gap-2 border-2 border-background transition-all ${adminRole === "owner" ? "metallic-gold text-black" : "metallic-indigo text-white"}`}
             >
               <span className="relative overflow-hidden">
-                {quickLoginBusy ? "Logging in…" : "⚡ Quick Login"}
+                {quickLoginBusy ? "Logging in…" : "Quick Login"}
                 <span
                   aria-hidden="true"
                   className="pointer-events-none absolute top-0 h-full w-[60%] -skew-x-[22deg] bg-gradient-to-r from-transparent via-white/50 to-transparent shine-sweep"
@@ -1051,7 +1052,7 @@ export function ProfileClient() {
               type="checkbox"
               checked={notificationsEnabled === true}
               onChange={toggleNotifications}
-              disabled={saving || notificationsEnabled === null}
+              disabled={notificationsSaving || notificationsEnabled === null}
               aria-pressed={notificationsEnabled === true}
               aria-label="Toggle Telegram notifications"
             />

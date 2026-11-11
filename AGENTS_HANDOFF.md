@@ -1991,3 +1991,27 @@ Each module below includes: **What** (functional spec from plan), **How it works
 **Deploy status:** Not deployed. Working tree only.
 
 **Verified by:** Kermes (nemotron-3.5-super-vl-120b-a12b)
+
+### 2026-11-10 — Hermes Agent "Kermes" — Admin Image Upload Fix
+
+**What:** Fixed the broken "Choose image" upload on the add product card. Previously, picking a file converted it to a base64 data URL which failed Zod URL validation (`http://` or `https://` required), so the product was never created.
+
+**Where:**
+- `src/app/api/store/admin/upload-image/route.ts` — NEW: POST endpoint accepts multipart/form-data file, saves to `public/uploads/`, returns `{ url }`
+- `src/app/api/store/admin/uploads/[filename]/route.ts` — NEW: GET endpoint serves uploaded images with correct Content-Type
+- `src/app/store/admin/page.tsx` — onChange handler now uploads the file via the API and sets the returned real URL into `form.imageUrl`; `selectProduct` now fetches existing media and restores `imageUrl` on edit instead of wiping it
+- `src/lib/store/validation.ts` — client `imageUrl` schema now accepts `/` prefixed paths in addition to `http://`/`https://`
+- `src/app/api/store/admin/products/route.ts` — server `imageUrl` schema changed from `z.string().url()` to `z.string()` to accept relative upload paths
+
+**Changes:**
+1. **Upload endpoint** — `POST /api/store/admin/upload-image` saves the file to disk and returns a public API URL
+2. **Image serving** — `GET /api/store/admin/uploads/[filename]` serves the file with correct MIME type
+3. **Frontend wiring** — file picker → upload API → set real URL into form → preview shows uploaded image
+4. **Validation** — client and server both accept `/api/store/admin/uploads/...` paths
+5. **Edit preservation** — `selectProduct` fetches existing media and restores `imageUrl` instead of setting `""`
+
+**Gates:** `tsc --noEmit` exit 0. `next build` clean. Server running at http://127.0.0.1:3001 (HTTP 200 on /store/admin). Upload + image serving verified via curl (HTTP 200, correct Content-Type).
+
+**Deploy status:** Not deployed. Working tree only.
+
+**Verified by:** Kermes (nemotron-3.5-super-vl-120b-a12b)

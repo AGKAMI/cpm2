@@ -25,6 +25,34 @@ export default function OwnerPage() {
   const router = useRouter();
   const toast = useToast();
   const [admins, setAdmins] = useState<AdminRow[]>([]);
+
+  // Force kick: non-owner users are redirected to the store home
+  useEffect(() => {
+    const checkOwner = async () => {
+      const initData =
+        typeof window !== "undefined" && typeof window.Telegram !== "undefined"
+          ? window.Telegram.WebApp?.initData ?? ""
+          : "";
+      const headers: HeadersInit = {};
+      if (initData) headers["X-Telegram-Init-Data"] = initData;
+      try {
+        const r = await fetch("/api/store/admin/is-admin", {
+          cache: "no-store",
+          headers,
+        });
+        if (!r.ok) {
+          router.push("/store");
+          return;
+        }
+        const data = await r.json();
+        if (!data?.isOwner) router.push("/store");
+      } catch {
+        router.push("/store");
+      }
+    };
+    checkOwner();
+  }, [router]);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [newId, setNewId] = useState("");

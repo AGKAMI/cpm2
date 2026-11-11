@@ -85,7 +85,7 @@ export function ProductPageClient({ productId }: { productId: string }) {
 
   return (
     <StoreShell>
-      <PageHeading folio="01" title={product.name} meta={formatPrice(product.basePriceCents, product.currency)} />
+      <PageHeading folio="01" title={product.name} meta={formatPrice(product.basePriceCents, product.currency)} backHref="/store/categories" />
 
       {/* Hero image carousel */}
       <section className="mb-6 px-4">

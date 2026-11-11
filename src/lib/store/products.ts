@@ -91,8 +91,8 @@ export async function createProduct(input: ProductInput): Promise<Product> {
   const db = await getStoreDb();
   const now = new Date().toISOString();
   const result = await db.execute({
-    sql: `INSERT INTO vanta_products (category_id, cpm2_car_code, name, description, base_price_cents, currency, stock_quantity, availability_state, exclusivity, is_featured, is_new, is_sale, is_published, air_suspension, unlocked_bodykits, version, created_at, updated_at, spec_hp, spec_top_speed, spec_zero_hundred, spec_drive)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)`,
+    sql: `INSERT INTO vanta_products (category_id, cpm2_car_code, name, description, base_price_cents, currency, stock_quantity, availability_state, exclusivity, is_featured, is_new, is_sale, is_published, air_suspension, unlocked_bodykits, created_at, updated_at, spec_hp, spec_top_speed, spec_zero_hundred, spec_drive)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '${now}', ?, ?, ?, ?, ?)`,
     args: [
       input.categoryId ?? null,
       input.cpm2CarCode ?? null,
@@ -109,7 +109,6 @@ export async function createProduct(input: ProductInput): Promise<Product> {
       input.isPublished ? 1 : 0,
       input.airSuspension ? 1 : 0,
       input.unlockedBodykits ? 1 : 0,
-      now,
       now,
       input.specHp ?? null,
       input.specTopSpeed ?? null,

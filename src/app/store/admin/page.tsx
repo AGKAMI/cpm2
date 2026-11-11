@@ -116,6 +116,34 @@ export default function AdminPage() {
   const [products, setProducts] = useState<VantaProduct[]>([]);
   const [categories, setCategories] = useState<VantaCategory[]>([]);
   const [promotions, setPromotions] = useState<VantaPromotion[]>([]);
+
+  // Force kick: non-admin/owner users are redirected to the store home
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const initData =
+        typeof window !== "undefined" && typeof window.Telegram !== "undefined"
+          ? window.Telegram.WebApp?.initData ?? ""
+          : "";
+      const headers: HeadersInit = {};
+      if (initData) headers["X-Telegram-Init-Data"] = initData;
+      try {
+        const r = await fetch("/api/store/admin/is-admin", {
+          cache: "no-store",
+          headers,
+        });
+        if (!r.ok) {
+          router.push("/store");
+          return;
+        }
+        const data = await r.json();
+        if (!data?.isAdmin && !data?.isOwner) router.push("/store");
+      } catch {
+        router.push("/store");
+      }
+    };
+    checkAdmin();
+  }, [router]);
+
   const [form, setForm] = useState<ProductForm>(EMPTY_FORM);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [inlineEditingId, setInlineEditingId] = useState<number | null>(null);
@@ -223,7 +251,7 @@ export default function AdminPage() {
       setShowCategoryForm(false);
     };
 
-    const selectProduct = (p: VantaProduct) => {
+    const selectProduct = async (p: VantaProduct) => {
       setForm({
         cpm2CarCode: String(p.cpm2CarCode ?? ""),
         imageUrl: "",
@@ -244,6 +272,16 @@ export default function AdminPage() {
       setEditingId(p.id);
       setInlineEditingId(p.id);
       setMsg(null);
+
+      // Load existing media for the product so the image isn't lost on edit
+      try {
+        const { media } = await vantaApi.media(p.id);
+        if (media.length > 0) {
+          setForm((f) => ({ ...f, imageUrl: media[0].publicUrl }));
+        }
+      } catch {
+        // Media fetch is non-fatal — user can re-upload if needed
+      }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -890,17 +928,27 @@ export default function AdminPage() {
                 onChange={async (e) => {
                   const file = e.target.files?.[0] ?? null;
                   if (!file) return;
-                  setProductConverterFile(file);
                   setProductConverterError(null);
                   try {
-                    const dataUrl = await convertFileToDataUrl(file);
-                    setProductConverterResult(dataUrl);
-                    // Auto-convert to URL — no extra click needed
-                    setForm((f) => ({ ...f, imageUrl: dataUrl }));
-                    setProductConverterFile(null);
-                    setProductConverterResult(null);
+                    // Upload to server and get a real public URL
+                    const formData = new FormData();
+                    formData.append("file", file);
+                    const res = await fetch("/api/store/admin/upload-image", {
+                      method: "POST",
+                      body: formData,
+                    });
+                    if (!res.ok) {
+                      const errBody = await res.json().catch(() => ({}));
+                      throw new Error(errBody.error?.message || "Upload failed");
+                    }
+                    const { url } = (await res.json()) as { url: string };
+                    // Set the real URL into the form
+                    setForm((f) => ({ ...f, imageUrl: url }));
+                    // Keep preview + filename visible
+                    setProductConverterFile(file);
+                    setProductConverterResult(url);
                   } catch {
-                    setProductConverterError("Failed to read image file.");
+                    setProductConverterError("Failed to upload image.");
                   }
                 }}
               />

@@ -20,7 +20,7 @@ import { z } from "zod";
 
 const productSchema = z.object({
   cpm2CarCode: z.coerce.number().int().nonnegative().optional(),
-  imageUrl: z.string().url().optional(),
+  imageUrl: z.string().optional(),
   name: z.string().min(1),
   description: z.string().optional(),
   basePriceCents: z.coerce.number().int().nonnegative(),

@@ -32,7 +32,7 @@ const WHATSAPP_CHANNEL_ID = "0029Vb9MVBOGpLHVobbY3e0s@newsletter";
 const VANTA_WHATSAPP_WEBHOOK_URL = process.env.VANTA_WHATSAPP_WEBHOOK_URL || "";
 const VANTA_WHATSAPP_WEBHOOK_SECRET = process.env.VANTA_WHATSAPP_WEBHOOK_SECRET || "";
 
-async function broadcastToWhatsAppBot(text: string): Promise<void> {
+export async function broadcastToWhatsAppBot(text: string, imageUrl?: string): Promise<void> {
   if (!VANTA_WHATSAPP_WEBHOOK_URL) {
     console.warn("VANTA_WHATSAPP_WEBHOOK_URL not set — skipping WhatsApp bot broadcast");
     return;
@@ -49,6 +49,7 @@ async function broadcastToWhatsAppBot(text: string): Promise<void> {
       body: JSON.stringify({
         message: text,
         jid: WHATSAPP_CHANNEL_ID,
+        ...(imageUrl ? { image: imageUrl } : {}),
       }),
     });
     if (!res.ok) {

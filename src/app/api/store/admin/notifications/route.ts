@@ -9,7 +9,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStoreDb } from "@/lib/store-db";
 import { requireStoreAdmin } from "@/lib/store/auth";
-import { sendNotification } from "@/lib/store/notifications";
+import { sendNotification, broadcastToWhatsAppBot } from "@/lib/store/notifications";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +21,7 @@ const notificationSchema = z.object({
   type: z.string().min(1).max(50).default("general"),
   relatedProductId: z.coerce.number().int().positive().optional(),
   relatedOrderId: z.string().optional(),
+  imageUrl: z.string().url().optional(),
 });
 
 export async function POST(request: NextRequest) {

@@ -25,7 +25,7 @@ export function AppSelection() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-8 p-6 sm:p-10">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-8 p-6 sm:p-10 bg-background">
       {/* Brand mark - gold serif, no shield (that's the garage's). */}
       <div className="flex flex-col items-center gap-2">
         <span className="block text-[44px] font-display font-bold tracking-[-0.03em] text-ink">CPM</span>
@@ -129,8 +129,9 @@ function ThemeAppCard({ app, mode, title, subtitle, description, label, href, ic
     >
       {/* Animated card surface */}
       <div className="app-card">
-        <div className={`app-card__bg bg-background backdrop-blur-md border ${borderCls}`} />
+        <div className={`app-card__bg bg-background backdrop-blur-md ${isGarage ? "" : `border ${borderCls}`}`} />
         <div className={`app-card__blob ${blobCls}`} />
+        {isGarage && <div className="app-card__border-garage" />}
         <div className="app-card__content">
           <div className="flex items-center gap-3 mb-6">
             <div className={cn("h-10 w-10 rounded-[18px] flex items-center justify-center", bgCls)}>

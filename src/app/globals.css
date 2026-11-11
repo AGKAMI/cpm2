@@ -1801,7 +1801,7 @@ html {
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
-  animation: text-shine 3s ease-in-out infinite;
+  animation: text-shine 6s ease-in-out infinite;
 }
 @keyframes text-shine {
   0% { background-position: 200% 0; }

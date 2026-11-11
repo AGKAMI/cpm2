@@ -56,6 +56,7 @@ export function ProfileClient() {
     const [notificationsEnabled, setNotificationsEnabled] = useState<boolean | null>(null);
     const { mode, setMode } = useTheme();
   const toast = useToast();
+  const [quickLoginBusy, setQuickLoginBusy] = useState(false);
 
   async function checkSession() {
     try {
@@ -210,6 +211,51 @@ export function ProfileClient() {
       toast.error("Update failed", err instanceof Error ? err.message : String(err));
     } finally {
       setSaving(false);
+    }
+  };
+
+  // --- Quick login: skip email/password, log in via linked Telegram ID ---
+  // Only shown to owner/admin customers who have their Telegram linked.
+  const quickLogin = async () => {
+    if (!customer?.id || !customer.telegramLinked) return;
+    setQuickLoginBusy(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const initData =
+        typeof window !== "undefined" && typeof window.Telegram !== "undefined"
+          ? window.Telegram.WebApp?.initData ?? ""
+          : "";
+      const headers: HeadersInit = {};
+      if (initData) headers["X-Telegram-Init-Data"] = initData;
+
+      const r = await fetch("/api/store/admin/is-admin", {
+        cache: "no-store",
+        headers,
+        credentials: "include",
+      });
+      if (!r.ok) throw new Error("Not authorised");
+      const data = await r.json();
+      if (!data?.isAdmin && !data?.isOwner) {
+        throw new Error("You're not set as owner or admin.");
+      }
+
+      // Mark admin session active so the dock buttons appear
+      localStorage.setItem("vanta_admin_session", "true");
+      // Tell the shell to re-check admin status
+      window.dispatchEvent(new Event("focus"));
+
+      setSuccess(
+        data.isOwner
+          ? "Quick login — owner access enabled."
+          : "Quick login — admin access enabled."
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Quick login failed.";
+      setError(msg);
+      toast.error("Quick login failed", msg);
+    } finally {
+      setQuickLoginBusy(false);
     }
   };
 
@@ -595,6 +641,26 @@ export function ProfileClient() {
           <p className={`mt-2 text-xs ${isActive ? "text-racing font-medium" : "text-muted-foreground"}`}>
             {isActive ? "Active buyer" : "No orders yet — browse the catalogue"}
           </p>
+
+          {/* Quick login for owner/admin — skip email/password */ }
+          {customer &&
+            (customer.role === "owner" || customer.role === "admin") &&
+            customer.telegramLinked && (
+              <Button
+                variant="outline"
+                onClick={quickLogin}
+                disabled={quickLoginBusy}
+                className="mt-4 w-full flex items-center justify-center gap-2 border-2 border-gold/50 bg-metallic-gold/10 hover:bg-metallic-gold/20 transition-all"
+              >
+                <span className="relative overflow-hidden">
+                  {quickLoginBusy ? "Logging in…" : "⚡ Quick Login"}
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute top-0 h-full w-[60%] -skew-x-[22deg] bg-gradient-to-r from-transparent via-white/50 to-transparent shine-sweep"
+                  />
+                </span>
+              </Button>
+            )}
         </div>
       </section>
 

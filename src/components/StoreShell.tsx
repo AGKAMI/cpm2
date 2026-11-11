@@ -54,6 +54,13 @@ export function StoreShell({ children, dock }: StoreShellProps) {
   const [customerLoggedIn, setCustomerLoggedIn] = useState<boolean>(false);
   const { mode, toggleTheme } = useTheme();
 
+  // Admin session gate — dock buttons only show after the user explicitly
+  // clicks "Quick Login" on the profile page. Telegram auto-detection alone
+  // does NOT surface these buttons.
+  const adminSessionActive = () =>
+    typeof window !== "undefined" &&
+    localStorage.getItem("vanta_admin_session") === "true";
+
   // Lightweight admin status check on mount — shows/hides admin/owner dock
   // buttons based on whether the linked Telegram ID is admin or owner.
   // The "login" happens on the Profile page (link your Telegram ID there).
@@ -153,8 +160,8 @@ export function StoreShell({ children, dock }: StoreShellProps) {
 
   const visibleNav = STORE_NAV.filter(
     (t) =>
-      (t.key !== "admin" || isAdmin === true) &&
-      (t.key !== "owner" || isOwner === true),
+      (t.key !== "admin" || (isAdmin === true && adminSessionActive())) &&
+      (t.key !== "owner" || (isOwner === true && adminSessionActive())),
   );
 
   const activeTab: StoreTab | undefined =

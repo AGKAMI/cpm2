@@ -2389,9 +2389,10 @@ html {
     transform 0.3s;
 }
 
-/* Wishlist heart — circle that expands into a gradient "Favourite" pill on
-   hover. Expansion is overlay-only (absolute inside a fixed-size wrapper) so
-   sibling layout never shifts. */
+/* Wishlist heart — circle that expands into a metallic gold "Add to wishlist"
+   pill on hover. Expansion is overlay-only (absolute inside a fixed-size
+   wrapper) so sibling layout never shifts. Metallic gold (#d4af4f) per VANTA
+   Garage fixed theme — no gradient, no emoji. */
 .heart-fav-wrap {
   position: relative;
   width: 44px;
@@ -2403,20 +2404,21 @@ html {
   inset: 0;
   border-radius: 9999px;
   background: var(--background);
-  border: 1px solid var(--border);
+  border: 1.5px solid #d4af4f;
+  color: #d4af4f;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  transition: width 0.5s, box-shadow 0.5s, border-color 0.5s;
+  transition: width 0.5s, box-shadow 0.5s, border-color 0.5s, color 0.5s;
 }
 .heart-fav::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: 9999px;
-  background: linear-gradient(45deg, #ff9966, #ff5e62);
+  background: #d4af4f;
   opacity: 0;
   transition: opacity 0.5s;
 }
@@ -2428,17 +2430,20 @@ html {
   width: 100%;
   height: 100%;
   border-radius: 9999px;
-  background: linear-gradient(45deg, #ff9966, #ff5e62);
+  background: #d4af4f;
   filter: blur(15px);
   z-index: -1;
   opacity: 0;
   transition: opacity 0.5s;
 }
 .heart-fav:hover,
-.heart-fav:focus-visible {
+.heart-fav:focus-visible,
+.heart-fav.is-active {
   width: 150px;
-  box-shadow: 0 10px 25px rgba(255, 94, 98, 0.35);
-  border-color: transparent;
+  box-shadow: 0 10px 25px rgba(212, 175, 79, 0.35);
+  border-color: #d4af4f;
+  background: #d4af4f;
+  color: #000;
 }
 .heart-fav:hover::before,
 .heart-fav:focus-visible::before,
@@ -2454,7 +2459,7 @@ html {
   position: absolute;
   width: 20px;
   height: 20px;
-  color: var(--muted-foreground);
+  color: inherit;
   transition: transform 0.5s, color 0.5s;
   transition-delay: 0.25s;
 }
@@ -2462,12 +2467,12 @@ html {
 .heart-fav:focus-visible .heart-icon,
 .heart-fav.is-active .heart-icon {
   transform: scale(0);
-  color: #fff;
+  color: #000;
   transition-delay: 0s;
 }
 .heart-fav .heart-title {
   position: absolute;
-  color: #fff;
+  color: #000;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;

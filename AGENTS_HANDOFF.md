@@ -2159,7 +2159,21 @@ Each module below includes: **What** (functional spec from plan), **How it works
 **Verified by:** AG (GLM-5.3-flash-free)
 
 
-### 2026-11-12 — Agent "AG" (GLM-5.3-flash-free) — Fix "no photo" on home cards + Quick Login visibility + dock admin/owner buttons
+### 2026-11-12 — Agent "AG" (GLM-5.3-flash-free) — Heart button: metallic gold + "Add to wishlist" text
+
+**What:** Two user-requested changes to the wishlist heart toggle.
+
+1. **Heart button text** — Changed pill text from "Favourite" to "Add to wishlist" in `HeartToggle.tsx` (both the visible span and the `aria-label`).
+
+2. **Heart button color** — Switched from pink/coral gradient (#ff9966→#ff5e62) to VANTA metallic gold (#d4af4f) per the fixed VANTA Garage theme. The button now has a metallic gold border, gold fill on hover/wishlisted state, and gold glow. Expansion remains overlay-only inside the fixed 44px `.heart-fav-wrap` so card layout never shifts.
+
+**Files:** `src/components/HeartToggle.tsx`, `src/app/globals.css`
+
+**Gate:** `npx next build` clean (port-3001 listener killed first), tests 67/67 pass. Server restarted on http://127.0.0.1:3001 (HTTP 200 on /store). Live verified in build artifacts: `#d4af4f` colors and "Add to wishlist" text confirmed in shipped CSS/JS chunks.
+
+**Deploy status:** Local only. Production deploy still awaiting user go-ahead.
+
+**Verified by:** AG (GLM-5.3-flash-free)### 2026-11-12 — Agent "AG" (GLM-5.3-flash-free) — Fix "no photo" on home cards + Quick Login visibility + dock admin/owner buttons
 
 **What:** Re-read AGENTS_HANDOFF.md top-to-bottom per protocol. Investigated and fixed three user-reported issues:
 

@@ -111,7 +111,9 @@ const [activeIndex, setActiveIndex] = useState(0);
     const firstItem = items[0] as HTMLElement;
     const itemWidth = firstItem.offsetWidth;
     if (itemWidth === 0) return;
-    const index = Math.round(el.scrollLeft / itemWidth);
+    const gap = parseFloat(getComputedStyle(el).gap) || 0;
+    const step = itemWidth + gap;
+    const index = Math.round(el.scrollLeft / step);
     setActiveIndex(Math.max(0, Math.min(index, featured.length - 1)));
   }, [featured.length]);
 

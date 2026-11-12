@@ -1182,9 +1182,11 @@ html {
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
-  padding: 0 1rem;
+  padding: 0 1rem 1rem 1rem;
   scroll-padding-left: 1rem;
   scroll-padding-right: 1rem;
+  gap: 1rem;
+  box-shadow: inset 0 -6px 12px -4px rgba(0,0,0,0.25);
 }
 .featured-carousel::-webkit-scrollbar {
   display: none;
@@ -1192,26 +1194,29 @@ html {
 .featured-carousel-item {
   flex: 0 0 auto;
   scroll-snap-align: start;
+  scroll-snap-stop: always;
   width: calc(100% - 2rem);
 }
 @media (min-width: 640px) {
   .featured-carousel {
-    padding: 0 1.5rem;
+    padding: 0 1.5rem 1rem 1.5rem;
     scroll-padding-left: 1.5rem;
     scroll-padding-right: 1.5rem;
+    gap: 1.5rem;
   }
   .featured-carousel-item {
-    width: calc(50% - 1rem);
+    width: calc(50% - 2.25rem);
   }
 }
 @media (min-width: 1024px) {
   .featured-carousel {
-    padding: 0 2rem;
+    padding: 0 2rem 1rem 2rem;
     scroll-padding-left: 2rem;
     scroll-padding-right: 2rem;
+    gap: 2rem;
   }
   .featured-carousel-item {
-    width: calc(33.33% - 1.33rem);
+    width: calc(33.33% - 3.34rem);
   }
 }
 
@@ -1229,28 +1234,31 @@ html {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 44px;
-  height: 44px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  border: 1px solid var(--border);
+  border: 2px solid var(--brand-gold);
   background: var(--background);
-  color: var(--foreground);
+  color: var(--brand-gold);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
   z-index: 10;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
 }
 .featured-nav button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+  border-color: var(--border);
+  color: var(--muted-foreground);
 }
 .featured-nav button:hover:not(:disabled) {
-  border-color: var(--brand-gold);
-  color: var(--brand-gold);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  background: var(--brand-gold);
+  color: var(--primary-foreground);
+  box-shadow: 0 6px 20px rgba(212,175,79,0.35);
+  transform: translateY(-50%) scale(1.05);
 }
 .featured-prev {
   left: 0.5rem;
@@ -1504,12 +1512,6 @@ html {
 .card-hover-gold {
   position: relative;
   overflow: hidden;
-  transition: all 250ms ease-out;
-}
-.card-hover-gold:hover {
-  border-color: var(--brand-gold);
-  box-shadow: 0 12px 32px rgba(212, 175, 79, 0.35);
-  transform: translateY(-4px);
 }
 .card-hover-gold:hover::before {
   content: "";
@@ -1739,7 +1741,7 @@ html {
 @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 var(--pulse-ring-color); } 70% { box-shadow: 0 0 0 8px rgba(212, 175, 79, 0); } 100% { box-shadow: 0 0 0 0 var(--pulse-ring-color); } }
 .animate-pulse-ring { animation: pulse-ring 1.8s infinite; }
 
-.app-card { position: relative; width: 190px; height: 254px; border-radius: 10px; overflow: hidden; z-index: 1111; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 0 15px; background: linear-gradient(0deg, #000, #272727); border: none; color: white; font-weight: 900; cursor: pointer; transition-duration: 0.2s; box-shadow: none; }
+.app-card { position: relative; width: 190px; height: 254px; border-radius: 10px; overflow: hidden; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 0 15px; background: linear-gradient(0deg, #000, #272727); border: none; color: white; font-weight: 400; cursor: pointer; }
 .app-card__bg { position: absolute; top: 5px; left: 5px; width: calc(100% - 10px); height: calc(100% - 10px); z-index: 2; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
 .app-card__blob { position: absolute; z-index: 1; top: 50%; left: 50%; width: 150px; height: 150px; border-radius: 50%; opacity: 1; filter: blur(12px); animation: blob-bounce 5s infinite ease; pointer-events: none; }
 @keyframes blob-bounce {
@@ -1749,7 +1751,7 @@ html {
   75% { transform: translate(-100%, -100%) translate3d(0, 100%, 0); }
   100% { transform: translate(-100%, -100%) translate3d(0, 0, 0); }
 }
-.app-card__content { position: relative; z-index: 3; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0; }
+.app-card__content { position: relative; z-index: 3; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 22px 0 14px; }
 
 /* Animated border gradient — matches reference structure, our colours */
 .app-card::before, .app-card::after {
@@ -1787,22 +1789,48 @@ html {
 /* Text shine sweep — applied to subtitle text on app cards */
 .text-shine {
   display: inline-block;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.35) 0%,
-    rgba(255, 255, 255, 1) 50%,
-    rgba(255, 255, 255, 0.35) 100%
-  );
   background-size: 200% 100%;
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
   animation: text-shine 6s linear infinite;
 }
+.app-card--fleet .text-shine {
+  background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 1) 50%, rgba(255, 255, 255, 0.35) 100%);
+}
+.app-card--garage .text-shine {
+  background-image: linear-gradient(90deg, rgba(212, 175, 79, 0.45) 0%, #f6e3a0 50%, rgba(212, 175, 79, 0.45) 100%);
+}
 @keyframes text-shine {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+@media (prefers-reduced-motion: reduce) {
+  .app-card__blob,
+  .app-card::before,
+  .app-card::after,
+  .text-shine { animation: none !important; }
+}
+
+/* App card link — hover lift, focus ring, CTA feedback */
+.app-card-link { display: block; transition: transform 0.2s ease; }
+.app-card-link:hover { transform: translateY(-2px); }
+.app-card-link:active { transform: translateY(0); }
+.app-card-link:focus-visible { outline: 2px solid var(--brand-gold); outline-offset: 3px; }
+.app-card__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.75;
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+.app-card--fleet .app-card__cta { color: var(--primary); }
+.app-card--garage .app-card__cta { color: var(--brand-gold); }
+.app-card-link:hover .app-card__cta { opacity: 1; }
+.app-card__arrow { transition: transform 0.2s ease; }
+.app-card-link:hover .app-card__arrow { transform: translateX(2px); }
 
 .timeline b { font-size: 12.5px; display: block; line-height: 1.2; }
 .timeline small { font-size: 10.5px; color: var(--muted-foreground); }

@@ -1,14 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Dock } from "@/components/ui/dock";
 import { LucideIcon } from "lucide-react";
 import { Home, Grid, List } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+
 import { NotificationBell } from "@/components/NotificationBell";
 import { vantaApi } from "@/lib/store/client";
 import { AdminIcon } from "@/components/ui/admin-icon";
@@ -43,7 +43,6 @@ interface StoreShellProps {
   children: ReactNode;
   dock?: ReactNode;
 }
-// eslint-disable-next-line react/no-unescaped-entities
 
 export function StoreShell({ children, dock }: StoreShellProps) {
   const pathname = usePathname();
@@ -54,200 +53,104 @@ export function StoreShell({ children, dock }: StoreShellProps) {
   const [customerLoggedIn, setCustomerLoggedIn] = useState<boolean>(false);
   const [loaded, setLoaded] = useState<boolean>(false);
 
-  // VANTA Garage has a fixed identity (gold/black/steel) — the global
-  // night/paper switch has no place here, so the dock always renders night.
   const mode = "night" as const;
 
-  // Fade the avatar pulse ring in only after the page has loaded.
+  // Fade the avatar pulse ring in after the page has loaded.
   useEffect(() => {
     const t = setTimeout(() => setLoaded(true), 400);
     return () => clearTimeout(t);
   }, []);
 
-  // Admin session gate — dock buttons only show after the user explicitly
-  // clicks "Quick Login" on the profile page. Telegram auto-detection alone
-  // does NOT surface these buttons.
   const adminSessionActive = () =>
     typeof window !== "undefined" &&
     localStorage.getItem("vanta_admin_session") === "true";
 
-  // Telegram's WebView script may not have executed yet when this component
-  // mounts (it loads from telegram.org) — firing the is-admin check before it
-  // does sends no initData and makes the dock buttons vanish until the next
-  // focus event. Poll briefly for initData before checking.
-  const waitForTelegramInitData = async (maxMs = 4000): Promise<string> => {
-    const deadline = Date.now() + maxMs;
-    for (;;) {
-      const data =
-        typeof window !== "undefined" && typeof window.Telegram !== "undefined"
-          ? window.Telegram.WebApp?.initData ?? ""
-          : "";
-      if (data) return data;
-      if (Date.now() >= deadline) return "";
-      await new Promise((r) => setTimeout(r, 150));
+  // Single non-blocking check for Telegram initData — replaces the old
+  // 4-second polling loop (150ms interval × up to 26 iterations).
+  const getTelegramInitData = async (): Promise<string> => {
+    if (typeof window === "undefined" || typeof window.Telegram === "undefined")
+      return "";
+    return window.Telegram.WebApp?.initData ?? "";
+  };
+
+  // Combined admin + profile status check.
+  const refreshStatus = async () => {
+    const initData = await getTelegramInitData();
+    const headers: HeadersInit = {};
+    if (initData) headers["X-Telegram-Init-Data"] = initData;
+
+    try {
+      const r = await fetch("/api/store/admin/is-admin", {
+        cache: "no-store",
+        headers,
+      });
+      if (r.ok) {
+        const data = await r.json();
+        setIsAdmin(Boolean(data?.isAdmin));
+        setIsOwner(Boolean(data?.isOwner));
+        if (data?.isAdmin || data?.isOwner) {
+          localStorage.setItem("vanta_admin_session", "true");
+        }
+      }
+    } catch {
+      // Keep last-known state.
+    }
+
+    try {
+      const data = await vantaApi.profile();
+      if (data.telegramUser) {
+        setProfile({
+          photoUrl: data.telegramUser.photoUrl,
+          displayName: data.telegramUser.displayName,
+          username: data.telegramUser.username,
+        });
+      }
+    } catch {
+      // Profile fetch is non-fatal.
     }
   };
 
-  // Lightweight admin status check on mount — shows/hides admin/owner dock
-  // buttons based on whether the linked Telegram ID is admin or owner.
-  // The "login" happens on the Profile page (link your Telegram ID there).
+  // Mount + focus + storage: refresh status once, no polling.
   useEffect(() => {
-    let alive = true;
-    const checkAdmin = async () => {
-      const initData = await waitForTelegramInitData();
-      if (!alive) return;
-      const headers: HeadersInit = {};
-      if (initData) headers["X-Telegram-Init-Data"] = initData;
-      try {
-        const r = await fetch("/api/store/admin/is-admin", {
-          cache: "no-store",
-          headers,
-        });
-        if (!alive) return;
-        if (!r.ok) {
-          setIsAdmin(false);
-          setIsOwner(false);
-          return;
-        }
-        const data = await r.json();
-        setIsAdmin(Boolean(data?.isAdmin));
-        setIsOwner(Boolean(data?.isOwner));
-        // If Telegram (via cookie or initData) confirms admin/owner status,
-        // set the session flag so dock buttons appear without requiring
-        // a separate "Quick Login" click.
-        if (data?.isAdmin || data?.isOwner) {
-          localStorage.setItem("vanta_admin_session", "true");
-        }
-      } catch {
-        // Leave state unknown (null) — a transient failure shouldn't
-        // permanently hide the buttons before the next check runs.
-      }
-    };
-    checkAdmin();
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  // Re-check when window regains focus (e.g. after linking Telegram on profile)
-  useEffect(() => {
-    let alive = true;
-    const onFocus = async () => {
-      const initData = await waitForTelegramInitData();
-      if (!alive) return;
-      const headers: HeadersInit = {};
-      if (initData) headers["X-Telegram-Init-Data"] = initData;
-      try {
-        const r = await fetch("/api/store/admin/is-admin", {
-          cache: "no-store",
-          headers,
-        });
-        if (!alive) return;
-        if (!r.ok) {
-          // 4xx = genuinely not admin (or auth rejected). 5xx = transient —
-          // treat as "no data" so the last-known state survives a hiccup.
-          if (r.status >= 500) return;
-          setIsAdmin(false);
-          setIsOwner(false);
-          return;
-        }
-        const data = await r.json();
-        setIsAdmin(Boolean(data?.isAdmin));
-        setIsOwner(Boolean(data?.isOwner));
-        if (data?.isAdmin || data?.isOwner) {
-          localStorage.setItem("vanta_admin_session", "true");
-        }
-      } catch {
-        // Network error — keep the last-known admin state.
-      }
-    };
-    onFocus();
+    refreshStatus();
+    const onFocus = () => void refreshStatus();
+    const onStorage = () => void refreshStatus();
     window.addEventListener("focus", onFocus);
+    window.addEventListener("storage", onStorage);
     return () => {
-      alive = false;
       window.removeEventListener("focus", onFocus);
+      window.removeEventListener("storage", onStorage);
     };
   }, []);
 
-  // Track customer login state via localStorage
+  // Customer login state via localStorage.
   useEffect(() => {
     const checkLogin = () => {
       if (typeof window !== "undefined") {
-        setCustomerLoggedIn(Boolean(localStorage.getItem("vanta_customer_id")));
+        setCustomerLoggedIn(
+          Boolean(localStorage.getItem("vanta_customer_id")),
+        );
       }
     };
     checkLogin();
     window.addEventListener("storage", checkLogin);
-    window.addEventListener("focus", checkLogin);
-    return () => {
-      window.removeEventListener("storage", checkLogin);
-      window.removeEventListener("focus", checkLogin);
-    };
+    return () => window.removeEventListener("storage", checkLogin);
   }, []);
 
-  // Refresh admin status when the admin session flag changes (e.g. Quick Login
-  // fired from another tab or from the Profile page).
+  // Re-check admin when session flag appears from another tab.
   useEffect(() => {
     const onAdminSessionStorage = () => {
       if (typeof window !== "undefined") {
-        const wasAdmin = isAdmin === true;
-        const wasOwner = isOwner === true;
         const nowActive = adminSessionActive();
-        if (nowActive && !wasAdmin && !wasOwner) {
-          // Session flag appeared — re-check admin status immediately.
-          void (async () => {
-            const initData = await waitForTelegramInitData();
-            const headers: HeadersInit = {};
-            if (initData) headers["X-Telegram-Init-Data"] = initData;
-            try {
-              const r = await fetch("/api/store/admin/is-admin", {
-                cache: "no-store",
-                headers,
-              });
-              if (r.ok) {
-                const data = await r.json();
-                setIsAdmin(Boolean(data?.isAdmin));
-                setIsOwner(Boolean(data?.isOwner));
-              }
-            } catch {
-              // Keep last-known state.
-            }
-          })();
+        if (nowActive && isAdmin !== true && isOwner !== true) {
+          void refreshStatus();
         }
       }
     };
     window.addEventListener("storage", onAdminSessionStorage);
-    return () => window.removeEventListener("storage", onAdminSessionStorage);
+    return () =>
+      window.removeEventListener("storage", onAdminSessionStorage);
   }, [isAdmin, isOwner]);
-
-  // Fetch Telegram profile for avatar (non-admin, just for profile picture).
-  // Mirrors the profile page: refetch on focus/storage so anything changed on
-  // the profile page (linking Telegram, new photo) shows up here too.
-  useEffect(() => {
-    const load = () => {
-      vantaApi
-        .profile()
-        .then((data) => {
-          if (data.telegramUser) {
-            setProfile({
-              photoUrl: data.telegramUser.photoUrl,
-              displayName: data.telegramUser.displayName,
-              username: data.telegramUser.username,
-            });
-          }
-        })
-        .catch(() => {
-          // Profile fetch is non-fatal
-        });
-    };
-    load();
-    window.addEventListener("focus", load);
-    window.addEventListener("storage", load);
-    return () => {
-      window.removeEventListener("focus", load);
-      window.removeEventListener("storage", load);
-    };
-  }, []);
 
   const visibleNav = STORE_NAV.filter(
     (t) =>
@@ -265,8 +168,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
 
   return (
     <div className="relative min-h-screen bg-background">
-      {/* Store header — Vanta logo centered, avatar left, controls right. */}
-      <AnimatePresence mode="popLayout">
+      <>
         <header
           className="sticky top-0 z-30 border-b border-border shadow-sm px-4 pt-8 pb-8 sm:px-6"
           style={{ backgroundColor: "var(--background)" }}
@@ -275,9 +177,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
             <div className="flex items-center gap-2 shrink-0">
               {activeTab !== "profile" && (
                 <div className="relative h-8 w-8 shrink-0">
-                  <motion.div
-                    layoutId="vanta-profile-avatar"
-                    transition={{ type: "spring", stiffness: 320, damping: 32 }}
+                  <div
                     className="h-8 w-8 rounded-full overflow-hidden border-2 border-gold"
                   >
                     {profile?.photoUrl ? (
@@ -295,7 +195,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
                         {(profile?.displayName || "U").charAt(0).toUpperCase()}
                       </div>
                     )}
-                  </motion.div>
+                  </div>
                   <div
                     className={cn(
                       "absolute inset-0 h-full w-full rounded-full border-2 border-gold animate-pulse-ring transition-opacity duration-700 ease-out",
@@ -306,11 +206,31 @@ export function StoreShell({ children, dock }: StoreShellProps) {
               )}
             </div>
             <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center">
-              <Image src={VANTA_LOCKUP} alt="Vanta Garage" className="h-24 w-24 sm:h-32 sm:w-32" width={96} height={96} style={{ objectFit: "contain" }} />
+              <Image
+                src={VANTA_LOCKUP}
+                alt="Vanta Garage"
+                className="h-24 w-24 sm:h-32 sm:w-32"
+                width={96}
+                height={96}
+                style={{ objectFit: "contain" }}
+              />
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <Button variant="ghost" size="icon" onClick={() => router.push("/")} aria-label="Back to app selection">
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => router.push("/")}
+                aria-label="Back to app selection"
+              >
+                <svg
+                  className="h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
               </Button>
               <NotificationBell />
             </div>
@@ -322,13 +242,14 @@ export function StoreShell({ children, dock }: StoreShellProps) {
         >
           {children}
         </main>
-      </AnimatePresence>
+      </>
 
       <Dock
         mode={mode}
         items={visibleNav.map((item) => ({
           icon: ICON_MAP[item.key],
-          label: item.label.charAt(0).toUpperCase() + item.label.slice(1),
+          label:
+            item.label.charAt(0).toUpperCase() + item.label.slice(1),
           href: item.href,
           active: activeTab === item.key,
         }))}

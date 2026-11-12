@@ -10,7 +10,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   formatPrice,
   type VantaCategory,
@@ -35,17 +35,19 @@ export function StoreHomeClient({
   newArrivals: VantaProduct[];
   onSale: VantaProduct[];
 }) {
-  const [cardImages, setCardImages] = useState<Record<number, string>>({});
   const carouselRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
   // Media already resolved on server — build lookup map
-  const coverMap: Record<number, string> = {};
-  featured.forEach((p) => {
-    if ((p as { coverImage?: string }).coverImage) {
-      coverMap[p.id] = (p as { coverImage?: string }).coverImage!;
-    }
-  });
+  const coverMap: Record<number, string> = useMemo(() => {
+      const map: Record<number, string> = {};
+      featured.forEach((p) => {
+        if ((p as { coverImage?: string }).coverImage) {
+          map[p.id] = (p as { coverImage?: string }).coverImage!;
+        }
+      });
+      return map;
+    }, [featured]);
 
   // --- Featured carousel handlers ---
   const handleScroll = useCallback(() => {
@@ -402,12 +404,12 @@ const ProductCard = React.memo(
           <div className="vanta-card-media">
             {coverImage ? (
               <Image
-                src={coverImage}
-                alt={product.name}
-                loading="lazy"
-                width={300}
-                height={200}
-                style={{ width: 300, height: 200, objectFit: "cover" }}
+                              src={coverImage}
+                              alt={product.name}
+                              loading={isFeatured ? "eager" : "lazy"}
+                              width={300}
+                              height={200}
+                              style={{ width: 300, height: 200, objectFit: "cover" }}
               />
             ) : (
               <div className="no-photo">No photo</div>

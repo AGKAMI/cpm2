@@ -5,6 +5,16 @@
 
 const STORE_BASE = "/api/store";
 
+// Simple in-memory fetch cache — dedupes concurrent identical requests
+// and serves stale data with a short TTL so page-to-page nav is instant.
+const cache = new Map<string, { data: unknown; expiry: number }>();
+const inflight = new Map<string, Promise<unknown>>();
+const CACHE_TTL_MS = 30_000; // 30 seconds
+
+function getCacheKey(path: string): string {
+  return path;
+}
+
 function telegramInitData(): string {
   if (typeof window === "undefined" || typeof window.Telegram === "undefined") return "";
   const webApp = window.Telegram?.WebApp;
@@ -34,6 +44,21 @@ async function request<T>(
   path: string,
   init?: RequestInit,
 ): Promise<T> {
+  const cacheKey = getCacheKey(path);
+
+  // Return cached data if still fresh (only for GET requests without body)
+  if (!init?.method || init.method === "GET") {
+    const cached = cache.get(cacheKey);
+    if (cached && cached.expiry > Date.now()) {
+      return cached.data as T;
+    }
+    // Deduplicate concurrent identical requests
+    const existing = inflight.get(cacheKey);
+    if (existing) {
+      return existing as T;
+    }
+  }
+
   const headers = new Headers(init?.headers);
   if (init?.body && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
@@ -57,7 +82,17 @@ async function request<T>(
     throw new Error(body?.error?.message ?? `Request failed with status ${response.status}.`);
   }
 
-  return payload as T;
+  const result = payload as T;
+
+  // Cache GET responses
+  if (!init?.method || init.method === "GET") {
+    const promise = Promise.resolve(result);
+    inflight.set(cacheKey, promise);
+    setTimeout(() => inflight.delete(cacheKey), 5000);
+    cache.set(cacheKey, { data: result, expiry: Date.now() + CACHE_TTL_MS });
+  }
+
+  return result;
 }
 
 export const vantaApi = {
@@ -332,4 +367,91 @@ export function formatPrice(cents: number, currency = "ZAR"): string {
     style: "currency",
     currency,
   }).format(rands);
+}
+
+// ── SWR hooks — cached, auto-revalidating data fetches ─────────────────────
+import useSWR from "swr";
+
+function fetcher<T>(path: string): Promise<T> {
+  return request(path);
+}
+
+export function useProducts(params?: { q?: string; featured?: boolean }) {
+  let url = "/products";
+  const qs = new URLSearchParams();
+  if (params?.q) qs.set("q", params.q);
+  if (params?.featured) qs.set("featured", "1");
+  if (qs.toString()) url += `?${qs.toString()}`;
+  const { data, error, isLoading, mutate } = useSWR<{ products: VantaProduct[]; total: number }>(url, fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    dedupingInterval: 30_000,
+  });
+  return {
+    products: data?.products ?? [],
+    total: data?.total ?? 0,
+    isLoading,
+    error,
+    mutate,
+  };
+}
+
+export function useCategories() {
+  const { data, error, isLoading, mutate } = useSWR<{ categories: VantaCategory[] }>("/categories", fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    dedupingInterval: 30_000,
+  });
+  return {
+    categories: data?.categories ?? [],
+    isLoading,
+    error,
+    mutate,
+  };
+}
+
+export function usePromotions() {
+  const { data, error, isLoading, mutate } = useSWR<{ promotions: VantaPromotion[] }>("/promotions", fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    dedupingInterval: 30_000,
+  });
+  return {
+    promotions: data?.promotions ?? [],
+    isLoading,
+    error,
+    mutate,
+  };
+}
+
+export function useProfile() {
+  const { data, error, isLoading, mutate } = useSWR<{ customer: VantaCustomer | null; telegramUser: TelegramUser | null }>("/profile", fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    dedupingInterval: 30_000,
+  });
+  return {
+    customer: data?.customer ?? null,
+    telegramUser: data?.telegramUser ?? null,
+    isLoading,
+    error,
+    mutate,
+  };
+}
+
+export function useMedia(productId: number) {
+  const { data, error, isLoading } = useSWR<{ media: VantaProductMedia[] }>(
+    productId ? `/media?productId=${productId}` : null,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 30_000,
+    },
+  );
+  return {
+    media: (data as { media: unknown[] } | undefined)?.media ?? [],
+    isLoading,
+    error,
+  };
 }

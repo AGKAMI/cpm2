@@ -2,106 +2,78 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { vantaApi, formatPrice, type VantaProduct, type VantaCategory, type VantaCustomer, type VantaPromotion, type TelegramUser } from "@/lib/store/client";
+import { formatPrice, type VantaProduct, type VantaCategory, type VantaCustomer, type VantaPromotion, type TelegramUser, useProducts, useCategories, usePromotions, useProfile, useMedia, vantaApi } from "@/lib/store/client";
 import { StoreShell } from "@/components/StoreShell";
 import { HeartToggle } from "@/components/HeartToggle";
 import { NotificationBell } from "@/components/NotificationBell";
 
 export function StoreHomeClient() {
-  const [featured, setFeatured] = useState<VantaProduct[]>([]);
+  const { products: featured, isLoading: featuredLoading } = useProducts({ featured: true });
+  const { products: allProducts, isLoading: allLoading } = useProducts({});
+  const { categories: allCategories, isLoading: catsLoading } = useCategories();
+  const { promotions, isLoading: promosLoading } = usePromotions();
+  const { customer, telegramUser, isLoading: profileLoading } = useProfile();
+
   const [newArrivals, setNewArrivals] = useState<VantaProduct[]>([]);
   const [onSale, setOnSale] = useState<VantaProduct[]>([]);
-  const [categories, setCategories] = useState<VantaCategory[]>([]);
   const [cardImages, setCardImages] = useState<Record<number, string>>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
-  const [customer, setCustomer] = useState<VantaCustomer | null>(null);
-  const [telegramUser, setTelegramUser] = useState<TelegramUser | null>(null);
-  const [promotions, setPromotions] = useState<VantaPromotion[]>([]);
-const carouselRef = useRef<HTMLDivElement>(null);
-const [activeIndex, setActiveIndex] = useState(0);
+  const [categories, setCategories] = useState<VantaCategory[]>([]);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
 
+  const isLoading = featuredLoading || allLoading || catsLoading || promosLoading || profileLoading;
+
+  // Compute derived data when products load
   useEffect(() => {
-    (async () => {
-      try {
-        const [f, all, cats, profile] = await Promise.all([
-          vantaApi.products({ featured: true }),
-          vantaApi.products({}),
-          vantaApi.categories(),
-          vantaApi.profile(),
-        ]);
-        setFeatured(f.products);
-        setCategories(cats.categories);
-        setCustomer(profile.customer);
-        setTelegramUser(profile.telegramUser);
+    if (allProducts.length === 0) return;
 
-        try {
-          const promos = await vantaApi.promotions();
-          setPromotions(Array.isArray(promos.promotions) ? promos.promotions : []);
-        } catch {
-          // Promotions not available — sections stay hidden.
-        }
+    const products = allProducts as VantaProduct[];
 
-        // New arrivals = products with isNew flag, fallback to most recent
-        const arrivals = [...all.products]
-          .filter((p) => p.isNew)
-          .slice(0, 8);
-        if (arrivals.length === 0) {
-          // Fallback to most recently created
-          const recent = [...all.products]
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-            .slice(0, 8);
-          setNewArrivals(recent);
-        } else {
-          setNewArrivals(arrivals);
-        }
+    // New arrivals = products with isNew flag, fallback to most recent
+    const arrivals = [...products]
+      .filter((p: VantaProduct) => p.isNew)
+      .slice(0, 8);
+    if (arrivals.length > 0) {
+      setNewArrivals(arrivals);
+    } else {
+      const recent = [...products]
+        .sort((a: VantaProduct, b: VantaProduct) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 8);
+      setNewArrivals(recent);
+    }
 
-        // On sale = products with isSale flag
-        const saleItems = [...all.products]
-          .filter((p) => p.isSale)
-          .slice(0, 8);
-        setOnSale(saleItems);
+    // On sale = products with isSale flag
+    const saleItems = [...products]
+      .filter((p: VantaProduct) => p.isSale)
+      .slice(0, 8);
+    setOnSale(saleItems);
 
-        // Compute media IDs from all products that will be displayed in sections.
-        // Use all.products since arrivals/sale/best-sellers may be empty until
-        // we have isNew/isSale/isFeatured flags set on products.
-        const displayIds = [...new Set(all.products.map((p) => p.id))].slice(0, 20);
-        const covers = await Promise.all(
-          displayIds.map((id) =>
-            vantaApi
-              .media(id)
-              .then((m): [number, string | undefined] => [id, m.media[0]?.publicUrl])
-              .catch(() => null),
-          ),
-        );
-        const entries = covers.filter(
-          (c): c is [number, string] => c !== null && c[1] !== undefined,
-        );
-        setCardImages(Object.fromEntries(entries));
+    // Media for up to 20 products
+    const displayIds = [...new Set(products.map((p: VantaProduct) => p.id))].slice(0, 20);
+    Promise.all(
+      displayIds.map((id) =>
+        vantaApi.media(id)
+          .then((m): [number, string | undefined] => [id, m.media[0]?.publicUrl])
+          .catch(() => null),
+      ),
+    ).then((covers) => {
+      const entries = covers.filter(
+        (c): c is [number, string] => c !== null && c[1] !== undefined,
+      );
+      setCardImages(Object.fromEntries(entries));
 
-        const productIdsWithImages = new Set(entries.map(([id]) => id));
+      const productIdsWithImages = new Set(entries.map(([id]) => id));
 
-        // Only show categories that actually have products WITH images assigned.
-        const categoryIdsWithProducts = new Set(
-          all.products
-            .filter((p) => productIdsWithImages.has(p.id))
-            .map((p) => p.categoryId)
-            .filter(Boolean),
-        );
-        setCategories(cats.categories.filter((cat) => categoryIdsWithProducts.has(cat.id)));
-
-        setError(null);
-
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Couldn't load catalogue.");
-      } finally {
-        setLoading(false);
-        setLoaded(true);
-      }
-    })();
-  }, []);
-
+      // Only show categories that actually have products WITH images assigned.
+      const categoryIdsWithProducts = new Set(
+        products
+          .filter((p: VantaProduct) => productIdsWithImages.has(p.id))
+          .map((p: VantaProduct) => p.categoryId)
+          .filter(Boolean),
+      );
+      setCategories((allCategories as VantaCategory[]).filter((cat: VantaCategory) => categoryIdsWithProducts.has(cat.id)));
+    });
+  }, [allProducts, allCategories]);
   // --- Featured carousel handlers ---
   const handleScroll = useCallback(() => {
     const el = carouselRef.current;
@@ -148,7 +120,7 @@ const [activeIndex, setActiveIndex] = useState(0);
         </h1>
         <p className="text-ink-mid max-w-[30ch]">
           {featured.length} vehicles ready to drive.{" "}
-          {featured.filter((c) => c.exclusivity !== "standard").length} limited editions.
+          {(featured as VantaProduct[]).filter((c: VantaProduct) => c.exclusivity !== "standard").length} limited editions.
         </p>
       </section>
 
@@ -191,7 +163,7 @@ const [activeIndex, setActiveIndex] = useState(0);
               role="region"
               aria-label="Featured vehicles"
             >
-            {featured.map((c) => (
+            {featured.map((c: VantaProduct) => (
               <div key={c.id} className="vanta-card group">
                 <Link href={`/store/products/${c.id}`} className="block h-full w-full">
                   <div className="vanta-card-media">
@@ -229,7 +201,7 @@ const [activeIndex, setActiveIndex] = useState(0);
             ))}
             </div>
             <div className="featured-pagination">
-              {featured.map((_, i) => (
+              {featured.map((_: VantaProduct, i: number) => (
                 <button
                   key={i}
                   onClick={() => goTo(i)}
@@ -252,7 +224,7 @@ const [activeIndex, setActiveIndex] = useState(0);
             <Link href="/store/categories" className="vanta-section-see-all">See all</Link>
           </div>
           <div className="flex flex-col gap-6">
-            {promotions.map((promo) => (
+            {promotions.map((promo: VantaPromotion) => (
               <Link
                 key={promo.id}
                 href={promo.ctaLink || "/store/categories"}
@@ -325,13 +297,13 @@ const [activeIndex, setActiveIndex] = useState(0);
             <Link href="/store/categories" className="vanta-section-see-all">All</Link>
           </div>
           <div className="vanta-card-list">
-            {categories.slice(0, 8).map((cat) => (
+            {categories.slice(0, 8).map((cat: VantaCategory) => (
               <div key={cat.id} className="vanta-card group" style={{ minWidth: "72px", flex: "0 0 auto" }}>
                 <Link href={`/store/categories?category=${cat.slug}`} className="block h-full w-full text-center">
                   <div className="vanta-card-media" style={{ aspectRatio: "1" }}>
                     <span className="text-[11px] font-bold text-center text-ink-soft absolute inset-0 flex items-center justify-center">{cat.name.charAt(0)}</span>
                   </div>
-                  <div className="vanta-card-body" style={{ padding: "8px 4px 4px 4px" }}>
+                  <div className="vanta-card-body">
                     <p className="vanta-card-subtitle">{cat.name}</p>
                   </div>
                 </Link>
@@ -351,7 +323,7 @@ const [activeIndex, setActiveIndex] = useState(0);
             <Link href="/store/categories" className="vanta-section-see-all">See all</Link>
           </div>
           <div className="vanta-card-list">
-            {newArrivals.map((c) => (
+            {newArrivals.map((c: VantaProduct) => (
               <div key={c.id} className="vanta-card group">
                 <Link href={`/store/products/${c.id}`} className="block h-full w-full">
                   <div className="vanta-card-media">
@@ -391,7 +363,7 @@ const [activeIndex, setActiveIndex] = useState(0);
             <Link href="/store/categories" className="vanta-section-see-all">See all</Link>
           </div>
           <div className="vanta-card-list">
-            {onSale.map((c) => (
+            {onSale.map((c: VantaProduct) => (
               <div key={c.id} className="vanta-card group">
                 <Link href={`/store/products/${c.id}`} className="block h-full w-full">
                   <div className="vanta-card-media">
@@ -426,12 +398,12 @@ const [activeIndex, setActiveIndex] = useState(0);
         <div className="vanta-section-header">
           <div>
             <span className="eyebrow">Personalised</span>
-            <h3 className="font-serif font-bold text-[20px] leading-none mt-[6px]">Picked for you, {telegramUser?.displayName || customer?.inGameName || "you"}</h3>
+            <h3 className="font-serif font-bold text-[20px] leading-none mt-[6px]">Picked for you, {(telegramUser as { displayName?: string })?.displayName || (customer as { inGameName?: string })?.inGameName || "you"}</h3>
           </div>
         </div>
         <p className="vanta-card-subtitle" style={{ marginTop: "-4px", marginBottom: "8px", marginLeft: "16px" }}>Because you viewed the featured builds</p>
-        <div className="vanta-card-list" style={{ paddingLeft: "16px", paddingRight: "16px" }}>
-          {featured.slice(0, 4).map((c) => (
+        <div className="vanta-card-list">
+          {featured.slice(0, 4).map((c: VantaProduct) => (
             <div key={c.id} className="vanta-card group">
               <Link href={`/store/products/${c.id}`} className="block h-full w-full">
                 <div className="vanta-card-media">
@@ -462,7 +434,119 @@ const [activeIndex, setActiveIndex] = useState(0);
       </div>
     </>
   );
+const loadingSkeleton = (
+    <>
+      <section className="hero relative px-4 pt-6 pb-8">
+        <SkeletonBar className="h-2.5 w-24 rounded mb-3" />
+        <SkeletonBar className="h-8 w-3/4 rounded mb-2" />
+        <SkeletonBar className="h-3 w-48 rounded" />
+      </section>
 
+      <section className="vanta-section" aria-label="Featured vehicles">
+        <SkeletonSectionHeader />
+        <div className="relative">
+          <div className="featured-nav">
+            <button disabled className="featured-prev" aria-label="Previous featured vehicle">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 19l-7-7 7-7" /></svg>
+            </button>
+            <button disabled className="featured-next" aria-label="Next featured vehicle">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 5l7 7-7 7" /></svg>
+            </button>
+          </div>
+          <div className="featured-carousel">
+            <SkeletonFeaturedCard />
+            <SkeletonFeaturedCard />
+          </div>
+          <div className="featured-pagination">
+            <span className="featured-dot active" />
+            <span className="featured-dot" />
+          </div>
+        </div>
+      </section>
+
+      <section className="vanta-section">
+        <SkeletonSectionHeader />
+        <div className="flex flex-col gap-6">
+          <div className="promotion-card relative overflow-hidden rounded-[22px] p-6 border border-border bg-raised shadow-sm" style={{ minHeight: "160px" }}>
+            <div className="absolute inset-y-0 right-0 h-full w-[55%] pointer-events-none" style={{ background: "linear-gradient(90deg, var(--color-paper-raised) 0%, transparent 100%)" }} />
+            <div className="relative z-10">
+              <SkeletonBar className="h-2.5 w-16 rounded mb-1.5" />
+              <SkeletonBar className="h-4 w-3/4 rounded mb-3" />
+              <SkeletonBar className="h-2 w-1/2 rounded mb-3" />
+              <SkeletonBar className="h-2 w-1/3 rounded" />
+            </div>
+          </div>
+          <div className="promotion-card relative overflow-hidden rounded-[22px] p-6 border border-border bg-raised shadow-sm" style={{ minHeight: "160px" }}>
+            <div className="absolute inset-y-0 right-0 h-full w-[55%] pointer-events-none" style={{ background: "linear-gradient(90deg, var(--color-paper-raised) 0%, transparent 100%)" }} />
+            <div className="relative z-10">
+              <SkeletonBar className="h-2.5 w-16 rounded mb-1.5" />
+              <SkeletonBar className="h-4 w-3/4 rounded mb-3" />
+              <SkeletonBar className="h-2 w-1/2 rounded mb-3" />
+              <SkeletonBar className="h-2 w-1/3 rounded" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="vanta-section">
+        <SkeletonSectionHeader seeAll={false} />
+        <div className="vanta-card-list">
+          {[...Array(6)].map((_, i) => (
+            <SkeletonVantaCard key={i} width="72px" square />
+          ))}
+        </div>
+      </section>
+
+      <section className="vanta-section">
+        <SkeletonSectionHeader />
+        <div className="vanta-card-list">
+          {[...Array(3)].map((_, i) => (
+            <SkeletonVantaCard key={i} />
+          ))}
+        </div>
+      </section>
+
+      <section className="vanta-section">
+        <SkeletonSectionHeader />
+        <div className="vanta-card-list">
+          {[...Array(3)].map((_, i) => (
+            <SkeletonVantaCard key={i} />
+          ))}
+        </div>
+      </section>
+
+      <section className="vanta-section">
+        <SkeletonSectionHeader />
+        <p className="vanta-card-subtitle" style={{ marginTop: "-4px", marginBottom: "8px", marginLeft: "16px" }}>
+          Because you viewed the featured builds
+        </p>
+        <div className="vanta-card-list">
+          {[...Array(3)].map((_, i) => (
+            <SkeletonVantaCard key={i} />
+          ))}
+        </div>
+      </section>
+
+      <div className="foot mb-4 px-4 text-center text-[10px] text-ink-soft tracking-[0.08em]">
+        <SkeletonBar className="h-4 w-3/4 rounded mb-1" />
+        <SkeletonBar className="h-2.5 w-1/2 rounded" />
+      </div>
+    </>
+  );
+
+  const [error, setError] = useState<string | null>(null);
+
+  return (
+    <StoreShell dock={null}>
+      {!isLoading ? content : loadingSkeleton}
+      {error && (
+        <div className="p-6 text-center">
+          <p className="rounded-md border border-destructive bg-background px-4 py-3 text-xs text-destructive">{error}</p>
+        </div>
+      )}
+    </StoreShell>
+  );
+}
 /* --- Loading skeleton -----------------------------------------------------
    Mirrors the real page structure section-for-section, reusing the same
    .vanta-* classes with pulsing fills so skeleton geometry matches the
@@ -472,9 +556,9 @@ function SkeletonBar({ className }: { className: string }) {
   return <div className={`bg-paper-raised animate-pulse ${className}`} />;
 }
 
-function SkeletonVantaCard({ width, square, small }: { width: string; square?: boolean; small?: boolean }) {
+function SkeletonVantaCard({ width, square, small }: { width?: string; square?: boolean; small?: boolean }) {
   return (
-    <div className="vanta-card" style={{ flex: "0 0 auto", width }}>
+    <div className="vanta-card" style={{ flex: "0 0 auto", ...(width ? { width } : undefined) }}>
       <div className="vanta-card-media" style={square ? { aspectRatio: "1" } : undefined}>
         <div className="absolute inset-0 bg-paper-raised animate-pulse" />
       </div>
@@ -531,86 +615,5 @@ function SkeletonSectionHeader({ seeAll = true }: { seeAll?: boolean }) {
       </div>
       {seeAll && <SkeletonBar className="h-3 w-12 rounded" />}
     </div>
-  );
-}
-
-const loadingSkeleton = (
-    <>
-      <section className="hero relative px-4 pt-6 pb-8">
-        <SkeletonBar className="h-2.5 w-24 rounded mb-3" />
-        <SkeletonBar className="h-8 w-3/4 rounded mb-2" />
-        <SkeletonBar className="h-3 w-48 rounded" />
-      </section>
-
-      <section className="vanta-section" aria-label="Featured vehicles">
-        <SkeletonSectionHeader />
-        <div className="relative">
-          <div className="featured-carousel">
-            <SkeletonFeaturedCard />
-            <SkeletonFeaturedCard />
-          </div>
-          <div className="featured-pagination">
-            <span className="featured-dot active" />
-            <span className="featured-dot" />
-          </div>
-        </div>
-      </section>
-
-      <section className="promo mb-6 px-4">
-        <div className="relative overflow-hidden rounded-[22px] p-5 border border-border" style={{ minHeight: "160px" }}>
-          <SkeletonBar className="h-2.5 w-20 rounded mb-2" />
-          <SkeletonBar className="h-5 w-40 rounded mb-1.5" />
-          <SkeletonBar className="h-3 w-56 rounded" />
-          <SkeletonBar className="mt-4 h-9 w-28 rounded" />
-        </div>
-      </section>
-
-      <section className="vanta-section">
-        <SkeletonSectionHeader seeAll={false} />
-        <div className="vanta-card-list">
-          {[...Array(6)].map((_, i) => (
-            <SkeletonVantaCard key={i} width="72px" square small />
-          ))}
-        </div>
-      </section>
-
-      <section className="vanta-section">
-        <SkeletonSectionHeader />
-        <div className="vanta-card-list">
-          {[...Array(3)].map((_, i) => (
-            <SkeletonVantaCard key={i} width="200px" />
-          ))}
-        </div>
-      </section>
-
-      <section className="vanta-section">
-        <SkeletonSectionHeader />
-        <div className="vanta-card-list">
-          {[...Array(3)].map((_, i) => (
-            <SkeletonVantaCard key={i} width="200px" />
-          ))}
-        </div>
-      </section>
-
-      <section className="vanta-section">
-        <SkeletonSectionHeader seeAll={false} />
-        <div className="vanta-card-list">
-          {[...Array(3)].map((_, i) => (
-            <SkeletonVantaCard key={i} width="200px" />
-          ))}
-        </div>
-      </section>
-    </>
-  );
-
-  return (
-    <StoreShell dock={null}>
-      {loaded ? content : loadingSkeleton}
-      {error && (
-        <div className="p-6 text-center">
-          <p className="rounded-md border border-destructive bg-background px-4 py-3 text-xs text-destructive">{error}</p>
-        </div>
-      )}
-    </StoreShell>
   );
 }

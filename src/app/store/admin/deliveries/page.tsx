@@ -29,10 +29,6 @@ export default function AdminDeliveriesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadAppointments();
-  }, []);
-
   async function loadAppointments() {
     try {
       setLoading(true);
@@ -49,6 +45,11 @@ export default function AdminDeliveriesPage() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadAppointments();
+  }, []);
 
   async function verifyDelivery(appointmentId: string) {
     if (!window.confirm("Mark this delivery as verified?")) return;

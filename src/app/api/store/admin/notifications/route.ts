@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
         sql: `SELECT c.id FROM vanta_customers c`,
         args: [],
       });
-      targetCustomerIds = result.rows.map((row: any) => Number(row.id));
+      targetCustomerIds = result.rows.map((row: Record<string, unknown>) => Number(row.id));
     }
 
     const now = new Date().toISOString();
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
       args: [],
     });
     const telegramCustomers = new Map<number, number | null>();
-    for (const row of tgResult.rows as any[]) {
+    for (const row of tgResult.rows as Record<string, unknown>[]) {
       telegramCustomers.set(Number(row.id), row.platform_user_id ? Number(row.platform_user_id) : null);
     }
 
@@ -127,9 +127,9 @@ export async function POST(request: NextRequest) {
       created,
       sentTo: targetCustomerIds.length,
     });
-  } catch (err: any) {
+  } catch (err) {
     return NextResponse.json(
-      { error: { code: "SERVER_ERROR", message: err?.message || "Failed to create notification" } },
+      { error: { code: "SERVER_ERROR", message: err instanceof Error ? err.message : "Failed to create notification" } },
       { status: 500 }
     );
   }

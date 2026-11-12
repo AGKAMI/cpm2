@@ -23,10 +23,6 @@ export default function AnalyticsPage() {
   const [error, setError] = useState<string | null>(null);
   const [range, setRange] = useState<"7d" | "30d" | "90d">("30d");
 
-  useEffect(() => {
-    loadAnalytics();
-  }, [range]);
-
   async function loadAnalytics() {
     try {
       setLoading(true);
@@ -47,6 +43,11 @@ export default function AnalyticsPage() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadAnalytics();
+  }, [range]);
 
   const totalRevenue = revenue.reduce((sum, r) => sum + r.amountCents, 0);
   const totalOrders = revenue.reduce((sum, r) => sum + r.orders, 0);

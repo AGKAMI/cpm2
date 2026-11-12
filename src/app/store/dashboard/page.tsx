@@ -75,10 +75,6 @@ export default function CustomerDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadOrders();
-  }, []);
-
   async function loadOrders() {
     try {
       const res = await vantaApi.orders();
@@ -90,6 +86,11 @@ export default function CustomerDashboardPage() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadOrders();
+  }, []);
 
   const activeOrders = orders.filter(
     (o) =>

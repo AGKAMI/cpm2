@@ -192,6 +192,8 @@ function ConfigRow({
   onSave: (value: string) => void;
   onDelete: (key: string) => void;
 }) {
+  const updatedDisplay = entry.updatedAt ? new Date(entry.updatedAt).toLocaleDateString() : "—";
+
   return (
     <article className="panel rounded-xl border border-border p-4">
       <div className="flex items-baseline justify-between mb-2">
@@ -236,7 +238,7 @@ function ConfigRow({
         </div>
       )}
       <p className="text-[10px] text-muted-foreground mt-1">
-        Updated {new Date(entry.updatedAt || Date.now()).toLocaleDateString()}
+        Updated {updatedDisplay}
       </p>
     </article>
   );

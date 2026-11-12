@@ -60,8 +60,12 @@ export const productFormSchema = z.object({
     .trim()
     .optional()
     .refine(
-      (v) => !v || URL_PATTERN.test(v) || v.startsWith("/"),
-      { error: "Image URL must start with http://, https://, or /." },
+      (v) =>
+        !v ||
+        URL_PATTERN.test(v) ||
+        v.startsWith("/") ||
+        v.startsWith("data:"),
+      { error: "Image URL must start with http://, https://, /, or data:." },
     ),
   categoryId: z
     .string()
@@ -154,8 +158,12 @@ export const promotionFormSchema = z.object({
     .trim()
     .optional()
     .refine(
-      (v) => !v || URL_PATTERN.test(v) || v.startsWith("/"),
-      { error: "Image URL must start with http://, https://, or /." },
+      (v) =>
+        !v ||
+        URL_PATTERN.test(v) ||
+        v.startsWith("/") ||
+        v.startsWith("data:"),
+      { error: "Image URL must start with http://, https://, /, or data:." },
     ),
   isActive: z.boolean({
     error: "Active flag is required.",

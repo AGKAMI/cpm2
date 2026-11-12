@@ -42,6 +42,7 @@ interface StoreShellProps {
   children: ReactNode;
   dock?: ReactNode;
 }
+// eslint-disable-next-line react/no-unescaped-entities
 
 export function StoreShell({ children, dock }: StoreShellProps) {
   const pathname = usePathname();

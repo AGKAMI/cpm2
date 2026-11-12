@@ -37,7 +37,7 @@ export async function GET(
     args: [customerId],
   });
 
-  const notifications = result.rows.map((row: any) => ({
+  const notifications = result.rows.map((row: Record<string, unknown>) => ({
     id: row.id,
     type: row.type,
     title: row.title,

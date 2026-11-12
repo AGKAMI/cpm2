@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
@@ -99,6 +99,8 @@ export function ProfileClient() {
     }
   }
 
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   useEffect(() => {
     let alive = true;
     queueMicrotask(() => {
@@ -106,7 +108,7 @@ export function ProfileClient() {
     });
     return () => {
       alive = false;
-      if (pollTimer) clearInterval(pollTimer);
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current);
     };
   }, []);
 
@@ -429,8 +431,6 @@ export function ProfileClient() {
     }
   };
 
-  let pollTimer: ReturnType<typeof setInterval> | null = null;
-
   const pollLinkVerification = async () => {
     if (!verificationId) return;
     try {
@@ -441,7 +441,7 @@ export function ProfileClient() {
       const data = await res.json();
       if (data.status === "confirmed") {
         setVerificationStage("confirmed");
-        if (pollTimer) clearInterval(pollTimer);
+        if (pollTimerRef.current) clearInterval(pollTimerRef.current);
         setLinkTelegramOpen(false);
         setTelegramIdInput("");
         setLinkPreview(null);
@@ -450,7 +450,7 @@ export function ProfileClient() {
         await checkSession();
       } else if (data.status === "rejected" || data.status === "expired") {
         setVerificationStage(data.status);
-        if (pollTimer) clearInterval(pollTimer);
+        if (pollTimerRef.current) clearInterval(pollTimerRef.current);
       }
     } catch {
       // Non-fatal, keep polling
@@ -458,12 +458,12 @@ export function ProfileClient() {
   };
 
   const startCountdown = () => {
-    if (pollTimer) clearInterval(pollTimer);
-    pollTimer = setInterval(() => {
+    if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+    pollTimerRef.current = setInterval(() => {
       setVerificationCountdown((prev) => {
         if (prev <= 1) {
-          clearInterval(pollTimer!);
-          pollTimer = null;
+          clearInterval(pollTimerRef.current!);
+          pollTimerRef.current = null;
           return 0;
         }
         return prev - 1;
@@ -472,8 +472,8 @@ export function ProfileClient() {
   };
 
   const cancelLinkVerification = () => {
-    if (pollTimer) clearInterval(pollTimer);
-    pollTimer = null;
+    if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+    pollTimerRef.current = null;
     setVerificationStage("input");
     setVerificationId(null);
     setLinkPreview(null);
@@ -800,7 +800,7 @@ export function ProfileClient() {
                 {isTelegramWebApp ? (
                   <>
                     <p className="text-xs text-muted-foreground">
-                      Telegram detected — link this app's account to your store login:
+                      Telegram detected — link this app&apos;s account to your store login:
                     </p>
                     <Button variant="primary" onClick={linkTelegramToAccount} className="w-full" disabled={linkingTg}>
                       {linkingTg ? "Linking…" : "Link Telegram account"}
@@ -916,7 +916,7 @@ export function ProfileClient() {
                           </div>
                         </div>
                         <p className="text-[10px] text-ink-soft text-center mb-3">
-                          Open your Telegram and tap <b>Yes, it's me</b> or <b>No, it's not me</b>. Expires in{" "}
+                          Open your Telegram and tap <b>Yes, it&apos;s me</b> or <b>No, it&apos;s not me</b>. Expires in{" "}
                           <span className="font-mono text-sm text-foreground">{verificationCountdown}s</span>
                         </p>
                         <div className="flex gap-2">

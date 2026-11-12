@@ -34,6 +34,7 @@ export function StoreHomeClient() {
       .filter((p: VantaProduct) => p.isNew)
       .slice(0, 8);
     if (arrivals.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setNewArrivals(arrivals);
     } else {
       const recent = [...products]

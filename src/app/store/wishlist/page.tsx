@@ -32,10 +32,6 @@ export default function WishlistPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadWishlist();
-  }, []);
-
   async function loadWishlist() {
     try {
       setLoading(true);
@@ -52,6 +48,11 @@ export default function WishlistPage() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadWishlist();
+  }, []);
 
   async function removeFromWishlist(productId: number) {
     if (!window.confirm("Remove this vehicle from your wishlist?")) return;

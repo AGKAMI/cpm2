@@ -48,7 +48,7 @@ async function sendFollowup(token: string, chatId: number | string, text: string
 
 export async function POST(request: NextRequest) {
   try {
-    const body = (await readJson(request)) as any;
+    const body = (await readJson(request)) as Record<string, unknown>;
     const token = telegramBotToken();
     if (!token) {
       return NextResponse.json({ error: { code: "BOT_NOT_CONFIGURED" } }, { status: 500 });
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 
     // Handle callback_query from inline keyboard buttons
     if (body.callback_query) {
-      const { id: callbackQueryId, data, from, message } = body.callback_query;
+      const { id: callbackQueryId, data, from, message } = body.callback_query as { id: string; data: string; from: { id: number }; message: { chat: { id: number } } };
       const chatId = message?.chat?.id ?? from.id;
 
       await answerCallbackQuery(token, callbackQueryId);

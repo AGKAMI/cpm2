@@ -57,11 +57,6 @@ export default function AdminDashboardPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedAlert, setSelectedAlert] = useState<DashboardAlert | null>(null);
 
-  useEffect(() => {
-    loadStats();
-    loadAlerts();
-  }, []);
-
   async function loadStats() {
     try {
       const res = await vantaApi.adminDashboardStats();
@@ -83,6 +78,12 @@ export default function AdminDashboardPage() {
     }
   }
 
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadStats();
+    loadAlerts();
+  }, []);
+
   if (loading) {
     return (
       <StoreShell>
@@ -94,6 +95,7 @@ export default function AdminDashboardPage() {
 
   const highSeverity = alerts.filter((a) => a.severity === "high");
   const mediumSeverity = alerts.filter((a) => a.severity === "medium");
+  const selectedAlertDate = selectedAlert ? new Date(selectedAlert.createdAt).toLocaleString() : "";
 
   return (
     <StoreShell>
@@ -213,7 +215,7 @@ export default function AdminDashboardPage() {
           <div className="space-y-3">
             <p className="text-sm text-foreground">{selectedAlert.description}</p>
             <p className="text-xs text-muted-foreground">
-              Entity: {selectedAlert.entityId} · {new Date(selectedAlert.createdAt || Date.now()).toLocaleString()}
+              Entity: {selectedAlert.entityId} · {selectedAlertDate}
             </p>
             <div className="flex gap-2 pt-4">
               <Button variant="outline" onClick={() => setModalOpen(false)}>
@@ -272,6 +274,7 @@ function AlertRow({
   onSelect: (a: DashboardAlert) => void;
 }) {
   const isHigh = alert.severity === "high";
+  const alertDate = alert.createdAt ? new Date(alert.createdAt).toLocaleDateString() : "";
   return (
     <article
       className="panel rounded-lg border border-border p-3 cursor-pointer hover:bg-surface-deep transition-colors"
@@ -292,7 +295,7 @@ function AlertRow({
             <span className="text-[9px] text-destructive font-bold">HIGH</span>
           )}
         </div>
-        <span className="text-[10px] text-ink-faint">{new Date(alert.createdAt || Date.now()).toLocaleDateString()}</span>
+        <span className="text-[10px] text-ink-faint">{alertDate}</span>
       </div>
       <p className="text-sm text-foreground">{alert.title}</p>
       <p className="text-xs text-muted-foreground mt-1">{alert.description}</p>

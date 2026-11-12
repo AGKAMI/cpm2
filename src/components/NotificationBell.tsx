@@ -33,6 +33,7 @@ export function NotificationBell() {
 
   const fetchNotifications = useCallback(async () => {
     if (!customerId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoading(false);
       return;
     }
@@ -58,6 +59,7 @@ export function NotificationBell() {
   }, [customerId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchNotifications();
   }, [fetchNotifications]);
 

@@ -32,9 +32,9 @@ export async function POST(request: NextRequest) {
     await notifyAdminPromoted(Number(telegramUserId), promotedBy ?? "the owner");
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
+  } catch (err) {
     return NextResponse.json(
-      { error: { code: "SERVER_ERROR", message: err?.message || "Failed to send promotion notice." } },
+      { error: { code: "SERVER_ERROR", message: err instanceof Error ? err.message : "Failed to send promotion notice." } },
       { status: 500 }
     );
   }

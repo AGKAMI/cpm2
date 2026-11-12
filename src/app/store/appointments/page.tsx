@@ -27,10 +27,6 @@ export default function AppointmentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadAppointments();
-  }, []);
-
   async function loadAppointments() {
     try {
       setLoading(true);
@@ -47,6 +43,11 @@ export default function AppointmentsPage() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadAppointments();
+  }, []);
 
   async function confirmDelivery(appointmentId: string) {
     if (!window.confirm("Confirm you received the vehicle?")) return;

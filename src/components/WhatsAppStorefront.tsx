@@ -27,7 +27,7 @@ export function WhatsAppStorefront() {
         </Link>
       </div>
       <p className="text-xs text-ink-soft mb-6">
-        Send ".vanta" on WhatsApp to browse categories, check stock, and place orders.
+        Send &quot;.vanta&quot; on WhatsApp to browse categories, check stock, and place orders.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {categories.map((cat) => (

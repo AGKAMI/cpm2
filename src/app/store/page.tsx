@@ -9,12 +9,10 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function StorePage() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-
   const [productsRes, categoriesRes, promotionsRes] = await Promise.all([
-    fetch(`${baseUrl}/api/store/products`, { cache: "no-store" }),
-    fetch(`${baseUrl}/api/store/categories`, { cache: "no-store" }),
-    fetch(`${baseUrl}/api/store/promotions`, { cache: "no-store" }),
+    fetch("/api/store/products", { cache: "no-store" }),
+    fetch("/api/store/categories", { cache: "no-store" }),
+    fetch("/api/store/promotions", { cache: "no-store" }),
   ]);
 
   const { products, total } = (await productsRes.json()) as {

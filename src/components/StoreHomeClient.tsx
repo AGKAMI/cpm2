@@ -319,7 +319,7 @@ export function StoreHomeClient({
               <ProductCard
                 key={c.id}
                 product={c}
-                coverImage={coverMap[c.id] || c.imageUrl || ""}
+                coverImage={coverMap[c.id] ?? c.imageUrl ?? undefined}
                 variant="standard"
               />
             ))}
@@ -345,7 +345,7 @@ export function StoreHomeClient({
               <ProductCard
                 key={c.id}
                 product={c}
-                coverImage={coverMap[c.id] || c.imageUrl || ""}
+                coverImage={coverMap[c.id] ?? c.imageUrl ?? undefined}
                 variant="standard"
               />
             ))}

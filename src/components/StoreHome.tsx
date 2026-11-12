@@ -28,13 +28,11 @@ export async function StoreHome({
   const allPromotions = promotions as VantaPromotion[];
 
   // Resolve media URLs on the server — no client-side media fetches
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   const productsWithMedia = await Promise.all(
     featured.map(async (p) => {
-      const res = await fetch(
-        `${baseUrl}/api/store/media?productId=${p.id}`,
-        { cache: "no-store" }
-      );
+      const res = await fetch(`/api/store/media?productId=${p.id}`, {
+        cache: "no-store",
+      });
       const { media } = (await res.json()) as {
         media: { publicUrl: string }[];
       };

@@ -2159,7 +2159,21 @@ Each module below includes: **What** (functional spec from plan), **How it works
 **Verified by:** AG (GLM-5.3-flash-free)
 
 
-### 2026-11-12 — Agent "AG" (GLM-5.3-flash-free) — Heart button: metallic gold + "Add to wishlist" text
+### 2026-11-12 — Agent "AG" (GLM-5.3-flash-free) — Dock admin/owner buttons refresh after login + SSR fix
+
+**What:** Fixed dock not showing admin/owner buttons after Quick Login, and fixed a server-side rendering crash.
+
+1. **Dock admin/owner buttons not refreshing after login** — Root cause: StoreShell's mount `checkAdmin` effect called `/api/store/admin/is-admin` immediately on mount without waiting for Telegram's `initData` (loads from telegram.org). With no initData header, the endpoint returned `isAdmin: false`, and `isAdmin` stayed `false` forever — even after Quick Login set `vanta_admin_session` and dispatched a focus event. Fix: added `waitForTelegramInitData()` polling (4s deadline) to both the mount effect and focus listener so the check waits for initData before calling the API. Added `vanta_admin_session` as a fallback condition in the `visibleNav` filter so the dock shows buttons as soon as the session flag is set. Added an `alive` flag with cleanup to both effects to prevent state updates after unmount. Added 5xx error handling in the focus listener to preserve last-known state on transient failures. Added a `storage` event listener for `vanta_admin_session` changes so the dock refreshes when Quick Login fires from another tab.
+
+2. **SSR crash — "Cannot read properties of undefined (reading 'getItem')"** — HeartToggle.tsx called `localStorage.getItem()` directly in a `useState` initializer, which runs during server-side rendering where `localStorage`/`window` is undefined. Fix: added `if (typeof window === "undefined") return false;` guard before the `localStorage` access.
+
+**Files:** `src/components/StoreShell.tsx`, `src/components/HeartToggle.tsx`, `src/components/StoreHomeClient.tsx`
+
+**Gate:** `npx next build` clean (port-3001 listener killed first, `.next` cleaned), tests 67/67 pass. Server restarted on http://127.0.0.1:3001 (HTTP 200 on /store and /store/categories).
+
+**Deploy status:** Local only. Production deploy still awaiting user go-ahead.
+
+**Verified by:** AG (GLM-5.3-flash-free)### 2026-11-12 — Agent "AG" (GLM-5.3-flash-free) — Heart button: metallic gold + "Add to wishlist" text
 
 **What:** Two user-requested changes to the wishlist heart toggle.
 
@@ -2188,6 +2202,23 @@ Each module below includes: **What** (functional spec from plan), **How it works
 **Shared-file note:** StoreShell.tsx, ProfileClient.tsx, and client.ts also carry another agent's uncommitted edits (waitForTelegramInitData in mount effects, cache invalidation in request(), etc.) — those edits were preserved in the working tree but NOT committed by this run. Only my changes above are staged and committed.
 
 **Gate:** `npx next build` clean (port-3001 listener killed first), tests 67/67 pass, lint warnings only (2 pre-existing errors in `WhatsAppOrder.tsx` — other agent's file). Server restarted on http://127.0.0.1:3001 (HTTP 200 on /store). Live verified in browser: both product cards show images via media API data URLs.
+
+**Deploy status:** Local only. Production deploy still awaiting user go-ahead.
+
+**Verified by:** AG (GLM-5.3-flash-free)
+
+
+### 2026-11-12 — Agent "AG" (GLM-5.3-flash-free) — Dock admin/owner buttons refresh after login + SSR fix
+
+**What:** Fixed dock not showing admin/owner buttons after Quick Login, and fixed a server-side rendering crash.
+
+1. **Dock admin/owner buttons not refreshing after login** — Root cause: StoreShell's mount `checkAdmin` effect called `/api/store/admin/is-admin` immediately on mount without waiting for Telegram's `initData` (loads from telegram.org). With no initData header, the endpoint returned `isAdmin: false`, and `isAdmin` stayed `false` forever — even after Quick Login set `vanta_admin_session` and dispatched a focus event. Fix: added `waitForTelegramInitData()` polling (4s deadline) to both the mount effect and focus listener so the check waits for initData before calling the API. Added `vanta_admin_session` as a fallback condition in the `visibleNav` filter so the dock shows buttons as soon as the session flag is set. Added an `alive` flag with cleanup to both effects to prevent state updates after unmount. Added 5xx error handling in the focus listener to preserve last-known state on transient failures. Added a `storage` event listener for `vanta_admin_session` changes so the dock refreshes when Quick Login fires from another tab.
+
+2. **SSR crash — "Cannot read properties of undefined (reading 'getItem')"** — HeartToggle.tsx called `localStorage.getItem()` directly in a `useState` initializer, which runs during server-side rendering where `localStorage`/`window` is undefined. Fix: added `if (typeof window === "undefined") return false;` guard before the `localStorage` access.
+
+**Files:** `src/components/StoreShell.tsx`, `src/components/HeartToggle.tsx`, `src/components/StoreHomeClient.tsx`
+
+**Gate:** `npx next build` clean (port-3001 listener killed first, `.next` cleaned), tests 67/67 pass. Server restarted on http://127.0.0.1:3001 (HTTP 200 on /store and /store/categories).
 
 **Deploy status:** Local only. Production deploy still awaiting user go-ahead.
 

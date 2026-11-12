@@ -1,5 +1,10 @@
 import { Metadata } from "next";
 import { StoreHome } from "@/components/StoreHome";
+import {
+  listProducts,
+  listCategories,
+  listPromotions,
+} from "@/lib/store/products";
 
 export const metadata: Metadata = {
   title: "VANTA GARAGE - CPM2 vehicles for sale",
@@ -9,28 +14,17 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function StorePage() {
-  const [productsRes, categoriesRes, promotionsRes] = await Promise.all([
-    fetch("/api/store/products", { cache: "no-store" }),
-    fetch("/api/store/categories", { cache: "no-store" }),
-    fetch("/api/store/promotions", { cache: "no-store" }),
+  const [products, categories, promotions] = await Promise.all([
+    listProducts({ onlyPublished: true }),
+    listCategories(),
+    listPromotions(),
   ]);
-
-  const { products, total } = (await productsRes.json()) as {
-    products: unknown[];
-    total: number;
-  };
-  const { categories } = (await categoriesRes.json()) as {
-    categories: unknown[];
-  };
-  const { promotions } = (await promotionsRes.json()) as {
-    promotions: unknown[];
-  };
 
   return (
     <StoreHome
-      products={products as unknown[]}
-      categories={categories as unknown[]}
-      promotions={promotions as unknown[]}
+      products={products}
+      categories={categories}
+      promotions={promotions}
     />
   );
 }

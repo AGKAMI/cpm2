@@ -11,6 +11,7 @@ import {
   type VantaProduct,
   type VantaPromotion,
 } from "@/lib/store/client";
+import { listMedia } from "@/lib/store/products";
 import { StoreHomeClient } from "@/components/StoreHomeClient";
 
 export async function StoreHome({
@@ -30,13 +31,8 @@ export async function StoreHome({
   // Resolve media URLs on the server — no client-side media fetches
   const productsWithMedia = await Promise.all(
     featured.map(async (p) => {
-      const res = await fetch(`/api/store/media?productId=${p.id}`, {
-        cache: "no-store",
-      });
-      const { media } = (await res.json()) as {
-        media: { publicUrl: string }[];
-      };
-      return { ...p, coverImage: media[0]?.publicUrl };
+      const media = await listMedia(p.id);
+      return { ...p, coverImage: media[0]?.publicUrl ?? null };
     })
   );
 

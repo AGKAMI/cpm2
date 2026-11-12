@@ -202,7 +202,7 @@ const [activeIndex, setActiveIndex] = useState(0);
                       <span className="text-[10px] text-ink-soft uppercase tracking-[0.2em]">No photo</span>
                     </div>
                   )}
-                  <div className="tl absolute top-2 left-2">
+                  <div className="tl absolute top-2 left-2 z-10">
                     {c.isNew && <span className="bd bd-new text-[9px] font-bold px-2 py-1">New</span>}
                     {c.isFeatured && <span className="bd bd-featured text-[9px] font-bold px-2 py-1">Featured</span>}
                     {c.isSale && <span className="bd bd-sale text-[9px] font-bold px-2 py-1">Sale</span>}

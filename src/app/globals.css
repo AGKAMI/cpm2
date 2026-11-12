@@ -957,6 +957,9 @@ html {
   color: #17120a;
   border-color: var(--brand-gold);
 }
+.bd {
+  display: inline-block;
+}
 .bd-one {
   background: var(--brand-gold-gradient);
   color: #17120a;
@@ -1873,6 +1876,61 @@ html {
 .app-card-link:hover .app-card__cta { opacity: 1; }
 .app-card__arrow { transition: transform 0.2s ease; }
 .app-card-link:hover .app-card__arrow { transform: translateX(2px); }
+
+/* Icon shine — same glint system as the app cards, sized for icons/badges */
+.icon-shine {
+  position: relative;
+  display: inline-block;
+  padding: 2px;
+  border-radius: 24px;
+  isolation: isolate;
+}
+.icon-shine--round { border-radius: 9999px; }
+.icon-shine::before, .icon-shine::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  z-index: -1;
+}
+.icon-shine::before {
+  background:
+    conic-gradient(from var(--shine-angle),
+      transparent 0deg,
+      rgba(255, 255, 255, 0.95) 40deg,
+      transparent 120deg,
+      transparent 360deg),
+    var(--border-gradient-fleet);
+  animation: app-card-shine 3.5s linear infinite;
+}
+.icon-shine--garage::before {
+  background:
+    conic-gradient(from var(--shine-angle),
+      transparent 0deg,
+      rgba(255, 255, 255, 0.95) 40deg,
+      transparent 120deg,
+      transparent 360deg),
+    var(--border-gradient-garage);
+  animation: app-card-shine 3.5s linear infinite;
+}
+.icon-shine::after {
+  background: conic-gradient(from var(--shine-angle),
+    transparent 0deg,
+    var(--primary) 50deg,
+    transparent 140deg,
+    transparent 360deg);
+  filter: blur(6px);
+  animation: app-card-shine 3.5s linear infinite;
+}
+.icon-shine--garage::after {
+  background: conic-gradient(from var(--shine-angle),
+    transparent 0deg,
+    #d4af4f 50deg,
+    transparent 140deg,
+    transparent 360deg);
+  filter: blur(6px);
+  animation: app-card-shine 3.5s linear infinite;
+}
 
 .timeline b { font-size: 12.5px; display: block; line-height: 1.2; }
 .timeline small { font-size: 10.5px; color: var(--muted-foreground); }

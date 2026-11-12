@@ -1926,6 +1926,9 @@ Each module below includes: **What** (functional spec from plan), **How it works
 
 **Verified by:** Kermes (nemotron-3.5-super-vl-120b-a12b)
 
+
+
+
 ### 2026-11-10 — Hermes Agent "Kermes" — App Selection Page: Animated Theme Cards
 
 **What:** Replaced static Fleet Ledger / VANTA Garage selection cards on the root page with animated Uiverse.io blob-bounce cards. Colours match each app's theme — garage gets gold outline + gold blob; fleet ledger uses active theme palette colours (primary/deep based on current mode+palette).
@@ -1945,6 +1948,9 @@ Each module below includes: **What** (functional spec from plan), **How it works
 **Deploy status:** Not deployed. Working tree only.
 
 **Verified by:** Kermes (nemotron-3.5-super-vl-120b-a12b)
+
+
+
 
 ### 2026-11-10 — Hermes Agent "Kermes" — Admin Page Full Fix (All Issues)
 
@@ -1972,6 +1978,9 @@ Each module below includes: **What** (functional spec from plan), **How it works
 
 **Verified by:** Kermes (nemotron-3.5-super-vl-120b-a12b)
 
+
+
+
 ### 2026-11-10 — Hermes Agent "Kermes" — Notifications Toggle: Green → Garage Gold
 
 **What:** Changed the Telegram notifications toggle on the profile page from green (`#21cc4c`) to garage metallic gold (`--brand-gold: #d4af4f`).
@@ -1991,6 +2000,9 @@ Each module below includes: **What** (functional spec from plan), **How it works
 **Deploy status:** Not deployed. Working tree only.
 
 **Verified by:** Kermes (nemotron-3.5-super-vl-120b-a12b)
+
+
+
 
 ### 2026-11-10 — Hermes Agent "Kermes" — Quick Login Button: emoji removal, owner gold/admin purple, metallic button bg, actual authentication
 
@@ -2054,9 +2066,34 @@ Each module below includes: **What** (functional spec from plan), **How it works
 3. **Frontend wiring** — file picker → upload API → set real URL into form → preview shows uploaded image
 4. **Validation** — client and server both accept `/api/store/admin/uploads/...` paths
 5. **Edit preservation** — `selectProduct` fetches existing media and restores `imageUrl` instead of setting `""`
-
+|
 **Gates:** `tsc --noEmit` exit 0. `next build` clean. Server running at http://127.0.0.1:3001 (HTTP 200 on /store/admin). Upload + image serving verified via curl (HTTP 200, correct Content-Type).
+|
+**Deploy status:** Not deployed. Working tree only.
+|
+**Verified by:** Kermes (nemotron-3.5-super-vl-120b-a12b)
+
+
+### 2026-11-12 — Hermes Agent "Kermes" — Pill Badges Overlay + Hover Removal + Live Image Preview + Server Restart
+
+**What:** Replaced tag text on home page cards with coloured pill badges overlayed on images; removed all hover motion (scale/gold-lift) from home page cards; added uploading/success states + live URL preview on admin image upload; restarted local dev server on port 3001.
+
+**Where:**
+- `src/app/globals.css` — added `.bd` base class; pill `border-radius: 9999px` + padding on `.bd-new` (blue #3b82f6), `.bd-sale` (red #ef4444), `.bd-featured` (cyan #06b6d4), `.bd-ltd` (amber #f59e0b)
+- `src/components/StoreHomeClient.tsx` — removed `card-hover-gold card-border-shine` + `group-hover:scale-105` from featured carousel, new arrivals, on sale, personalised picks; added pill badges (`bd-new`/`bd-featured`/`bd-sale`) overlayed at `top-2 left-2` with `z-10` on featured carousel; exclusivity badge kept
+- `src/app/store/admin/page.tsx` — added `productConverterUploading` state; server upload handler clears stale `productConverterResult`/`productConverterFile` on new selection; button shows amber "Converting image…" during upload, emerald "✓ filename → converted to URL" on success; preview caption changed to "Live preview from URL"
+
+**Changes:**
+1. **Pill badges overlayed on images** — New (blue), Featured (cyan), Sale (red) pills with unique colours, sitting on top of card images at top-left; featured carousel badges given `z-10` so they render above the overlay div
+2. **Hover motion removed** — no more scale-up or gold lift on any home page card hover; only the infinite `card-gold-shine` sweep remains
+3. **Live image preview with states** — admin add/edit forms show uploading state (amber, animated), success state (emerald ✓ + "converted to URL"), and the `` renders live from the converted URL; stale preview cleared when a new file is picked
+4. **Local server restarted** — killed stale node on 3001, ran `npx next build` (clean), started `npx next start -H 127.0.0.1 --port 3001`; HTTP 200 on /store
+
+**Gates:** `tsc --noEmit` exit 0. `next build` clean. Server running at http://127.0.0.1:3001 (HTTP 200 on /store).
 
 **Deploy status:** Not deployed. Working tree only.
 
-**Verified by:** Kermes (nemotron-3.5-super-vl-120b-a12b)
+**Verified by:** Kermes (stepfun/step-3.7-flash:free)
+
+
+

@@ -9,12 +9,10 @@ import { LucideIcon } from "lucide-react";
 import { Home, Grid, List } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { NotificationBell } from "@/components/NotificationBell";
-import { useTheme } from "@/hooks/useTheme";
 import { vantaApi } from "@/lib/store/client";
 import { AdminIcon } from "@/components/ui/admin-icon";
 import { OwnerIcon } from "@/components/ui/owner-icon";
 import { ProfileIcon } from "@/components/ui/profile-icon";
-import SwitchComponent from "@/components/ui/switch8";
 
 type StoreTab = "home" | "categories" | "orders" | "profile" | "admin" | "owner";
 
@@ -52,7 +50,17 @@ export function StoreShell({ children, dock }: StoreShellProps) {
   const [isOwner, setIsOwner] = useState<boolean | null>(null);
   const [profile, setProfile] = useState<{ photoUrl?: string; displayName?: string; username?: string } | null>(null);
   const [customerLoggedIn, setCustomerLoggedIn] = useState<boolean>(false);
-  const { mode, toggleTheme } = useTheme();
+  const [loaded, setLoaded] = useState<boolean>(false);
+
+  // VANTA Garage has a fixed identity (gold/black/steel) — the global
+  // night/paper switch has no place here, so the dock always renders night.
+  const mode = "night" as const;
+
+  // Fade the avatar pulse ring in only after the page has loaded.
+  useEffect(() => {
+    const t = setTimeout(() => setLoaded(true), 400);
+    return () => clearTimeout(t);
+  }, []);
 
   // Admin session gate — dock buttons only show after the user explicitly
   // clicks "Quick Login" on the profile page. Telegram auto-detection alone
@@ -215,21 +223,24 @@ export function StoreShell({ children, dock }: StoreShellProps) {
                       </svg>
                     )}
                   </motion.div>
-                  <div className="absolute inset-0 h-full w-full rounded-full border-2 border-gold animate-pulse-ring" />
+                  <div
+                    className={cn(
+                      "absolute inset-0 h-full w-full rounded-full border-2 border-gold animate-pulse-ring transition-opacity duration-700 ease-out",
+                      loaded ? "opacity-100" : "opacity-0",
+                    )}
+                  />
                 </div>
               )}
             </div>
             <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center">
-              <img src={VANTA_LOCKUP} alt="Vanta Garage" className="h-24 w-24 sm:h-32 sm:w-32" />
+              <span className="icon-shine icon-shine--garage icon-shine--round">
+                <img src={VANTA_LOCKUP} alt="Vanta Garage" className="h-24 w-24 sm:h-32 sm:w-32 rounded-full" />
+              </span>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <Button variant="ghost" size="icon" onClick={() => router.push("/")} aria-label="Back to app selection">
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
               </Button>
-              <SwitchComponent
-                checked={mode === "night"}
-                onCheckedChange={() => toggleTheme()}
-              />
               <NotificationBell />
             </div>
           </div>

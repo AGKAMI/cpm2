@@ -930,6 +930,8 @@ export default function AdminPage() {
                     const file = e.target.files?.[0] ?? null;
                     if (!file) return;
                     setProductConverterError(null);
+                    setProductConverterResult(null);
+                    setProductConverterFile(null);
                     setProductConverterUploading(true);
                     try {
                       // Upload to server and get a real public URL

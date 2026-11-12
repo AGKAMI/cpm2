@@ -69,13 +69,15 @@ function ThemeAppCard({ app, title, subtitle, description, label, href, iconSrc 
         <div className="app-card__blob" />
         <div className="app-card__content">
           <div className="flex items-center gap-3 mb-4">
-            <img
-              src={iconSrc}
-              alt=""
-              width={40}
-              height={40}
-              className="h-10 w-10 rounded-[18px] object-cover object-center"
-            />
+            <span className={`icon-shine ${isGarage ? "icon-shine--garage" : "icon-shine--fleet"}`}>
+              <img
+                src={iconSrc}
+                alt=""
+                width={40}
+                height={40}
+                className="h-10 w-10 rounded-[18px] object-cover object-center"
+              />
+            </span>
           </div>
           <span className="block text-[16px] font-bold text-foreground">{title}</span>
           <span className="mt-1 block text-[10px] uppercase tracking-[0.15em] text-shine">

@@ -1616,10 +1616,14 @@ html {
   flex-wrap: nowrap;
   overflow-x: auto;
   scrollbar-width: none;
-  padding-bottom: 28px;
+  padding-bottom: 8px;
 }
 .vanta-card-list::-webkit-scrollbar {
   display: none;
+}
+.vanta-card-list > .vanta-card {
+  flex: 0 0 auto;
+  width: 260px;
 }
 
 /* Animated border shine on store card hover */

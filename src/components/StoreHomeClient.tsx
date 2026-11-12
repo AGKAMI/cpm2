@@ -282,13 +282,12 @@ export function StoreHomeClient({
               <div
                 key={cat.id}
                 className="vanta-card group"
-                style={{ minWidth: "72px", flex: "0 0 auto" }}
               >
                 <Link
                   href={`/store/categories?category=${cat.slug}`}
                   className="block h-full w-full text-center"
                 >
-                  <div className="vanta-card-media" style={{ aspectRatio: "1" }}>
+                  <div className="vanta-card-media">
                     <span className="text-[11px] font-bold text-center text-ink-soft absolute inset-0 flex items-center justify-center">
                       {cat.name.charAt(0)}
                     </span>
@@ -404,12 +403,12 @@ const ProductCard = React.memo(
           <div className="vanta-card-media">
             {coverImage ? (
               <Image
-                              src={coverImage}
-                              alt={product.name}
-                              loading={isFeatured ? "eager" : "lazy"}
-                              width={300}
-                              height={200}
-                              style={{ width: 300, height: 200, objectFit: "cover" }}
+                src={coverImage}
+                alt={product.name}
+                loading={isFeatured ? "eager" : "lazy"}
+                fill
+                sizes="(max-width: 768px) 100vw, 33vw"
+                style={{ objectFit: "cover" }}
               />
             ) : (
               <div className="no-photo">No photo</div>

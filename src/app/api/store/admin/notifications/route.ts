@@ -24,6 +24,28 @@ const notificationSchema = z.object({
   imageUrl: z.string().url().optional(),
 });
 
+function boxHeader(title: string): string {
+  const line = "═".repeat(Math.max(40, title.length + 4));
+  return `${line}\n${title}\n${line}\n\n`;
+}
+
+function formatPromotionMessage(title: string, message: string, imageUrl?: string): string {
+  return (
+    boxHeader("VANTA GARAGE — NEW PROMOTION") +
+    `✦ ${title} ✦\n\n` +
+    `▸ ${message}\n\n` +
+    `▶ Check it out in the store!`
+  );
+}
+
+function formatGeneralMessage(title: string, message: string): string {
+  return (
+    boxHeader("VANTA GARAGE — NOTIFICATION") +
+    `✦ ${title} ✦\n\n` +
+    `▸ ${message}`
+  );
+}
+
 export async function POST(request: NextRequest) {
   try {
     await requireStoreAdmin(request);
@@ -36,7 +58,6 @@ export async function POST(request: NextRequest) {
     if (body.customerId) {
       targetCustomerIds = [body.customerId];
     } else {
-      // Send to ALL customers for the in-app bell (not optional)
       const result = await db.execute({
         sql: `SELECT c.id FROM vanta_customers c`,
         args: [],
@@ -47,7 +68,6 @@ export async function POST(request: NextRequest) {
     const now = new Date().toISOString();
     const created: number[] = [];
 
-    // Get customers with notifications enabled (for Telegram DMs only)
     const tgResult = await db.execute({
       sql: `SELECT c.id, p.platform_user_id FROM vanta_customers c
             LEFT JOIN vanta_platform_identities p ON p.customer_id = c.id AND p.platform = 'telegram'
@@ -58,6 +78,8 @@ export async function POST(request: NextRequest) {
     for (const row of tgResult.rows as any[]) {
       telegramCustomers.set(Number(row.id), row.platform_user_id ? Number(row.platform_user_id) : null);
     }
+
+    const isMarketing = body.type === "promotion" || body.type === "new_product";
 
     for (const customerId of targetCustomerIds) {
       const insert = await db.execute({
@@ -77,18 +99,27 @@ export async function POST(request: NextRequest) {
       const notificationId = Number(insert.lastInsertRowid);
       created.push(notificationId);
 
-      // Send Telegram DM only if customer has notifications enabled AND a linked Telegram
       const telegramId = telegramCustomers.get(customerId);
       if (telegramId) {
         try {
-          await sendNotification(
-            telegramId,
-            `<b>${body.title}</b>\n\n${body.message}`
-          );
+          const formatted = body.type === "promotion"
+            ? formatPromotionMessage(body.title, body.message, body.imageUrl)
+            : formatGeneralMessage(body.title, body.message);
+          await sendNotification(telegramId, formatted);
         } catch {
           // Don't fail if Telegram send fails
         }
       }
+    }
+
+    // Broadcast marketing events to WhatsApp channel (newsletter)
+    if (isMarketing && body.message) {
+      await broadcastToWhatsAppBot(
+        body.type === "promotion"
+          ? `✦ ${body.title} ✦\n\n▸ ${body.message}\n\n▶ Check it out in the store!`
+          : `✦ ${body.title} ✦\n\n▸ ${body.message}`,
+        body.imageUrl ?? undefined,
+      );
     }
 
     return NextResponse.json({

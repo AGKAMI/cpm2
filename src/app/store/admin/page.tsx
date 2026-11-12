@@ -347,6 +347,7 @@ export default function AdminPage() {
               title: "New Vehicle Added",
               message: `A new ${body.name} has been added to the catalog. Check it out now!`,
               type: "new_product",
+              imageUrl: body.imageUrl ?? undefined,
             }),
           });
           toast.success("Product created.");
@@ -470,6 +471,7 @@ export default function AdminPage() {
               title: "New Promotion",
               message: `New promotion: ${body.title}. ${body.description || ""}`,
               type: "promotion",
+              imageUrl: body.imageUrl ?? undefined,
             }),
           });
         }

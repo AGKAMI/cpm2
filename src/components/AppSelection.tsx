@@ -66,7 +66,7 @@ function ThemeAppCard({ app, title, subtitle, description, label, href, iconSrc 
       {/* Card surface — matches reference structure: overflow hidden, no white backdrop */}
       <div className={`app-card ${isGarage ? "app-card--garage" : "app-card--fleet"}`}>
         <div className="app-card__bg bg-background border border-border" />
-        <div className="app-card__blob bg-grey" />
+        <div className="app-card__blob" />
         <div className="app-card__content">
           <div className="flex items-center gap-3 mb-4">
             <img

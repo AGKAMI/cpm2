@@ -29,9 +29,9 @@
   --brand-gold-deep: #8f6f26;
   --brand-gold-gradient: linear-gradient(135deg, #f6e3a0 0%, #d4af4f 45%, #9b7a2a 100%);
 
-  /* Animated border gradients — app card shine (moving thin = dark grey) */
-  --border-gradient-fleet: linear-gradient(45deg, #5a5a5a 0%, #333333 25%, #5a5a5a 50%, #333333 75%, #5a5a5a 100%);
-  --border-gradient-garage: linear-gradient(45deg, #5a5a5a 0%, #333333 25%, #5a5a5a 50%, #333333 75%, #5a5a5a 100%);
+  /* Animated border gradients — gold shine on Garage, live-theme shine on Fleet */
+  --border-gradient-fleet: linear-gradient(45deg, color-mix(in srgb, var(--primary) 55%, white) 0%, var(--primary) 25%, color-mix(in srgb, var(--primary) 60%, black) 50%, var(--primary) 75%, color-mix(in srgb, var(--primary) 55%, white) 100%);
+  --border-gradient-garage: linear-gradient(45deg, #f6e3a0 0%, #d4af4f 25%, #8f6f26 50%, #d4af4f 75%, #f6e3a0 100%);
 
   /* Grey — used for blob and inner borders */
   --color-grey: #2a2a2a;
@@ -1744,6 +1744,8 @@ html {
 .app-card { position: relative; width: 190px; height: 254px; border-radius: 10px; overflow: hidden; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 0 15px; background: linear-gradient(0deg, #000, #272727); border: none; color: white; font-weight: 400; cursor: pointer; }
 .app-card__bg { position: absolute; top: 5px; left: 5px; width: calc(100% - 10px); height: calc(100% - 10px); z-index: 2; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
 .app-card__blob { position: absolute; z-index: 1; top: 50%; left: 50%; width: 150px; height: 150px; border-radius: 50%; opacity: 1; filter: blur(12px); animation: blob-bounce 5s infinite ease; pointer-events: none; }
+.app-card--fleet .app-card__blob { background: var(--primary); }
+.app-card--garage .app-card__blob { background: var(--brand-gold); }
 @keyframes blob-bounce {
   0% { transform: translate(-100%, -100%) translate3d(0, 0, 0); }
   25% { transform: translate(-100%, -100%) translate3d(100%, 0, 0); }
@@ -1796,7 +1798,7 @@ html {
   animation: text-shine 6s linear infinite;
 }
 .app-card--fleet .text-shine {
-  background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 1) 50%, rgba(255, 255, 255, 0.35) 100%);
+  background-image: linear-gradient(90deg, color-mix(in srgb, var(--primary) 45%, transparent) 0%, var(--primary) 50%, color-mix(in srgb, var(--primary) 45%, transparent) 100%);
 }
 .app-card--garage .text-shine {
   background-image: linear-gradient(90deg, rgba(212, 175, 79, 0.45) 0%, #f6e3a0 50%, rgba(212, 175, 79, 0.45) 100%);
@@ -1806,10 +1808,7 @@ html {
   100% { background-position: -200% 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .app-card__blob,
-  .app-card::before,
-  .app-card::after,
-  .text-shine { animation: none !important; }
+  .app-card__blob { animation: none !important; }
 }
 
 /* App card link — hover lift, focus ring, CTA feedback */

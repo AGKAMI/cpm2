@@ -48,7 +48,7 @@ const DockIconButton = React.forwardRef<
         whileTap={{ scale: 0.95 }}
         className={cn(
           "relative group p-3 rounded-lg",
-          active ? "bg-primary text-black" : "hover:bg-secondary transition-colors",
+          active ? "bg-primary text-black dock-active" : "hover:bg-secondary transition-colors",
           className
         )}
         onClick={() => {

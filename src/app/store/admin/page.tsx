@@ -179,6 +179,7 @@ export default function AdminPage() {
   const [promotionConverterResult, setPromotionConverterResult] = useState<string | null>(null);
   const [promotionConverterError, setPromotionConverterError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const promoFileInputRef = useRef<HTMLInputElement>(null);
   // Toggle for the add/edit product form (behind a button, not always open)
   const [showProductForm, setShowProductForm] = useState(false);
 
@@ -773,6 +774,7 @@ export default function AdminPage() {
                   <Field label="Image URL (optional background image)">
                     <div className="relative group cursor-pointer">
                       <input
+                        ref={promoFileInputRef}
                         type="file"
                         accept="image/*"
                         className="sr-only"
@@ -794,7 +796,7 @@ export default function AdminPage() {
                           }}
                           />
                           <div
-                          onClick={() => fileInputRef.current?.click()}
+                          onClick={() => promoFileInputRef.current?.click()}
                           className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${promotionConverterFile ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}
                           >
                           {promotionConverterFile ? (
@@ -809,9 +811,36 @@ export default function AdminPage() {
                           </div>
                           {promotionConverterError && <p className="text-xs text-destructive mt-1">{promotionConverterError}</p>}
                           {promotionConverterResult && (
-                          <div className="mt-3 border border-input rounded-md p-3 bg-background">
-                          <img src={promotionConverterResult} alt="Preview" className="max-w-full max-h-48 rounded-md border border-border object-cover" />
-                          <p className="text-[10px] text-ink-soft mt-2">Image preview — URL auto-set</p>
+                          <div
+                            className="relative mt-3 overflow-hidden rounded-md border border-border h-32"
+                            style={{ backgroundColor: promotionForm.backgroundColor || "var(--color-paper-raised)" }}
+                          >
+                            {promotionForm.imageUrl && (
+                              <>
+                                <img
+                                  src={promotionForm.imageUrl}
+                                  alt="Banner preview"
+                                  className="absolute inset-y-0 right-0 h-full w-[55%] object-cover"
+                                />
+                                <div
+                                  className="absolute inset-y-0 right-0 w-[55%] pointer-events-none"
+                                  style={{
+                                    background: `linear-gradient(90deg, ${promotionForm.backgroundColor || "var(--color-paper-raised)"} 0%, transparent 100%)`,
+                                  }}
+                                />
+                              </>
+                            )}
+                            <div className="relative z-10 p-3">
+                              <p
+                                className="text-[10px] uppercase tracking-[0.2em]"
+                                style={{ color: promotionForm.accentColor || "#d4af4f" }}
+                              >
+                                {promotionForm.subtitle || "Special offer"}
+                              </p>
+                              <p className="font-serif font-bold text-lg">
+                                {promotionForm.title || "Title"}
+                              </p>
+                            </div>
                           </div>
                           )}
                   </Field>

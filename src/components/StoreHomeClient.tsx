@@ -258,11 +258,19 @@ const [activeIndex, setActiveIndex] = useState(0);
                 }}
               >
                 {promo.imageUrl && (
-                  <img
-                    src={promo.imageUrl}
-                    alt={promo.title}
-                    className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none"
-                  />
+                  <>
+                    <img
+                      src={promo.imageUrl}
+                      alt={promo.title}
+                      className="absolute inset-y-0 right-0 h-full w-[55%] object-cover pointer-events-none"
+                    />
+                    <div
+                      className="absolute inset-y-0 right-0 w-[55%] pointer-events-none"
+                      style={{
+                        background: `linear-gradient(90deg, ${promo.backgroundColor || "var(--color-paper-raised)"} 0%, transparent 100%)`,
+                      }}
+                    />
+                  </>
                 )}
                 <div className="relative z-10">
                   <span

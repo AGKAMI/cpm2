@@ -157,22 +157,33 @@ export function StoreShell({ children, dock }: StoreShellProps) {
     };
   }, []);
 
-  // Fetch Telegram profile for avatar (non-admin, just for profile picture)
+  // Fetch Telegram profile for avatar (non-admin, just for profile picture).
+  // Mirrors the profile page: refetch on focus/storage so anything changed on
+  // the profile page (linking Telegram, new photo) shows up here too.
   useEffect(() => {
-    vantaApi
-      .profile()
-      .then((data) => {
-        if (data.telegramUser) {
-          setProfile({
-            photoUrl: data.telegramUser.photoUrl,
-            displayName: data.telegramUser.displayName,
-            username: data.telegramUser.username,
-          });
-        }
-      })
-      .catch(() => {
-        // Profile fetch is non-fatal
-      });
+    const load = () => {
+      vantaApi
+        .profile()
+        .then((data) => {
+          if (data.telegramUser) {
+            setProfile({
+              photoUrl: data.telegramUser.photoUrl,
+              displayName: data.telegramUser.displayName,
+              username: data.telegramUser.username,
+            });
+          }
+        })
+        .catch(() => {
+          // Profile fetch is non-fatal
+        });
+    };
+    load();
+    window.addEventListener("focus", load);
+    window.addEventListener("storage", load);
+    return () => {
+      window.removeEventListener("focus", load);
+      window.removeEventListener("storage", load);
+    };
   }, []);
 
   const visibleNav = STORE_NAV.filter(
@@ -214,13 +225,9 @@ export function StoreShell({ children, dock }: StoreShellProps) {
                         loading="eager"
                       />
                     ) : (
-                      <svg
-                        className="absolute inset-0 h-full w-full fill-current text-ink-soft"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                      >
-                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
+                      <div className="h-full w-full flex items-center justify-center text-ink-soft text-xs font-bold select-none">
+                        {(profile?.displayName || "U").charAt(0).toUpperCase()}
+                      </div>
                     )}
                   </motion.div>
                   <div
@@ -233,9 +240,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
               )}
             </div>
             <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center">
-              <span className="icon-shine icon-shine--garage icon-shine--round">
-                <img src={VANTA_LOCKUP} alt="Vanta Garage" className="h-24 w-24 sm:h-32 sm:w-32 rounded-full" />
-              </span>
+              <img src={VANTA_LOCKUP} alt="Vanta Garage" className="h-24 w-24 sm:h-32 sm:w-32" />
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <Button variant="ghost" size="icon" onClick={() => router.push("/")} aria-label="Back to app selection">

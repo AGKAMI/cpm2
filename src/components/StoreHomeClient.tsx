@@ -454,88 +454,140 @@ const [activeIndex, setActiveIndex] = useState(0);
     </>
   );
 
+/* --- Loading skeleton -----------------------------------------------------
+   Mirrors the real page structure section-for-section, reusing the same
+   .vanta-* classes with pulsing fills so skeleton geometry matches the
+   loaded layout by construction. */
+
+function SkeletonBar({ className }: { className: string }) {
+  return <div className={`bg-paper-raised animate-pulse ${className}`} />;
+}
+
+function SkeletonVantaCard({ width, square, small }: { width: string; square?: boolean; small?: boolean }) {
+  return (
+    <div className="vanta-card" style={{ flex: "0 0 auto", width }}>
+      <div className="vanta-card-media" style={square ? { aspectRatio: "1" } : undefined}>
+        <div className="absolute inset-0 bg-paper-raised animate-pulse" />
+      </div>
+      <div className="vanta-card-body" style={small ? { padding: "8px 4px 4px 4px" } : undefined}>
+        {small ? (
+          <SkeletonBar className="h-2.5 w-full rounded" />
+        ) : (
+          <>
+            <SkeletonBar className="h-4 w-3/4 rounded" />
+            <SkeletonBar className="h-2.5 w-1/2 rounded" />
+            <div className="vanta-card-footer">
+              <SkeletonBar className="w-5 h-5 rounded-full" />
+              <SkeletonBar className="h-[18px] w-14 rounded" />
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SkeletonFeaturedCard() {
+  return (
+    <div className="vanta-card" style={{ flex: "0 0 auto", width: "min(340px, 82%)" }}>
+      <div className="vanta-card-media">
+        <div className="absolute inset-0 bg-paper-raised animate-pulse" />
+        <div className="vanta-card-badges">
+          <SkeletonBar className="h-[15px] w-12 rounded border border-border" />
+        </div>
+      </div>
+      <div className="vanta-card-body">
+        <div className="flex items-end justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <SkeletonBar className="h-2.5 w-20 rounded mb-1.5" />
+            <SkeletonBar className="h-4 w-3/4 rounded mb-2" />
+            <div className="flex items-end gap-2">
+              <SkeletonBar className="w-5 h-5 rounded-full" />
+              <SkeletonBar className="h-[18px] w-16 rounded" />
+            </div>
+          </div>
+          <SkeletonBar className="w-10 h-10 rounded-full" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SkeletonSectionHeader({ seeAll = true }: { seeAll?: boolean }) {
+  return (
+    <div className="vanta-section-header">
+      <div>
+        <SkeletonBar className="h-2.5 w-16 rounded mb-1.5" />
+        <SkeletonBar className="h-5 w-40 rounded" />
+      </div>
+      {seeAll && <SkeletonBar className="h-3 w-12 rounded" />}
+    </div>
+  );
+}
+
 const loadingSkeleton = (
     <>
-      <section className="hero px-4 pt-6 pb-8 relative">
-        <div className="animate-pulse">
-          <div className="h-4 w-1/4 bg-paper-raised rounded mb-2" />
-          <div className="h-8 w-3/4 bg-paper-raised rounded mb-1" />
-          <div className="h-8 w-1/2 bg-paper-raised rounded" />
-        </div>
+      <section className="hero relative px-4 pt-6 pb-8">
+        <SkeletonBar className="h-2.5 w-24 rounded mb-3" />
+        <SkeletonBar className="h-8 w-3/4 rounded mb-2" />
+        <SkeletonBar className="h-3 w-48 rounded" />
       </section>
-      <section className="px-4">
-        <div className="animate-pulse">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="product-card">
-                <div className="relative overflow-hidden rounded-[18px] border border-border">
-                  <div className="w-full h-[220px] bg-paper-raised" />
-                  <div className="absolute bottom-2 left-2 right-2 p-2 bg-ink/60">
-                    <div className="h-4 w-3/4 bg-paper-raised rounded mb-1" />
-                    <div className="h-6 w-1/2 bg-gold rounded" />
-                  </div>
-                </div>
-              </div>
-            ))}
+
+      <section className="vanta-section" aria-label="Featured vehicles">
+        <SkeletonSectionHeader />
+        <div className="relative">
+          <div className="featured-carousel">
+            <SkeletonFeaturedCard />
+            <SkeletonFeaturedCard />
+          </div>
+          <div className="featured-pagination">
+            <span className="featured-dot active" />
+            <span className="featured-dot" />
           </div>
         </div>
       </section>
-      <section className="sec mb-6 px-4 animate-pulse">
-        <div className="h-5 w-1/4 bg-paper-raised rounded mb-3" />
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+
+      <section className="promo mb-6 px-4">
+        <div className="relative overflow-hidden rounded-[22px] p-5 border border-border" style={{ minHeight: "160px" }}>
+          <SkeletonBar className="h-2.5 w-20 rounded mb-2" />
+          <SkeletonBar className="h-5 w-40 rounded mb-1.5" />
+          <SkeletonBar className="h-3 w-56 rounded" />
+          <SkeletonBar className="mt-4 h-9 w-28 rounded" />
+        </div>
+      </section>
+
+      <section className="vanta-section">
+        <SkeletonSectionHeader seeAll={false} />
+        <div className="vanta-card-list">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="panel p-4">
-              <div className="h-3 w-1/3 bg-paper-raised rounded mb-1" />
-              <div className="h-5 w-1/2 bg-paper-raised rounded" />
-            </div>
+            <SkeletonVantaCard key={i} width="72px" square small />
           ))}
         </div>
       </section>
-      <section className="sec mb-6 px-4 animate-pulse">
-        <div className="h-5 w-1/4 bg-paper-raised rounded mb-3" />
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="product-card">
-              <div className="relative overflow-hidden rounded-[18px] border border-border">
-                <div className="w-full h-[220px] bg-paper-raised" />
-                <div className="absolute bottom-2 left-2 right-2 p-2 bg-ink/60">
-                  <div className="h-4 w-3/4 bg-paper-raised rounded mb-1" />
-                  <div className="h-6 w-1/2 bg-gold rounded" />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-      <section className="sec mb-6 px-4 animate-pulse">
-        <div className="h-5 w-1/4 bg-paper-raised rounded mb-3" />
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="product-card">
-              <div className="relative overflow-hidden rounded-[18px] border border-border">
-                <div className="w-full h-[220px] bg-paper-raised" />
-                <div className="absolute bottom-2 left-2 right-2 p-2 bg-ink/60">
-                  <div className="h-4 w-3/4 bg-paper-raised rounded mb-1" />
-                  <div className="h-6 w-1/2 bg-destructive rounded" />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-      <section className="sec mb-10 px-4 animate-pulse">
-        <div className="h-5 w-1/4 bg-paper-raised rounded mb-3" />
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+
+      <section className="vanta-section">
+        <SkeletonSectionHeader />
+        <div className="vanta-card-list">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="product-card">
-              <div className="relative overflow-hidden rounded-[18px] border border-border">
-                <div className="w-full h-[220px] bg-paper-raised" />
-                <div className="absolute bottom-2 left-2 right-2 p-2 bg-ink/60">
-                  <div className="h-4 w-3/4 bg-paper-raised rounded mb-1" />
-                  <div className="h-6 w-1/2 bg-gold rounded" />
-                </div>
-              </div>
-            </div>
+            <SkeletonVantaCard key={i} width="200px" />
+          ))}
+        </div>
+      </section>
+
+      <section className="vanta-section">
+        <SkeletonSectionHeader />
+        <div className="vanta-card-list">
+          {[...Array(3)].map((_, i) => (
+            <SkeletonVantaCard key={i} width="200px" />
+          ))}
+        </div>
+      </section>
+
+      <section className="vanta-section">
+        <SkeletonSectionHeader seeAll={false} />
+        <div className="vanta-card-list">
+          {[...Array(3)].map((_, i) => (
+            <SkeletonVantaCard key={i} width="200px" />
           ))}
         </div>
       </section>

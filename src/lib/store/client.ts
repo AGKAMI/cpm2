@@ -240,6 +240,7 @@ export type VantaProduct = {
   isNew: boolean;
   isSale: boolean;
   isPublished: boolean;
+  imageUrl: string | null;
   version: number;
   airSuspension: boolean;       // Air suspension installation included
   unlockedBodykits: boolean;    // Design unlocks bodykits

@@ -189,8 +189,8 @@ export function StoreShell({ children, dock }: StoreShellProps) {
 
   const visibleNav = STORE_NAV.filter(
     (t) =>
-      (t.key !== "admin" || (isAdmin === true && adminSessionActive())) &&
-      (t.key !== "owner" || (isOwner === true && adminSessionActive())),
+      (t.key !== "admin" || isAdmin === true) &&
+      (t.key !== "owner" || isOwner === true),
   );
 
   const activeTab: StoreTab | undefined =

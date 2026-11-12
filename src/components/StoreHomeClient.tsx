@@ -168,8 +168,8 @@ export function StoreHomeClient() {
               <div key={c.id} className="vanta-card group">
                 <Link href={`/store/products/${c.id}`} className="block h-full w-full">
                   <div className="vanta-card-media">
-                    {cardImages[c.id] ? (
-                      <img src={cardImages[c.id]} alt={c.name} loading="lazy" />
+                    {cardImages[c.id] || c.imageUrl ? (
+                      <img src={cardImages[c.id] || c.imageUrl || undefined} alt={c.name} loading="lazy" />
                     ) : (
                       <div className="no-photo">No photo</div>
                     )}
@@ -328,8 +328,8 @@ export function StoreHomeClient() {
               <div key={c.id} className="vanta-card group">
                 <Link href={`/store/products/${c.id}`} className="block h-full w-full">
                   <div className="vanta-card-media">
-                    {cardImages[c.id] ? (
-                      <img src={cardImages[c.id]} alt={c.name} loading="lazy" />
+                    {cardImages[c.id] || c.imageUrl ? (
+                      <img src={cardImages[c.id] || c.imageUrl || undefined} alt={c.name} loading="lazy" />
                     ) : (
                       <div className="no-photo">No photo</div>
                     )}
@@ -368,8 +368,8 @@ export function StoreHomeClient() {
               <div key={c.id} className="vanta-card group">
                 <Link href={`/store/products/${c.id}`} className="block h-full w-full">
                   <div className="vanta-card-media">
-                    {cardImages[c.id] ? (
-                      <img src={cardImages[c.id]} alt={c.name} loading="lazy" />
+                    {cardImages[c.id] || c.imageUrl ? (
+                      <img src={cardImages[c.id] || c.imageUrl || undefined} alt={c.name} loading="lazy" />
                     ) : (
                       <div className="no-photo">No photo</div>
                     )}
@@ -408,8 +408,8 @@ export function StoreHomeClient() {
             <div key={c.id} className="vanta-card group">
               <Link href={`/store/products/${c.id}`} className="block h-full w-full">
                 <div className="vanta-card-media">
-                  {cardImages[c.id] ? (
-                    <img src={cardImages[c.id]} alt={c.name} loading="lazy" />
+                  {cardImages[c.id] || c.imageUrl ? (
+                    <img src={cardImages[c.id] || c.imageUrl || undefined} alt={c.name} loading="lazy" />
                   ) : (
                     <div className="no-photo">No photo</div>
                   )}

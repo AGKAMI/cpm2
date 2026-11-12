@@ -681,7 +681,10 @@ export function ProfileClient() {
           </p>
 
           {/* Quick login for owner/admin — skip email/password */}
-          {!customer && adminRole && (
+          {!customer &&
+            (adminRole ||
+              (typeof window !== "undefined" &&
+                localStorage.getItem("vanta_admin_session") === "true")) && (
             <Button
               variant="outline"
               onClick={quickLogin}

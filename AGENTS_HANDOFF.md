@@ -2096,4 +2096,67 @@ Each module below includes: **What** (functional spec from plan), **How it works
 **Verified by:** Kermes (stepfun/step-3.7-flash:free)
 
 
+### 2026-11-12 — Hermes Agent "Kermes" — Skeleton Loader Matches Home Page Layout
+
+**What:** Aligned the loading skeleton with the real home page section structure so skeleton geometry matches loaded layout exactly.
+
+**Where:**
+- `src/components/StoreHomeClient.tsx` — `SkeletonVantaCard`, `SkeletonSectionHeader`, `SkeletonFeaturedCard`, `loadingSkeleton`
+
+**Changes:**
+1. **Featured carousel** — added `featured-nav` prev/next buttons to match real carousel header
+2. **Promo section** — changed from `<section className="promo mb-6 px-4">` with bare div to `<section className="vanta-section">` with `SkeletonSectionHeader` and `promotion-card` wrappers matching real structure
+3. **Categories** — removed `small` prop from skeleton cards (real categories no longer uses inline padding override)
+4. **New arrivals / On sale** — removed fixed `width="200px"` from skeleton cards (real cards have no fixed width)
+5. **Personalised** — changed `seeAll={false}` to default, added "Because you viewed the featured builds" subtitle paragraph between header and card-list
+6. **Footer** — added `<div className="foot...">` skeleton bars at end to match real footer
+7. **SkeletonVantaCard** — made `width` optional so sections without fixed width render naturally
+
+**Gates:** `tsc --noEmit` exit 0. `next build` clean. Server running at http://127.0.0.1:3001 (HTTP 200 on /store).
+
+**Deploy status:** Not deployed. Working tree only.
+
+**Verified by:** Kermes (stepfun/step-3.7-flash:free)
+
+
+### 2026-11-12 — Agent "AG" (GLM-5.3-flash-free) — Protocol run: handoff read, layout-plan audit Q&A, no code changes
+
+**What:** Read AGENTS_HANDOFF.md top-to-bottom per protocol. Answered three user questions. **No code changes made this run.**
+
+1. **Home page vs 38-round plan audit** — layout is plan-conformant: fixed black/gold theme, compact hero, editorial order, featured carousel (admin `isFeatured`), dynamic promo banners (full admin CRUD), auto new arrivals, 4-tab dock. Best sellers correctly absent (never planned; earlier gated version was removed in the design-system pass). Real gaps vs plan: **top search not built** (header has logo/bell/avatar only); **personalised section re-uses featured items** under "Because you viewed the featured builds" — history-based personalisation not implemented; VANTA Garage is **fixed dark by user decision** (no light mode in the store; night/paper switch removed from store header).
+
+2. **Promo card hover border identified** — `.promotion-card:hover::after` (globals.css ~line 2308): 1px gold border ring masked via mask-composite, animated with `borderShine 3s linear infinite` (translateX -100% → 100%), i.e. a left-to-right gold glint around the border on hover. Plus always-on `.promotion-card::before` white glare (`promotionShine 3s`). Both are part of the metallic-gold system the user wants kept.
+
+3. **HeartToggle identified** — wishlist toggle, localStorage-only (`vanta_wishlist_<productId>`), renders on Profile wishlist section; server wishlist API still pending (gap-plan Module 12: price-drop/stock alerts).
+
+**Kermes' uncommitted work left untouched (verified via `git diff HEAD`):** `StoreHomeClient.tsx` (skeleton refinements: featured-nav buttons in skeleton, promotion-card skeleton wrappers, optional skeleton widths, personalised subtitle, footer skeleton bars), `globals.css` (`.vanta-card` radius 20→22px, `.vanta-card-list` padding-bottom 8→28px). Not modified, not built, not committed by this agent.
+
+**Process note (stale-build lesson from earlier run):** commits only reach the local server after a rebuild — kill the port-3001 listener first (building while the server runs corrupts `.next` → unstyled site), then `npx next build`, then detached `npx next start -H 127.0.0.1 --port 3001` per Kermes' 2026-11-10 entry. Never `next dev`.
+
+**Gate:** none needed (no code changes).
+
+**Verified by:** AG (GLM-5.3-flash-free)
+
+
+### 2026-11-12 — Agent "AG" (GLM-5.3-flash-free) — Promo hover-glint removed + admin image upload fix + wishlist heart redesign
+
+**What:** Three user-named changes. Handoff re-read top-to-bottom before starting.
+
+1. **Promo card hover border removed** — `.promotion-card:hover::after` (the left-to-right gold `borderShine` border glint) is now `content: none`; `@keyframes borderShine` deleted. The always-on white glare (`.promotion-card::before`, `promotionShine 3s`) is kept — user only named the hover border.
+
+2. **Admin image converter fixed** — root cause: request-body cap. This Next version defaults `proxyClientMaxBodySize: 10485760` (10MB) — verified live: 9MB POST → 200, 10MB → 500 INTERNAL_ERROR. Vercel serverless caps bodies at ~4.5MB, so production would fail too. Fix: new `compressImageForUpload()` helper in `admin/page.tsx` (createImageBitmap + canvas → JPEG q0.85, max 1600px; falls back to original file if undecodable, e.g. HEIC outside Safari) wired into all three image handlers (main product upload, inline-edit data URL, promotion data URL). Verified end-to-end in browser: 4000x3000 image → compressed → `POST /api/store/admin/upload-image` → 200 + URL.
+
+3. **HeartToggle redesigned** — the old SVG was a malformed two-path icon that did not read as a heart. Replaced with the Material heart path (filled), Uiverse-style circle that expands into a #FF9966→#FF5E62 gradient "FAVOURITE" pill on hover with blur glow; wishlisted state = persistent gradient. Expansion is overlay-only (absolute inside fixed 44px `.heart-fav-wrap`) so card layout never shifts. No emoji (UI rule) — SVG heart. Wishlist behavior unchanged (localStorage `vanta_wishlist_<id>`).
+
+**Files:** `src/app/globals.css`, `src/components/HeartToggle.tsx`, `src/app/store/admin/page.tsx`
+
+**Shared-file note:** those three files also carried another agent's uncommitted edits (lazy localStorage init in HeartToggle, radius/padding tweaks in globals, quote escapes + upload fallback/error message in admin page) — preserved and riding along in this commit, not reverted. The bulk uncommitted batch elsewhere (StoreShell, notifications, pages, validation, fix_storehome.py, etc.) is untouched.
+
+**Gate:** `npx next build` clean (port-3001 listener killed first), tests 67/67 pass, lint 2 errors pre-existing in `WhatsAppOrder.tsx` (other agent's in-flight file, untouched by this run). Server restarted on http://127.0.0.1:3001 (HTTP 200 on /store). Live verified: promo hover glint gone (`::after` computed `content: none`), glare still animating; heart CSS/JS/SVG confirmed shipped in build chunks (catalogue currently has 0 products, so no heart renders on-page — component verified via build artifacts + passing build).
+
+**Deploy status:** Local only. Production deploy still awaiting user go-ahead.
+
+**Verified by:** AG (GLM-5.3-flash-free)
+
+
 

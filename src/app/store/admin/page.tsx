@@ -236,6 +236,34 @@ export default function AdminPage() {
     });
   };
 
+  // Downscale + re-encode large images (phone camera photos are 10MB+) to a
+  // small JPEG before upload. Server request bodies are capped (10MB local,
+  // ~4.5MB on Vercel serverless), so raw camera files get rejected with a
+  // generic 500 — compressing here avoids that entirely.
+  const compressImageForUpload = async (file: File, maxDim = 1600, quality = 0.85): Promise<File> => {
+    if (typeof createImageBitmap !== "function") return file;
+    try {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+      const w = Math.round(bitmap.width * scale);
+      const h = Math.round(bitmap.height * scale);
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return file;
+      ctx.drawImage(bitmap, 0, 0, w, h);
+      bitmap.close();
+      const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+      if (!blob || blob.size >= file.size) return file;
+      const name = file.name.replace(/\.[^.]+$/, "") + ".jpg";
+      return new File([blob], name, { type: "image/jpeg" });
+    } catch {
+      // Undecodable format (e.g. HEIC outside Safari) — send the original
+      return file;
+    }
+  };
+
   const resetForm = () => {
     setForm(EMPTY_FORM);
     setPickedCar(null);
@@ -614,7 +642,7 @@ export default function AdminPage() {
           )}
           <div className="flex flex-wrap gap-2">
             {categories.length === 0 ? (
-              <span className="text-xs text-muted-foreground">No categories yet. Click "Add Category" to create one.</span>
+              <span className="text-xs text-muted-foreground">No categories yet. Click &quot;Add Category&quot; to create one.</span>
             ) : (
               <>
                 {categories.map((cat) => (
@@ -696,7 +724,7 @@ export default function AdminPage() {
                         setError(null);
                       }}
                     >
-                      "Add Promotion"
+                      &quot;Add Promotion&quot;
                     </Button>
                   </div>
 
@@ -784,7 +812,7 @@ export default function AdminPage() {
                           setPromotionConverterFile(file);
                           setPromotionConverterError(null);
                           try {
-                            const dataUrl = await convertFileToDataUrl(file);
+                            const dataUrl = await convertFileToDataUrl(await compressImageForUpload(file));
                             setPromotionConverterResult(dataUrl);
                             // Auto-convert to URL — no extra click needed
                             setPromotionForm((f) => ({ ...f, imageUrl: dataUrl }));
@@ -881,7 +909,7 @@ export default function AdminPage() {
 
               <div className="flex flex-wrap gap-3">
                 {promotions.length === 0 ? (
-                  <span className="text-xs text-muted-foreground">No promotions yet. Click "Add Promotion" to create one.</span>
+                  <span className="text-xs text-muted-foreground">No promotions yet. Click &quot;Add Promotion&quot; to create one.</span>
                 ) : (
                   promotions.map((p) => (
                     <div
@@ -966,8 +994,9 @@ export default function AdminPage() {
                     setProductConverterUploading(true);
                     try {
                       // Upload to server and get a real public URL
+                      const uploadFile = await compressImageForUpload(file);
                       const formData = new FormData();
-                      formData.append("file", file);
+                      formData.append("file", uploadFile);
                       const res = await fetch("/api/store/admin/upload-image", {
                         method: "POST",
                         body: formData,
@@ -982,8 +1011,17 @@ export default function AdminPage() {
                       // Keep preview + filename visible
                       setProductConverterFile(file);
                       setProductConverterResult(url);
-                    } catch {
-                      setProductConverterError("Failed to upload image.");
+                    } catch (err) {
+                      // Server upload failed — fall back to local data URL
+                      const msg = err instanceof Error ? err.message : "Upload failed";
+                      try {
+                        const dataUrl = await convertFileToDataUrl(file);
+                        setForm((f) => ({ ...f, imageUrl: dataUrl }));
+                        setProductConverterFile(file);
+                        setProductConverterResult(dataUrl);
+                      } catch {
+                        setProductConverterError(`Failed to upload image: ${msg}`);
+                      }
                     } finally {
                       setProductConverterUploading(false);
                     }
@@ -1099,7 +1137,7 @@ export default function AdminPage() {
                   </div>
                 ) : (
                   <div className="absolute z-20 mt-1 w-full border border-border rounded-md bg-background px-3 py-2 text-sm text-muted-foreground">
-                    No car in the CPM2 catalog matches "{carQuery}".
+                    No car in the CPM2 catalog matches &quot;{carQuery}&quot;.
                   </div>
                 ))}
               </div>
@@ -1312,7 +1350,7 @@ export default function AdminPage() {
                               setProductConverterFile(file);
                               setProductConverterError(null);
                               try {
-                                const dataUrl = await convertFileToDataUrl(file);
+                                const dataUrl = await convertFileToDataUrl(await compressImageForUpload(file));
                                 setProductConverterResult(dataUrl);
                                 setForm((f) => ({ ...f, imageUrl: dataUrl }));
                                 setProductConverterFile(null);
@@ -1426,7 +1464,7 @@ export default function AdminPage() {
                               </div>
                             ) : (
                               <div className="absolute z-20 mt-1 w-full border border-border rounded-md bg-background px-3 py-2 text-sm text-muted-foreground">
-                                No car in the CPM2 catalog matches "{carQuery}".
+                                No car in the CPM2 catalog matches &quot;{carQuery}&quot;.
                               </div>
                             ))}
                           </div>

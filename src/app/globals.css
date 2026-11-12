@@ -964,18 +964,26 @@ html {
 .bd-new {
   background: #3b82f6;
   color: #fff;
+  border-radius: 9999px;
+  padding: 2px 8px;
 }
 .bd-sale {
   background: #ef4444;
   color: #fff;
+  border-radius: 9999px;
+  padding: 2px 8px;
 }
 .bd-featured {
   background: #06b6d4;
   color: #fff;
+  border-radius: 9999px;
+  padding: 2px 8px;
 }
 .bd-ltd {
   background: #f59e0b;
   color: #fff;
+  border-radius: 9999px;
+  padding: 2px 8px;
 }
 
 .stock-badge {
@@ -1755,37 +1763,72 @@ html {
 }
 .app-card__content { position: relative; z-index: 3; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 22px 0 14px; }
 
-/* Animated border gradient — matches reference structure, our colours */
+/* Border shine — metallic base ring + specular glint circling the card */
+@property --shine-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
 .app-card::before, .app-card::after {
   content: "";
   position: absolute;
   left: -2px;
   top: -2px;
   border-radius: 10px;
-  background-size: 400%;
   width: calc(100% + 4px);
   height: calc(100% + 4px);
   z-index: -1;
-  animation: steam 20s linear infinite;
 }
+/* Base ring: gold or theme gradient, with two white glints sweeping over it */
 .app-card::before {
-  background: var(--border-gradient-fleet);
+  background:
+    conic-gradient(from var(--shine-angle),
+      transparent 0deg,
+      rgba(255, 255, 255, 0.9) 15deg,
+      transparent 55deg,
+      transparent 180deg,
+      rgba(255, 255, 255, 0.9) 195deg,
+      transparent 235deg),
+    var(--border-gradient-fleet);
+  animation: app-card-shine 3.5s linear infinite;
 }
 .app-card--garage::before {
-  background: var(--border-gradient-garage);
+  background:
+    conic-gradient(from var(--shine-angle),
+      transparent 0deg,
+      rgba(255, 255, 255, 0.9) 15deg,
+      transparent 55deg,
+      transparent 180deg,
+      rgba(255, 255, 255, 0.9) 195deg,
+      transparent 235deg),
+    var(--border-gradient-garage);
+  animation: app-card-shine 3.5s linear infinite;
 }
+/* Soft glow trailing the glints */
 .app-card::after {
-  background: var(--border-gradient-fleet);
-  filter: blur(100px);
+  background: conic-gradient(from var(--shine-angle),
+    transparent 0deg,
+    var(--primary) 30deg,
+    transparent 80deg,
+    transparent 180deg,
+    var(--primary) 210deg,
+    transparent 260deg);
+  filter: blur(10px);
+  animation: app-card-shine 3.5s linear infinite;
 }
 .app-card--garage::after {
-  background: var(--border-gradient-garage);
-  filter: blur(100px);
+  background: conic-gradient(from var(--shine-angle),
+    transparent 0deg,
+    #d4af4f 30deg,
+    transparent 80deg,
+    transparent 180deg,
+    #d4af4f 210deg,
+    transparent 260deg);
+  filter: blur(10px);
+  animation: app-card-shine 3.5s linear infinite;
 }
-@keyframes steam {
-  0% { background-position: 0 0; }
-  50% { background-position: 400% 0; }
-  100% { background-position: 0 0; }
+@keyframes app-card-shine {
+  to { --shine-angle: 360deg; }
 }
 
 /* Text shine sweep — applied to subtitle text on app cards */

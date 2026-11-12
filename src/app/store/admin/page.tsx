@@ -174,6 +174,7 @@ export default function AdminPage() {
   const [productConverterFile, setProductConverterFile] = useState<File | null>(null);
   const [productConverterResult, setProductConverterResult] = useState<string | null>(null);
   const [productConverterError, setProductConverterError] = useState<string | null>(null);
+  const [productConverterUploading, setProductConverterUploading] = useState(false);
   const [promotionConverterFile, setPromotionConverterFile] = useState<File | null>(null);
   const [promotionConverterResult, setPromotionConverterResult] = useState<string | null>(null);
   const [promotionConverterError, setPromotionConverterError] = useState<string | null>(null);
@@ -926,40 +927,49 @@ export default function AdminPage() {
                 accept="image/*"
                 className="sr-only"
                 onChange={async (e) => {
-                  const file = e.target.files?.[0] ?? null;
-                  if (!file) return;
-                  setProductConverterError(null);
-                  try {
-                    // Upload to server and get a real public URL
-                    const formData = new FormData();
-                    formData.append("file", file);
-                    const res = await fetch("/api/store/admin/upload-image", {
-                      method: "POST",
-                      body: formData,
-                    });
-                    if (!res.ok) {
-                      const errBody = await res.json().catch(() => ({}));
-                      throw new Error(errBody.error?.message || "Upload failed");
+                    const file = e.target.files?.[0] ?? null;
+                    if (!file) return;
+                    setProductConverterError(null);
+                    setProductConverterUploading(true);
+                    try {
+                      // Upload to server and get a real public URL
+                      const formData = new FormData();
+                      formData.append("file", file);
+                      const res = await fetch("/api/store/admin/upload-image", {
+                        method: "POST",
+                        body: formData,
+                      });
+                      if (!res.ok) {
+                        const errBody = await res.json().catch(() => ({}));
+                        throw new Error(errBody.error?.message || "Upload failed");
+                      }
+                      const { url } = (await res.json()) as { url: string };
+                      // Set the real URL into the form
+                      setForm((f) => ({ ...f, imageUrl: url }));
+                      // Keep preview + filename visible
+                      setProductConverterFile(file);
+                      setProductConverterResult(url);
+                    } catch {
+                      setProductConverterError("Failed to upload image.");
+                    } finally {
+                      setProductConverterUploading(false);
                     }
-                    const { url } = (await res.json()) as { url: string };
-                    // Set the real URL into the form
-                    setForm((f) => ({ ...f, imageUrl: url }));
-                    // Keep preview + filename visible
-                    setProductConverterFile(file);
-                    setProductConverterResult(url);
-                  } catch {
-                    setProductConverterError("Failed to upload image.");
-                  }
-                }}
+                  }}
               />
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${productConverterFile ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}
+                className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${productConverterUploading ? "border-amber-500 text-amber-500 bg-amber-50" : productConverterFile ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}
               >
-                {productConverterFile ? (
+                {productConverterUploading ? (
+                  <>
+                    <span className="text-xs font-bold animate-pulse">⟳</span>
+                    Converting image…
+                  </>
+                ) : productConverterFile ? (
                   <>
                     <span className="text-xs font-bold">✓</span>
                     {productConverterFile.name}
+                    {productConverterResult && <span className="text-[10px] text-ink-soft ml-2">→ converted to URL</span>}
                   </>
                 ) : (
                   "Choose image"
@@ -970,7 +980,7 @@ export default function AdminPage() {
             {productConverterResult && (
               <div className="mt-3 border border-input rounded-md p-3 bg-background">
                 <img src={productConverterResult} alt="Preview" className="max-w-full max-h-48 rounded-md border border-border object-cover" />
-                <p className="text-[10px] text-ink-soft mt-2">Image preview — URL auto-set</p>
+                <p className="text-[10px] text-ink-soft mt-2">Live preview from URL</p>
               </div>
             )}
           </Field>
@@ -1281,25 +1291,31 @@ export default function AdminPage() {
                           />
                           <div
                             onClick={() => fileInputRef.current?.click()}
-                            className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${productConverterFile ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}
+                            className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${productConverterUploading ? "border-amber-500 text-amber-500 bg-amber-50" : productConverterFile ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}
                           >
-                            {productConverterFile ? (
+                            {productConverterUploading ? (
+                              <>
+                                <span className="text-xs font-bold animate-pulse">⟳</span>
+                                Converting image…
+                              </>
+                            ) : productConverterFile ? (
                               <>
                                 <span className="text-xs font-bold">✓</span>
                                 {productConverterFile.name}
+                                {productConverterResult && <span className="text-[10px] text-ink-soft ml-2">→ converted to URL</span>}
                               </>
                             ) : (
                               "Choose image"
                             )}
                           </div>
-                        </div>
-                        {productConverterError && <p className="text-xs text-destructive mt-1">{productConverterError}</p>}
-                        {productConverterResult && (
+                          </div>
+                          {productConverterError && <p className="text-xs text-destructive mt-1">{productConverterError}</p>}
+                          {productConverterResult && (
                           <div className="mt-3 border border-input rounded-md p-3 bg-background">
                             <img src={productConverterResult} alt="Preview" className="max-w-full max-h-48 rounded-md border border-border object-cover" />
-                            <p className="text-[10px] text-ink-soft mt-2">Image preview — URL auto-set</p>
+                            <p className="text-[10px] text-ink-soft mt-2">Live preview from URL</p>
                           </div>
-                        )}
+                          )}
                       </Field>
                       <Field
                         label="Car (CPM2 catalog)"

@@ -191,23 +191,24 @@ const [activeIndex, setActiveIndex] = useState(0);
               aria-label="Featured vehicles"
             >
             {featured.map((c) => (
-              <div key={c.id} className="featured-carousel-item group cursor-pointer card-hover-gold card-border-shine">
+              <div key={c.id} className="featured-carousel-item group cursor-pointer card-border-shine">
                 <Link href={`/store/products/${c.id}`} className="block h-full">
                 <div className="media r1611 relative overflow-hidden rounded-[24px] border border-border card-gold-shine-wrap">
                     <div className="card-gold-shine" aria-hidden="true" />
                   {cardImages[c.id] ? (
-                    <img src={cardImages[c.id]} alt={c.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                    <img src={cardImages[c.id]} alt={c.name} className="w-full h-full object-cover" loading="lazy" />
                   ) : (
                     <div className="w-full h-full bg-paper-raised flex items-center justify-center">
                       <span className="text-[10px] text-ink-soft uppercase tracking-[0.2em]">No photo</span>
                     </div>
                   )}
+                  <div className="tl absolute top-2 left-2">
+                    {c.isNew && <span className="bd bd-new text-[9px] font-bold px-2 py-1">New</span>}
+                    {c.isFeatured && <span className="bd bd-featured text-[9px] font-bold px-2 py-1">Featured</span>}
+                    {c.isSale && <span className="bd bd-sale text-[9px] font-bold px-2 py-1">Sale</span>}
+                    {c.exclusivity !== "standard" && <span className="badge-exclusive text-[9px] font-bold">{c.exclusivity.replace("_", " ")}</span>}
+                  </div>
                   <div className="ov absolute inset-0 flex flex-col justify-between p-3 text-ink">
-                    <div>
-                      {c.exclusivity !== "standard" && (
-                        <span className="badge-exclusive text-[9px] font-bold">{c.exclusivity.replace("_", " ")}</span>
-                      )}
-                    </div>
                     <div className="flex items-end justify-between gap-2">
                       <div>
                         <small className="text-ink/80 uppercase tracking-[0.06em]">{c.name.toUpperCase()}</small>
@@ -330,7 +331,7 @@ const [activeIndex, setActiveIndex] = useState(0);
           </div>
           <div className="hs px-4 gap-4" style={{ scrollPaddingLeft: "16px" }}>
             {newArrivals.map((c) => (
-              <Link key={c.id} href={`/store/products/${c.id}`} className="nc cursor-pointer card-hover-gold card-border-shine">
+              <Link key={c.id} href={`/store/products/${c.id}`} className="nc cursor-pointer">
                 <div className="relative card-gold-shine-wrap">
                     <div className="card-gold-shine" aria-hidden="true" />
                   <div className="media r43 rounded-[18px] border border-border overflow-hidden">
@@ -342,7 +343,9 @@ const [activeIndex, setActiveIndex] = useState(0);
                       </div>
                     )}
                     <div className="tl absolute top-2 left-2">
-                      {c.isNew && <span className="bd bd-new text-[9px] font-bold px-2 py-1 rounded">New</span>}
+                      {c.isNew && <span className="bd bd-new text-[9px] font-bold px-2 py-1">New</span>}
+                      {c.isFeatured && <span className="bd bd-featured text-[9px] font-bold px-2 py-1">Featured</span>}
+                      {c.isSale && <span className="bd bd-sale text-[9px] font-bold px-2 py-1">Sale</span>}
                     </div>
                   </div>
                   <h4 className="font-bold text-sm">{c.name}</h4>
@@ -369,7 +372,7 @@ const [activeIndex, setActiveIndex] = useState(0);
           </div>
           <div className="hs px-4 gap-4" style={{ scrollPaddingLeft: "16px" }}>
             {onSale.map((c) => (
-              <Link key={c.id} href={`/store/products/${c.id}`} className="nc cursor-pointer card-hover-gold card-border-shine">
+              <Link key={c.id} href={`/store/products/${c.id}`} className="nc cursor-pointer">
                 <div className="relative card-gold-shine-wrap">
                     <div className="card-gold-shine" aria-hidden="true" />
                   <div className="media r43 rounded-[18px] border border-border overflow-hidden">
@@ -381,7 +384,9 @@ const [activeIndex, setActiveIndex] = useState(0);
                       </div>
                     )}
                     <div className="tl absolute top-2 left-2">
-                      {c.isSale && <span className="bd bd-sale text-[9px] font-bold px-2 py-1 rounded">Sale</span>}
+                      {c.isNew && <span className="bd bd-new text-[9px] font-bold px-2 py-1">New</span>}
+                      {c.isFeatured && <span className="bd bd-featured text-[9px] font-bold px-2 py-1">Featured</span>}
+                      {c.isSale && <span className="bd bd-sale text-[9px] font-bold px-2 py-1">Sale</span>}
                     </div>
                   </div>
                   <h4 className="font-bold text-sm">{c.name}</h4>
@@ -408,7 +413,7 @@ const [activeIndex, setActiveIndex] = useState(0);
         <p className="text-[11px] text-ink-soft mt-[-4px] mb-3 px-4">Because you viewed the featured builds</p>
         <div className="pad flex flex-col gap-3 px-4">
           {featured.slice(0, 4).map((c) => (
-            <Link key={c.id} href={`/store/products/${c.id}`} className="rk cursor-pointer card-hover-gold card-border-shine">
+            <Link key={c.id} href={`/store/products/${c.id}`} className="rk cursor-pointer">
               <div className="media w-16 h-16 rounded-[16px] border border-border flex-shrink-0 card-gold-shine-wrap">
                   <div className="card-gold-shine" aria-hidden="true" />
                 {cardImages[c.id] ? (

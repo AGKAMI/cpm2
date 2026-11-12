@@ -34,6 +34,11 @@ CREATE TABLE IF NOT EXISTS vanta_categories (
   created_at  TEXT    NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS vanta_cpm2_cars (
+  code   INTEGER PRIMARY KEY,
+  name   TEXT    NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS vanta_products (
   id                 INTEGER PRIMARY KEY AUTOINCREMENT,
   category_id        INTEGER REFERENCES vanta_categories(id),

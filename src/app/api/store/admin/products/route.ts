@@ -7,8 +7,10 @@
  */
 
 import { fail, ok, readJson } from "@/lib/route";
+import { writeFile, mkdir } from "fs/promises";
+import { join } from "path";
 import { requireStoreAdmin } from "@/lib/store/auth";
-import { carByCode } from "@/lib/car-catalog";
+import { getStoreDb } from "@/lib/store-db";
 import {
   createProduct,
   createMedia,
@@ -45,9 +47,14 @@ export const dynamic = "force-dynamic";
  * silently create a product linked to no car. Returns a fail response or null.
  * Only enforced when the field is present (PUT partial updates keep the old code).
  */
-function invalidCarCode(cpm2CarCode: number | undefined) {
+async function invalidCarCode(cpm2CarCode: number | undefined) {
   if (cpm2CarCode === undefined) return null;
-  if (!carByCode(cpm2CarCode, "cpm2")) {
+  const store = await getStoreDb();
+  const result = await store.execute({
+    sql: `SELECT code FROM vanta_cpm2_cars WHERE code = ?`,
+    args: [cpm2CarCode],
+  });
+  if (result.rows.length === 0) {
     return fail({
       status: 400,
       body: {
@@ -61,11 +68,30 @@ function invalidCarCode(cpm2CarCode: number | undefined) {
   return null;
 }
 
+/**
+ * Data-URL images (the client's offline fallback when the upload endpoint is
+ * unreachable) are megabyte-scale base64 blobs. Persisting them as-is bloats
+ * the DB and every home-page response. Decode them to real files in
+ * public/uploads and store the file path instead — same treatment the upload
+ * endpoint gives raw files. Non-data URLs pass through untouched.
+ */
+async function persistDataUrlImage(dataUrl: string): Promise<string> {
+  const match = /^data:(image\/(?:jpeg|jpg|png|webp|gif));base64,(.+)$/.exec(dataUrl);
+  if (!match) return dataUrl;
+  const [, mime, base64] = match;
+  const ext = mime.split("/")[1] === "jpeg" ? "jpg" : mime.split("/")[1];
+  const uploadsDir = join(process.cwd(), "public", "uploads");
+  await mkdir(uploadsDir, { recursive: true });
+  const filename = `${crypto.randomUUID()}.${ext}`;
+  await writeFile(join(uploadsDir, filename), Buffer.from(base64, "base64"));
+  return `/api/store/admin/uploads/${filename}`;
+}
+
 export async function POST(request: Request) {
   try {
     await requireStoreAdmin(request);
     const body = productSchema.parse(await readJson(request));
-    const badCode = invalidCarCode(body.cpm2CarCode);
+    const badCode = await invalidCarCode(body.cpm2CarCode);
     if (badCode) return badCode;
     const input: ProductInput = {
           cpm2CarCode: body.cpm2CarCode,
@@ -85,9 +111,10 @@ export async function POST(request: Request) {
         };
     const product = await createProduct(input);
     if (body.imageUrl) {
+      const publicUrl = await persistDataUrlImage(body.imageUrl);
       await createMedia({
         productId: product.id,
-        publicUrl: body.imageUrl,
+        publicUrl,
         sortOrder: 0,
       });
     }
@@ -107,7 +134,7 @@ export async function PUT(request: Request) {
     }
     // Allow partial updates (e.g. publish toggle only sends isPublished)
     const body = productSchema.partial().parse(await readJson(request));
-    const badCode = invalidCarCode(body.cpm2CarCode);
+    const badCode = await invalidCarCode(body.cpm2CarCode);
     if (badCode) return badCode;
     const product = await getProduct(Number(id));
     if (!product) {

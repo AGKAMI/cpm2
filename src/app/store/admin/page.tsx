@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { carByCode, searchCars, type CarEntry } from "@/lib/car-catalog";
+import { carByCode, type CarEntry } from "@/lib/car-catalog";
 import { vantaApi, formatPrice, type VantaProduct, type VantaCategory, type VantaPromotion } from "@/lib/store/client";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
@@ -171,6 +171,7 @@ export default function AdminPage() {
   const [carQuery, setCarQuery] = useState("");
   const [carOpen, setCarOpen] = useState(false);
   const [pickedCar, setPickedCar] = useState<CarEntry | null>(null);
+  const [cars, setCars] = useState<CarEntry[]>([]);
   const [productConverterFile, setProductConverterFile] = useState<File | null>(null);
   const [productConverterResult, setProductConverterResult] = useState<string | null>(null);
   const [productConverterError, setProductConverterError] = useState<string | null>(null);
@@ -187,18 +188,22 @@ export default function AdminPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [pRes, cRes, promoRes] = await Promise.all([
+      const [pRes, cRes, promoRes, carsRes] = await Promise.all([
         vantaApi.products({}),
         vantaApi.categories(),
         vantaApi.promotions(),
+        fetch("/api/store/cars").then((r) => r.json()),
       ]);
       setProducts(pRes.products);
       setCategories(cRes.categories);
       setPromotions(Array.isArray(promoRes.promotions) ? promoRes.promotions : []);
+      if (carsRes && Array.isArray(carsRes.cars)) {
+        setCars(carsRes.cars);
+      }
       setError(null);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Couldn't load products, categories, or promotions.",
+        err instanceof Error ? err.message : "Couldn't load products, categories, or promotions."
       );
     } finally {
       setLoading(false);
@@ -562,8 +567,10 @@ export default function AdminPage() {
     // Car codes are set-once: locked for editing when the product already has one.
     const carLocked = editingId !== null && form.cpm2CarCode !== "";
 
-    // Searchable catalog matches (name-only, no codes visible)
-    const carMatches = searchCars(carQuery, 30, "cpm2");
+    // Searchable catalog matches (name-only, no codes visible) — from Fleet Ledger DB
+    const carMatches = cars.filter(
+      (c) => !carQuery || c.name.toLowerCase().includes(carQuery.toLowerCase())
+    ).slice(0, 30);
 
     return (
           <StoreShell>

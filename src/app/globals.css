@@ -1484,6 +1484,144 @@ html {
   box-shadow: 0 8px 24px rgba(212, 175, 79, 0.25);
 }
 
+/* Consistent home page card system — all cards share spacing, radius, padding */
+.vanta-card {
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 250ms ease-out;
+  display: flex;
+  flex-direction: column;
+}
+.vanta-card:hover {
+  border-color: var(--brand-gold);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(212, 175, 79, 0.25);
+}
+.vanta-card-media {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 16/10;
+  background: var(--background);
+  border-bottom: 1px solid var(--border);
+}
+.vanta-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.vanta-card-media .no-photo {
+  width: 100%;
+  height: 100%;
+  background: var(--paper-raised);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted-foreground);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+.vanta-card-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.vanta-card-badges {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.vanta-card-badge {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: #fff;
+  white-space: nowrap;
+}
+.vanta-card-badge.new { background: var(--success); }
+.vanta-card-badge.featured { background: var(--brand-gold); color: #000; }
+.vanta-card-badge.sale { background: var(--destructive); }
+.vanta-card-badge.exclusive { background: var(--primary); }
+.vanta-card-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--foreground);
+  margin: 0;
+}
+.vanta-card-subtitle {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted-foreground);
+  margin: 0;
+}
+.vanta-card-price {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--brand-gold);
+  margin: 0;
+}
+.vanta-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+}
+/* Section header consistency */
+.vanta-section {
+  margin-bottom: 24px;
+  padding: 0 16px;
+}
+.vanta-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 12px;
+}
+.vanta-section-header h3 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  margin: 0;
+}
+.vanta-section-see-all {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+}
+.vanta-card-list {
+  display: flex;
+  gap: 16px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 8px;
+}
+.vanta-card-list::-webkit-scrollbar {
+  display: none;
+}
+
 /* Animated border shine on store card hover */
 .card-border-shine {
   position: relative;

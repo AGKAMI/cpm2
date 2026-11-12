@@ -153,12 +153,13 @@ const [activeIndex, setActiveIndex] = useState(0);
       </section>
 
       {featured.length > 0 && (
-        <section className="mb-6 px-4 sm:px-6" aria-label="Featured vehicles">
-          <div className="sh flex justify-between items-end mb-3">
+        <section className="vanta-section" aria-label="Featured vehicles">
+          <div className="vanta-section-header">
             <div>
               <span className="eyebrow">Featured</span>
               <h3 className="font-serif font-bold text-[20px] leading-none mt-[6px]">Featured Vehicles</h3>
             </div>
+            <Link href="/store/categories" className="vanta-section-see-all">See all</Link>
           </div>
           <div className="relative">
             <div className="featured-nav">
@@ -191,40 +192,39 @@ const [activeIndex, setActiveIndex] = useState(0);
               aria-label="Featured vehicles"
             >
             {featured.map((c) => (
-              <div key={c.id} className="featured-carousel-item group cursor-pointer card-border-shine">
-                <Link href={`/store/products/${c.id}`} className="block h-full">
-                <div className="media r1611 relative overflow-hidden rounded-[24px] border border-border card-gold-shine-wrap">
-                    <div className="card-gold-shine" aria-hidden="true" />
-                  {cardImages[c.id] ? (
-                    <img src={cardImages[c.id]} alt={c.name} className="w-full h-full object-cover" loading="lazy" />
-                  ) : (
-                    <div className="w-full h-full bg-paper-raised flex items-center justify-center">
-                      <span className="text-[10px] text-ink-soft uppercase tracking-[0.2em]">No photo</span>
+              <div key={c.id} className="vanta-card group">
+                <Link href={`/store/products/${c.id}`} className="block h-full w-full">
+                  <div className="vanta-card-media">
+                    {cardImages[c.id] ? (
+                      <img src={cardImages[c.id]} alt={c.name} loading="lazy" />
+                    ) : (
+                      <div className="no-photo">No photo</div>
+                    )}
+                    <div className="vanta-card-badges">
+                      {c.isNew && <span className="vanta-card-badge new">New</span>}
+                      {c.isFeatured && <span className="vanta-card-badge featured">Featured</span>}
+                      {c.isSale && <span className="vanta-card-badge sale">Sale</span>}
+                      {c.exclusivity !== "standard" && (
+                        <span className="vanta-card-badge exclusive">{c.exclusivity.replace("_", " ")}</span>
+                      )}
                     </div>
-                  )}
-                  <div className="tl absolute top-2 left-2 z-10">
-                    {c.isNew && <span className="bd bd-new text-[9px] font-bold px-2 py-1">New</span>}
-                    {c.isFeatured && <span className="bd bd-featured text-[9px] font-bold px-2 py-1">Featured</span>}
-                    {c.isSale && <span className="bd bd-sale text-[9px] font-bold px-2 py-1">Sale</span>}
-                    {c.exclusivity !== "standard" && <span className="badge-exclusive text-[9px] font-bold">{c.exclusivity.replace("_", " ")}</span>}
                   </div>
-                  <div className="ov absolute inset-0 flex flex-col justify-between p-3 text-ink">
+                  <div className="vanta-card-body">
                     <div className="flex items-end justify-between gap-2">
                       <div>
-                        <small className="text-ink/80 uppercase tracking-[0.06em]">{c.name.toUpperCase()}</small>
-                        <h3 className="font-serif font-bold text-xl leading-none mt-1">{c.name}</h3>
-                        <div className="mt-2 font-bold tabular-nums text-lg">
+                        <p className="vanta-card-subtitle">{c.name.toUpperCase()}</p>
+                        <h3 className="vanta-card-title">{c.name}</h3>
+                        <div className="flex items-end gap-2">
                           <HeartToggle productId={c.id} />
-                          {formatPrice(c.basePriceCents, c.currency)}
+                          <span className="vanta-card-price">{formatPrice(c.basePriceCents, c.currency)}</span>
                         </div>
                       </div>
-                      <div className="go w-10 h-10 rounded-full bg-gold flex items-center justify-center text-primary-foreground">
+                      <div className="w-10 h-10 rounded-full bg-brand-gold flex items-center justify-center text-primary-foreground">
                         <span className="text-[12px]">▸</span>
                       </div>
                     </div>
                   </div>
-                </div>
-              </Link>
+                </Link>
               </div>
             ))}
             </div>
@@ -310,135 +310,138 @@ const [activeIndex, setActiveIndex] = useState(0);
       )}
 
       {categories.length > 0 && (
-        <section className="sec mb-6 px-4">
-          <div className="sh flex justify-between items-end mb-3">
+        <section className="vanta-section">
+          <div className="vanta-section-header">
             <h3 className="font-serif font-bold text-[20px] leading-none">Featured categories</h3>
-            <Link href="/store/categories" className="text-[11px] font-bold text-gold uppercase tracking-[0.06em]">All</Link>
+            <Link href="/store/categories" className="vanta-section-see-all">All</Link>
           </div>
-          <div className="hs px-4 gap-3" style={{ scrollPaddingLeft: "16px" }}>
+          <div className="vanta-card-list">
             {categories.slice(0, 8).map((cat) => (
-              <Link key={cat.id} href={`/store/categories?category=${cat.slug}`} className="circ cursor-pointer">
-                <div className="media w-18 h-18 rounded-full border border-border flex-shrink-0 relative overflow-hidden bg-paper-raised">
-                  <span className="text-[11px] font-bold text-center text-ink-soft absolute inset-0 flex items-center justify-center">{cat.name.charAt(0)}</span>
-                </div>
-                <span className="mt-1 block text-[10px] font-bold text-center">{cat.name}</span>
-              </Link>
+              <div key={cat.id} className="vanta-card group" style={{ minWidth: "72px", flex: "0 0 auto" }}>
+                <Link href={`/store/categories?category=${cat.slug}`} className="block h-full w-full text-center">
+                  <div className="vanta-card-media" style={{ aspectRatio: "1" }}>
+                    <span className="text-[11px] font-bold text-center text-ink-soft absolute inset-0 flex items-center justify-center">{cat.name.charAt(0)}</span>
+                  </div>
+                  <div className="vanta-card-body" style={{ padding: "8px 4px 4px 4px" }}>
+                    <p className="vanta-card-subtitle">{cat.name}</p>
+                  </div>
+                </Link>
+              </div>
             ))}
           </div>
         </section>
       )}
 
       {newArrivals.length > 0 && (
-        <section className="sec mb-6 px-4">
-          <div className="sh flex justify-between items-end mb-3">
+        <section className="vanta-section">
+          <div className="vanta-section-header">
             <div>
               <span className="eyebrow">This month</span>
               <h3 className="font-serif font-bold text-[20px] leading-none mt-[6px]">New arrivals</h3>
             </div>
-            <Link href="/store/categories" className="text-[11px] font-bold text-gold uppercase tracking-[0.06em]">See all</Link>
+            <Link href="/store/categories" className="vanta-section-see-all">See all</Link>
           </div>
-          <div className="hs px-4 gap-4" style={{ scrollPaddingLeft: "16px" }}>
+          <div className="vanta-card-list">
             {newArrivals.map((c) => (
-              <Link key={c.id} href={`/store/products/${c.id}`} className="nc cursor-pointer">
-                <div className="relative card-gold-shine-wrap">
-                    <div className="card-gold-shine" aria-hidden="true" />
-                  <div className="media r43 rounded-[18px] border border-border overflow-hidden">
+              <div key={c.id} className="vanta-card group">
+                <Link href={`/store/products/${c.id}`} className="block h-full w-full">
+                  <div className="vanta-card-media">
                     {cardImages[c.id] ? (
-                      <img src={cardImages[c.id]} alt={c.name} className="w-full h-full object-cover" loading="lazy" />
+                      <img src={cardImages[c.id]} alt={c.name} loading="lazy" />
                     ) : (
-                      <div className="w-full h-full bg-paper-raised flex items-center justify-center">
-                        <span className="text-[10px] text-ink-soft uppercase tracking-[0.2em]">No photo</span>
-                      </div>
+                      <div className="no-photo">No photo</div>
                     )}
-                    <div className="tl absolute top-2 left-2">
-                      {c.isNew && <span className="bd bd-new text-[9px] font-bold px-2 py-1">New</span>}
-                      {c.isFeatured && <span className="bd bd-featured text-[9px] font-bold px-2 py-1">Featured</span>}
-                      {c.isSale && <span className="bd bd-sale text-[9px] font-bold px-2 py-1">Sale</span>}
+                    <div className="vanta-card-badges">
+                      {c.isNew && <span className="vanta-card-badge new">New</span>}
+                      {c.isFeatured && <span className="vanta-card-badge featured">Featured</span>}
+                      {c.isSale && <span className="vanta-card-badge sale">Sale</span>}
                     </div>
                   </div>
-                  <h4 className="font-bold text-sm">{c.name}</h4>
-                  <p className="text-[10px] text-ink-soft">{c.availabilityState}</p>
-                  <div className="vc-f mt-1">
-                    <HeartToggle productId={c.id} />
-                    <span className="pr font-bold tabular-nums">{formatPrice(c.basePriceCents, c.currency)}</span>
+                  <div className="vanta-card-body">
+                    <h3 className="vanta-card-title">{c.name}</h3>
+                    <p className="vanta-card-subtitle">{c.availabilityState}</p>
+                    <div className="vanta-card-footer">
+                      <HeartToggle productId={c.id} />
+                      <span className="vanta-card-price">{formatPrice(c.basePriceCents, c.currency)}</span>
+                    </div>
                   </div>
-                </div>
-              </Link>
+                </Link>
+              </div>
             ))}
           </div>
         </section>
       )}
 
       {onSale.length > 0 && (
-        <section className="sec mb-6 px-4">
-          <div className="sh flex justify-between items-end mb-3">
+        <section className="vanta-section">
+          <div className="vanta-section-header">
             <div>
               <span className="eyebrow">Limited time</span>
               <h3 className="font-serif font-bold text-[20px] leading-none mt-[6px]">On sale</h3>
             </div>
-            <Link href="/store/categories" className="text-[11px] font-bold text-gold uppercase tracking-[0.06em]">See all</Link>
+            <Link href="/store/categories" className="vanta-section-see-all">See all</Link>
           </div>
-          <div className="hs px-4 gap-4" style={{ scrollPaddingLeft: "16px" }}>
+          <div className="vanta-card-list">
             {onSale.map((c) => (
-              <Link key={c.id} href={`/store/products/${c.id}`} className="nc cursor-pointer">
-                <div className="relative card-gold-shine-wrap">
-                    <div className="card-gold-shine" aria-hidden="true" />
-                  <div className="media r43 rounded-[18px] border border-border overflow-hidden">
+              <div key={c.id} className="vanta-card group">
+                <Link href={`/store/products/${c.id}`} className="block h-full w-full">
+                  <div className="vanta-card-media">
                     {cardImages[c.id] ? (
-                      <img src={cardImages[c.id]} alt={c.name} className="w-full h-full object-cover" loading="lazy" />
+                      <img src={cardImages[c.id]} alt={c.name} loading="lazy" />
                     ) : (
-                      <div className="w-full h-full bg-paper-raised flex items-center justify-center">
-                        <span className="text-[10px] text-ink-soft uppercase tracking-[0.2em]">No photo</span>
-                      </div>
+                      <div className="no-photo">No photo</div>
                     )}
-                    <div className="tl absolute top-2 left-2">
-                      {c.isNew && <span className="bd bd-new text-[9px] font-bold px-2 py-1">New</span>}
-                      {c.isFeatured && <span className="bd bd-featured text-[9px] font-bold px-2 py-1">Featured</span>}
-                      {c.isSale && <span className="bd bd-sale text-[9px] font-bold px-2 py-1">Sale</span>}
+                    <div className="vanta-card-badges">
+                      {c.isNew && <span className="vanta-card-badge new">New</span>}
+                      {c.isFeatured && <span className="vanta-card-badge featured">Featured</span>}
+                      {c.isSale && <span className="vanta-card-badge sale">Sale</span>}
                     </div>
                   </div>
-                  <h4 className="font-bold text-sm">{c.name}</h4>
-                  <p className="text-[10px] text-ink-soft">{c.availabilityState}</p>
-                  <div className="vc-f mt-1">
-                    <HeartToggle productId={c.id} />
-                    <span className="pr font-bold tabular-nums">{formatPrice(c.basePriceCents, c.currency)}</span>
+                  <div className="vanta-card-body">
+                    <h3 className="vanta-card-title">{c.name}</h3>
+                    <p className="vanta-card-subtitle">{c.availabilityState}</p>
+                    <div className="vanta-card-footer">
+                      <HeartToggle productId={c.id} />
+                      <span className="vanta-card-price">{formatPrice(c.basePriceCents, c.currency)}</span>
+                    </div>
                   </div>
-                </div>
-              </Link>
+                </Link>
+              </div>
             ))}
           </div>
         </section>
       )}
 
       {customer && (
-        <section className="sec mb-8 px-4">
-        <div className="sh mb-4">
+        <section className="vanta-section">
+        <div className="vanta-section-header">
           <div>
             <span className="eyebrow">Personalised</span>
             <h3 className="font-serif font-bold text-[20px] leading-none mt-[6px]">Picked for you, {telegramUser?.displayName || customer?.inGameName || "you"}</h3>
           </div>
         </div>
-        <p className="text-[11px] text-ink-soft mt-[-4px] mb-3 px-4">Because you viewed the featured builds</p>
-        <div className="pad flex flex-col gap-3 px-4">
+        <p className="vanta-card-subtitle" style={{ marginTop: "-4px", marginBottom: "8px", marginLeft: "16px" }}>Because you viewed the featured builds</p>
+        <div className="vanta-card-list" style={{ paddingLeft: "16px", paddingRight: "16px" }}>
           {featured.slice(0, 4).map((c) => (
-            <Link key={c.id} href={`/store/products/${c.id}`} className="rk cursor-pointer">
-              <div className="media w-16 h-16 rounded-[16px] border border-border flex-shrink-0 card-gold-shine-wrap">
-                  <div className="card-gold-shine" aria-hidden="true" />
-                {cardImages[c.id] ? (
-                  <img src={cardImages[c.id]} alt={c.name} className="w-full h-full object-cover" loading="lazy" />
-                ) : (
-                  <div className="w-full h-full bg-paper-raised flex items-center justify-center">
-                    <span className="text-[10px] text-ink-soft uppercase tracking-[0.2em]">No photo</span>
+            <div key={c.id} className="vanta-card group">
+              <Link href={`/store/products/${c.id}`} className="block h-full w-full">
+                <div className="vanta-card-media">
+                  {cardImages[c.id] ? (
+                    <img src={cardImages[c.id]} alt={c.name} loading="lazy" />
+                  ) : (
+                    <div className="no-photo">No photo</div>
+                  )}
+                </div>
+                <div className="vanta-card-body">
+                  <h3 className="vanta-card-title">{c.name}</h3>
+                  <p className="vanta-card-subtitle">{c.availabilityState}</p>
+                  <div className="vanta-card-footer">
+                    <HeartToggle productId={c.id} />
+                    <span className="vanta-card-price">{formatPrice(c.basePriceCents, c.currency)}</span>
                   </div>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-sm">{c.name}</h4>
-                <p className="text-[10px] text-ink-soft">{c.availabilityState}</p>
-                <span className="pr font-bold tabular-nums">{formatPrice(c.basePriceCents, c.currency)}</span>
-              </div>
-              <span className="text-gold text-[14px]">▸</span>
-            </Link>
+                </div>
+              </Link>
+            </div>
           ))}
         </div>
       </section>

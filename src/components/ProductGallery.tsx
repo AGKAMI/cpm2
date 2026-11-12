@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
@@ -44,11 +45,15 @@ export function ProductGallery({ productId }: { productId: number }) {
     <div className="grid gap-6 lg:grid-cols-3">
       {/* Main image */}
       <div className="relative aspect-[4/3] rounded-xl border border-border bg-background overflow-hidden shadow-lg">
-        <img
-          src={activeMedia || media[0]?.publicUrl}
+        <Image
+          src={(activeMedia || media[0]?.publicUrl) || ""}
           alt={product.name}
           className="h-full w-full object-cover"
           loading="eager"
+          priority
+          width={800}
+          height={600}
+          style={{ objectFit: "cover" }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
         {/* Corner tags */}
@@ -80,7 +85,7 @@ export function ProductGallery({ productId }: { productId: number }) {
                   activeMedia === m.publicUrl ? "border-racing" : "border-border"
                 }`}
               >
-                <img src={m.publicUrl} alt="" className="h-full w-full object-cover" />
+                <Image src={m.publicUrl} alt="" className="h-full w-full object-cover" width={100} height={60} style={{ objectFit: "cover" }} />
               </button>
             ))}
           </div>

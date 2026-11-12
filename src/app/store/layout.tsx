@@ -48,10 +48,6 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
       <body className={`min-h-screen antialiased bg-background ${mono.variable}`}>
         <VantaThemeLock />
         <TelegramInit />
-        <Script
-          src="https://telegram.org/js/telegram-web-app.js"
-          strategy="beforeInteractive"
-        />
         <ToastProvider>
           {children}
           <TelegramBridge />

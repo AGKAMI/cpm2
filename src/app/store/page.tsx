@@ -1,14 +1,38 @@
 import { Metadata } from "next";
-import { StoreHomeClient } from "@/components/StoreHomeClient";
+import { StoreHome } from "@/components/StoreHome";
 
 export const metadata: Metadata = {
   title: "VANTA GARAGE - CPM2 vehicles for sale",
   description: "Premium CPM2 vehicle storefront. Ready-to-purchase cars, limited editions, One of One builds.",
 };
 
-// Force dynamic rendering so client components hydrate and fetch data
 export const dynamic = "force-dynamic";
 
-export default function HomePage() {
-  return <StoreHomeClient />;
+export default async function StorePage() {
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
+  const [productsRes, categoriesRes, promotionsRes] = await Promise.all([
+    fetch(`${baseUrl}/api/store/products`, { cache: "no-store" }),
+    fetch(`${baseUrl}/api/store/categories`, { cache: "no-store" }),
+    fetch(`${baseUrl}/api/store/promotions`, { cache: "no-store" }),
+  ]);
+
+  const { products, total } = (await productsRes.json()) as {
+    products: unknown[];
+    total: number;
+  };
+  const { categories } = (await categoriesRes.json()) as {
+    categories: unknown[];
+  };
+  const { promotions } = (await promotionsRes.json()) as {
+    promotions: unknown[];
+  };
+
+  return (
+    <StoreHome
+      products={products as unknown[]}
+      categories={categories as unknown[]}
+      promotions={promotions as unknown[]}
+    />
+  );
 }

@@ -1,0 +1,54 @@
+{
+  "local-home": {
+    "url": "http://127.0.0.1:3000/",
+    "performance": 0.9,
+    "accessibility": 0.93,
+    "lcp": 946.7135000000001,
+    "cls": 0,
+    "tbt": 393.64324999999985,
+    "fcp": 946.7135000000001,
+    "bootup": 1560.947999999999,
+    "mainthread": 7729.4719999999415,
+    "unused_js_kb": 426.1884765625,
+    "server_latency": 512.817
+  },
+  "local-store": {
+    "url": "http://127.0.0.1:3000/store",
+    "performance": 0.26,
+    "accessibility": 0.88,
+    "lcp": 28921.3116,
+    "cls": 0.2682591560843135,
+    "tbt": 3721.999999999998,
+    "fcp": 946.3116,
+    "bootup": 9842.92399999984,
+    "mainthread": 50128.69999999641,
+    "unused_js_kb": 439.0927734375,
+    "server_latency": 23.1558
+  },
+  "prod-store": {
+    "url": "https://cpm2-bay.vercel.app/store",
+    "performance": 0.67,
+    "accessibility": 0.88,
+    "lcp": 1565.691,
+    "cls": 0.14132566519458425,
+    "tbt": 694.5,
+    "fcp": 1565.691,
+    "bootup": 101086.50800002107,
+    "mainthread": 136131.4240000154,
+    "unused_js_kb": 24.7060546875,
+    "server_latency": 620.691
+  },
+  "local-admin": {
+    "url": "http://127.0.0.1:3000/store/admin",
+    "performance": 0.21,
+    "accessibility": 0.88,
+    "lcp": 29607.805100000005,
+    "cls": 0.27895329306202415,
+    "tbt": 5222.097450000004,
+    "fcp": 957.8051,
+    "bootup": 12968.523999999903,
+    "mainthread": 39765.46799999926,
+    "unused_js_kb": 427.763671875,
+    "server_latency": 55.8240000000001
+  }
+}

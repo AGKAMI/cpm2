@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { vantaApi, formatPrice, type VantaProduct } from "@/lib/store/client";
@@ -98,12 +99,15 @@ export function ProductPageClient({ productId }: { productId: string }) {
             style={{ transform: `translateX(${translateX}px)`, width: `${media.length * 100}%` }}
           >
             {media.map((m, i) => (
-              <img
+              <Image
                 key={i}
                 src={m.publicUrl}
                 alt={product.name}
                 className="w-[25vw] min-w-[25vw] h-full object-cover"
                 loading={i === 0 ? "eager" : "lazy"}
+                width={250}
+                height={250}
+                style={{ width: "25vw", height: "25vw", objectFit: "cover" }}
               />
             ))}
           </div>

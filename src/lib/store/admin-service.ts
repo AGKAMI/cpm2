@@ -103,13 +103,16 @@ export async function removeAdmin(telegramUserId: string): Promise<boolean> {
 /** Resolve the calling user's admin status from Telegram initData or owner email header.
  *  Returns { isAdmin: boolean, isOwner: boolean, telegramUserId, role }.
  */
-export async function resolveAdminStatus(request: Request): Promise<{
+export async function resolveAdminStatus(
+  request: Request,
+  options: { maxAgeSeconds?: number } = {},
+): Promise<{
   isAdmin: boolean;
   isOwner: boolean;
   telegramUserId: string | null;
   role: "owner" | "admin" | null;
 }> {
-  const telegramUserId = await assertTelegramAuth(request);
+  const telegramUserId = await assertTelegramAuth(request, options);
   if (telegramUserId !== null) {
     const ownerIdRaw = process.env.STORE_ADMIN_TELEGRAM_ID ?? "";
     const ownerId = ownerIdRaw ? Number(ownerIdRaw) : null;

@@ -3,15 +3,24 @@
 import { useEffect } from "react";
 
 /**
- * Sets touch-action: manipulation on the document root on the client only.
- * The previous inline <script dangerouslySetInnerHTML> in store/layout.tsx
- * applied these styles during SSR, causing a React hydration mismatch
- * (React finds inline styles on <html>/<body> it did not set).
- *
- * TelegramBridge already handles ready()/expand() polling — this component
- * only owns the touch-action style, which must be set after hydration.
+ * Loads the Telegram Web App SDK async after hydration — never blocks HTML parse.
+ * Also sets touch-action: manipulation on the document root.
  */
 export function TelegramInit() {
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://telegram.org/js/telegram-web-app.js";
+    script.async = true;
+    document.head.appendChild(script);
+    return () => {
+      try {
+        document.head.removeChild(script);
+      } catch {
+        // already removed
+      }
+    };
+  }, []);
+
   useEffect(() => {
     document.documentElement.style.touchAction = "manipulation";
     if (document.body) {

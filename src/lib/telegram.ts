@@ -144,14 +144,17 @@ export function initDataUserId(raw: string): number | null {
  * Throws on forged, stale, or invalid signatures. Returns null when no
  * initData header is present (caller falls back to session cookie).
  */
-export async function assertTelegramAuth(request: Request): Promise<number | null> {
+export async function assertTelegramAuth(
+  request: Request,
+  options: { maxAgeSeconds?: number } = {},
+): Promise<number | null> {
   const initData = request.headers.get(TELEGRAM_INIT_DATA_HEADER);
   if (!initData) return null;
 
   const token = telegramBotToken();
   if (!token) throw new ApiError(401, "TELEGRAM_AUTH_INVALID", "Telegram auth is not configured.");
 
-  if (!(await verifyTelegramInitData(initData, token))) {
+  if (!(await verifyTelegramInitData(initData, token, options))) {
     throw new ApiError(
       401,
       "TELEGRAM_AUTH_INVALID",

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { StoreShell } from "@/components/StoreShell";
@@ -114,12 +115,24 @@ export function ProfileClient() {
 
   // Detect admin/owner via Telegram ID — no login required.
   // If your Telegram ID matches the owner or an admin, the Quick Login button shows.
+  // Telegram's WebView script may not have executed yet on mount, so poll
+  // briefly for initData before checking — otherwise the check runs with no
+  // header, fails silently, and the Quick Login button stays hidden until the
+  // next focus event.
   useEffect(() => {
+    let alive = true;
     const detectAdmin = async () => {
-      const initData =
-        typeof window !== "undefined" && typeof window.Telegram !== "undefined"
-          ? window.Telegram.WebApp?.initData ?? ""
-          : "";
+      const deadline = Date.now() + 4000;
+      let initData = "";
+      for (;;) {
+        initData =
+          typeof window !== "undefined" && typeof window.Telegram !== "undefined"
+            ? window.Telegram.WebApp?.initData ?? ""
+            : "";
+        if (initData || Date.now() >= deadline) break;
+        await new Promise((r) => setTimeout(r, 150));
+      }
+      if (!alive) return;
       const headers: HeadersInit = {};
       if (initData) headers["X-Telegram-Init-Data"] = initData;
       try {
@@ -127,6 +140,7 @@ export function ProfileClient() {
           cache: "no-store",
           headers,
         });
+        if (!alive) return;
         if (!r.ok) {
           setAdminRole(null);
           return;
@@ -134,10 +148,13 @@ export function ProfileClient() {
         const data = await r.json();
         setAdminRole(data?.isOwner ? "owner" : data?.isAdmin ? "admin" : null);
       } catch {
-        setAdminRole(null);
+        // Network hiccup — keep the last-known role rather than hiding the button.
       }
     };
     detectAdmin();
+    return () => {
+      alive = false;
+    };
   }, []);
 
   // --- CPM2 ID edit ---
@@ -580,11 +597,14 @@ export function ProfileClient() {
               className="h-32 w-32 rounded-full overflow-hidden border-4 border-gold bg-secondary"
             >
               {photoUrl ? (
-                <img
+                <Image
                   src={photoUrl}
                   alt={displayName}
                   className="h-full w-full object-cover object-center"
                   loading="eager"
+                  width={128}
+                  height={128}
+                  style={{ objectFit: "cover" }}
                 />
               ) : (
                 <div className="h-full w-full flex items-center justify-center text-ink-soft text-2xl font-bold select-none">
@@ -853,11 +873,14 @@ export function ProfileClient() {
                         </p>
                         <div className="flex items-center justify-center gap-3 mb-3">
                           {linkPreview.hasPhoto ? (
-                            <img
+                            <Image
                               src={linkPreview.photoUrl!}
                               alt={linkPreview.displayName}
                               className="w-16 h-16 rounded-full border-2 border-gold/40 object-cover bg-secondary"
                               loading="eager"
+                              width={64}
+                              height={64}
+                              style={{ objectFit: "cover" }}
                             />
                           ) : (
                             <div

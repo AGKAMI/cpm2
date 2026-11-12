@@ -13,6 +13,7 @@ import { useCallback, useEffect, useState } from "react";
 export function HeartToggle({ productId }: { productId: number }) {
   const key = `vanta_wishlist_${productId}`;
   const [isWishlisted, setIsWishlisted] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
     const stored = localStorage.getItem(key);
     return stored === "true";
   });

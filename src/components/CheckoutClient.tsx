@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { vantaApi, formatPrice, type VantaProduct } from "@/lib/store/client";
@@ -176,7 +177,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
       <section className="panel rounded-xl border border-border p-4 mb-6">
         <div className="relative aspect-[4/3] rounded-lg bg-background overflow-hidden mb-3">
           {cover ? (
-            <img src={cover} alt={product.name} className="h-full w-full object-cover" loading="eager" />
+            <Image src={cover} alt={product.name} className="h-full w-full object-cover" loading="eager" width={400} height={300} style={{ objectFit: "cover" }} />
           ) : (
             <span className="num text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
               No photo yet

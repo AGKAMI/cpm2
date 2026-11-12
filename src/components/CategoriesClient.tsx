@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 import { useEffect, useState } from "react";
@@ -317,11 +318,14 @@ export function CategoriesClient() {
                       <div className="relative overflow-hidden rounded-[24px] border border-border mb-4">
                         {cardImages[c.id] ? (
                                                       <>
-                                                        <img
-                                                          src={cardImages[c.id]}
+                                                        <Image
+                                                          src={cardImages[c.id] || ""}
                                                           alt={c.name}
                                                           className="w-full h-[260px] object-cover group-hover:scale-105 transition-transform duration-500"
                                                           loading="lazy"
+                                                          width={200}
+                                                          height={260}
+                                                          style={{ objectFit: "cover" }}
                                                         />
                                                         </>
                                                         ) : (

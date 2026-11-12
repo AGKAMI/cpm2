@@ -243,69 +243,78 @@ const [activeIndex, setActiveIndex] = useState(0);
       )}
 
       {promotions.length > 0 && (
-        <section className="promo mb-6 px-4 relative overflow-hidden rounded-[22px] p-5">
-          {promotions.map((promo) => (
-            <Link
-              key={promo.id}
-              href={promo.ctaLink || "/store/categories"}
-              className="block cursor-pointer"
-            >
-              <div
-                className={`promotion-card relative overflow-hidden rounded-[22px] p-5 border border-border bg-raised shadow-sm hover:shadow-md transition-shadow duration-200 ease-out`}
-                style={{
-                  backgroundColor: promo.backgroundColor || "var(--color-paper-raised)",
-                  color: promo.accentColor ? "var(--color-paper-sunken)" : undefined,
-                }}
+        <section className="vanta-section">
+          <div className="vanta-section-header">
+            <div>
+              <span className="eyebrow">Promotions</span>
+              <h3 className="font-serif font-bold text-[20px] leading-none mt-[6px]">Current Promotions</h3>
+            </div>
+            <Link href="/store/categories" className="vanta-section-see-all">See all</Link>
+          </div>
+          <div className="flex flex-col gap-6">
+            {promotions.map((promo) => (
+              <Link
+                key={promo.id}
+                href={promo.ctaLink || "/store/categories"}
+                className="cursor-pointer block"
               >
-                {promo.imageUrl && (
-                  <>
-                    <img
-                      src={promo.imageUrl}
-                      alt={promo.title}
-                      className="absolute inset-y-0 right-0 h-full w-[55%] object-cover pointer-events-none"
-                    />
-                    <div
-                      className="absolute inset-y-0 right-0 w-[55%] pointer-events-none"
-                      style={{
-                        background: `linear-gradient(90deg, ${promo.backgroundColor || "var(--color-paper-raised)"} 0%, transparent 100%)`,
-                      }}
-                    />
-                  </>
-                )}
-                <div className="relative z-10">
-                  <span
-                    className="eyebrow"
-                    style={{ color: promo.accentColor || "#d4af4f" }}
-                  >
-                    {promo.subtitle || "Special offer"}
-                  </span>
-                  <h3 className="font-serif font-bold text-[24px] leading-none mb-1">
-                    {promo.title}
-                  </h3>
-                  {promo.description && (
-                    <p className="text-[11px] text-ink mb-3">
-                      {promo.description}
-                    </p>
+                <div
+                  className={`promotion-card relative overflow-hidden rounded-[22px] p-6 border border-border bg-raised shadow-sm hover:shadow-md transition-shadow duration-200 ease-out`}
+                  style={{
+                    backgroundColor: promo.backgroundColor || "var(--color-paper-raised)",
+                    color: promo.accentColor ? "var(--color-paper-sunken)" : undefined,
+                  }}
+                >
+                  {promo.imageUrl && (
+                    <>
+                      <img
+                        src={promo.imageUrl}
+                        alt={promo.title}
+                        className="absolute inset-y-0 right-0 h-full w-[55%] object-cover pointer-events-none"
+                      />
+                      <div
+                        className="absolute inset-y-0 right-0 w-[55%] pointer-events-none"
+                        style={{
+                          background: `linear-gradient(90deg, ${promo.backgroundColor || "var(--color-paper-raised)"} 0%, transparent 100%)`,
+                        }}
+                      />
+                    </>
                   )}
-                  {(promo.discountPercent || promo.discountCode) && (
-                    <p className="text-[11px] mb-3">
-                      {promo.discountCode ? (
-                        <>
-                          Code <b className="text-[11px] font-bold tracking-[0.12em]">{promo.discountCode}</b>{" "}
-                          {promo.discountPercent > 0 ? `· ${promo.discountPercent}% off` : ""}
-                        </>
-                      ) : (
-                        `${promo.discountPercent}% off`
-                      )}
-                    </p>
-                  )}
-                  <button className="btn rounded-full px-4 py-2 text-[11px] font-bold tracking-wider">
-                    {promo.ctaText || "Shop now"} <span className="text-[10px] ml-1">▸</span>
-                  </button>
+                  <div className="relative z-10">
+                    <span
+                      className="eyebrow"
+                      style={{ color: promo.accentColor || "#d4af4f" }}
+                    >
+                      {promo.subtitle || "Special offer"}
+                    </span>
+                    <h3 className="font-serif font-bold text-[24px] leading-none mb-1">
+                      {promo.title}
+                    </h3>
+                    {promo.description && (
+                      <p className="text-[11px] text-ink mb-3">
+                        {promo.description}
+                      </p>
+                    )}
+                    {(promo.discountPercent || promo.discountCode) && (
+                      <p className="text-[11px] mb-3">
+                        {promo.discountCode ? (
+                          <>
+                            Code <b className="text-[11px] font-bold tracking-[0.12em]">{promo.discountCode}</b>{" "}
+                            {promo.discountPercent > 0 ? `· ${promo.discountPercent}% off` : ""}
+                          </>
+                        ) : (
+                          `${promo.discountPercent}% off`
+                        )}
+                      </p>
+                    )}
+                    <button className="btn rounded-full px-4 py-2 text-[11px] font-bold tracking-wider">
+                      {promo.ctaText || "Shop now"} <span className="text-[10px] ml-1">▸</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            ))}
+          </div>
         </section>
       )}
 

@@ -44,7 +44,8 @@ export const productFormSchema = z.object({
     .refine((v) => /^\d+(\.\d{1,2})?$/.test(v), {
       error: "Enter a valid price (e.g. 60.00).",
     })
-    .refine((v) => parseFloat(v) > 0, { error: "Price must be greater than 0." }),
+    .refine((v) => parseFloat(v) > 0, { error: "Price must be greater than 0." })
+    .refine((v) => parseFloat(v) <= 200, { error: "Price cannot exceed R200." }),
   currency: z
     .string({ error: "Currency is required." })
     .trim()

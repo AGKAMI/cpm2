@@ -25,7 +25,7 @@ const productSchema = z.object({
   imageUrl: z.string().optional(),
   name: z.string().min(1),
   description: z.string().optional(),
-  basePriceCents: z.coerce.number().int().nonnegative(),
+  basePriceCents: z.coerce.number().int().nonnegative().max(20000),
   currency: z.string().default("ZAR"),
   stockQuantity: z.coerce.number().int().nonnegative().default(1),
   availabilityState: z

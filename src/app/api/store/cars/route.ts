@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getStoreDb } from "@/lib/store-db";
+import { ok } from "@/lib/route";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
       game: "cpm2",
     }));
 
-    return NextResponse.json({ cars });
+    return ok({ cars });
   } catch (err: any) {
     return NextResponse.json(
       { error: { code: "SERVER_ERROR", message: err?.message || "Failed to load cars" } },

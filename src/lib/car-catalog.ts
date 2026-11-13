@@ -125,7 +125,7 @@ export const CAR_CATALOG: CarEntry[] = [
   { code: 97, name: "2012 MERCEDES-BENZ C63 AMG", game: "cpm1" },
   { code: 98, name: "1995 MERCEDES-BENZ W210", game: "cpm1" },
   { code: 99, name: "VOLKSWAGEN GOLF MK2", game: "cpm1" },
-  { code: 100, name: "2017 VOLKSWAGEN GOLF MK VII", game: "cpm1" },
+  { code: 100, name: "2017 VOLKSWAGEN GOLF MK7", game: "cpm1" },
   { code: 101, name: "2010 BMW X5 M E70", game: "cpm1" },
   { code: 102, name: "BMW X7", game: "cpm1" },
   { code: 103, name: "2016 FORD EXPLORER", game: "cpm1" },

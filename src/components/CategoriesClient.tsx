@@ -263,18 +263,8 @@ export function CategoriesClient({
           </div>
 
           <div id="res" className="carousel px-4">
-            <button
-              onClick={() => {
-                const el = document.getElementById("res");
-                el?.scrollBy({ left: -380, behavior: "smooth" });
-              }}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-16 w-10 rounded-r-full bg-ink/80 border border-border flex items-center justify-center text-gold hover:bg-ink/80 transition-colors hidden md:flex"
-              aria-label="Scroll left"
-            >
-              <span className="text-[16px]">‹</span>
-            </button>
             <div
-              className="flex flex-nowrap gap-6 snap-x snap-mandatory pb-6"
+              className="flex flex-nowrap gap-6 snap-x snap-mandatory pb-6 overflow-x-auto scrollbar-hide"
               style={{ scrollPaddingLeft: "16px", scrollPaddingRight: "16px" }}
             >
               {sorted.length ? (
@@ -328,18 +318,6 @@ export function CategoriesClient({
                   <span className="text-[10px] font-bold uppercase tracking-[0.1em] mb-2 block">search</span>
                   <p>No vehicles match your filters.</p>
                 </div>
-              )}
-              {sorted.length > 0 && (
-                <button
-                  onClick={() => {
-                    const el = document.getElementById("res");
-                    el?.scrollBy({ left: 380, behavior: "smooth" });
-                  }}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-16 w-10 rounded-l-full bg-ink/80 border border-border flex items-center justify-center text-gold hover:bg-ink/80 transition-colors hidden md:flex"
-                  aria-label="Scroll right"
-                >
-                  <span className="text-[16px]">›</span>
-                </button>
               )}
             </div>
           </div>

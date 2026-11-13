@@ -28,7 +28,10 @@ export function HeartToggle({ productId }: { productId: number }) {
     <span className="heart-fav-wrap">
       <button
         type="button"
-        onClick={toggle}
+        onClick={(e) => {
+          e.stopPropagation();
+          toggle();
+        }}
         className={`heart-fav ${isWishlisted ? "is-active" : ""}`}
         aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
         aria-pressed={isWishlisted}

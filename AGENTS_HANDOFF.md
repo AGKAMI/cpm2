@@ -2253,3 +2253,22 @@ Each module below includes: **What** (functional spec from plan), **How it works
 
 **Verified by:** AG (GLM-5.3-flash-free)
 
+
+### 2026-11-14 (2) — Agent "AG" (GLM-5.3-flash-free) — Catalog re-seed (208 cars) + categories page fixes
+
+**What:** User approved (a) re-seeding the store catalog and (b) fixing the categories page despite Kermes's uncommitted edits elsewhere.
+
+1. **"0 vehicles" diagnosis** — NOT a wipe: the DB had 11 products, 9 of them UNPUBLISHED leftovers (ids 19–24 = old `seed-demo-products.mjs` demo rows, ids 25–27 = test products; that script was deleted in commit `24a64d3`). Only ids 28/29 were published. `7a5a1d1` trimmed only the car-catalog.ts creation whitelist, not the DB.
+
+2. **Catalog re-seed** — New `scripts/seed-store-catalog.mjs`: parses the 208-car CPM2 whitelist from `car-catalog.ts`, prices every car from `trade_prices` (game='cpm2') with a documented rule — kind `paid` → Rand ×100, kind `coin` → 1 coin = 1 cent, kind `cash` → owner rate 0.00022998 Rand/cash; ALL hard-capped at R200 (20000 cents) per the store price rule. Categories mapped by name keyword onto the 6 existing categories (Hatchback 6, Coupes 5, Sedans 4, 4x4 3, SUV 1, Offroad 2); unmatched cars stay category_id NULL for admin assignment. Skips code 113 (published Golf id 28 already carries it). First 6 inserted flagged featured for the home carousel. No images attached — real photos go through the admin converter. Guard: refuses to run unless catalogue ≤ 2 products unless `--force`; `--list` mode dumps rows. Result: 207 inserted → 209 published, 6 featured, price range R2.76–R200 (R2.76 = a cash-kind trade-book conversion; owner can adjust in admin).
+
+3. **Categories page** — `#res` product row was a plain div (no overflow), so it never scrolled, and the two absolutely-positioned arrows anchored to a non-relative ancestor → stray floating "Scroll left"/"›" buttons. Fix: inner flex div gets `overflow-x-auto scrollbar-hide`; both stray arrow buttons removed (native scroll + snap). Verified: scrollWidth 9192 / clientWidth 655, 24 cards, 0 stray buttons. Home featured-categories row also confirmed scrollable (1880/687).
+
+**Files:** `scripts/seed-store-catalog.mjs` (new), `src/components/CategoriesClient.tsx`. Commit `db64793`. (Kermes's uncommitted edits in other files untouched.)
+
+**Gate:** port-3000 killed → build clean → detached restart, HTTP 200 on /store + /store/categories. Browser-verified home: "6 vehicles ready to drive", 6-card featured carousel, logo correct.
+
+**Deploy status:** Production deploy of db64793 in progress; catalog data is live immediately (shared Turso DB).
+
+**Verified by:** AG (GLM-5.3-flash-free)
+

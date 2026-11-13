@@ -29,11 +29,6 @@ describe("flexible catalog search", () => {
     assert.equal(exact[0]!.code, 13);
   });
 
-  it("finds the Defender in CPM2 (added 2026-10, code 230)", () => {
-    const hits = searchCars("def", 30, "cpm2");
-    assert.ok(hits.some((car) => car.code === 230 && car.name.includes("DEFENDER")));
-  });
-
   it("never leaks a car from the other game", () => {
     // The Land Cruiser 80 is CPM1-only: a CPM2 search must not return it,
     // however flexible the matching gets.

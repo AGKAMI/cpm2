@@ -34,10 +34,10 @@ export function CategoriesClient({
   const [debouncedQ, setDebouncedQ] = useState("");
   const [clientCoverMap, setClientCoverMap] = useState<Record<number, string>>(coverMap);
 
-  // Fetch cover media for above-the-fold products only (first 6).
-  // Keeps SSR fast — no media queries on the server.
+  // Fetch cover media for every visible product. Keeps SSR fast — no media
+  // queries on the server — while ensuring no card falls back to "No photo".
   useEffect(() => {
-    const visibleIds = products.slice(0, 6).map((p) => p.id).filter((id) => !(id in coverMap));
+    const visibleIds = products.map((p) => p.id).filter((id) => !(id in coverMap));
     if (visibleIds.length === 0) return;
     (async () => {
       try {

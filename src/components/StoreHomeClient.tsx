@@ -53,9 +53,8 @@ export function StoreHomeClient({
   const handleScroll = useCallback(() => {
     const el = carouselRef.current;
     if (!el || featured.length === 0) return;
-    const items = el.querySelectorAll(".featured-carousel-item");
-    if (items.length === 0) return;
-    const firstItem = items[0] as HTMLElement;
+    const firstItem = el.children[0] as HTMLElement | undefined;
+    if (!firstItem) return;
     const itemWidth = firstItem.offsetWidth;
     if (itemWidth === 0) return;
     const gap = parseFloat(getComputedStyle(el).gap) || 0;
@@ -66,13 +65,11 @@ export function StoreHomeClient({
 
   const goTo = useCallback((index: number) => {
     const el = carouselRef.current;
-    if (!el) return;
-    const items = el.querySelectorAll(".featured-carousel-item");
-    const target = items[index] as HTMLElement;
+    const target = el?.children[index] as HTMLElement | undefined;
     if (target) {
       target.scrollIntoView({ behavior: "smooth", inline: "start" });
     }
-  }, [featured]);
+  }, []);
 
   const scrollPrev = useCallback(() => {
     if (activeIndex > 0) {
@@ -398,7 +395,7 @@ const ProductCard = React.memo(
     const hasArrow = isFeatured;
 
     return (
-      <div key={product.id} className="vanta-card group">
+      <div key={product.id} className={`vanta-card group ${isFeatured ? "featured-carousel-item" : ""}`}>
         <Link href={`/store/products/${product.id}`} className="block h-full w-full">
           <div className="vanta-card-media" style={{ aspectRatio: 4 / 5 }}>
             {coverImage ? (

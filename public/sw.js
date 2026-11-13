@@ -14,7 +14,7 @@ const ASSETS = [
   "/store/checkout/thank-you",
   "/og-image.svg",
   "/vanta-logo.svg",
-  "/vanta-lockup.png",
+  "/kami-lockup-gold.png",
 ];
 
 // Install: cache shell assets

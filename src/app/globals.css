@@ -1239,7 +1239,7 @@ html {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: -1.5rem 0 0.5rem 0;
+  margin: 0 0 0.5rem 0;
   pointer-events: none;
 }
 .featured-nav button {
@@ -1281,7 +1281,7 @@ html {
 }
 @media (min-width: 640px) {
   .featured-nav {
-    margin: -2rem 0 0.75rem 0;
+    margin: 0 0 0.75rem 0;
   }
   .featured-prev {
     left: 1rem;
@@ -1292,7 +1292,7 @@ html {
 }
 @media (min-width: 1024px) {
   .featured-nav {
-    margin: -2.5rem 0 1rem 0;
+    margin: 0 0 1rem 0;
   }
   .featured-prev {
     left: 1.5rem;
@@ -1509,7 +1509,6 @@ html {
   border-bottom: 1px solid var(--border);
   position: relative;
   overflow: hidden;
-  width: 300px;
 }
 .vanta-card-media img {
   width: 100%;

@@ -37,7 +37,7 @@ const ICON_MAP: Record<StoreTab, StoreIcon> = {
   owner: OwnerIcon,
 };
 
-const VANTA_LOCKUP = "/vanta-lockup.png";
+const VANTA_LOCKUP = "/kami-lockup-gold.png";
 
 interface StoreShellProps {
   children: ReactNode;
@@ -203,7 +203,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
               <Image
                 src={VANTA_LOCKUP}
                 alt="Vanta Garage"
-                className="h-24 w-auto sm:h-32 sm:w-auto"
+                className="h-20 w-auto sm:h-28 sm:w-auto"
                 width={512}
                 height={272}
                 style={{ objectFit: "contain" }}

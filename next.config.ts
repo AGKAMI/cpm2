@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200],
     remotePatterns: [
       { protocol: "https", hostname: "cpm2-bay.vercel.app" },
+      { protocol: "https", hostname: "images.unsplash.com" },
     ],
   },
   turbopack: {

@@ -2272,3 +2272,29 @@ Each module below includes: **What** (functional spec from plan), **How it works
 
 **Verified by:** AG (GLM-5.3-flash-free)
 
+
+### 2026-11-14 (3) — Agent "AG" (GLM-5.3-flash-free) — Gold logo recolor + featured carousel fixes + product image seeding + Chromium 400-cache fix
+
+**What:** User reported four issues: logo too big and "why didnt u keep the original colour cause my svg aint even white"; featured carousel next-button "THIS DOESNT WORK"; featured cards "OVERLAPPING ONTO THE TEXT SUBTITLE"; and "IMAGES AINT RENDERING" on /store/categories.
+
+1. **Logo gold recolor + size** — The SVG's `feColorMatrix` filter forces a white silhouette, and I had extracted the WRONG embedded raster (img 0 = 469KB white silhouette; img 1 = 3.3MB gold metallic PNG). Fix: extracted img 1 (4096×2180, opaque black bg), downscaled to 512px, luminance-keyed alpha ×1.5 boost → `public/kami-lockup-gold.png` (131KB, ORIGINAL GOLD colors). `VANTA_LOCKUP` → `/kami-lockup-gold.png`, size reduced to `h-20 w-auto sm:h-28 sm:w-auto`. `sw.js` precache updated. Renamed the file (not just edited) to defeat next/image's immutable `/_next/image` cache. Browser-verified gold wings render.
+
+2. **Featured carousel buttons dead** — Handlers queried `.featured-carousel-item` but the cards never had that class (only `.vanta-card group`), so `goTo()` found no targets. Fix: handlers now use `el.children[index]` (StoreHomeClient.tsx), and featured ProductCard wrapper gets `featured-carousel-item` class restored (snap/sizing CSS works again).
+
+3. **Heading overlap** — `.featured-nav` had negative top margins at all breakpoints (−1.5rem base, −2rem @640, −2.5rem @1024 = the measured −32px). All set to `margin: 0 …`. Also removed a stray hardcoded `width: 300px` on `.vanta-card-media`. Verified computed margin `0px 0px 12px`.
+
+4. **"IMAGES AINT RENDERING"** — Three stacked causes:
+   a. **Optimizer 400s:** `images.unsplash.com` was missing from `remotePatterns` in next.config.ts → `/_next/image` rejected all Unsplash URLs with 400. Added it.
+   b. **Missing media rows:** catalog re-seed created 207 products with no media. New `scripts/seed-store-media.mjs` attaches curated verified Unsplash car photos pooled per category (Hatchback 6, Coupes 5, Sedans 4, 4x4 3, SUV 1, Offroad 2, NULL pool), cycled by product id; only fills products lacking media (idempotent). Inserted 207 rows. Photo IDs verified HTTP 200 before use (one 404 excluded).
+   c. **Chromium cached the 400s:** even after the optimizer returned 200, the browser kept replaying the OLD 400 responses — proven by the cached response replaying the same `Date:` header from minutes earlier. Since `/_next/image` URLs are immutable-cached, the fix is to change the URL (same lesson as the logo rename): `scripts/bust-media-cache.mjs` appends `&v=2` to every seeded media `public_url` (212 rows). New optimizer URL → cache miss → fresh 200.
+
+5. **Categories "No photo" placeholders** — CategoriesClient only fetched covers for the first 6 products (above-the-fold perf pattern), so 18 of 24 cards rendered "No photo". Extended the client fetch to all visible products (keeps SSR fast; all 24 cards now show images — verified `imgs: 24, noPhoto: 0`).
+
+**Files:** `src/components/StoreHomeClient.tsx`, `src/components/CategoriesClient.tsx`, `src/app/globals.css`, `src/components/StoreShell.tsx`, `public/sw.js`, `next.config.ts` (unsplash remotePattern only — Kermes's `localhost:3001` remotePattern line remains uncommitted in the working tree), `public/kami-lockup-gold.png` (new), `public/vanta-lockup.png` (deleted), `scripts/seed-store-media.mjs` (new), `scripts/bust-media-cache.mjs` (new).
+
+**Gate:** port-3000 killed → build clean → detached restart on 127.0.0.1:3000. `npm test`: 66/66 pass. Browser-verified: /store 8/8 images render + gold logo + carousel scrolls; /store/categories 24/24 cards with photos, 0 "No photo".
+
+**Deploy status:** prod deploy of this commit pending.
+
+**Verified by:** AG (GLM-5.3-flash-free)
+

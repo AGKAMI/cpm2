@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
-import { motion } from "framer-motion";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
@@ -40,10 +39,18 @@ const ProfileIcon = ({ className }: ProfileIconProps) => (
   </svg>
 );
 
-export function ProfileClient() {
-  const [customer, setCustomer] = useState<VantaCustomer | null>(null);
-  const [telegramUser, setTelegramUser] = useState<TelegramUser | null>(null);
-  const [loading, setLoading] = useState(true);
+type ProfileClientProps = {
+  initialCustomer?: VantaCustomer | null;
+  initialTelegramUser?: TelegramUser | null;
+};
+
+export function ProfileClient({
+  initialCustomer = null,
+  initialTelegramUser = null,
+}: ProfileClientProps) {
+  const [customer, setCustomer] = useState<VantaCustomer | null>(initialCustomer);
+  const [telegramUser, setTelegramUser] = useState<TelegramUser | null>(initialTelegramUser);
+  const [loading, setLoading] = useState(!initialCustomer && !initialTelegramUser);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [ordersCount, setOrdersCount] = useState(0);
@@ -591,9 +598,7 @@ export function ProfileClient() {
       <section className="mb-8 px-4">
         <div className="flex flex-col items-center gap-4">
           <div className="relative group">
-            <motion.div
-              layoutId="vanta-profile-avatar"
-              transition={{ type: "spring", stiffness: 320, damping: 32 }}
+            <div
               className="h-32 w-32 rounded-full overflow-hidden border-4 border-gold bg-secondary"
             >
               {photoUrl ? (
@@ -611,7 +616,7 @@ export function ProfileClient() {
                   {displayName.charAt(0).toUpperCase()}
                 </div>
               )}
-            </motion.div>
+            </div>
 
             {/* Role badge — pinned to the avatar's bottom edge */}
             {(() => {

@@ -12,7 +12,7 @@ const mono = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   variable: "--font-jetbrains-mono",
-  display: "swap",
+  display: "optional",
 });
 
 const themeScript = `(function(){try{var d=document.documentElement;var m=localStorage.getItem("cpm2:theme:v2");d.setAttribute("data-theme",m==="paper"?"paper":"night");var p=localStorage.getItem("cpm2:palette:v1");var ids=${JSON.stringify(PALETTE_IDS)};d.setAttribute("data-palette",ids.indexOf(p)>=0?p:"${DEFAULT_PALETTE}");}catch(e){}})();`;
@@ -56,24 +56,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){
-              var d=document.documentElement,b=document.body;
-              var waited=0;
-              var poll=setInterval(function(){
-                var w=window.Telegram?.WebApp;
-                if(w){
-                  clearInterval(poll);
-                  try{
-                    w.ready?.();w.expand?.();
-                    d.style.touchAction='manipulation';
-                    if(b){
-                      b.style.touchAction='manipulation';
-                    }
-                  }catch(e){}
-                  return;
-                }
-                waited+=50;
-                if(waited>=30000) clearInterval(poll);
-              },50);
+              var w=window.Telegram?.WebApp;
+              if(w){
+                try{
+                  w.ready?.();w.expand?.();
+                  document.documentElement.style.touchAction='manipulation';
+                }catch(e){}
+              }
             })()`,
           }}
         />

@@ -4,6 +4,8 @@
   --font-display: var(--font-cormorant-garamond), "Cormorant Garamond", Georgia, serif;
   --font-sans: var(--font-manrope), "Manrope", system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, "Cascadia Mono", monospace;
+  --font-size-adjust-display: 0.495;
+  --font-size-adjust-sans: 0.473;
 
   /* Radius */
   --radius: 0.5rem;
@@ -383,6 +385,8 @@ body {
 }
 
 html {
+  font-size-adjust: var(--font-size-adjust-sans);
+  overflow-anchor: avoid;
 }
 
 /* Panel — solid opaque surface that visibly contrasts with the page background.
@@ -1494,6 +1498,7 @@ html {
   transition: all 250ms ease-out;
   display: flex;
   flex-direction: column;
+  contain: layout paint;
 }
 .vanta-card:hover {
   border-color: var(--brand-gold);
@@ -1506,6 +1511,7 @@ html {
   aspect-ratio: 16/10;
   background: var(--background);
   border-bottom: 1px solid var(--border);
+  contain: layout paint;
 }
 .vanta-card-media img {
   width: 100%;

@@ -11,6 +11,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import React, { useCallback, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   formatPrice,
   type VantaCategory,
@@ -18,7 +19,11 @@ import {
   type VantaPromotion,
 } from "@/lib/store/client";
 import { StoreShell } from "@/components/StoreShell";
-import { HeartToggle } from "@/components/HeartToggle";
+
+const HeartToggle = dynamic(
+  () => import("@/components/HeartToggle").then((mod) => mod.HeartToggle),
+  { ssr: false, loading: () => <span className="w-[44px] h-[44px] rounded-full bg-paper-raised animate-pulse" /> },
+);
 
 export function StoreHomeClient({
   featured,
@@ -400,7 +405,7 @@ const ProductCard = React.memo(
     return (
       <div key={product.id} className="vanta-card group">
         <Link href={`/store/products/${product.id}`} className="block h-full w-full">
-          <div className="vanta-card-media">
+          <div className="vanta-card-media" style={{ aspectRatio: 4 / 5 }}>
             {coverImage ? (
               <Image
                 src={coverImage}
@@ -473,11 +478,14 @@ function SkeletonVantaCard({
   return (
     <div
       className="vanta-card"
-      style={{ flex: "0 0 auto", ...(width ? { width } : undefined) }}
+      style={{
+        flex: "0 0 auto",
+        ...(width ? { width, minWidth: width } : undefined),
+      }}
     >
       <div
         className="vanta-card-media"
-        style={square ? { aspectRatio: "1" } : undefined}
+        style={square ? { aspectRatio: "1" } : { aspectRatio: 4 / 5 }}
       >
         <div className="absolute inset-0 bg-paper-raised animate-pulse" />
       </div>

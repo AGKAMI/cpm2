@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { motion, Variants } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface DockProps {
@@ -24,28 +23,14 @@ interface DockIconButtonProps {
   className?: string;
 }
 
-const floatingAnimation: Variants = {
-  initial: { y: 0 },
-  animate: {
-    y: [-2, 2, -2],
-    transition: {
-      duration: 4,
-      repeat: Infinity,
-      ease: "easeInOut" as const,
-    },
-  },
-};
-
 const DockIconButton = React.forwardRef<
   HTMLButtonElement,
   DockIconButtonProps
 >(
   ({ icon: Icon, label, href, active, mode, className }, ref) => {
     return (
-      <motion.button
+      <button
         ref={ref}
-        whileHover={{ scale: 1.1, y: -2 }}
-        whileTap={{ scale: 0.95 }}
         className={cn(
           "relative group p-3 rounded-lg",
           active ? "bg-primary text-black dock-active" : "hover:bg-secondary transition-colors",
@@ -76,7 +61,7 @@ const DockIconButton = React.forwardRef<
         >
           {label}
         </span>
-      </motion.button>
+      </button>
     );
   }
 );
@@ -87,17 +72,7 @@ const Dock = React.forwardRef<HTMLDivElement, DockProps>(
     return (
       <div ref={ref} className={cn("fixed bottom-3 left-1/2 -translate-x-1/2 z-50 w-full flex items-center justify-center p-2 pointer-events-none", className)}>
         <div className="w-full max-w-4xl flex items-center justify-center relative pointer-events-none">
-          <motion.div
-            initial="initial"
-            animate="animate"
-            variants={floatingAnimation}
-            className={cn(
-              "pointer-events-auto flex items-center gap-1 p-2 rounded-2xl",
-              "backdrop-blur-lg border shadow-lg",
-              "bg-background/90 border-border",
-              "hover:shadow-xl transition-shadow duration-300"
-            )}
-          >
+          <div className="pointer-events-auto flex items-center gap-1 p-2 rounded-2xl backdrop-blur-lg border shadow-lg bg-background/90 border-border hover:shadow-xl transition-shadow duration-300">
             {items.map((item) => {
               const Icon = item.icon;
               return (
@@ -111,7 +86,7 @@ const Dock = React.forwardRef<HTMLDivElement, DockProps>(
                 />
               );
             })}
-          </motion.div>
+          </div>
         </div>
       </div>
     );

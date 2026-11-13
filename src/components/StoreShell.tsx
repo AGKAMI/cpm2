@@ -5,7 +5,7 @@ import { type ReactNode, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
-import { Dock } from "@/components/ui/dock";
+import dynamic from "next/dynamic";
 import { LucideIcon } from "lucide-react";
 import { Home, Grid, List } from "lucide-react";
 
@@ -14,6 +14,11 @@ import { vantaApi } from "@/lib/store/client";
 import { AdminIcon } from "@/components/ui/admin-icon";
 import { OwnerIcon } from "@/components/ui/owner-icon";
 import { ProfileIcon } from "@/components/ui/profile-icon";
+
+const Dock = dynamic(
+  () => import("@/components/ui/dock").then((mod) => mod.Dock),
+  { ssr: false, loading: () => null },
+);
 
 type StoreTab = "home" | "categories" | "orders" | "profile" | "admin" | "owner";
 
@@ -51,15 +56,9 @@ export function StoreShell({ children, dock }: StoreShellProps) {
   const [isOwner, setIsOwner] = useState<boolean | null>(null);
   const [profile, setProfile] = useState<{ photoUrl?: string; displayName?: string; username?: string } | null>(null);
   const [customerLoggedIn, setCustomerLoggedIn] = useState<boolean>(false);
-  const [loaded, setLoaded] = useState<boolean>(false);
+  const [loaded, setLoaded] = useState<boolean>(true);
 
   const mode = "night" as const;
-
-  // Fade the avatar pulse ring in after the page has loaded.
-  useEffect(() => {
-    const t = setTimeout(() => setLoaded(true), 400);
-    return () => clearTimeout(t);
-  }, []);
 
   const adminSessionActive = () =>
     typeof window !== "undefined" &&

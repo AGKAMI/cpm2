@@ -71,6 +71,22 @@ export function FleetProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
+    // Only fetch Fleet Ledger data when authenticated; otherwise skip to
+    // avoid 401s that block the store homepage on mobile.
+    const isAuthed =
+      typeof window !== "undefined" &&
+      Boolean(localStorage.getItem("vanta_customer_id"));
+    if (!isAuthed) {
+      setAccounts([]);
+      setArchived([]);
+      setStats(null);
+      setEvents([]);
+      setTrophies({});
+      setTrophyTotals({ gold: 0, silver: 0, bronze: 0, total: 0 });
+      setError(null);
+      setLoading(false);
+      return;
+    }
     try {
       const [active, archivedList, eventList, trophyList] = await Promise.all([
         api.list(),

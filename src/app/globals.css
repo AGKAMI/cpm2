@@ -385,8 +385,6 @@ body {
 }
 
 html {
-  font-size-adjust: var(--font-size-adjust-sans);
-  overflow-anchor: avoid;
 }
 
 /* Panel — solid opaque surface that visibly contrasts with the page background.
@@ -1498,7 +1496,6 @@ html {
   transition: all 250ms ease-out;
   display: flex;
   flex-direction: column;
-  contain: layout paint;
 }
 .vanta-card:hover {
   border-color: var(--brand-gold);
@@ -1511,7 +1508,6 @@ html {
   aspect-ratio: 16/10;
   background: var(--background);
   border-bottom: 1px solid var(--border);
-  contain: layout paint;
 }
 .vanta-card-media img {
   width: 100%;

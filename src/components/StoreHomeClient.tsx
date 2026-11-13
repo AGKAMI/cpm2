@@ -11,7 +11,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import dynamic from "next/dynamic";
 import {
   formatPrice,
   type VantaCategory,
@@ -19,11 +18,7 @@ import {
   type VantaPromotion,
 } from "@/lib/store/client";
 import { StoreShell } from "@/components/StoreShell";
-
-const HeartToggle = dynamic(
-  () => import("@/components/HeartToggle").then((mod) => mod.HeartToggle),
-  { ssr: false, loading: () => <span className="w-[44px] h-[44px] rounded-full bg-paper-raised animate-pulse" /> },
-);
+import { HeartToggle } from "@/components/HeartToggle";
 
 export function StoreHomeClient({
   featured,

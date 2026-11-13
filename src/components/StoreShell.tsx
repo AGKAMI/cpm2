@@ -5,7 +5,7 @@ import { type ReactNode, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
-import dynamic from "next/dynamic";
+import { Dock } from "@/components/ui/dock";
 import { LucideIcon } from "lucide-react";
 import { Home, Grid, List } from "lucide-react";
 
@@ -14,11 +14,6 @@ import { vantaApi } from "@/lib/store/client";
 import { AdminIcon } from "@/components/ui/admin-icon";
 import { OwnerIcon } from "@/components/ui/owner-icon";
 import { ProfileIcon } from "@/components/ui/profile-icon";
-
-const Dock = dynamic(
-  () => import("@/components/ui/dock").then((mod) => mod.Dock),
-  { ssr: false, loading: () => null },
-);
 
 type StoreTab = "home" | "categories" | "orders" | "profile" | "admin" | "owner";
 

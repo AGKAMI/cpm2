@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useFleet } from "@/components/FleetProvider";
@@ -74,6 +74,10 @@ export default function AccountPage() {
     uploadedAt: string;
   }>>([]);
   const [uploading, setUploading] = useState(false);
+  // Direct ref to this section's file input — the button used to find it with
+  // a document-wide querySelector, which silently breaks if any other file
+  // input is ever added higher in the DOM.
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchImages = async () => {
     try {
@@ -376,6 +380,7 @@ export default function AccountPage() {
 
         <div className="mb-3 flex gap-2">
           <input
+            ref={fileInputRef}
             type="file"
             accept="image/*"
             multiple
@@ -387,12 +392,7 @@ export default function AccountPage() {
             variant="outline"
             size="sm"
             disabled={uploading || archived}
-            onClick={() => {
-              const input = document.querySelector(
-                'input[type="file"][accept="image/*"]'
-              ) as HTMLInputElement | null;
-              input?.click();
-            }}
+            onClick={() => fileInputRef.current?.click()}
           >
             {uploading ? "Uploading…" : "Add images"}
           </Button>

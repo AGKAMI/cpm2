@@ -13,12 +13,12 @@ type Variant =
 type Size = "default" | "sm" | "lg" | "icon";
 
 const VARIANTS: Record<Variant, string> = {
-  primary: "bg-primary text-primary-foreground border border-primary hover:bg-racing hover:text-primary-foreground hover:border-primary",
-  secondary: "bg-secondary text-secondary-foreground border border-secondary hover:bg-racing hover:text-primary-foreground hover:border-secondary",
-  destructive: "bg-destructive text-destructive-foreground border border-destructive hover:bg-destructive hover:text-destructive-foreground hover:border-destructive",
-  outline: "border border-input bg-background hover:border-primary hover:text-accent-foreground",
-  ghost: "border border-input bg-background hover:border-primary hover:text-accent-foreground",
-  link: "text-primary underline-offset-4 hover:underline",
+  primary: "bg-primary text-primary-foreground border border-primary hover:bg-primary-hover hover:text-primary-foreground hover:border-primary active:bg-primary active:text-primary-foreground active:border-primary",
+  secondary: "bg-secondary text-secondary-foreground border border-secondary hover:bg-muted hover:text-secondary-foreground hover:border-secondary active:bg-secondary active:text-secondary-foreground active:border-secondary",
+  destructive: "bg-destructive text-destructive-foreground border border-destructive hover:bg-destructive/90 hover:text-destructive-foreground hover:border-destructive active:bg-destructive active:text-destructive-foreground active:border-destructive",
+  outline: "border border-input bg-background hover:bg-muted hover:text-accent-foreground hover:border-primary active:bg-secondary active:text-accent-foreground active:border-primary",
+  ghost: "border border-input bg-background hover:bg-muted hover:text-accent-foreground hover:border-primary active:bg-secondary active:text-accent-foreground active:border-primary",
+  link: "text-primary underline-offset-4 hover:underline active:text-primary",
 };
 
 const SIZES: Record<Size, string> = {
@@ -43,7 +43,7 @@ export function Button({
     <button
       {...props}
       className={cn(
-        "inline-flex items-center justify-center rounded-md text-sm font-medium transition-[transform,box-shadow,border-color,background-color] duration-160 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:bg-secondary disabled:text-secondary-foreground active:scale-[var(--scale-medium)] hover:border-primary hover:text-primary-foreground",
+        "inline-flex items-center justify-center rounded-md text-sm font-medium cursor-pointer transition-[transform,box-shadow,border-color,background-color] duration-160 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:bg-secondary disabled:text-secondary-foreground active:scale-[var(--scale-medium)]",
         VARIANTS[variant],
         SIZES[size],
         className,

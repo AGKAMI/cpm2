@@ -160,6 +160,18 @@ CREATE TABLE IF NOT EXISTS trade_rates (
   CHECK (value >= 0)
 );
 
+CREATE TABLE IF NOT EXISTS fleet_account_images (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  account_id INTEGER NOT NULL,
+  image_url  TEXT    NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  is_cover   INTEGER NOT NULL DEFAULT 0,
+  uploaded_at TEXT   NOT NULL,
+  FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_fleet_account_images_account ON fleet_account_images (account_id);
+
 CREATE INDEX IF NOT EXISTS idx_account_cars_game
   ON account_cars (account_id, game);
 

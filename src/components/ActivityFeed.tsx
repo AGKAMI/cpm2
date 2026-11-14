@@ -17,6 +17,8 @@ const TYPES: Record<FleetEventType, { label: string; mark: string; text: string 
   trophies_updated: { label: "Trophy", mark: "bg-racing", text: "text-racing" },
   car_added: { label: "Garage", mark: "bg-racing", text: "text-racing" },
   car_removed: { label: "Garage", mark: "bg-racing", text: "text-racing" },
+  image_added: { label: "Image+", mark: "bg-racing", text: "text-racing" },
+  image_removed: { label: "Image-", mark: "bg-racing", text: "text-racing" },
 };
 
 export function ActivityFeed({ events }: { events: FleetEvent[] }) {

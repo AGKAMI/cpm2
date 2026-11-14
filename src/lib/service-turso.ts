@@ -1,4 +1,6 @@
 import { ZodError } from "zod";
+import { unlink } from "fs/promises";
+import { join } from "path";
 import { ApiError } from "./api.ts";
 import {
   GAME_LABELS,
@@ -1125,5 +1127,186 @@ export async function bindUserTelegram(userId: number, telegramUserId: number) {
   await db.execute({
     sql: `UPDATE users SET telegram_user_id = ?, updated_at = ? WHERE id = ?`,
     args: [telegramUserId, new Date().toISOString(), userId],
+  });
+}
+
+// ---------------------------------------------------------------- fleet account images
+
+export type NewAccountImage = {
+  id: number;
+  accountId: number;
+  imageUrl: string;
+  sortOrder: number;
+  isCover: boolean;
+  uploadedAt: string;
+};
+
+export async function addAccountImages(
+  accountId: number,
+  imageUrls: string[],
+  userId?: number,
+): Promise<NewAccountImage[]> {
+  const account = await requireAccount(accountId);
+  if (userId !== undefined && Number(account.user_id) !== userId) {
+    throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
+  }
+
+  const db = await getTursoDb();
+  const stamp = new Date().toISOString();
+
+  // Get max sort_order to append after existing images
+  const maxRow = await db.execute({
+    sql: `SELECT COALESCE(MAX(sort_order), -1) AS max_so FROM fleet_account_images WHERE account_id = ?`,
+    args: [accountId],
+  });
+  const maxSort = Number((maxRow.rows[0] as { max_so: unknown }).max_so) + 1;
+
+  const inserted: NewAccountImage[] = [];
+  for (let i = 0; i < imageUrls.length; i += 1) {
+    const result = await db.execute({
+      sql: `INSERT INTO fleet_account_images (account_id, image_url, sort_order, is_cover, uploaded_at)
+            VALUES (?, ?, ?, 0, ?)`,
+      args: [accountId, imageUrls[i], maxSort + i, stamp],
+    });
+    const id = Number(result.lastInsertRowid);
+    inserted.push({
+      id,
+      accountId,
+      imageUrl: imageUrls[i],
+      sortOrder: maxSort + i,
+      isCover: false,
+      uploadedAt: stamp,
+    });
+  }
+
+  await logEvent(accountId, account.email, "image_added", `Added ${imageUrls.length} image(s) to account`, {
+    count: { from: 0, to: imageUrls.length },
+  });
+
+  return inserted;
+}
+
+export async function listAccountImages(accountId: number): Promise<NewAccountImage[]> {
+  const db = await getTursoDb();
+  const rows = await db.execute({
+    sql: `SELECT id, account_id, image_url, sort_order, is_cover, uploaded_at
+          FROM fleet_account_images
+          WHERE account_id = ?
+          ORDER BY sort_order ASC, id ASC`,
+    args: [accountId],
+  });
+  return (rows.rows as unknown as Array<{
+    id: number;
+    account_id: number;
+    image_url: string;
+    sort_order: number;
+    is_cover: number;
+    uploaded_at: string;
+  }>).map((row) => ({
+    id: row.id,
+    accountId: row.account_id,
+    imageUrl: row.image_url,
+    sortOrder: row.sort_order,
+    isCover: row.is_cover === 1,
+    uploadedAt: row.uploaded_at,
+  }));
+}
+
+export async function removeAccountImage(
+  accountId: number,
+  imageId: number,
+  userId?: number,
+): Promise<void> {
+  const account = await requireAccount(accountId);
+  if (userId !== undefined && Number(account.user_id) !== userId) {
+    throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
+  }
+
+  const db = await getTursoDb();
+  const row = await db.execute({
+    sql: `SELECT image_url FROM fleet_account_images WHERE id = ? AND account_id = ?`,
+    args: [imageId, accountId],
+  });
+  if (!row.rows[0]) {
+    throw new ApiError(404, "NOT_FOUND", "That image does not exist on this account.");
+  }
+  const imageUrl = String(row.rows[0].image_url);
+
+  await db.execute({
+    sql: `DELETE FROM fleet_account_images WHERE id = ? AND account_id = ?`,
+    args: [imageId, accountId],
+  });
+
+  // Try to delete the physical file from public/uploads/fleet/
+  try {
+    const filename = imageUrl.split("/").pop();
+    if (filename) {
+      await unlink(join(process.cwd(), "public", "uploads", "fleet", filename));
+    }
+  } catch {
+    // File may already be gone — ignore
+  }
+
+  await logEvent(accountId, account.email, "image_removed", `Removed image from account`, {
+    imageId: { from: imageId, to: null },
+  });
+}
+
+export async function setAccountCoverImage(
+  accountId: number,
+  imageId: number,
+  userId?: number,
+): Promise<void> {
+  const account = await requireAccount(accountId);
+  if (userId !== undefined && Number(account.user_id) !== userId) {
+    throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
+  }
+
+  const db = await getTursoDb();
+  // Verify the image belongs to this account
+  const row = await db.execute({
+    sql: `SELECT id FROM fleet_account_images WHERE id = ? AND account_id = ?`,
+    args: [imageId, accountId],
+  });
+  if (!row.rows[0]) {
+    throw new ApiError(404, "NOT_FOUND", "That image does not exist on this account.");
+  }
+
+  // Unset all covers for this account, then set the new one
+  await db.execute({
+    sql: `UPDATE fleet_account_images SET is_cover = 0 WHERE account_id = ?`,
+    args: [accountId],
+  });
+  await db.execute({
+    sql: `UPDATE fleet_account_images SET is_cover = 1 WHERE id = ? AND account_id = ?`,
+    args: [imageId, accountId],
+  });
+
+  await logEvent(accountId, account.email, "updated", `Set cover image for account`, {
+    coverImageId: { from: null, to: imageId },
+  });
+}
+
+export async function reorderAccountImages(
+  accountId: number,
+  imageIds: number[],
+  userId?: number,
+): Promise<void> {
+  const account = await requireAccount(accountId);
+  if (userId !== undefined && Number(account.user_id) !== userId) {
+    throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");
+  }
+
+  const db = await getTursoDb();
+  const stamp = new Date().toISOString();
+  for (let i = 0; i < imageIds.length; i += 1) {
+    await db.execute({
+      sql: `UPDATE fleet_account_images SET sort_order = ? WHERE id = ? AND account_id = ?`,
+      args: [i, imageIds[i], accountId],
+    });
+  }
+
+  await logEvent(accountId, account.email, "updated", `Reordered account images`, {
+    count: { from: 0, to: imageIds.length },
   });
 }

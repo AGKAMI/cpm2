@@ -44,7 +44,9 @@ export type FleetEventType =
   | "password_revealed"
   | "trophies_updated"
   | "car_added"
-  | "car_removed";
+  | "car_removed"
+  | "image_added"
+  | "image_removed";
 
 export type FleetEvent = {
   id: number;
@@ -188,4 +190,14 @@ export type CarMatch = {
   code: number;
   name: string;
   score: number;
+};
+
+/** One uploaded image attached to a fleet account. */
+export type AccountImage = {
+  id: number;
+  accountId: number;
+  imageUrl: string;
+  sortOrder: number;
+  isCover: boolean;
+  uploadedAt: string;
 };

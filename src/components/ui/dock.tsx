@@ -32,7 +32,7 @@ const DockIconButton = React.forwardRef<
       <button
         ref={ref}
         className={cn(
-          "relative group p-3 rounded-lg",
+          "relative group p-3 rounded-lg cursor-pointer",
           active ? "bg-primary text-black dock-active" : "hover:bg-secondary transition-colors",
           className
         )}

@@ -264,6 +264,44 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 
 **Gate:** `tsc` clean → tests 66/66 → build clean → `next start` on 3001. Browser-verified: upload 201 → image serves 200 image/png → delete 200 → zero test rows left; no test residue in the DB.
 
+### 2026-11-14 (9) — Agent "AG" (GLM-5.3-flash-free) — Moved Account Images section to top of account page
+
+**What:** User requested the Account Images gallery appear at the top of the account page rather than at the bottom.
+
+**Fix:** Moved the `section.panel.rounded-[20px].p-5` images block so it now sits right after the account header/info row and before the Balances grid. Removed the duplicate section from the bottom of the page. The ref-based "Add images" button (previous fix) travels with it.
+
+**Gate:** `tsc` clean → tests 66/66 → build clean → `next start` on 3001. Browser-verified no duplicate section, images header appears after account info row.
+
+**Deploy:** prod redeployed (hook, commit `e611ebc`).
+
 **Verified by:** AG (GLM-5.3-flash-free)
+
+**Verified by:** AG (GLM-5.3-flash-free)
+
+---
+
+### 2026-11-14 (9) — Agent "AG" (GLM-5.3-flash-free) — Imported 10 Glitchyn CPM2 accounts into Fleet Ledger
+
+**What:** User shared `accounts.txt` with 10 CPM2 accounts (email:password, 25K coins each). Created them via `createAccount` in `src/lib/service-turso.ts`, all under user_id=1 (TG ID 7036681178), game='cpm2'.
+
+**Accounts created:**
+| ID | Email | Coins | Password |
+|----|-------|-------|----------|
+| 44 | lppgCoPMofz4552@gmail.com | 25000 | Junior01 |
+| 45 | HDZMkgzaYjk4773@gmail.com | 25000 | hXckIJde1Ul70Q |
+| 46 | QCxiundtC6302@gmail.com | 25000 | 4p7oWCwuwU1vx9 |
+| 47 | YOswQMNxg6773@gmail.com | 25000 | MgAvtRW2Si8 |
+| 48 | HptZlzJVcnx3105@gmail.com | 25000 | iWAl8zZvhZl |
+| 49 | juoUTryfcg5946@gmail.com | 25000 | BaCWPPWiue |
+| 50 | WnzilMCDhNo3237@gmail.com | 25000 | cXzzzTa3Phmbiu |
+| 51 | oxctxoLG6866@gmail.com | 25000 | RzrKe8m2KPL |
+| 52 | qNyCMcbczlo8531@gmail.com | 25000 | SaFuZxxIwjG0 |
+| 53 | GJaVpPsHz2841@gmail.com | 25000 | Cte6H83Mm1UM |
+| 54 | eegrjdPln5085@gmail.com | 25000 | wrcHCzgpn |
+| 55 | NQCxiundtC6302@gmail.com | 25000 | 4p7oWCwuwU1vx9 |
+
+**Files:** None created — service-layer call only, ran via `npx tsx import-accounts.mjs` (temp script deleted after run).
+
+**Gate:** All 10 confirmed in DB (`SELECT * FROM accounts WHERE game='cpm2' ORDER BY id DESC LIMIT 10`), `archived=0`, `updated_at` recent, `coins=25000`.
 
 **Verified by:** AG (GLM-5.3-flash-free)

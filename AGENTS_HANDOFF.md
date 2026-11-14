@@ -2247,7 +2247,7 @@ Each module below includes: **What** (functional spec from plan), **How it works
 
 **Files:** `src/components/StoreShell.tsx`, `src/components/HeartToggle.tsx`, `public/vanta-lockup.png` (new), `public/sw.js`, `public/kami-vanta-logo.svg` (deleted). Commit `e71848e`.
 
-**Gate:** port-3000 listener killed → `npx next build` clean → detached `next start` on 127.0.0.1:3000 (HTTP 200 /store + /store/profile). Browser-verified: transparent logo renders on /store and /store/profile headers; optimizer cache cleared + file renamed to defeat immutable caching.
+**Gate:** port-3001 listener killed → `npx next build` clean → detached `next start` on 127.0.0.1:3001 (HTTP 200 /store + /store/profile). Browser-verified: transparent logo renders on /store and /store/profile headers; optimizer cache cleared + file renamed to defeat immutable caching.
 
 **Deploy status:** Production deployed and verified (cpm2-bay.vercel.app).
 
@@ -2266,7 +2266,7 @@ Each module below includes: **What** (functional spec from plan), **How it works
 
 **Files:** `scripts/seed-store-catalog.mjs` (new), `src/components/CategoriesClient.tsx`. Commit `db64793`. (Kermes's uncommitted edits in other files untouched.)
 
-**Gate:** port-3000 killed → build clean → detached restart, HTTP 200 on /store + /store/categories. Browser-verified home: "6 vehicles ready to drive", 6-card featured carousel, logo correct.
+**Gate:** port-3001 killed → build clean → detached restart on 127.0.0.1:3001, HTTP 200 on /store + /store/categories. Browser-verified home: "6 vehicles ready to drive", 6-card featured carousel, logo correct.
 
 **Deploy status:** Production deploy of db64793 in progress; catalog data is live immediately (shared Turso DB).
 
@@ -2292,7 +2292,9 @@ Each module below includes: **What** (functional spec from plan), **How it works
 
 **Files:** `src/components/StoreHomeClient.tsx`, `src/components/CategoriesClient.tsx`, `src/app/globals.css`, `src/components/StoreShell.tsx`, `public/sw.js`, `next.config.ts` (unsplash remotePattern only — Kermes's `localhost:3001` remotePattern line remains uncommitted in the working tree), `public/kami-lockup-gold.png` (new), `public/vanta-lockup.png` (deleted), `scripts/seed-store-media.mjs` (new), `scripts/bust-media-cache.mjs` (new).
 
-**Gate:** port-3000 killed → build clean → detached restart on 127.0.0.1:3000. `npm test`: 66/66 pass. Browser-verified: /store 8/8 images render + gold logo + carousel scrolls; /store/categories 24/24 cards with photos, 0 "No photo".
+**Gate:** port-3001 killed → build clean → detached restart on 127.0.0.1:3001. `npm test`: 66/66 pass. Browser-verified: /store 8/8 images render + gold logo + carousel scrolls; /store/categories 24/24 cards with photos, 0 "No photo".
+
+**Correction (post-deploy):** this run (and the two before it) mistakenly started the local server on **port 3000** — the handoff's standing protocol is port **3001** (Kermes 2026-11-10: never `next dev`; stable server is `npx next start -H 127.0.0.1 --port 3001`). Fixed mid-round: 3000 listener killed, server restarted on 127.0.0.1:3001 (HTTP 200 /store + /store/categories). ALL FUTURE RUNS: port **3001 only** unless the user explicitly says otherwise.
 
 **Deploy status:** prod deploy of this commit pending.
 

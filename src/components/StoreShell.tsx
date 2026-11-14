@@ -53,6 +53,22 @@ export function StoreShell({ children, dock }: StoreShellProps) {
   const [customerLoggedIn, setCustomerLoggedIn] = useState<boolean>(false);
   const [loaded, setLoaded] = useState<boolean>(true);
 
+  // localStorage must NEVER be read during render: the server can't see it,
+  // so an admin's first client render computed a different dock than the SSR
+  // HTML (React #418 → hydration recovery wipes <main> → black page). Mirror
+  // the flag into state after mount instead — same eventual UI, safe hydration.
+  const [adminSessionFlag, setAdminSessionFlag] = useState<boolean>(false);
+  useEffect(() => {
+    const sync = () =>
+      setAdminSessionFlag(
+        typeof window !== "undefined" &&
+          localStorage.getItem("vanta_admin_session") === "true",
+      );
+    sync();
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, []);
+
   const mode = "night" as const;
 
   const adminSessionActive = () =>
@@ -148,8 +164,8 @@ export function StoreShell({ children, dock }: StoreShellProps) {
 
   const visibleNav = STORE_NAV.filter(
     (t) =>
-      (t.key !== "admin" || isAdmin === true || adminSessionActive()) &&
-      (t.key !== "owner" || isOwner === true || adminSessionActive()),
+      (t.key !== "admin" || isAdmin === true || adminSessionFlag) &&
+      (t.key !== "owner" || isOwner === true || adminSessionFlag),
   );
 
   const activeTab: StoreTab | undefined =

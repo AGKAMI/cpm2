@@ -243,3 +243,15 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 **Gate:** `tsc` clean → tests 66/66 → build clean → `next start` on 3001. Browser-verified with a valid owner session and NO `vanta_customer_id` key present: /fleet/cpm2 lists 12 accounts, /fleet/cpm1 lists 24 ("24 of 36 accounts"), /store renders normally.
 
 **Verified by:** AG (GLM-5.3-flash-free)
+
+### 2026-11-14 (7) — Agent "AG" (GLM-5.3-flash-free) — Verified + fixed the account-images feature; removed per-row console-password input
+
+**What:** User asked to find and verify the account-images feature another agent added (`972d147` — bulk photo gallery per account page), and separately flagged the per-row "console password" input on the register as useless.
+
+**Account-images audit — feature was BROKEN at the serve step.** Upload worked (201 + DB row), but the gallery renders `<img src={imageUrl}>` where imageUrl embeds the **uuid filename** (`/api/accounts/43/images/<uuid>.png`), and the `[imageId]` route did `parseId(imageId)` on it → **400 on every image** (delete/cover use numeric row ids and were fine). Fix in `src/app/api/accounts/[id]/images/[imageId]/route.ts` GET: when imageId contains a dot it is matched as a filename against the DB row's imageUrl (basename taken from the DB row, never user input — no traversal surface) and the binary is served; numeric ids still work with `?serve=1`. Browser-verified full cycle on account 43: list → upload (201) → **serve 200 image/png** (was 400) → DELETE 200 → 0 rows left (test artifact cleaned up).
+
+**PasswordCell cleanup.** Removed the per-row inline console-password input + unlock button (user: "useless"). Reveal/copy without consent now opens ONE shared modal ("Confirm it's you") that earns the same 5-minute reveal-consent cookie — same security model (auth.ts: active session alone is not enough to reveal stored passwords), matching the export-consent modal pattern in AppShell. Enter submits, Escape/Cancel closes, wrong password shows an inline error.
+
+**Gate:** `tsc` clean → tests 66/66 → build clean → `next start` on 3001. Browser-verified: 0 inline password inputs on /fleet/cpm1; eye click opens the modal and Escape closes it; account-images serve 200.
+
+**Verified by:** AG (GLM-5.3-flash-free)

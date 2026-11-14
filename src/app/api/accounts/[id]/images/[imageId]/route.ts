@@ -30,12 +30,18 @@ export async function GET(
   try {
     const { id, imageId } = await context.params;
     const accountId = parseId(id);
-    const imgId = parseId(imageId);
     const url = new URL(request.url);
     const serve = url.searchParams.get("serve") === "1";
 
+    // imageId comes in TWO forms: a numeric row id (the UI's delete/cover
+    // calls) or the stored uuid filename (the imageUrl the gallery renders
+    // directly in <img src>). parseId would 400 on a filename, which made
+    // every uploaded image unviewable — match by filename when it is one.
+    const isFilename = imageId.includes(".");
     const images = await listAccountImages(accountId);
-    const image = images.find((img) => img.id === imgId);
+    const image = isFilename
+      ? images.find((img) => img.imageUrl.endsWith(`/${imageId}`))
+      : images.find((img) => img.id === parseId(imageId));
 
     if (!image) {
       return fail({
@@ -44,8 +50,10 @@ export async function GET(
       });
     }
 
-    if (serve) {
-      // Serve the actual image binary from public/uploads/fleet/
+    if (serve || isFilename) {
+      // Serve the actual image binary from public/uploads/fleet/. The file
+      // name comes from the DB row (server-generated uuid), never from user
+      // input, so there is no path-traversal surface here.
       const filename = image.imageUrl.split("/").pop();
       if (!filename) {
         return fail({

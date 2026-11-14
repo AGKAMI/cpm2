@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api, ApiRequestError } from "@/lib/client";
+import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toaster";
 
 const REMASK_MS = 10_000;
@@ -21,8 +22,10 @@ export function PasswordCell({ accountId }: { accountId: number }) {
   const [revealed, setRevealed] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [consentOpen, setConsentOpen] = useState(false);
   const [consentPassword, setConsentPassword] = useState("");
   const [consentBusy, setConsentBusy] = useState(false);
+  const [consentError, setConsentError] = useState<string | null>(null);
   const [consentEarned, setConsentEarned] = useState(false);
   const deadline = useRef<number | null>(null);
   // Set when the current reveal came from a hover (so leaving the button hides it).
@@ -84,27 +87,31 @@ export function PasswordCell({ accountId }: { accountId: number }) {
     return result.password;
   }
 
-  /** Prompted path: earn consent with the console password, then reveal. */
-  async function revealWithConsent(): Promise<void> {
+  /** Prompted path: a single shared modal collects the console password once
+   *  (per-row inline inputs were removed as clutter) and earns a 5-minute
+   *  reveal consent cookie. */
+  async function confirmConsent(): Promise<void> {
     if (!consentPassword.trim()) {
-      toast.error("Console password needed", "Enter the console password to unlock stored passwords.");
+      setConsentError("Enter the console password.");
       return;
     }
-    setBusy(true);
+    setConsentBusy(true);
+    setConsentError(null);
     try {
       await earnConsent();
       await reveal();
+      setConsentOpen(false);
+      setConsentPassword("");
     } catch (err) {
-      if (err instanceof ApiRequestError && err.code === "AUTH_INVALID") {
-        toast.error("Wrong console password", "Try again.");
-        return;
-      }
-      toast.error(
-        "Password locked",
-        err instanceof ApiRequestError ? err.message : "Could not unlock stored passwords.",
+      setConsentError(
+        err instanceof ApiRequestError && err.code === "AUTH_INVALID"
+          ? "Wrong console password — try again."
+          : err instanceof Error
+            ? err.message
+            : "Could not unlock stored passwords.",
       );
     } finally {
-      setBusy(false);
+      setConsentBusy(false);
     }
   }
 
@@ -139,7 +146,7 @@ export function PasswordCell({ accountId }: { accountId: number }) {
       await reveal();
       return;
     }
-    await revealWithConsent();
+    setConsentOpen(true);
   }
 
   async function onCopy(): Promise<void> {
@@ -147,7 +154,8 @@ export function PasswordCell({ accountId }: { accountId: number }) {
       if (consentEarned) {
         await reveal();
       } else {
-        await revealWithConsent();
+        setConsentOpen(true);
+        return;
       }
       if (!revealed) return;
     }
@@ -195,32 +203,6 @@ export function PasswordCell({ accountId }: { accountId: number }) {
           </svg>
         )}
       </button>
-      {!revealed ? (
-        <div className="flex items-center gap-1">
-          <input
-            type="password"
-            placeholder="console password"
-            value={consentPassword}
-            onChange={(event) => setConsentPassword(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") void revealWithConsent();
-            }}
-            autoComplete="current-password"
-            className="field-rule num w-32 px-2 py-1 text-[11px]"
-          />
-          <button
-            type="button"
-            onClick={revealWithConsent}
-            disabled={consentBusy}
-            className="square-btn h-7 w-7 disabled:bg-secondary disabled:text-secondary-foreground"
-            aria-label="Unlock stored passwords"
-          >
-            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-              <path d="M3 3l18 18" strokeLinecap="round" />
-            </svg>
-          </button>
-        </div>
-      ) : null}
       <button
         type="button"
         onClick={onCopy}
@@ -234,6 +216,44 @@ export function PasswordCell({ accountId }: { accountId: number }) {
           <path d="M15 5.5A2.5 2.5 0 0012.5 3h-7A2.5 2.5 0 005.5 15" strokeLinecap="round" />
         </svg>
       </button>
+
+      {/* Shared consent modal — replaces the per-row console-password input
+          (removed as clutter). Earns the same 5-minute reveal consent cookie. */}
+      {consentOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background px-4">
+          <div className="relative w-full max-w-[340px] rounded-lg border border-border bg-background p-6 text-center shadow-lg">
+            <h2 className="text-lg font-medium text-foreground mb-2">Confirm it&apos;s you</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Re-enter the console password to unlock stored passwords for 5 minutes.
+            </p>
+            <input
+              type="password"
+              placeholder="console password"
+              value={consentPassword}
+              autoFocus
+              onChange={(event) => setConsentPassword(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") void confirmConsent();
+                if (event.key === "Escape") setConsentOpen(false);
+              }}
+              autoComplete="current-password"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-background file:text-sm font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={consentBusy}
+            />
+            {consentError && (
+              <p className="mt-2 text-xs text-destructive">{consentError}</p>
+            )}
+            <div className="mt-4 flex gap-2 justify-center">
+              <Button variant="outline" onClick={() => setConsentOpen(false)} type="button">
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={() => void confirmConsent()} disabled={consentBusy} type="button">
+                {consentBusy ? "Unlocking…" : "Unlock"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

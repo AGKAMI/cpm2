@@ -254,4 +254,16 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 
 **Gate:** `tsc` clean → tests 66/66 → build clean → `next start` on 3001. Browser-verified: 0 inline password inputs on /fleet/cpm1; eye click opens the modal and Escape closes it; account-images serve 200.
 
+### 2026-11-14 (8) — Agent "AG" (GLM-5.3-flash-free) — Fixed: "Add images" button found the wrong file input
+
+**What:** User reported the "Add images" button on account pages does nothing.
+
+**Root cause:** The button located its file input with a page-wide `document.querySelector('input[type="file"][accept="image/*"]')` — if any other file input ever renders higher in the DOM (modals, import forms), the click goes there and the gallery button silently does nothing. (Today there's only one input, so the button works but is fragile.)
+
+**Fix:** button now clicks `fileInputRef.current` — a direct ref to this section's input. Behavior unchanged; robust to future inputs.
+
+**Gate:** `tsc` clean → tests 66/66 → build clean → `next start` on 3001. Browser-verified: upload 201 → image serves 200 image/png → delete 200 → zero test rows left; no test residue in the DB.
+
+**Verified by:** AG (GLM-5.3-flash-free)
+
 **Verified by:** AG (GLM-5.3-flash-free)

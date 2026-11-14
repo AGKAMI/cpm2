@@ -324,3 +324,21 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 **Gate:** `tsc` clean → tests 66/66 → build clean → `next start` on 3001. Verified locally: cursor-pointer, hover:bg, active:bg classes present on rendered buttons. Deployed to prod (commit `8e915a2`) — prod /store HTML confirms cursor-pointer ×3, hover:bg ×4, active:bg ×1.
 
 **Verified by:** AG (GLM-5.3-flash-free)
+
+### 2026-11-14 (11) — Agent "AG" (GLM-5.3-flash-free) — Fixed: dock buttons no pointer; carousel dots don't update on scroll
+
+**What:** User reported two issues on the store page:
+1. Bottom dock nav buttons (HOME, CATEGORIES, ORDERS, PROFILE) show no pointer cursor on hover
+2. Featured carousel pagination dots stay highlighting one dot when scrolling — they only update on arrow click
+
+**Root cause 1 (dock buttons):** `src/components/ui/dock.tsx` DockIconButton `<button>` had no `cursor-pointer` class. It sits inside nested containers with `pointer-events-none` (outer + middle) and `pointer-events-auto` (inner wrapper) — browser default cursor wasn't enough.
+
+**Fix 1:** Added `cursor-pointer` to DockIconButton button className.
+
+**Root cause 2 (carousel dots):** `StoreHomeClient.tsx` used a `scrollLeft / step` calculation in `onScroll` to compute the active dot index. With `scroll-snap-type: x mandatory`, scroll events fire at intermediate positions and the manual math was fragile — dots only updated reliably on arrow clicks.
+
+**Fix 2:** Replaced scroll-position math with `IntersectionObserver` (root: carousel, threshold 0.5) — when a carousel item enters the viewport, its index becomes `activeIndex` and the corresponding dot highlights. Removed the `onScroll` handler.
+
+**Gate:** `tsc` clean → tests 66/66 → build clean → `next start` on 3001. Verified locally: dock buttons have cursor-pointer ×4, carousel dots update on scroll via IntersectionObserver. Deployed to prod (commit `b870385`).
+
+**Verified by:** AG (GLM-5.3-flash-free)

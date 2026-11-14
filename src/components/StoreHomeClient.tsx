@@ -10,7 +10,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   formatPrice,
   type VantaCategory,
@@ -49,27 +49,21 @@ export function StoreHomeClient({
       return map;
     }, [featured]);
 
-  // Track which carousel item is currently visible via IntersectionObserver —
-  // far more reliable than scrollLeft math with scroll-snap carousels.
-  useEffect(() => {
+  // Track which carousel item is currently visible via scroll position.
+  // scroll-snap carousels align items to the start, so scrollLeft / step
+  // gives the active index reliably.
+  const handleScroll = useCallback(() => {
     const el = carouselRef.current;
     if (!el || featured.length === 0) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const intersecting = entries.find((entry) => entry.isIntersecting);
-        if (!intersecting) return;
-        const index = Array.from(el.children).indexOf(intersecting.target as Element);
-        if (index !== -1 && index !== activeIndex) {
-          setActiveIndex(index);
-        }
-      },
-      { root: el, threshold: 0.5 },
-    );
-
-    Array.from(el.children).forEach((child) => observer.observe(child));
-    return () => observer.disconnect();
-  }, [featured, activeIndex]);
+    const firstItem = el.children[0] as HTMLElement | undefined;
+    if (!firstItem) return;
+    const itemWidth = firstItem.offsetWidth;
+    if (itemWidth === 0) return;
+    const gap = parseFloat(getComputedStyle(el).gap) || 0;
+    const step = itemWidth + gap;
+    const index = Math.round(el.scrollLeft / step);
+    setActiveIndex(Math.max(0, Math.min(index, featured.length - 1)));
+  }, [featured.length]);
 
   const goTo = useCallback((index: number) => {
     const el = carouselRef.current;
@@ -157,6 +151,7 @@ export function StoreHomeClient({
             <div
               ref={carouselRef}
               className="featured-carousel"
+              onScroll={handleScroll}
               role="region"
               aria-label="Featured vehicles"
             >

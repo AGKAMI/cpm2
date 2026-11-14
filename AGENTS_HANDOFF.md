@@ -305,3 +305,22 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 **Gate:** All 10 confirmed in DB (`SELECT * FROM accounts WHERE game='cpm2' ORDER BY id DESC LIMIT 10`), `archived=0`, `updated_at` recent, `coins=25000`.
 
 **Verified by:** AG (GLM-5.3-flash-free)
+
+### 2026-11-14 (10) — Agent "AG" (GLM-5.3-flash-free) — Fixed: buttons show no pointer, no hover/active states
+
+**What:** User reported that buttons on both apps (VANTA GARAGE store + Fleet Ledger) show no pointer cursor on hover, no hover color change, and no dark-on-press state.
+
+**Root cause:** `src/components/ui/Button.tsx` base classes had no `cursor-pointer`, no hover background change (only `hover:border-primary hover:text-primary-foreground` overriding variant hover styles), and no active/darken state (only `active:scale-[var(--scale-medium)]`). Buttons looked static on hover/press.
+
+**Fix:** Rewrote Button base + variants:
+- Base: added `cursor-pointer`, removed the overriding `hover:border-primary hover:text-primary-foreground` from base
+- Variants: each variant now has explicit `hover:bg-*` (lighter on hover) and `active:bg-*` (darker on press) states
+- `primary`: hover `bg-primary-hover` (#f6e3a0), active `bg-primary`
+- `secondary`: hover `bg-muted`, active `bg-secondary`
+- `destructive`: hover `bg-destructive/90`, active `bg-destructive`
+- `outline`/`ghost`: hover `bg-muted`, active `bg-secondary`
+- `link`: active `text-primary`
+
+**Gate:** `tsc` clean → tests 66/66 → build clean → `next start` on 3001. Verified locally: cursor-pointer, hover:bg, active:bg classes present on rendered buttons. Deployed to prod (commit `8e915a2`) — prod /store HTML confirms cursor-pointer ×3, hover:bg ×4, active:bg ×1.
+
+**Verified by:** AG (GLM-5.3-flash-free)

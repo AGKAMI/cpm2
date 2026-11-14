@@ -161,6 +161,7 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 6. **Button borders** — all buttons need visible borders (`Button.tsx` variants, no borderless text-only tap targets)
 7. **Hardcoded car cleanup** — delete 6 seeded products (IDs 19-24, created 2026-11-07) via Admin UI once new build is live
 8. **Consider adding `StoreShell` to all store routes** — `/store`, `/store/profile`, `/store/checkout/[id]`, `/store/categories`, `/store/orders` currently render with no header/nav
+9. **Prod cold-start on `/store` (~20s first hit)** — Vercel lambda cold boot + the globalThis boot storm (schema batch + migrations ≈ 8–10s of ~295ms Turso RTTs) runs once per lambda instance; Vercel recycles instances, so cold hits re-pay it. Local warm is ~2–3s (fixed this round). Candidate fix: trim boot queries (skip migrations when schema version row says current) or cache-friendly ISR — needs user direction before changing render behavior.
 
 ---
 

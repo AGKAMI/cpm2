@@ -243,6 +243,86 @@ export default function AccountPage() {
         </div>
       </div>
 
+    {/* Account Images Gallery */}
+    <section className="panel rounded-[20px] p-5">
+      <div className="mb-4 flex items-baseline justify-between gap-3">
+        <h2 className="panel-title">Account Images</h2>
+        <span className="num text-[10px] text-ink-faint">
+          {images.length} {images.length === 1 ? "image" : "images"}
+        </span>
+      </div>
+
+      <div className="mb-3 flex gap-2">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          disabled={uploading || archived}
+          onChange={(e) => handleUpload(e.target.files)}
+          className="sr-only"
+        />
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={uploading || archived}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          {uploading ? "Uploading…" : "Add images"}
+        </Button>
+        {archived && (
+          <span className="text-[10px] text-ink-faint">archived — uploads locked</span>
+        )}
+      </div>
+
+      {images.length === 0 ? (
+        <div className="panel rounded-[20px] px-6 py-10 text-center text-sm text-ink-faint">
+          No images yet. Add car photos to see them here.
+        </div>
+      ) : (
+        <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          {images.map((img) => (
+            <div
+              key={img.id}
+              className="relative rounded-[16px] overflow-hidden border border-ink bg-background"
+            >
+              <img
+                src={img.imageUrl}
+                alt="Account image"
+                className="w-full h-32 object-cover cursor-pointer"
+                onClick={() => window.open(img.imageUrl, "_blank")}
+              />
+              {img.isCover && (
+                <span className="absolute top-2 left-2 bg-ink px-1.5 py-0.5 rounded text-[10px] font-bold text-background">
+                  Cover
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => handleSetCover(img.id)}
+                disabled={img.isCover || archived}
+                className="absolute top-2 right-2 p-1 hover:bg-ink hover:text-background transition-colors"
+                title={img.isCover ? "Already cover" : "Set as cover image"}
+                aria-label={img.isCover ? "Already cover image" : "Set as cover image"}
+              >
+                {img.isCover ? "★" : "☆"}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDelete(img.id)}
+                disabled={archived}
+                className="absolute bottom-2 right-2 p-1 hover:bg-oxblood hover:text-background transition-colors"
+                title="Delete image"
+                aria-label="Delete image"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+
       <div className="grid gap-4 lg:grid-cols-3">
         <section className="panel rounded-[20px] p-5 lg:col-span-2 min-w-0">
           <div className="mb-4 flex items-baseline justify-between gap-3">
@@ -367,86 +447,6 @@ export default function AccountPage() {
 
       <section className="panel rounded-[20px] p-5">
         <TrophyCabinet accountId={account.id} readOnly={archived} onChanged={() => void fleet.refresh(true)} />
-      </section>
-
-      {/* Account Images Gallery */}
-      <section className="panel rounded-[20px] p-5">
-        <div className="mb-4 flex items-baseline justify-between gap-3">
-          <h2 className="panel-title">Account Images</h2>
-          <span className="num text-[10px] text-ink-faint">
-            {images.length} {images.length === 1 ? "image" : "images"}
-          </span>
-        </div>
-
-        <div className="mb-3 flex gap-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            disabled={uploading || archived}
-            onChange={(e) => handleUpload(e.target.files)}
-            className="sr-only"
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={uploading || archived}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {uploading ? "Uploading…" : "Add images"}
-          </Button>
-          {archived && (
-            <span className="text-[10px] text-ink-faint">archived — uploads locked</span>
-          )}
-        </div>
-
-        {images.length === 0 ? (
-          <div className="panel rounded-[20px] px-6 py-10 text-center text-sm text-ink-faint">
-            No images yet. Add car photos to see them here.
-          </div>
-        ) : (
-          <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {images.map((img) => (
-              <div
-                key={img.id}
-                className="relative rounded-[16px] overflow-hidden border border-ink bg-background"
-              >
-                <img
-                  src={img.imageUrl}
-                  alt="Account image"
-                  className="w-full h-32 object-cover cursor-pointer"
-                  onClick={() => window.open(img.imageUrl, "_blank")}
-                />
-                {img.isCover && (
-                  <span className="absolute top-2 left-2 bg-ink px-1.5 py-0.5 rounded text-[10px] font-bold text-background">
-                    Cover
-                  </span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => handleSetCover(img.id)}
-                  disabled={img.isCover || archived}
-                  className="absolute top-2 right-2 p-1 hover:bg-ink hover:text-background transition-colors"
-                  title={img.isCover ? "Already cover" : "Set as cover image"}
-                  aria-label={img.isCover ? "Already cover image" : "Set as cover image"}
-                >
-                  {img.isCover ? "★" : "☆"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(img.id)}
-                  disabled={archived}
-                  className="absolute bottom-2 right-2 p-1 hover:bg-oxblood hover:text-background transition-colors"
-                  title="Delete image"
-                  aria-label="Delete image"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
       </section>
 
       <section>

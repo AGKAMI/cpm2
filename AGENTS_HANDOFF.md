@@ -130,6 +130,11 @@ Root route `/` now shows an app selection screen instead of redirecting to Fleet
 
 ## WhatsApp (KAMI-Bot) note
 
+**PORT LOCK — READ BEFORE ANY DEV WORK:**
+
+- **Port 3000 = WhatsApp bridge ONLY.** It runs the Hermes WhatsApp bridge (`/health` returns `connected`). **Never kill the port-3000 process for Vanta dev.** The bridge needs `creds.json` and a QR re-pair if it dies — downtime breaks WhatsApp notifications entirely.
+- **Port 3001 = Vanta Garage dev server only.** Always run `npx next dev -p 3001` — never `--port 3000`. If port 3000 is occupied by a dev server, the bridge can't bind and WhatsApp sends die.
+
 Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net with its own session (27683993925). `vanta.js` calls VANTA APIs via HTTPS — no bridge involvement.
 
 ---

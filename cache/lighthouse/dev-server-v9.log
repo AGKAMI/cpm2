@@ -1,0 +1,66 @@
+
+> cpm2@0.1.0 dev
+> next dev -H 127.0.0.1
+
+▲ Next.js 16.4.2 (Turbopack)
+- Local:         http://127.0.0.1:3000
+- Network:       http://127.0.0.1:3000
+- Environments: .env.local
+✓ Ready in 2.1s
+✓ Running next.config.ts took 181ms
+
+○ Compiling /store/admin ...
+ GET /store/admin 200 in 5.2s (next.js: 4.4s, proxy.ts: 256ms, application-code: 496ms)
+ GET /store/admin 200 in 109ms (next.js: 19ms, proxy.ts: 6ms, application-code: 84ms)
+ GET /store 200 in 9.6s (next.js: 602ms, proxy.ts: 15ms, application-code: 9.0s)
+[browser] [Telegram.WebApp] Header color is not supported in version 6.0 (https://telegram.org/js/telegram-web-app.js:769:15)
+[browser] [Telegram.WebApp] Background color is not supported in version 6.0 (https://telegram.org/js/telegram-web-app.js:825:15)
+[browser] [Telegram.WebApp] Header color is not supported in version 6.0 (https://telegram.org/js/telegram-web-app.js:769:15)
+[browser] [Telegram.WebApp] Background color is not supported in version 6.0 (https://telegram.org/js/telegram-web-app.js:825:15)
+ GET /api/store/admin/is-admin 200 in 743ms (next.js: 706ms, proxy.ts: 21ms, application-code: 16ms)
+ GET /api/store/admin/is-admin 200 in 767ms (next.js: 674ms, proxy.ts: 82ms, application-code: 11ms)
+ GET /api/store/profile 200 in 331ms (next.js: 305ms, proxy.ts: 10ms, application-code: 16ms)
+ GET /api/store/profile 200 in 34ms (next.js: 12ms, proxy.ts: 13ms, application-code: 9ms)
+ GET /api/bg 200 in 1304ms (next.js: 674ms, proxy.ts: 10ms, application-code: 621ms)
+ GET /llms.txt 404 in 1421ms (next.js: 1234ms, proxy.ts: 9ms, application-code: 178ms)
+ GET /robots.txt 404 in 149ms (next.js: 15ms, proxy.ts: 9ms, application-code: 125ms)
+ GET /store 200 in 1576ms (next.js: 81ms, proxy.ts: 19ms, application-code: 1477ms)
+ GET /.well-known/ard.json 404 in 132ms (next.js: 18ms, proxy.ts: 14ms, application-code: 100ms)
+ GET /.well-known/ai-catalog.json 404 in 179ms (next.js: 14ms, proxy.ts: 11ms, application-code: 154ms)
+ GET /store 200 in 1600ms (next.js: 94ms, proxy.ts: 14ms, application-code: 1492ms)
+ GET /health 404 in 110ms (next.js: 38ms, proxy.ts: 5ms, application-code: 66ms)
+⨯ TypeError: Failed to parse URL from /api/store/profile
+    at async ProfilePage (src\app\store\profile\page.tsx:18:15)
+  16 |   if (initData) fetchHeaders["X-Telegram-Init-Data"] = initData;
+  17 |
+> 18 |   const res = await fetch("/api/store/profile", {
+     |               ^
+  19 |     headers: fetchHeaders,
+  20 |     cache: "no-store",
+  21 |   }); {
+  digest: '4212969338',
+  [cause]: TypeError: Invalid URL
+      at async ProfilePage (src\app\store\profile\page.tsx:18:15)
+    16 |   if (initData) fetchHeaders["X-Telegram-Init-Data"] = initData;
+    17 |
+  > 18 |   const res = await fetch("/api/store/profile", {
+       |               ^
+    19 |     headers: fetchHeaders,
+    20 |     cache: "no-store",
+    21 |   }); {
+    code: 'ERR_INVALID_URL',
+    input: '/api/store/profile'
+  }
+}
+ GET /store/profile 500 in 1599ms (next.js: 1290ms, proxy.ts: 12ms, application-code: 296ms)
+[browser] Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template). 
+[browser] Uncaught TypeError: Failed to parse URL from /api/store/profile
+    at ProfilePage (src\app\store\profile\page.tsx:18:15)
+  16 |   if (initData) fetchHeaders["X-Telegram-Init-Data"] = initData;
+  17 |
+> 18 |   const res = await fetch("/api/store/profile", {
+     |               ^
+  19 |     headers: fetchHeaders,
+  20 |     cache: "no-store",
+  21 |   });
+✓ Compiled in 219ms

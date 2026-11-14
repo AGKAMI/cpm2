@@ -2298,3 +2298,39 @@ Each module below includes: **What** (functional spec from plan), **How it works
 
 **Verified by:** AG (GLM-5.3-flash-free)
 
+### 2026-11-14 (4) — Agent "AG" (GLM-5.3-flash-free) — Promotions Save button wired
+
+**What:** The Save button on `/store/admin/promotions` had `onClick={() => {}}` — empty, did nothing. Wired it to actually save.
+
+**Where:** `src/app/store/admin/promotions/page.tsx`
+
+**Changes Made:**
+1. **Added `savePromotion()` function** — validates draft has a title, then POSTs to `/api/store/admin/promotions` (new promotion, `editing === 0`) or PUTs to `/api/store/admin/promotions?id=<id>` (existing promotion). On success: reloads promotions, clears draft, sets editing to null, clears error. On failure: shows error message.
+2. **Passed `onSave` prop to `PromotionCard`** — the Save button now calls `onSave` instead of the empty no-op. `savePromotion` is passed down from the parent page component.
+
+**Files:** `src/app/store/admin/promotions/page.tsx`
+
+**Gate:** `npx tsc --noEmit` clean (0 errors), `npx next build` clean. Server running on http://127.0.0.1:3001.
+
+**Deploy status:** Production deployed via Deploy Hook (HTTP 201). Verified on cpm2-bay.vercel.app — Promotions Save button wired.
+
+**Verified by:** AG (GLM-5.3-flash-free)
+
+### 2026-11-14 (5) — Agent "AG" (GLM-5.3-flash-free) — Real legal text for all 8 policy pages
+
+**What:** `/legal/[doc]` had identical generic placeholder boilerplate for all 8 policies. Replaced with real, differentiated text for each document in plain English.
+
+**Where:** `src/app/legal/[doc]/page.tsx`
+
+**Changes Made:**
+1. **8 legal documents now have real body text** — Terms & Conditions, Privacy Policy, Refund Policy, Delivery Policy, Payment Policy, Cancellation Policy, Appointment Policy, Dispute Policy. Each has its own sections specific to VANTA GARAGE (CPM2 vehicle marketplace via Telegram Mini App and WhatsApp).
+2. **Type change** — `LEGAL_DOCS` entries now include `body: ReactNode` instead of just title/version. Rendered via `{doc.body}` in the page.
+
+**Files:** `src/app/legal/[doc]/page.tsx`
+
+**Gate:** `npx tsc --noEmit` clean (0 errors), `npx next build` clean.
+
+**Deploy status:** Production deployed via Deploy Hook (HTTP 201).
+
+**Verified by:** AG (GLM-5.3-flash-free)
+

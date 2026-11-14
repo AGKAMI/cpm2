@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "cpm2-bay.vercel.app" },
       { protocol: "https", hostname: "images.unsplash.com" },
+      { protocol: "http", hostname: "localhost", port: "3001" },
     ],
   },
   turbopack: {

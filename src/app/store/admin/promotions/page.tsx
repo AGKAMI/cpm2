@@ -5,7 +5,7 @@
 
 "use client";
 
-export const dynamic = "force-dynamic";
+
 
 import { useEffect, useState } from "react";
 import { StoreShell } from "@/components/StoreShell";
@@ -87,6 +87,32 @@ export default function AdminPromotionsPage() {
     }
   }
 
+  async function savePromotion() {
+    if (!draft || !draft.title?.trim()) {
+      setError("Title is required.");
+      return;
+    }
+    try {
+      const isNew = editing === 0;
+      const url = isNew
+        ? "/api/store/admin/promotions"
+        : `/api/store/admin/promotions?id=${editing}`;
+      const res = await fetch(url, {
+        method: isNew ? "POST" : "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(draft),
+      });
+      if (!res.ok) throw new Error("Failed to save promotion");
+      await loadPromotions();
+      setEditing(null);
+      setDraft(null);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save promotion.");
+    }
+  }
+
   if (loading) {
     return (
       <StoreShell>
@@ -128,6 +154,7 @@ export default function AdminPromotionsPage() {
             setDraft={setDraft}
             onToggle={() => togglePromotion(p.id, p.isActive)}
             onDelete={() => deletePromotion(p.id)}
+            onSave={savePromotion}
           />
         ))}
       </div>
@@ -143,6 +170,7 @@ function PromotionCard({
   setDraft,
   onToggle,
   onDelete,
+  onSave,
 }: {
   promo: Promotion;
   editing: boolean;
@@ -151,6 +179,7 @@ function PromotionCard({
   setDraft: (d: Partial<Promotion> | null) => void;
   onToggle: () => void;
   onDelete: () => void;
+  onSave: () => void;
 }) {
   const isEditing = editing;
   return (
@@ -217,7 +246,7 @@ function PromotionCard({
             >
               Cancel
             </Button>
-            <Button variant="primary" size="sm" onClick={() => {}}>
+            <Button variant="primary" size="sm" onClick={onSave}>
               Save
             </Button>
           </div>

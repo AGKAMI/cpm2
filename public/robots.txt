@@ -1,0 +1,15 @@
+User-agent: *
+Disallow: /api/
+Disallow: /store/admin/
+Disallow: /store/owner/
+Disallow: /store/checkout/
+Disallow: /store/orders/
+Disallow: /store/profile/
+Disallow: /store/appointments/
+Disallow: /store/wishlist/
+Disallow: /store/support/
+Disallow: /store/dashboard/
+
+Allow: /
+
+Sitemap: https://cpm2-bay.vercel.app/sitemap.xml

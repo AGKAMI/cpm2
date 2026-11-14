@@ -1,0 +1,129 @@
+
+> cpm2@0.1.0 dev
+> next dev -H 127.0.0.1
+
+▲ Next.js 16.4.2 (Turbopack)
+- Local:         http://127.0.0.1:3000
+- Network:       http://127.0.0.1:3000
+- Environments: .env.local
+✓ Ready in 1390ms
+✓ Running next.config.ts took 228ms
+
+○ Compiling /store/profile ...
+ GET /store/profile 200 in 10.0s (next.js: 8.0s, proxy.ts: 439ms, application-code: 1560ms)
+ GET /api/store/profile 200 in 870ms (next.js: 793ms, proxy.ts: 15ms, application-code: 61ms)
+ GET /api/store/profile 200 in 49ms (next.js: 18ms, proxy.ts: 10ms, application-code: 21ms)
+ GET /store/profile 200 in 324ms (next.js: 49ms, proxy.ts: 12ms, application-code: 263ms)
+ GET /store/admin 200 in 1574ms (next.js: 1426ms, proxy.ts: 11ms, application-code: 137ms)
+ GET /store 200 in 9.8s (next.js: 504ms, proxy.ts: 13ms, application-code: 9.2s)
+[browser] [Telegram.WebApp] Header color is not supported in version 6.0 (https://telegram.org/js/telegram-web-app.js:769:15)
+[browser] [Telegram.WebApp] Background color is not supported in version 6.0 (https://telegram.org/js/telegram-web-app.js:825:15)
+[browser] [Telegram.WebApp] Header color is not supported in version 6.0 (https://telegram.org/js/telegram-web-app.js:769:15)
+[browser] [Telegram.WebApp] Background color is not supported in version 6.0 (https://telegram.org/js/telegram-web-app.js:825:15)
+ GET /api/store/admin/is-admin 200 in 704ms (next.js: 651ms, proxy.ts: 19ms, application-code: 35ms)
+ GET /api/store/admin/is-admin 200 in 736ms (next.js: 694ms, proxy.ts: 22ms, application-code: 20ms)
+ GET /api/store/profile 200 in 137ms (next.js: 78ms, proxy.ts: 19ms, application-code: 40ms)
+ GET /api/store/profile 200 in 40ms (next.js: 8ms, proxy.ts: 13ms, application-code: 19ms)
+ GET /api/bg 200 in 1757ms (next.js: 617ms, proxy.ts: 14ms, application-code: 1126ms)
+ GET /llms.txt 404 in 1076ms (next.js: 955ms, proxy.ts: 13ms, application-code: 108ms)
+ GET /robots.txt 404 in 128ms (next.js: 23ms, proxy.ts: 9ms, application-code: 96ms)
+ GET /store 200 in 1618ms (next.js: 89ms, proxy.ts: 20ms, application-code: 1510ms)
+ GET /.well-known/ard.json 404 in 161ms (next.js: 15ms, proxy.ts: 10ms, application-code: 136ms)
+ GET /.well-known/ai-catalog.json 404 in 120ms (next.js: 18ms, proxy.ts: 12ms, application-code: 90ms)
+ GET /store 200 in 1530ms (next.js: 99ms, proxy.ts: 14ms, application-code: 1417ms)
+ GET /api/store/profile 200 in 34ms (next.js: 22ms, proxy.ts: 6ms, application-code: 6ms)
+ GET /store/profile 200 in 234ms (next.js: 75ms, proxy.ts: 10ms, application-code: 148ms)
+[browser] Image with src "/kami-vanta-logo.svg" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+ GET /api/bg 200 in 86ms (next.js: 53ms, proxy.ts: 17ms, application-code: 17ms)
+[browser] [Telegram.WebApp] Header color is not supported in version 6.0 (https://telegram.org/js/telegram-web-app.js:769:15)
+[browser] [Telegram.WebApp] Background color is not supported in version 6.0 (https://telegram.org/js/telegram-web-app.js:825:15)
+[browser] [Telegram.WebApp] Header color is not supported in version 6.0 (https://telegram.org/js/telegram-web-app.js:769:15)
+[browser] [Telegram.WebApp] Background color is not supported in version 6.0 (https://telegram.org/js/telegram-web-app.js:825:15)
+ GET /api/store/admin/is-admin 200 in 126ms (next.js: 67ms, proxy.ts: 42ms, application-code: 18ms)
+ GET /api/store/admin/is-admin 200 in 139ms (next.js: 87ms, proxy.ts: 41ms, application-code: 10ms)
+ GET /api/store/profile 200 in 143ms (next.js: 98ms, proxy.ts: 37ms, application-code: 9ms)
+ GET /api/store/profile 200 in 36ms (next.js: 12ms, proxy.ts: 13ms, application-code: 10ms)
+ GET /api/store/profile 200 in 46ms (next.js: 11ms, proxy.ts: 22ms, application-code: 13ms)
+[cpm2] unexpected error: {
+  status: 401,
+  body: {
+    error: {
+      code: 'NO_CUSTOMER',
+      message: 'No orders found for this identity.'
+    }
+  }
+}
+ GET /api/store/orders 500 in 684ms (next.js: 623ms, proxy.ts: 22ms, application-code: 38ms)
+ GET /api/store/wishlist 401 in 1028ms (next.js: 948ms, proxy.ts: 21ms, application-code: 58ms)
+ GET /api/store/admin/is-admin 200 in 42ms (next.js: 18ms, proxy.ts: 12ms, application-code: 13ms)
+ GET /llms.txt 404 in 248ms (next.js: 130ms, proxy.ts: 10ms, application-code: 109ms)
+ GET /robots.txt 404 in 157ms (next.js: 28ms, proxy.ts: 12ms, application-code: 117ms)
+ GET /api/store/profile 200 in 46ms (next.js: 22ms, proxy.ts: 13ms, application-code: 12ms)
+ GET /store/profile 200 in 288ms (next.js: 37ms, proxy.ts: 9ms, application-code: 242ms)
+ GET /.well-known/ard.json 404 in 171ms (next.js: 29ms, proxy.ts: 16ms, application-code: 127ms)
+ GET /.well-known/ai-catalog.json 404 in 161ms (next.js: 24ms, proxy.ts: 11ms, application-code: 126ms)
+ GET /api/store/profile 200 in 24ms (next.js: 7ms, proxy.ts: 7ms, application-code: 10ms)
+ GET /store/profile 200 in 172ms (next.js: 10ms, proxy.ts: 10ms, application-code: 152ms)
+ GET /health 404 in 80ms (next.js: 12ms, proxy.ts: 5ms, application-code: 63ms)
+ GET /api/store/profile 200 in 32ms (next.js: 10ms, proxy.ts: 13ms, application-code: 9ms)
+ GET /store/profile 200 in 165ms (next.js: 10ms, proxy.ts: 7ms, application-code: 148ms)
+ GET /health 404 in 196ms (next.js: 51ms, proxy.ts: 25ms, application-code: 121ms)
+ GET /health 404 in 111ms (next.js: 21ms, proxy.ts: 14ms, application-code: 77ms)
+ GET /health 404 in 126ms (next.js: 18ms, proxy.ts: 12ms, application-code: 96ms)
+  Turbopack has seen frequent file updates and is waiting for the filesystem to settle (0.5s elapsed so far; last modified: "\\\\?\\C:\\Users\\ojuni\\Documents\\GAMES\\cpm2\\.next\\server\\app\\api\\auth\\logout\\route\\server-reference-manifest.json").
+ GET /store/admin 200 in 371ms (next.js: 234ms, proxy.ts: 11ms, application-code: 126ms)
+ GET /store/admin 200 in 157ms (next.js: 18ms, proxy.ts: 21ms, application-code: 118ms)
+ GET /store 200 in 1670ms (next.js: 135ms, proxy.ts: 28ms, application-code: 1507ms)
+ GET /api/bg 200 in 65ms (next.js: 33ms, proxy.ts: 17ms, application-code: 16ms)
+ GET /api/store/admin/is-admin 200 in 79ms (next.js: 34ms, proxy.ts: 33ms, application-code: 12ms)
+ GET /api/store/admin/is-admin 200 in 103ms (next.js: 58ms, proxy.ts: 33ms, application-code: 13ms)
+[browser] [Telegram.WebApp] Header color is not supported in version 6.0 (https://telegram.org/js/telegram-web-app.js:769:15)
+[browser] [Telegram.WebApp] Background color is not supported in version 6.0 (https://telegram.org/js/telegram-web-app.js:825:15)
+[browser] [Telegram.WebApp] Header color is not supported in version 6.0 (https://telegram.org/js/telegram-web-app.js:769:15)
+[browser] [Telegram.WebApp] Background color is not supported in version 6.0 (https://telegram.org/js/telegram-web-app.js:825:15)
+ GET /api/store/profile 200 in 44ms (next.js: 23ms, proxy.ts: 11ms, application-code: 9ms)
+ GET /api/store/profile 200 in 32ms (next.js: 8ms, proxy.ts: 13ms, application-code: 10ms)
+ GET /llms.txt 404 in 147ms (next.js: 34ms, proxy.ts: 10ms, application-code: 103ms)
+ GET /robots.txt 404 in 55ms (next.js: 10ms, proxy.ts: 4ms, application-code: 41ms)
+ GET /store 200 in 1352ms (next.js: 5ms, proxy.ts: 5ms, application-code: 1343ms)
+ GET /.well-known/ard.json 404 in 68ms (next.js: 12ms, proxy.ts: 6ms, application-code: 50ms)
+ GET /.well-known/ai-catalog.json 404 in 90ms (next.js: 13ms, proxy.ts: 6ms, application-code: 70ms)
+ GET /store 200 in 427ms (next.js: 64ms, proxy.ts: 7ms, application-code: 356ms)
+ GET /api/store/profile 200 in 19ms (next.js: 9ms, proxy.ts: 5ms, application-code: 5ms)
+ GET /store/profile 200 in 103ms (next.js: 18ms, proxy.ts: 4ms, application-code: 80ms)
+[browser] Image with src "/kami-vanta-logo.svg" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+ GET /api/bg 200 in 22ms (next.js: 12ms, proxy.ts: 5ms, application-code: 5ms)
+ GET /api/store/profile 200 in 23ms (next.js: 6ms, proxy.ts: 12ms, application-code: 5ms)
+ GET /api/store/admin/is-admin 200 in 36ms (next.js: 16ms, proxy.ts: 15ms, application-code: 5ms)
+ GET /api/store/admin/is-admin 200 in 40ms (next.js: 22ms, proxy.ts: 13ms, application-code: 5ms)
+[browser] [Telegram.WebApp] Header color is not supported in version 6.0 (https://telegram.org/js/telegram-web-app.js:769:15)
+[browser] [Telegram.WebApp] Background color is not supported in version 6.0 (https://telegram.org/js/telegram-web-app.js:825:15)
+[browser] [Telegram.WebApp] Header color is not supported in version 6.0 (https://telegram.org/js/telegram-web-app.js:769:15)
+[browser] [Telegram.WebApp] Background color is not supported in version 6.0 (https://telegram.org/js/telegram-web-app.js:825:15)
+ GET /api/store/wishlist 401 in 79ms (next.js: 54ms, proxy.ts: 19ms, application-code: 6ms)
+[cpm2] unexpected error: {
+  status: 401,
+  body: {
+    error: {
+      code: 'NO_CUSTOMER',
+      message: 'No orders found for this identity.'
+    }
+  }
+}
+ GET /api/store/orders 500 in 98ms (next.js: 73ms, proxy.ts: 19ms, application-code: 6ms)
+ GET /api/store/profile 200 in 92ms (next.js: 73ms, proxy.ts: 16ms, application-code: 3ms)
+ GET /api/store/profile 200 in 14ms (next.js: 4ms, proxy.ts: 5ms, application-code: 4ms)
+ GET /llms.txt 404 in 61ms (next.js: 15ms, proxy.ts: 4ms, application-code: 42ms)
+ GET /api/store/admin/is-admin 200 in 12ms (next.js: 3ms, proxy.ts: 5ms, application-code: 4ms)
+ GET /robots.txt 404 in 52ms (next.js: 9ms, proxy.ts: 4ms, application-code: 39ms)
+ GET /api/store/profile 200 in 11ms (next.js: 4ms, proxy.ts: 4ms, application-code: 4ms)
+ GET /store/profile 200 in 81ms (next.js: 4ms, proxy.ts: 5ms, application-code: 72ms)
+ GET /.well-known/ard.json 404 in 81ms (next.js: 19ms, proxy.ts: 6ms, application-code: 57ms)
+ GET /.well-known/ai-catalog.json 404 in 64ms (next.js: 9ms, proxy.ts: 5ms, application-code: 50ms)
+ GET /api/store/profile 200 in 14ms (next.js: 4ms, proxy.ts: 6ms, application-code: 5ms)
+ GET /store/profile 200 in 83ms (next.js: 5ms, proxy.ts: 4ms, application-code: 74ms)
+ GET /health 404 in 51ms (next.js: 8ms, proxy.ts: 4ms, application-code: 39ms)
+ GET /health 404 in 54ms (next.js: 9ms, proxy.ts: 4ms, application-code: 40ms)
+[?25h

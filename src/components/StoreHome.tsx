@@ -11,7 +11,7 @@ import {
   type VantaProduct,
   type VantaPromotion,
 } from "@/lib/store/client";
-import { listMedia } from "@/lib/store/products";
+import { listCoverImageMap } from "@/lib/store/products";
 import { StoreHomeClient } from "@/components/StoreHomeClient";
 
 export async function StoreHome({
@@ -28,13 +28,12 @@ export async function StoreHome({
   const allCategories = categories as VantaCategory[];
   const allPromotions = promotions as VantaPromotion[];
 
-  // Resolve media URLs on the server — no client-side media fetches
-  const productsWithMedia = await Promise.all(
-    featured.map(async (p) => {
-      const media = await listMedia(p.id);
-      return { ...p, coverImage: media[0]?.publicUrl ?? null };
-    })
-  );
+  // Resolve media URLs on the server — one batched round-trip, no per-product calls
+  const coverMap = await listCoverImageMap(featured.map((p) => p.id));
+  const productsWithMedia = featured.map((p) => ({
+    ...p,
+    coverImage: coverMap.get(p.id) ?? null,
+  }));
 
   // Compute derived data on the server
   const arrivals = [...allProducts]

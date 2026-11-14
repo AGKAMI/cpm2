@@ -173,6 +173,8 @@ export const vantaApi = {
     }),
   media: (productId: number) =>
     request<{ media: VantaProductMedia[] }>(`/media?productId=${productId}`),
+  mediaCovers: (ids: number[]) =>
+    request<{ covers: Record<string, string> }>(`/media/covers?ids=${ids.join(",")}`),
 
   // Customer profile
   profile: () => request<{ customer: VantaCustomer | null; telegramUser: TelegramUser | null }>("/profile"),

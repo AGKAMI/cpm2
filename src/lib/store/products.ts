@@ -285,6 +285,27 @@ export async function listMedia(productId: number): Promise<ProductMedia[]> {
   return result.rows.map(rowToMedia);
 }
 
+/** Cover URLs for many products in ONE round-trip (first media per product).
+ *  Replaces per-product listMedia() calls in SSR paths — each Turso query is
+ *  a ~300ms+ cloud round-trip, so N parallel calls still cost connection churn. */
+export async function listCoverImageMap(productIds: number[]): Promise<Map<number, string>> {
+  const map = new Map<number, string>();
+  if (productIds.length === 0) return map;
+  const db = await getStoreDb();
+  const placeholders = productIds.map(() => "?").join(",");
+  const result = await db.execute({
+    sql: `SELECT product_id, public_url FROM vanta_product_media
+          WHERE product_id IN (${placeholders}) AND is_published = 1
+          ORDER BY sort_order ASC, uploaded_at ASC`,
+    args: productIds,
+  });
+  for (const row of result.rows) {
+    const pid = Number(row.product_id);
+    if (!map.has(pid)) map.set(pid, String(row.public_url ?? ""));
+  }
+  return map;
+}
+
 export async function setSystemConfig(key: string, value: string): Promise<void> {
   const db = await getStoreDb();
   const now = new Date().toISOString();

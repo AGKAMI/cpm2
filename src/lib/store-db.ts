@@ -7,35 +7,58 @@
 import type { TursoHttpClient } from "./db-turso.ts";
 import { VANTA_SCHEMA } from "./store-schema.ts";
 
-let _store: TursoHttpClient | null = null;
+// globalThis caches survive across route bundles within one server process
+// (module-level singletons do not in this Next version — each bundle re-ran
+// the schema batch + migrations ≈ 8s of sequential Turso round-trips).
+const g = globalThis as typeof globalThis & {
+  __vantaStoreDb?: TursoHttpClient;
+  __vantaStoreBoot?: Promise<TursoHttpClient>;
+  __vantaStoreMigrated?: boolean;
+};
 
 export async function getStoreDb(): Promise<TursoHttpClient> {
-  if (_store) return _store;
+  if (g.__vantaStoreDb) return g.__vantaStoreDb;
 
-  const { createTursoClient } = await import("./db-turso.ts");
-  _store = await createTursoClient();
+  // Share ONE boot promise process-wide: concurrent first-queries (a page
+  // render fires products + categories + promotions in parallel) must not
+  // each run the schema batch + migrations.
+  if (!g.__vantaStoreBoot) {
+    g.__vantaStoreBoot = (async () => {
+      const { createTursoClient } = await import("./db-turso.ts");
+      const store = await createTursoClient();
 
-  // Apply the VANTA schema idempotently on first boot — CREATE TABLE IF NOT EXISTS
-  // is safe to run on every cold start (no-op when tables already exist).
-  const statements = VANTA_SCHEMA.trim()
-    .split(";")
-    .filter((s) => s.trim())
-    .map((s) => s.trim() + ";");
+      // Apply the VANTA schema idempotently — CREATE TABLE IF NOT EXISTS
+      // is a no-op when tables already exist.
+      const statements = VANTA_SCHEMA.trim()
+        .split(";")
+        .filter((s) => s.trim())
+        .map((s) => s.trim() + ";");
+      await store.batch(statements);
 
-  await _store.batch(statements);
+      g.__vantaStoreDb = store;
 
-  // Run idempotent migrations (ALTER TABLE adds columns if missing; try/catch
-  // makes this safe to re-run on every cold start — quickly no-ops when columns exist).
-  await runStoreMigrations();
+      // Idempotent migrations ONCE per process (they were previously re-run
+      // for every route bundle's first cold hit — ~15 sequential round-trips).
+      if (!g.__vantaStoreMigrated) {
+        await runStoreMigrations(store);
+        g.__vantaStoreMigrated = true;
+      }
 
-  return _store;
+      return store;
+    })();
+    g.__vantaStoreBoot.catch(() => {
+      // Allow a retry after a failed boot instead of caching the rejection.
+      g.__vantaStoreBoot = undefined;
+    });
+  }
+  return g.__vantaStoreBoot;
 }
 
 /** Run one-time schema migrations. Call once at deploy time, NOT on every cold start.
  *  Vercel serverless will hammer Turso if ALTER TABLE runs on every function invocation.
  */
-export async function runStoreMigrations(): Promise<void> {
-  const store = await getStoreDb();
+export async function runStoreMigrations(storeArg?: TursoHttpClient): Promise<void> {
+  const store = storeArg ?? (await getStoreDb());
 
   // Migration: add cpm2_car_code to existing vanta_products tables
   try {
@@ -543,5 +566,10 @@ export async function runStoreMigrations(): Promise<void> {
 }
 
 export async function closeStoreDb(): Promise<void> {
-  _store = null;
+  const g = globalThis as typeof globalThis & {
+    __vantaStoreDb?: TursoHttpClient;
+    __vantaStoreBoot?: Promise<TursoHttpClient>;
+  };
+  g.__vantaStoreDb = undefined;
+  g.__vantaStoreBoot = undefined;
 }

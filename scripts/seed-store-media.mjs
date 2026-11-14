@@ -33,8 +33,7 @@ async function pipeline(requests) {
 }
 const rowsOf = (result) => result?.[0]?.response?.result?.rows ?? [];
 
-const unsplash = (id) =>
-  `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=1200&q=80`;
+const unsplash = (id) => `/store-covers/${id}.jpg`;
 
 // category_id -> photo pool (verified Unsplash car photos)
 // 6 Hatchback, 5 Coupes, 4 Sedans, 3 4x4, 1 SUV, 2 Offroad

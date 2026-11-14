@@ -34,25 +34,16 @@ export function CategoriesClient({
   const [debouncedQ, setDebouncedQ] = useState("");
   const [clientCoverMap, setClientCoverMap] = useState<Record<number, string>>(coverMap);
 
-  // Fetch cover media for every visible product. Keeps SSR fast — no media
-  // queries on the server — while ensuring no card falls back to "No photo".
+  // Fetch cover media for every visible product in ONE batched request.
+  // Keeps SSR fast — no media queries on the server — while ensuring no card
+  // falls back to "No photo". (24 per-product calls each cost a cloud RTT.)
   useEffect(() => {
     const visibleIds = products.map((p) => p.id).filter((id) => !(id in coverMap));
     if (visibleIds.length === 0) return;
     (async () => {
       try {
-        const covers = await Promise.all(
-          visibleIds.map(async (id) => {
-            try {
-              const m = await vantaApi.media(id);
-              return [id, m.media[0]?.publicUrl] as [number, string | undefined];
-            } catch {
-              return [id, undefined] as [number, string | undefined];
-            }
-          }),
-        );
-        const entries = covers.filter((c): c is [number, string] => c[1] !== undefined);
-        setClientCoverMap((prev) => ({ ...prev, ...Object.fromEntries(entries) }));
+        const { covers } = await vantaApi.mediaCovers(visibleIds);
+        setClientCoverMap((prev) => ({ ...prev, ...covers }) as Record<number, string>);
       } catch {
         // Non-fatal — products without cover images render as "No photo"
       }

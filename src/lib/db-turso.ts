@@ -1,4 +1,23 @@
 import { LIMITS, MAX_CARS, type GameType } from "./constants.ts";
+import { Agent } from "undici";
+
+/**
+ * Long-lived keep-alive agent for Turso. Node's default pool closes idle
+ * connections after ~4s; from this network a fresh TCP+TLS handshake to the
+ * DB region costs ~1s+, so every page visit that follows a >4s gap paid it
+ * again. 60s idle timeout keeps the pool hot between page loads.
+ */
+let _tursoAgent: Agent | null = null;
+function tursoDispatcher(): Agent {
+  if (!_tursoAgent) {
+    _tursoAgent = new Agent({
+      keepAliveTimeout: 60_000,
+      keepAliveMaxTimeout: 120_000,
+      connections: 16,
+    });
+  }
+  return _tursoAgent;
+}
 
 export type UserRow = {
   id: number;
@@ -234,7 +253,8 @@ export class TursoHttpClient {
         body: JSON.stringify({
           requests: [{ type: "execute", stmt: { sql, args: hranaArgs } }],
         }),
-      });
+        dispatcher: tursoDispatcher(),
+      } as RequestInit & { dispatcher: Agent });
       if (!resp.ok) {
         throw new Error(`Turso HTTP ${resp.status}: ${await resp.text()}`);
       }
@@ -271,7 +291,8 @@ export class TursoHttpClient {
         body: JSON.stringify({
           requests: sqls.map((s) => ({ type: "execute", stmt: { sql: s, args: [] } })),
         }),
-      });
+        dispatcher: tursoDispatcher(),
+      } as RequestInit & { dispatcher: Agent });
     if (!resp.ok) {
       throw new Error(`Turso batch HTTP ${resp.status}: ${await resp.text()}`);
     }
@@ -291,37 +312,43 @@ function getTursoToken(): string {
   return token;
 }
 
-let _http: TursoHttpClient | null = null;
-
 export async function createTursoClient(): Promise<TursoHttpClient> {
-  if (_http) return _http;
-  _http = new TursoHttpClient(getTursoUrl(), getTursoToken());
-  // Apply schema (idempotent — IF NOT EXISTS everywhere)
-  await _http.batch(
-    SCHEMA.trim().split(";").filter((s) => s.trim()).map((s) => s.trim() + ";"),
-  );
+  // Cache the boot PROMISE on globalThis — module-level singletons are
+  // per-route-bundle in the Next server, and a plain result cache lets two
+  // concurrent first-queries race the schema batch. A shared promise means
+  // every caller awaits the same single boot.
+  const g = globalThis as typeof globalThis & { __cpm2TursoHttp?: Promise<TursoHttpClient> };
+  if (g.__cpm2TursoHttp) return g.__cpm2TursoHttp;
+  g.__cpm2TursoHttp = (async () => {
+    const client = new TursoHttpClient(getTursoUrl(), getTursoToken());
+    // Apply schema (idempotent — IF NOT EXISTS everywhere)
+    await client.batch(
+      SCHEMA.trim().split(";").filter((s) => s.trim()).map((s) => s.trim() + ";"),
+    );
 
-  // Migration: existing databases created before the multi-user change have no
-  // `user_id` column on accounts. Add it if missing (SQLite ALTER TABLE is
-  // additive only — we add nullable, then service layer backfills on first use).
-  try {
-    const probe = await _http.execute({
-      sql: `PRAGMA table_info(accounts)`,
-      args: [],
-    });
-    const columns = probe.rows.map((r) => r.name);
-    if (!columns.includes("user_id")) {
-      await _http.execute({
-        sql: `ALTER TABLE accounts ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE CASCADE`,
+    // Migration: existing databases created before the multi-user change have no
+    // `user_id` column on accounts. Add it if missing (SQLite ALTER TABLE is
+    // additive only — we add nullable, then service layer backfills on first use).
+    try {
+      const probe = await client.execute({
+        sql: `PRAGMA table_info(accounts)`,
         args: [],
       });
+      const columns = probe.rows.map((r) => r.name);
+      if (!columns.includes("user_id")) {
+        await client.execute({
+          sql: `ALTER TABLE accounts ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE CASCADE`,
+          args: [],
+        });
+      }
+    } catch {
+      // Probe failure means the table didn't exist yet — SCHEMA above created it
+      // with user_id included, so nothing to migrate.
     }
-  } catch {
-    // Probe failure means the table didn't exist yet — SCHEMA above created it
-    // with user_id included, so nothing to migrate.
-  }
 
-  return _http;
+    return client;
+  })();
+  return g.__cpm2TursoHttp;
 }
 
 let _client: TursoHttpClient | null = null;
@@ -330,8 +357,4 @@ export async function getTursoDb(): Promise<TursoHttpClient> {
   if (_client) return _client;
   _client = await createTursoClient();
   return _client;
-}
-
-export async function closeTursoDb(): Promise<void> {
-  _client = null;
 }

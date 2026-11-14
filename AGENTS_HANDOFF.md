@@ -217,3 +217,17 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 **Gate:** port-3001 listener killed → `tsc` clean → tests 66/66 → build clean → detached `next start` on 3001 (HTTP 200) → browser-verified both pages.
 
 **Verified by:** AG (GLM-5.3-flash-free)
+
+### 2026-11-14 (5) — Agent "AG" (GLM-5.3-flash-free) — Fixed: admin hydration mismatch blacked out /store (React #418)
+
+**What:** User reported "site not working on your browser" — `/store` rendered a black page with an empty `<main>`. This was the previously-noted "hydration race quirk", now root-caused and fixed (it was NOT a race).
+
+**Root cause:** `StoreShell.tsx` read `localStorage` ("vanta_admin_session") **during render** to gate the ADMIN/OWNER dock items. The server renders without it, so an admin's first client render computed a different dock (6 items vs 4) → hydration mismatch (React #418) → recovery wiped `<main>` → black page. Only affected admins, which is why it looked intermittent. `NotificationBell`'s localStorage read is effect-side only — safe; `GuestGate`'s `window.location.pathname` read is fleet-pages-only, untouched.
+
+**Fix:** the flag is mirrored into state **after mount** (useEffect + storage listener) — identical eventual UI for admins, safe hydration. `adminSessionActive()` helper remains only inside event handlers.
+
+**Gate:** `tsc` clean → tests 66/66 → build clean → `next start` on 3001. Browser-verified: 3 consecutive /store reloads with 0 hydration errors, `<main>` fully populated, dock shows all 6 items incl. ADMIN/OWNER (flag "true" in localStorage); fresh tab /store 8 imgs 0 broken; /store/categories 26 imgs 0 broken, 0 "No photo".
+
+**Deploy:** prod redeployed (hook, commit `86e83e2`) and verified 200 on /store + /store/categories. Note: prod cold lambdas still 20–38s per hit (see to-do item on prod cold-start).
+
+**Verified by:** AG (GLM-5.3-flash-free)

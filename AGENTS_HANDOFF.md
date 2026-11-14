@@ -147,3 +147,35 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 8. **Consider adding `StoreShell` to all store routes** — `/store`, `/store/profile`, `/store/checkout/[id]`, `/store/categories`, `/store/orders` currently render with no header/nav
 
 ---
+
+### 2026-11-14 — Agent "AG" (GLM-5.3-flash-free) — Promotions Save button wired
+
+**What:** The Save button on `/store/admin/promotions` had `onClick={() => {}}` — empty no-op. Wired it to actually save.
+
+**Where:** `src/app/store/admin/promotions/page.tsx`
+
+**Changes Made:**
+1. **Added `savePromotion()` function** — validates draft has a title, then POSTs to `/api/store/admin/promotions` (new promotion) or PUTs to `/api/store/admin/promotions?id=<id>` (existing). On success: reloads promotions, clears draft, sets editing to null, clears error. On failure: shows error message.
+2. **Passed `onSave` prop to `PromotionCard`** — Save button calls `onSave` instead of the empty no-op.
+
+**Files:** `src/app/store/admin/promotions/page.tsx`
+
+**Gate:** `npx tsc --noEmit` clean (0 errors), `npx next build` clean. Deployed live on cpm2-bay.vercel.app.
+
+**Verified by:** AG (GLM-5.3-flash-free)
+
+### 2026-11-14 — Agent "AG" (GLM-5.3-flash-free) — Real legal text for all 8 policy pages
+
+**What:** `/legal/[doc]` had identical generic placeholder boilerplate for all 8 policies. Replaced with real, differentiated text in plain English.
+
+**Where:** `src/app/legal/[doc]/page.tsx`
+
+**Changes Made:**
+1. **8 legal documents now have real body text** — Terms & Conditions, Privacy Policy, Refund Policy, Delivery Policy, Payment Policy, Cancellation Policy, Appointment Policy, Dispute Policy. Each specific to VANTA GARAGE (CPM2 marketplace via Telegram Mini App + WhatsApp).
+2. **Type change** — `LEGAL_DOCS` entries now include `body: ReactNode` instead of just title/version.
+
+**Files:** `src/app/legal/[doc]/page.tsx`
+
+**Gate:** `npx tsc --noEmit` clean (0 errors), `npx next build` clean. Deployed live on cpm2-bay.vercel.app — `/legal/terms` returns HTTP 200 with `X-Matched-Path: /legal/[doc]` (curl verified).
+
+**Verified by:** AG (GLM-5.3-flash-free)

@@ -71,12 +71,19 @@ export function FleetProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
-    // Only fetch Fleet Ledger data when authenticated; otherwise skip to
-    // avoid 401s that block the store homepage on mobile.
-    const isAuthed =
-      typeof window !== "undefined" &&
-      Boolean(localStorage.getItem("vanta_customer_id"));
-    if (!isAuthed) {
+    // Gate on REAL fleet auth (the session cookie via /api/auth/owner), NOT on
+    // the VANTA store customer key (vanta_customer_id). That store key is
+    // unrelated to fleet sessions — when it was absent (fresh browser, cleared
+    // storage, a device without a store-profile login) the register silently
+    // showed ZERO accounts for signed-in fleet owners. Skip the fetches only
+    // when the session itself is signed out; GuestGate handles the prompt.
+    let authed = false;
+    try {
+      authed = (await fetch("/api/auth/owner")).ok;
+    } catch {
+      authed = false;
+    }
+    if (!authed) {
       setAccounts([]);
       setArchived([]);
       setStats(null);

@@ -231,3 +231,15 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 **Deploy:** prod redeployed (hook, commit `86e83e2`) and verified 200 on /store + /store/categories. Note: prod cold lambdas still 20–38s per hit (see to-do item on prod cold-start).
 
 **Verified by:** AG (GLM-5.3-flash-free)
+
+### 2026-11-14 (6) — Agent "AG" (GLM-5.3-flash-free) — Fixed: Fleet register silently showed zero accounts
+
+**What:** User asked "my account used to have accounts, what happened to them". DB audit first (read-only): **nothing was deleted** — 36 accounts intact (24 CPM1 + 12 CPM2 linked to user 1, none archived), 4 store customers, 6 orders, 393 account_events, newest event same day 16:06.
+
+**Root cause:** `b366e30` ("Performance fixes: remove framer-motion, fix SSR, guard 401 APIs…") added a gate in `FleetProvider.refresh()` that skips ALL fleet fetches unless browser localStorage has `vanta_customer_id` — a **VANTA store** key, unrelated to fleet sessions. A signed-in fleet owner on a browser without that key (cleared storage, new device, no store-profile login) got a silently empty register: no error, no sign-in prompt. GuestGate's own auth check (`/api/auth/owner`) was correct all along.
+
+**Fix:** `FleetProvider.refresh()` now gates on real fleet auth — probes `/api/auth/owner` once and only skips fetches when the session is actually signed out. Preserves the original intent (no unauthenticated 401 storms on store pages) while the register can no longer silently blank.
+
+**Gate:** `tsc` clean → tests 66/66 → build clean → `next start` on 3001. Browser-verified with a valid owner session and NO `vanta_customer_id` key present: /fleet/cpm2 lists 12 accounts, /fleet/cpm1 lists 24 ("24 of 36 accounts"), /store renders normally.
+
+**Verified by:** AG (GLM-5.3-flash-free)

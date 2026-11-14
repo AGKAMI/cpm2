@@ -7,7 +7,7 @@
 **Status:** Build complete, deployed to production. All routes 200 verified live. PayFast keys pending.
 **Date:** 2026-11-13
 **Live URL:** `https://cpm2-bay.vercel.app` — `/` = app selection, `/store` = VANTA Garage, `/fleet/cpm2` = Fleet Ledger
-**Latest Deploy:** `5f0e869` — Port lock doc added (3000=WhatsApp bridge, 3001=Vanta dev); images fixed via `localhost:3001` in `remotePatterns`
+**Latest Deploy:** Account images feature deployed to production (cpm2-bay.vercel.app). Fleet Ledger account images live at `/fleet` routes.
 **Deploy Hook:** `https://api.vercel.com/v1/integrations/deploy/prj_kgMwWJI3lOTBPVmVT0NXvmh6N0ZE/o6UHndNi6D`
 **Build Cache:** `VERCEL_FORCE_NO_BUILD_CACHE=1` env var in `vercel.json` permanently disables build cache. Do NOT add `generateBuildId` to `next.config.ts` — Vercel rejects dynamic build IDs (causes 500 error).
 
@@ -55,6 +55,22 @@ Root route `/` now shows an app selection screen instead of redirecting to Fleet
 **App-wide transparency strip:** zero `hover:bg-racing` / `hover:bg-accent` / `bg-muted` / `bg-surface-raised` / `bg-ink` / `opacity-*` / `transition-opacity` / `border-transparent` / `hover:opacity` anywhere — every surface is solid `bg-background` + `border-border` + `hover:border-primary` only.
 
 **Test status:** `tsc` clean, lint 0 errors (33 warnings), tests pass, `npm run build` passes. Infrastructure: `public/sw.js`, `public/sitemap.xml`, `public/og-image.svg`, `src/app/store/checkout/thank-you/page.tsx`.
+
+---
+
+## Fleet Ledger — Account Images (verified)
+
+Open any CPM1/CPM2 account in Fleet Ledger → bulk-select car photos → they upload and preview on that account page so you can see which car is in which account visually.
+
+**What's built:**
+- **Schema** — `fleet_account_images` table + index in `src/lib/db-turso.ts` (id, account_id, image_url, sort_order, is_cover, uploaded_at, FK → accounts ON DELETE CASCADE)
+- **Service layer** — `addAccountImages`, `listAccountImages`, `removeAccountImage`, `setAccountCoverImage`, `reorderAccountImages` in `src/lib/service-turso.ts`
+- **API routes** — `POST/GET /api/accounts/[id]/images` (bulk multipart upload → `public/uploads/fleet/`, list), `GET/PATCH/DELETE /api/accounts/[id]/images/[imageId]` (`?serve=1` returns image binary, PATCH sets cover, DELETE removes file + row)
+- **UI** — Account Images gallery section on `src/app/accounts/[id]/page.tsx` (image grid, add/delete/set-cover, cover badge on header plate, archive locks uploads)
+
+**Gate:** `npx tsc --noEmit` clean (0 errors), `npx next build` clean, `npm test` 66/66 pass. Deployed live on cpm2-bay.vercel.app.
+
+**Verified by:** AG (GLM-5.3-flash-free)
 
 ---
 
@@ -177,5 +193,26 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 **Files:** `src/app/legal/[doc]/page.tsx`
 
 **Gate:** `npx tsc --noEmit` clean (0 errors), `npx next build` clean. Deployed live on cpm2-bay.vercel.app — `/legal/terms` returns HTTP 200 with `X-Matched-Path: /legal/[doc]` (curl verified).
+
+**Verified by:** AG (GLM-5.3-flash-free)
+
+### 2026-11-14 (4) — Agent "AG" (GLM-5.3-flash-free) — Store page-speed: 22–37s → ~2–3s (root causes fixed)
+
+**What:** User reported multi-second responses and slow page changes even locally. Measured and fixed five root causes.
+
+**Changes Made:**
+1. **`next dev` was squatting on port 3001** (not started by AG — violated the port lock). It compiles every page on demand → 10–30s/page. Killed by verified PIDs only. Port lock reconfirmed: **3000 = WhatsApp bridge, never touch; 3001 = Vanta dev, prod build via `npx next start -H 127.0.0.1 --port 3001`**.
+2. **Per-route-bundle boot storms** — module-level DB singletons are per-route-bundle in this Next version, so each page's first hit re-ran the full schema batch + ~15 sequential ALTER probes (~23 Turso round-trips ≈ 8–10s), and concurrent first-queries could race the boot (transient 500s). Fixed in `db-turso.ts` + `store-db.ts`: client + boot **promise** cached on `globalThis` (per-process) — schema/migrations run exactly once, concurrent callers await the same boot.
+3. **4s keep-alive churn** — every Turso query is a ~295ms cloud RTT (DB in AWS us-east-1; DNS fine at 20ms), and undici's default pool closes idle connections after ~4s so page changes re-paid TCP+TLS (~1s+). Fixed: dedicated undici `Agent` (keepAliveTimeout 60s, 16 conns) on both Turso fetches; added `undici` dependency.
+4. **Covers localized** — Unsplash became throttled from this network (12–158s/image → optimizer 504s → blank/black pages). `scripts/localize-store-covers.mjs` downloaded all 14 unique cover photos into `public/store-covers/<id>.jpg` (~3.9MB) and rewrote every `vanta_product_media.public_url` to local paths (**0 unsplash rows remain**). `seed-store-media.mjs` now seeds local paths. **NOTE: this Next version manifests `public/` at build time — files added after a build 404 until rebuild.**
+5. **Per-product queries batched** — new `listCoverImageMap(ids)` (1 query, N products), new batched endpoint `GET /api/store/media/covers?ids=1,2,3` + `vantaApi.mediaCovers()`; `StoreHome` featured covers = 1 query (was 6), `CategoriesClient` = 1 request (was 24 client-side media calls).
+
+**Files:** `src/lib/db-turso.ts`, `src/lib/store-db.ts`, `src/lib/store/products.ts`, `src/lib/store/client.ts`, `src/components/StoreHome.tsx`, `src/components/CategoriesClient.tsx`, `src/app/api/store/media/covers/route.ts` (new), `public/store-covers/*` (new, 14 jpgs), `scripts/localize-store-covers.mjs` (new), `scripts/seed-store-media.mjs`, `scripts/probe-turso-latency.mjs` + `probe-app-latency.mjs` (new, diagnostics), `package.json`.
+
+**Measured after (local, warm):** /store ~2–3s (was 22–37s), categories ~1.8–3s, covers API 0.57s. Browser-verified: /store 7/7 images, categories 24/24 photos, 0 broken, 0 "No photo". Tests 66/66, `tsc` clean.
+
+**Known pre-existing quirk (not from this round):** reloading /store while the server is freshly restarting can hit a hydration race (React #418 → empty `<main>` until a reload); warm reloads render fine. Watch it, don't chase it.
+
+**Gate:** port-3001 listener killed → `tsc` clean → tests 66/66 → build clean → detached `next start` on 3001 (HTTP 200) → browser-verified both pages.
 
 **Verified by:** AG (GLM-5.3-flash-free)

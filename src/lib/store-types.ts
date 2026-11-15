@@ -43,6 +43,7 @@ export type Product = {
   basePriceCents: number;
   currency: string;
   stockQuantity: number;
+  stockInitial: number;         // baseline at creation / last restock — for ratio color tiers
   availabilityState: AvailabilityState;
   exclusivity: Exclusivity;
   isFeatured: boolean;
@@ -142,6 +143,7 @@ export type ProductInput = {
   basePriceCents: number;
   currency?: string;
   stockQuantity?: number;
+  stockInitial?: number;
   availabilityState?: AvailabilityState;
   exclusivity?: Exclusivity;
   isFeatured?: boolean;

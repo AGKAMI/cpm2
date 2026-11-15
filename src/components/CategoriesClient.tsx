@@ -9,6 +9,33 @@ import { PageHeading } from "@/components/PageHeading";
 import { formatPrice } from "@/lib/store/client";
 import { HeartToggle } from "@/components/HeartToggle";
 
+/**
+ * Stock color tier, relative to the stock baseline (`stockInitial`) set when
+ * the product was created (or last restocked):
+ *   0            → bad  ("Sold out")
+ *   < 5          → bad  (always red, regardless of ratio)
+ *   > 2/3 of baseline → ok    (green)
+ *   > 1/3 of baseline → warn  (orange)
+ *   otherwise         → bad   (red)
+ * Legacy rows with no baseline (0) fall back to the old flat thresholds.
+ */
+export function stockTier(stock: number, initial: number): "ok" | "warn" | "bad" {
+  if (stock === 0) return "bad";
+  if (stock < 5) return "bad";
+  if (initial > 0) {
+    const ratio = stock / initial;
+    if (ratio > 2 / 3) return "ok";
+    if (ratio > 1 / 3) return "warn";
+    return "bad";
+  }
+  return stock <= 3 ? "warn" : "ok";
+}
+
+export function stockLabel(stock: number, tier: "ok" | "warn" | "bad"): string {
+  if (stock === 0) return "Sold out";
+  return tier === "ok" ? `In stock · ${stock}` : `Only ${stock} left`;
+}
+
 const ICONS: Record<string, string> = {
   search: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`,
   sliders: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1"/><circle cx="16" cy="6" r="2.2"/><circle cx="10" cy="12" r="2.2"/><circle cx="18" cy="18" r="2.2"/></svg>`,
@@ -297,8 +324,8 @@ export function CategoriesClient({
                           {formatPrice(c.basePriceCents, c.currency)}
                         </span>
                         <span
-                          className={`stock-indicator ${c.stockQuantity === 0 ? "bad" : c.stockQuantity <= 3 ? "warn" : "ok"}`}>
-                          {c.stockQuantity === 0 ? "Sold out" : c.stockQuantity <= 3 ? `Only ${c.stockQuantity} left` : `In stock · ${c.stockQuantity}`}
+                          className={`stock-indicator ${stockTier(c.stockQuantity, c.stockInitial ?? 0)}`}>
+                          {stockLabel(c.stockQuantity, stockTier(c.stockQuantity, c.stockInitial ?? 0))}
                         </span>
                       </div>
                     </div>

@@ -16,6 +16,7 @@ function rowToProduct(row: Record<string, unknown>): Product {
     basePriceCents: Number(row.base_price_cents ?? 0),
     currency: String(row.currency ?? "ZAR"),
     stockQuantity: Number(row.stock_quantity ?? 0),
+    stockInitial: Number(row.initial_stock ?? 0),
     availabilityState: (row.availability_state ?? "available") as AvailabilityState,
     exclusivity: (row.exclusivity ?? "standard") as Exclusivity,
     isFeatured: Number(row.is_featured ?? 0) === 1,
@@ -91,8 +92,8 @@ export async function createProduct(input: ProductInput): Promise<Product> {
   const db = await getStoreDb();
   const now = new Date().toISOString();
   const result = await db.execute({
-    sql: `INSERT INTO vanta_products (category_id, cpm2_car_code, name, description, base_price_cents, currency, stock_quantity, availability_state, exclusivity, is_featured, is_new, is_sale, is_published, air_suspension, unlocked_bodykits, created_at, updated_at, spec_hp, spec_top_speed, spec_zero_hundred, spec_drive)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '${now}', ?, ?, ?, ?, ?)`,
+    sql: `INSERT INTO vanta_products (category_id, cpm2_car_code, name, description, base_price_cents, currency, stock_quantity, initial_stock, availability_state, exclusivity, is_featured, is_new, is_sale, is_published, air_suspension, unlocked_bodykits, created_at, updated_at, spec_hp, spec_top_speed, spec_zero_hundred, spec_drive)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '${now}', ?, ?, ?, ?, ?)`,
     args: [
       input.categoryId ?? null,
       input.cpm2CarCode ?? null,
@@ -101,6 +102,8 @@ export async function createProduct(input: ProductInput): Promise<Product> {
       input.basePriceCents ?? 0,
       input.currency ?? "ZAR",
       input.stockQuantity ?? 0,
+      // Baseline = the stock first put on the card (ratio color tiers)
+      input.stockInitial ?? input.stockQuantity ?? 0,
       input.availabilityState ?? "available",
       input.exclusivity ?? "standard",
       input.isFeatured ? 1 : 0,
@@ -118,7 +121,7 @@ export async function createProduct(input: ProductInput): Promise<Product> {
   });
   const id = result.lastInsertRowid;
   if (id === null) throw new Error("Product insert returned no id");
-  return rowToProduct({ id, category_id: input.categoryId ?? null, cpm2_car_code: input.cpm2CarCode ?? null, name: input.name.trim(), description: input.description ?? "", base_price_cents: input.basePriceCents ?? 0, currency: input.currency ?? "ZAR", stock_quantity: input.stockQuantity ?? 0, availability_state: input.availabilityState ?? "available", exclusivity: input.exclusivity ?? "standard", is_featured: input.isFeatured ? 1 : 0, is_new: input.isNew ? 1 : 0, is_sale: input.isSale ? 1 : 0, is_published: input.isPublished ? 1 : 0, air_suspension: input.airSuspension ? 1 : 0, unlocked_bodykits: input.unlockedBodykits ? 1 : 0, version: 1, spec_hp: input.specHp ?? null, spec_top_speed: input.specTopSpeed ?? null, spec_zero_hundred: input.specZeroHundred ?? null, spec_drive: input.specDrive ?? null, created_at: now, updated_at: now });
+  return rowToProduct({ id, category_id: input.categoryId ?? null, cpm2_car_code: input.cpm2CarCode ?? null, name: input.name.trim(), description: input.description ?? "", base_price_cents: input.basePriceCents ?? 0, currency: input.currency ?? "ZAR", stock_quantity: input.stockQuantity ?? 0, initial_stock: input.stockInitial ?? input.stockQuantity ?? 0, availability_state: input.availabilityState ?? "available", exclusivity: input.exclusivity ?? "standard", is_featured: input.isFeatured ? 1 : 0, is_new: input.isNew ? 1 : 0, is_sale: input.isSale ? 1 : 0, is_published: input.isPublished ? 1 : 0, air_suspension: input.airSuspension ? 1 : 0, unlocked_bodykits: input.unlockedBodykits ? 1 : 0, version: 1, spec_hp: input.specHp ?? null, spec_top_speed: input.specTopSpeed ?? null, spec_zero_hundred: input.specZeroHundred ?? null, spec_drive: input.specDrive ?? null, created_at: now, updated_at: now });
 }
 
 export async function getProduct(id: number): Promise<Product | null> {
@@ -181,7 +184,13 @@ export async function updateProduct(
   if (input.description !== undefined) set("description", input.description);
   if (input.basePriceCents !== undefined) set("base_price_cents", input.basePriceCents);
   if (input.currency !== undefined) set("currency", input.currency);
-  if (input.stockQuantity !== undefined) set("stock_quantity", input.stockQuantity);
+  if (input.stockQuantity !== undefined) {
+    set("stock_quantity", input.stockQuantity);
+    // Restock raises the ratio baseline; sales/decrements never lower it.
+    // MAX() in SQL means: baseline only grows when stock exceeds it.
+    fields.push(`initial_stock = MAX(initial_stock, ?)`);
+    args.push(input.stockQuantity);
+  }
   if (input.availabilityState !== undefined) set("availability_state", input.availabilityState);
   if (input.exclusivity !== undefined) set("exclusivity", input.exclusivity);
   if (input.specHp !== undefined) set("spec_hp", input.specHp);

@@ -146,6 +146,27 @@ export async function runStoreMigrations(storeArg?: TursoHttpClient): Promise<vo
     // Column already exists — safe to ignore
   }
 
+  // Migration: add initial_stock to vanta_products — the stock baseline set at
+  // creation (or last restock). Drives ratio-based stock color tiers.
+  try {
+    await store.execute({
+      sql: `ALTER TABLE vanta_products ADD COLUMN initial_stock INTEGER NOT NULL DEFAULT 0`,
+      args: [],
+    });
+  } catch {
+    // Column already exists — safe to ignore
+  }
+  // Backfill: legacy rows get their baseline = current stock so the ratio
+  // math has a reference point (idempotent — only touches rows still at 0).
+  try {
+    await store.execute({
+      sql: `UPDATE vanta_products SET initial_stock = stock_quantity WHERE initial_stock = 0`,
+      args: [],
+    });
+  } catch {
+    // Backfill already applied — safe to ignore
+  }
+
   // Migration: seed vanta_cpm2_cars with CPM2 catalog names (idempotent — INSERT OR IGNORE)
   try {
     await store.execute({

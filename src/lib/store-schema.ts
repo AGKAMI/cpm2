@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS vanta_products (
   base_price_cents   INTEGER NOT NULL DEFAULT 0,
   currency           TEXT    NOT NULL DEFAULT 'ZAR',
   stock_quantity     INTEGER NOT NULL DEFAULT 0,
+  initial_stock      INTEGER NOT NULL DEFAULT 0,  -- stock at creation / last restock — drives ratio-based color tiers
   availability_state TEXT    NOT NULL DEFAULT 'available' CHECK (availability_state IN ('available', 'limited', 'sold_out', 'unavailable')),
   exclusivity        TEXT    NOT NULL DEFAULT 'standard' CHECK (exclusivity IN ('standard', 'limited_edition', 'one_of_one')),
   is_featured        INTEGER NOT NULL DEFAULT 0,

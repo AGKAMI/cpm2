@@ -404,3 +404,19 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 **Gate:** `tsc` clean → tests 66/66 → build clean → local 3001 verified (migration applied, DB shows `initial_stock` backfilled to current stock; all 24 live products stock 1–4 → all render red per the < 5 rule). Deployed to prod (commits `2b741a1`, `d25c080`). Note: first prod check ~2.5 min after deploy trigger still served the old build (old deployment serves during build); new tiers live at 20:18 — `stock-indicator bad` ×24 on /store/categories.
 
 **Verified by:** AG (GLM-5.3-flash-free)
+
+### 2026-11-15 (13) — Agent "AG" (GLM-5.3-flash-free) — Fixed: "No photo" on non-featured store sections; removed 4MB data-URL bloat
+
+**What:** User asked why the AVAILABLE/NEW cards on /store show "NO PHOTO" when the products have images.
+
+**Root cause 1 (No photo):** `StoreHome.tsx` resolved covers via `listCoverImageMap` for **featured products only**; new-arrivals and on-sale sections received products without `coverImage` → `ProductCard` rendered the placeholder. DB probe confirmed all **209/209 published products have media rows** (local `/store-covers/*.jpg` paths) — images existed, they just never reached those sections.
+
+**Fix 1 (commit `193ded4`):** `StoreHome.tsx` now resolves covers for ALL products in the same one batched query and attaches `coverImage` to every product passed down (featured + allProducts + derived arrivals/sale). `StoreHomeClient`'s `coverMap` memo reads covers from `featured` AND `allProducts`.
+
+**Root cause 2 (discovered during verification — page bloat):** prod /store HTML was ~5.6MB. Two legacy `vanta_product_media` rows predate the admin API's `persistDataUrlImage()` conversion and held inline base64 data-URLs: media #13 → product 28 (114KB jpeg), media #14 → product 29 "Peugeot 308" (**2.9MB png**). These were inlined into every /store response's flight payload.
+
+**Fix 2 (commit `5df5257`):** `scripts/convert-data-url-media.mjs` decoded both via sharp → `public/store-covers/cover-p28.jpg` (87KB) / `cover-p29.jpg` (234KB), updated the rows (0 data-URL rows remain, `probe-data-url-media.mjs` verifies). Hrana gotcha re-confirmed: pipeline args must be typed values (`{type:"text",value}` / `{type:"integer",value:String(n)}`) — plain JSON args 400.
+
+**Gate:** `tsc` clean → tests 66/66 → build clean → local verified: **174KB** page (was ~5.6MB), "No photo" ×0, `/store-covers/` refs ×209, `data:image` refs ×0. Deployed to prod — **175KB, covers ×209, no-photo ×0** verified live 23:46. Note: Turso network was flaky through this run (connect timeouts / ECONNRESET); browser tab visual check skipped after repeated wedged tabs — HTML-level verification used instead. Prod /store cold fetch can exceed 110s (`--max-time` truncates mid-body — early "covers=0" readings were truncation artifacts, not real).
+
+**Verified by:** AG (GLM-5.3-flash-free)

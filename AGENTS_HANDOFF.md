@@ -381,3 +381,26 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 **Gate:** `tsc` clean → tests 66/66 → build clean → deployed to prod (commit `3f3caf9`). Local server couldn't start due to Turso DB timeout (infrastructure issue, not code), but `tsc`, tests, and build all pass. Prod /store deployed with the scroll handler.
 
 **Verified by:** AG (GLM-5.3-flash-free)
+
+### 2026-11-15 (12) — Agent "AG" (GLM-5.3-flash-free) — Fixed: Next/Prev page-scroll bug; ratio-based stock color tiers (initial_stock)
+
+**What:** User reported two things:
+1. Pressing the featured carousel "Next" button scrolled the whole page down, not just the carousel.
+2. Stock indicator colors should be relative to the stock first entered when creating the product (example: start at 30 → 30 green, 20 orange, 10 red), and any stock below 5 must always be red. "Only 1 left" showing orange was wrong.
+
+**Fix 1 (commit `2b741a1`):** `StoreHomeClient.tsx` `goTo()` called `scrollIntoView({ behavior: "smooth", inline: "start" })` — the missing `block` option defaults to `"center"`, vertically centering the carousel item in the viewport. Added `block: "nearest"` so only the carousel scrolls horizontally.
+
+**Fix 2 (commit `d25c080`):** Added `initial_stock` baseline column, auto-captured — no extra admin field:
+- `store-schema.ts`: `initial_stock INTEGER NOT NULL DEFAULT 0` on `vanta_products`
+- `store-db.ts` migration: `ALTER TABLE` add column + idempotent backfill (`initial_stock = stock_quantity WHERE initial_stock = 0`) for legacy rows
+- `products.ts` `createProduct`: baseline = the stock first entered at creation
+- `products.ts` `updateProduct`: on any stock edit, `initial_stock = MAX(initial_stock, ?)` — restocking raises the baseline, sales/decrements never lower it
+- `store-types.ts`: `Product.stockInitial: number`, `ProductInput.stockInitial?: number`
+- `CategoriesClient.tsx`: replaced flat thresholds with `stockTier(stock, initial)`: 0 → red "Sold out"; < 5 → always red; else ratio current/initial — > 2/3 green ("In stock · N"), > 1/3 orange ("Only N left"), else red. Legacy rows without a baseline fall back to old thresholds.
+- New read-only probe `scripts/probe-stock-tiers.mjs` prints stock/initial/tier per published product.
+
+**Rationale for auto-capture vs admin field:** user's words — "based on the stock i first put when making the card" — capturing at creation + MAX-bump on restock matches this without cluttering the admin form. Confirmed viable with kermes's schema findings (no initial_stock existed anywhere; kermes recommended adding the column).
+
+**Gate:** `tsc` clean → tests 66/66 → build clean → local 3001 verified (migration applied, DB shows `initial_stock` backfilled to current stock; all 24 live products stock 1–4 → all render red per the < 5 rule). Deployed to prod (commits `2b741a1`, `d25c080`). Note: first prod check ~2.5 min after deploy trigger still served the old build (old deployment serves during build); new tiers live at 20:18 — `stock-indicator bad` ×24 on /store/categories.
+
+**Verified by:** AG (GLM-5.3-flash-free)

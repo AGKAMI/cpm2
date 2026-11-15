@@ -69,7 +69,7 @@ export function StoreHomeClient({
     const el = carouselRef.current;
     const target = el?.children[index] as HTMLElement | undefined;
     if (target) {
-      target.scrollIntoView({ behavior: "smooth", inline: "start" });
+      target.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
     }
   }, []);
 

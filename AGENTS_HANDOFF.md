@@ -420,3 +420,13 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 **Gate:** `tsc` clean → tests 66/66 → build clean → local verified: **174KB** page (was ~5.6MB), "No photo" ×0, `/store-covers/` refs ×209, `data:image` refs ×0. Deployed to prod — **175KB, covers ×209, no-photo ×0** verified live 23:46. Note: Turso network was flaky through this run (connect timeouts / ECONNRESET); browser tab visual check skipped after repeated wedged tabs — HTML-level verification used instead. Prod /store cold fetch can exceed 110s (`--max-time` truncates mid-body — early "covers=0" readings were truncation artifacts, not real).
 
 **Verified by:** AG (GLM-5.3-flash-free)
+
+### 2026-11-15 (14) — Agent "AG" (GLM-5.3-flash-free) — Shrunk store header logo slightly
+
+**What:** User asked to shrink the "Vanta Garage" lockup in the store header ("shrink a lil bit").
+
+**Fix:** `StoreShell.tsx` header Image classes `h-20 w-auto sm:h-28 sm:w-auto` → `h-16 w-auto sm:h-24 sm:w-auto` (80/112px → 64/96px).
+
+**Gate:** build clean → `next start` on 3001 → browser-verified rendered height 96px desktop (was 112px). Deployed to prod (commit `b544ad7`); prod HTML confirms new classes at 23:55.
+
+**Verified by:** AG (GLM-5.3-flash-free)

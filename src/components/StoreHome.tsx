@@ -23,30 +23,31 @@ export async function StoreHome({
   categories: unknown[];
   promotions: unknown[];
 }) {
-  const featured = (products as VantaProduct[]).filter((p) => p.isFeatured);
   const allProducts = products as VantaProduct[];
   const allCategories = categories as VantaCategory[];
   const allPromotions = promotions as VantaPromotion[];
 
-  // Resolve media URLs on the server — one batched round-trip, no per-product calls
-  const coverMap = await listCoverImageMap(featured.map((p) => p.id));
-  const productsWithMedia = featured.map((p) => ({
+  // Resolve media URLs on the server — one batched round-trip for ALL products,
+  // not just featured (featured-only left every other section on "No photo").
+  const coverMap = await listCoverImageMap(allProducts.map((p) => p.id));
+  const productsWithMedia = allProducts.map((p) => ({
     ...p,
     coverImage: coverMap.get(p.id) ?? null,
   }));
+  const featuredWithMedia = productsWithMedia.filter((p) => p.isFeatured);
 
   // Compute derived data on the server
-  const arrivals = [...allProducts]
+  const arrivals = productsWithMedia
     .filter((p: VantaProduct) => p.isNew)
     .slice(0, 8);
-  const saleItems = [...allProducts]
+  const saleItems = productsWithMedia
     .filter((p: VantaProduct) => p.isSale)
     .slice(0, 8);
 
   return (
     <StoreHomeClient
-      featured={productsWithMedia}
-      allProducts={allProducts}
+      featured={featuredWithMedia}
+      allProducts={productsWithMedia}
       categories={allCategories}
       promotions={allPromotions}
       newArrivals={arrivals as VantaProduct[]}

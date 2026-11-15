@@ -38,16 +38,16 @@ export function StoreHomeClient({
   const carouselRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // Media already resolved on server — build lookup map
+  // Media already resolved on server — build lookup map from featured AND
+  // allProducts so every section (featured / new arrivals / on sale) gets covers.
   const coverMap: Record<number, string> = useMemo(() => {
       const map: Record<number, string> = {};
-      featured.forEach((p) => {
-        if ((p as { coverImage?: string }).coverImage) {
-          map[p.id] = (p as { coverImage?: string }).coverImage!;
-        }
-      });
+      for (const p of [...featured, ...allProducts]) {
+        const cover = (p as { coverImage?: string }).coverImage;
+        if (cover) map[p.id] = cover;
+      }
       return map;
-    }, [featured]);
+    }, [featured, allProducts]);
 
   // Track which carousel item is currently visible via scroll position.
   // scroll-snap carousels align items to the start, so scrollLeft / step
@@ -155,7 +155,7 @@ export function StoreHomeClient({
               role="region"
               aria-label="Featured vehicles"
             >
-              {featured.map((c: VantaProduct) => (
+              {featured.slice(0, 5).map((c: VantaProduct) => (
                 <ProductCard
                   key={c.id}
                   product={c}

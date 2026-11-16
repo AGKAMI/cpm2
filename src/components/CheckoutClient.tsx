@@ -26,6 +26,9 @@ export function CheckoutClient({ productId }: { productId: number }) {
   const [playerIdError, setPlayerIdError] = useState<string | null>(null);
   const [inGameNameError, setInGameNameError] = useState<string | null>(null);
   const [proofError, setProofError] = useState<string | null>(null);
+  // Red field styling only after a failed confirm attempt — while typing,
+  // incomplete fields stay neutral and complete ones turn green.
+  const [attempted, setAttempted] = useState(false);
 
   // Load product data on mount.
   useEffect(() => {
@@ -91,8 +94,26 @@ export function CheckoutClient({ productId }: { productId: number }) {
     setPlayerIdError(pIdErr);
     setInGameNameError(nameErr);
     setProofError(proofErr);
+    setAttempted(true);
 
     return !pIdErr && !nameErr && !proofErr;
+  };
+
+  /** Scroll to the first missing field (id-based, no DOM class guessing). */
+  const scrollToFirstInvalid = () => {
+    const firstInvalidId = validatePlayerId(playerId)
+      ? "checkout-player-id"
+      : validateInGameName(inGameName)
+        ? "checkout-ingame-name"
+        : validateProof(paymentMethod, proofFile)
+          ? "checkout-proof-upload"
+          : null;
+    if (firstInvalidId) {
+      document.getElementById(firstInvalidId)?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
   };
 
   const handleConfirm = async (e: React.FormEvent) => {
@@ -100,10 +121,8 @@ export function CheckoutClient({ productId }: { productId: number }) {
     if (!product) return;
 
     if (!validateAll()) {
-      const firstInvalid = document.querySelector(".border-destructive") as HTMLElement | null;
-      if (firstInvalid) {
-        firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
+      setError("Please complete the highlighted fields.");
+      scrollToFirstInvalid();
       return;
     }
 
@@ -177,7 +196,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
       <section className="panel rounded-xl border border-border p-4 mb-6">
         <div className="relative aspect-[4/3] rounded-lg bg-background overflow-hidden mb-3">
           {cover ? (
-            <Image src={cover} alt={product.name} className="h-full w-full object-cover" loading="eager" width={400} height={300} style={{ objectFit: "cover" }} />
+            <Image src={cover} alt={product.name} className="h-full w-full object-cover" loading="eager" priority width={800} height={600} sizes="(max-width: 768px) 100vw, 600px" style={{ objectFit: "cover" }} />
           ) : (
             <span className="num text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
               No photo yet
@@ -211,17 +230,11 @@ export function CheckoutClient({ productId }: { productId: number }) {
               className={
                 playerIdError
                   ? "border-destructive"
-                  : playerId.trim().length === 0
-                    ? "border-destructive"
-                    : playerId.trim().length <= 2
+                  : !validatePlayerId(playerId)
+                    ? "border-ok"
+                    : attempted
                       ? "border-destructive"
-                      : playerId.trim().length <= 4
-                        ? "border-yellow"
-                        : playerId.trim().length <= 6
-                          ? "border-orange"
-                          : playerId.trim().length >= 8 && !validatePlayerId(playerId)
-                            ? "border-ok"
-                            : "border-ok"
+                      : ""
               }
             />
             {playerIdError && (
@@ -237,11 +250,11 @@ export function CheckoutClient({ productId }: { productId: number }) {
               className={
                 inGameNameError
                   ? "border-destructive"
-                  : inGameName.trim() && !validateInGameName(inGameName)
-                    ? "border-destructive"
-                    : inGameName.trim()
-                      ? "border-ok"
-                      : "border-destructive"
+                  : !validateInGameName(inGameName)
+                    ? "border-ok"
+                    : attempted
+                      ? "border-destructive"
+                      : ""
               }
             />
             {inGameNameError && (
@@ -274,7 +287,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
                 EFT Proof Upload
               </h3>
               <div className="flex flex-col gap-3">
-                <label className={`flex items-center gap-3 cursor-pointer border border-dashed rounded-md p-4 text-center transition-colors ${proofFileName ? "border-ok hover:border-ok" : "border-destructive hover:border-destructive"}`}>
+                <label id="checkout-proof-upload" className={`flex items-center gap-3 cursor-pointer border border-dashed rounded-md p-4 text-center transition-colors ${proofFileName ? "border-ok hover:border-ok" : attempted ? "border-destructive hover:border-destructive" : "border-border hover:border-primary"}`}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="w-5 h-5 text-primary"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                   <span className="text-xs font-medium text-foreground">Choose file</span>
                   <input type="file" accept=".png,.jpg,.jpeg,.pdf" className="hidden" onChange={(e) => {
@@ -408,8 +421,9 @@ export function CheckoutClient({ productId }: { productId: number }) {
         <Button
           variant="primary"
           type="submit"
-          className="w-full"
-          disabled={checkoutBusy || !isFormValid}
+          className={`w-full ${!isFormValid ? "cursor-not-allowed" : ""}`}
+          disabled={checkoutBusy}
+          aria-disabled={!isFormValid}
         >
           {checkoutBusy ? "Processing" : "Confirm Payment"}
         </Button>

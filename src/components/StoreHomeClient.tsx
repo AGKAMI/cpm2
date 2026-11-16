@@ -19,6 +19,8 @@ import {
 } from "@/lib/store/client";
 import { StoreShell } from "@/components/StoreShell";
 import { HeartToggle } from "@/components/HeartToggle";
+import { addToCartLocal } from "@/lib/store/cart-client";
+import { Button } from "@/components/ui/Button";
 
 export function StoreHomeClient({
   featured,
@@ -113,7 +115,7 @@ export function StoreHomeClient({
               See all
             </Link>
           </div>
-          <div className="relative">
+          <div className="featured-carousel-wrap relative">
             <div className="featured-nav">
               <button
                 onClick={scrollPrev}
@@ -164,7 +166,8 @@ export function StoreHomeClient({
                 />
               ))}
             </div>
-            <div className="featured-pagination">
+          </div>
+          <div className="featured-pagination">
               {featured.map((_: VantaProduct, i: number) => (
                 <button
                   key={i}
@@ -174,7 +177,6 @@ export function StoreHomeClient({
                 />
               ))}
             </div>
-          </div>
         </section>
       )}
 
@@ -220,10 +222,12 @@ export function StoreHomeClient({
                         style={{ objectFit: "cover" }}
                         loading="eager"
                       />
+                      {/* Fade the card background into the image over a wide
+                          band so there is no hard "sticker" edge */}
                       <div
-                        className="absolute inset-y-0 right-0 w-[55%] pointer-events-none"
+                        className="absolute inset-y-0 right-0 w-[75%] pointer-events-none"
                         style={{
-                          background: `linear-gradient(90deg, ${promo.backgroundColor || "var(--color-paper-raised)"} 0%, transparent 100%)`,
+                          background: `linear-gradient(90deg, ${promo.backgroundColor || "var(--color-paper-raised)"} 0%, ${promo.backgroundColor || "var(--color-paper-raised)"} 30%, transparent 100%)`,
                         }}
                       />
                     </>
@@ -235,7 +239,10 @@ export function StoreHomeClient({
                     >
                       {promo.subtitle || "Special offer"}
                     </span>
-                    <h3 className="font-serif font-bold text-[24px] leading-none mb-1">
+                    <h3
+                      className="font-serif font-bold text-[24px] leading-none mb-1"
+                      style={{ color: promo.accentColor || undefined }}
+                    >
                       {promo.title}
                     </h3>
                     {promo.description && (
@@ -244,7 +251,10 @@ export function StoreHomeClient({
                       </p>
                     )}
                     {(promo.discountPercent || promo.discountCode) && (
-                      <p className="text-[11px] mb-3">
+                      <p
+                        className="text-[11px] mb-3"
+                        style={{ color: promo.accentColor || undefined }}
+                      >
                         {promo.discountCode ? (
                           <>
                             Code <b className="text-[11px] font-bold tracking-[0.12em]">{promo.discountCode}</b>{" "}
@@ -255,7 +265,17 @@ export function StoreHomeClient({
                         )}
                       </p>
                     )}
-                    <button className="btn rounded-full px-4 py-2 text-[11px] font-bold tracking-wider">
+                    <button
+                      className="btn rounded-full px-4 py-2 text-[11px] font-bold tracking-wider"
+                      style={
+                        promo.accentColor
+                          ? {
+                              borderColor: promo.accentColor,
+                              color: promo.accentColor,
+                            }
+                          : undefined
+                      }
+                    >
                       {promo.ctaText || "Shop now"} <span className="text-[10px] ml-1">▸</span>
                     </button>
                   </div>
@@ -435,7 +455,26 @@ const ProductCard = React.memo(
                   <span className="vanta-card-price">
                     {formatPrice(product.basePriceCents, product.currency)}
                   </span>
+                  {variant === "standard" && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        void addToCartLocal(product.id, 1);
+                      }}
+                      className="cart-add-btn flex h-8 w-8 items-center justify-center rounded-lg border border-input bg-background text-foreground hover:bg-secondary transition-colors cursor-pointer active:scale-95"
+                      aria-label={`Add ${product.name} to cart`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
+                {product.stockQuantity > 0 && (
+                  <AddToCartMini productId={product.id} />
+                )}
               </div>
               {hasArrow && (
                 <div className="w-10 h-10 rounded-full bg-brand-gold flex items-center justify-center text-primary-foreground">
@@ -542,5 +581,37 @@ function SkeletonSectionHeader({ seeAll = true }: { seeAll?: boolean }) {
       </div>
       {seeAll && <SkeletonBar className="h-3 w-12 rounded" />}
     </div>
+  );
+}
+
+/**
+ * Tiny add-to-cart chip for product cards — optimistic add with a
+ * momentary "Added!" state, server sync via cart-client.
+ */
+function AddToCartMini({ productId }: { productId: number }) {
+  const [added, setAdded] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const handleAdd = () => {
+    if (busy) return;
+    setBusy(true);
+    addToCartLocal(productId, 1);
+    setAdded(true);
+    setTimeout(() => {
+      setBusy(false);
+      setTimeout(() => setAdded(false), 900);
+    }, 600);
+  };
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={handleAdd}
+      disabled={busy || added}
+      className="text-[10px] h-7 px-2"
+    >
+      {added ? "Added" : "+ Cart"}
+    </Button>
   );
 }

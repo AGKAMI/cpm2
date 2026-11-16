@@ -292,6 +292,18 @@ CREATE INDEX IF NOT EXISTS idx_vanta_support_tickets_customer
   ON vanta_support_tickets (customer_id);
 CREATE INDEX IF NOT EXISTS idx_vanta_support_tickets_status
   ON vanta_support_tickets (status);
+CREATE TABLE IF NOT EXISTS vanta_cart_items (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id INTEGER NOT NULL REFERENCES vanta_customers(id) ON DELETE CASCADE,
+  product_id  INTEGER NOT NULL REFERENCES vanta_products(id) ON DELETE CASCADE,
+  quantity    INTEGER NOT NULL DEFAULT 1,
+  created_at  TEXT    NOT NULL,
+  updated_at  TEXT    NOT NULL,
+  UNIQUE (customer_id, product_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_vanta_cart_items_customer
+  ON vanta_cart_items (customer_id);
 CREATE INDEX IF NOT EXISTS idx_vanta_wishlist_customer
   ON vanta_wishlist (customer_id);
 CREATE INDEX IF NOT EXISTS idx_vanta_wishlist_product

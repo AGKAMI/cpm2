@@ -303,8 +303,9 @@ export function ProfileClient({
 
       // Mark admin session active so the dock buttons appear
       localStorage.setItem("vanta_admin_session", "true");
-      // Tell the shell to re-check admin status
+      // Tell the shell to re-check admin status (same-tab + other tabs)
       window.dispatchEvent(new Event("focus"));
+      window.dispatchEvent(new Event("vanta-admin-session"));
 
       // Refresh profile so the customer state reflects the Telegram login
       await checkSession();
@@ -609,6 +610,10 @@ export function ProfileClient({
                   loading="eager"
                   width={128}
                   height={128}
+                  unoptimized
+                  // The avatar route requires the caller's session cookie;
+                  // the next/image optimizer fetches without cookies and
+                  // 401s, so this image must bypass optimization.
                   style={{ objectFit: "cover" }}
                 />
               ) : (
@@ -885,6 +890,7 @@ export function ProfileClient({
                               loading="eager"
                               width={64}
                               height={64}
+                              unoptimized
                               style={{ objectFit: "cover" }}
                             />
                           ) : (

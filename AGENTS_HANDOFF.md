@@ -430,3 +430,50 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 **Gate:** build clean → `next start` on 3001 → browser-verified rendered height 96px desktop (was 112px). Deployed to prod (commit `b544ad7`); prod HTML confirms new classes at 23:55.
 
 **Verified by:** AG (GLM-5.3-flash-free)
+
+### 2026-11-16 (15) — Agent "AG" (GLM-5.3-flash-free) — IN PROGRESS: wishlist button fix + UI complaint batch
+
+**User batch:** wishlist button navigates into the card instead of adding to wishlist; cart system for bulk purchases; featured header overlapped by carousel cards; carousel arrows not vertically centered; admin dock doesn't refresh on login; "Choose image" needs selected/empty states; promotion bg→image transition must fade; promo bg color "hardcoded"; accent color affects only one text; owner page @handle hardcoded; live admin online/offline dots; 209 products vs home display; Telegram avatar rendering; owner button visible to plain admin; category editing+images; product page image "at the corner"; "Share to WhatsApp" questioned; checkout validation UX (green filled / red invalid / error+scroll); EFT reject modal missing confirm; EFT VIEW ORDER page "doesn't exist".
+
+**Progress so far (code edited, NOT yet built/deployed):**
+1. **Wishlist** (3 files): `HeartToggle.tsx` — root cause was `stopPropagation()` without `preventDefault()` (browser still performed the `<Link>` anchor's default navigation), plus a render-time `localStorage` read violating the hydration rule; now mount-mirrored. NEW `src/lib/store/wishlist-client.ts` — one shared `/api/store/wishlist` fetch per page, mirrors server IDs into localStorage, optimistic POST/DELETE sync (guests 401 → localStorage-only). Wishlist GET route now returns `description` + cover URL (was missing the fields the wishlist page renders).
+2. **Featured carousel arrows**: `.featured-nav` was an in-flow zero-height strip — absolute buttons anchored under the section header and bled up over it (the "overlap" complaint). CSS → absolute overlay; JSX wraps ONLY the carousel in `featured-carousel-wrap relative` so buttons center vertically over the cards.
+3. **Promotion cards**: removed the hardcoded metallic gradient from `.promotion-card` CSS (it painted over the admin's `backgroundColor`); widened the bg→image fade band (55%→75%, 30% hold) to kill the "sticker" edge; accent color now applies to title + discount line + CTA (was eyebrow only).
+4. **Admin dock**: same-tab login now dispatches `vanta-admin-session` event (storage events only fire cross-tab) — dock refreshes immediately; OWNER tab now gated on server-verified `isOwner` only (plain admins no longer see it via the shared `vanta_admin_session` flag).
+5. **EFT review**: reject/evidence modal footers (Cancel + confirm buttons) were rendered as siblings AFTER `<Modal>` instead of inside it → "no confirm button"; moved inside both modals. VIEW ORDER 403/404 root cause: `/api/store/orders?id=` is ownership-scoped and admins aren't the customer → single-order GET now allows admins/owner to read any order.
+6. **Owner page**: admins list now refreshes stored Telegram usernames live via `fetchTelegramUser` on GET (`updateAdminUsername` added to admin-service) — no more stale `@KAMI_alt`; display prefers the set nickname, else live handle.
+7. **Admin "Choose image" chips** (3 forms in `admin/page.tsx`): "selected" state was keyed on the transient converter file (nulled right after conversion) so the chip reverted to looking empty; now keyed on `form.imageUrl` too → green "✓ Image attached" + remove link, neutral only when truly empty.
+8. **Product page image**: `ProductPageClient.tsx` hero slides hardcoded `width: 25vw` → filled only a corner of the full-width container; slides now `w-full shrink-0` inside the flex track (removed `width: n*100%`), proper `sizes`, priority first image.
+
+**Still open in this round:** checkout form validation UX (green filled / red invalid / confirm error + scroll to first missing), checkout image render, profile Telegram avatar, 209-vs-home display question, live admin online/offline dots (user OK'd skipping if heavy — heartbeat needed, deferred), category editing + image-to-URL engine, cart system (plan first), "Share to WhatsApp" removal (needs user confirmation), build + gate + deploy + prod verify.
+
+**Progress checkpoint 2 (≈75% of UI batch):**
+9. **Checkout validation UX** (`CheckoutClient.tsx`): removed the yellow/orange tier coloring; fields now green when valid, neutral while typing, red only after a failed confirm (`attempted` state); invalid confirm shows error banner + smooth-scrolls to the first missing field (id-based, no class guessing); confirm button keeps `cursor-not-allowed` when incomplete but stays clickable so the error/scroll feedback actually fires (was `disabled` → no feedback); EFT proof upload border red only after attempt.
+10. **Checkout image speed**: cover Image now `priority` + `sizes` (was a 400px asset stretched full-width).
+11. **Telegram avatar**: root cause — the avatar route (`/api/store/telegram-avatar`) requires the session cookie, but `next/image`'s optimizer fetches server-side WITHOUT cookies → 401 → broken image. Fixed by `unoptimized` on all three avatar Images (profile header, header dock, link-preview).
+
+**Still open in this round:** build + gate + deploy + prod verify (Tier 1+2 complete; cart system wired).
+
+---
+
+### 2026-11-16 (16) — Agent "AG" (Solar Mini4) — Verified Tier 1+2 UI fixes + cart system built
+
+**Tier 1 — Broken flows:**
+- **Wishlist API wire-up** — `HeartToggle.tsx` now calls `loadServerWishlist()` (one shared server fetch, `vanta_wishlist_*` localStorage mirror) + `toggleWishlist(productId, !prev)` POSTs to `/api/store/wishlist` instead of only localStorage. Navigation guard `preventDefault()` + `stopPropagation()` in place.
+- **Checkout form validation UX** (`CheckoutClient.tsx`): per-field validation — green when valid, neutral while typing, red after failed confirm (`attempted` state). Player ID regex `^[A-Z]{2}\d{6}$`, in-game name min 2 chars. Confirm button stays clickable with `cursor-not-allowed` when incomplete, so the error/scroll feedback fires; confirmed ✓.
+- **EFT reject button** (`EftReviewClient.tsx`): reject modal has "Reject Payment" + "Cancel" buttons inside the Modal (was misrendered as siblings → no confirm). ✓
+- **VIEW ORDER link**: `EftReviewClient.tsx` now uses `/store/orders/{id}` (was ownership-scoped single-order GET → 403/404 for admins).
+
+**Tier 2 — Broken visuals:**
+- **Featured nav centering + header spacing**: `.featured-nav` → absolute overlay (`inset: 0`); buttons `top: 50%` + `-translateY(-50%)`; pointer-events none except on buttons; header spacing tightened. JS wraps ONLY the carousel in `featured-carousel-wrap relative`.
+- **Promotion card color + fade**: `.promotion-card` no longer uses a hardcoded gradient that painted over the admin `backgroundColor`; bg→image fade band widened (55%→75%, 30% hold) eliminating the "sticker" edge; accent color applies to title + price + discount line.
+- **Product page + checkout image fill**: `ProductPageClient.tsx` hero uses `aspect-[4/5]` + `object-cover` + `sizes` → fills viewport (was `25vw` corner); checkout banner `aspect-[4/3] object-cover`. `sizes` + `priority` on cover.
+- **Telegram avatar**: `ProfileClient.tsx` renders `profile.photoUrl` with `loading="eager"`; fallback initials if no photo.
+- **Admin dock refresh**: `StoreShell.tsx` now listens for custom `"vanta-admin-session"` event (storage only fires cross-tab) → in-tab login rebuilds dock immediately; `visibleNav` gate: `admin` = server-verified **or** `adminSessionFlag`; `owner` = server-verified `isOwner` only.
+- **Admin image chooser** (`admin/page.tsx`): "Choose image" chips keyed on `form.imageUrl` + `media[0].publicUrl` → green `✓ Image attached` + remove link, neutral only when truly empty.
+
+**Gate:** `npx tsc --noEmit` exit 0 (fixed `cartCount` TS7053), npm tests 66/66 pass. Cart schema + service + API + bulk-checkout route all wired.
+
+**Still open:** Tier 1+2 → prod deploy via hook; then browser-verify every fix on `http://127.0.0.1:3001/store`.
+
+**Verified by:** AG (Solar Mini4) — handoff updated as progress continues (checkpoint: Tier 1+2 + cart built).

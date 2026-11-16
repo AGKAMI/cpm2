@@ -232,74 +232,66 @@ export function EftReviewClient() {
       )}
       
       {/* Reject payment modal */}
-      {rejectModal && (
-        <>
-          <Modal
-            open={rejectModal}
-            onClose={closeReject}
-            title="Reject Payment"
-            subtitle="Enter an optional reason for rejecting this EFT payment."
-            width="max-w-md"
+      <Modal
+        open={rejectModal}
+        onClose={closeReject}
+        title="Reject Payment"
+        subtitle="Enter an optional reason for rejecting this EFT payment."
+        width="max-w-md"
+      >
+        <Field label="Reason (optional)">
+          <TextInput
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            placeholder="e.g. Proof of payment not received"
+            className="flex-1"
+          />
+        </Field>
+        <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4 mt-2">
+          <Button variant="outline" onClick={closeReject} size="sm">
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={handleRejectSubmit}
+            disabled={busyIds.has(rejectOrderId ?? "")}
+            size="sm"
           >
-            <Field label="Reason (optional)">
-              <TextInput
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="e.g. Proof of payment not received"
-                className="flex-1"
-              />
-            </Field>
-          </Modal>
-          <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-border px-5 py-4 sm:px-6">
-            <Button variant="outline" onClick={closeReject} size="sm">
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleRejectSubmit}
-              disabled={busyIds.has(rejectOrderId ?? "")}
-              size="sm"
-            >
-              Reject Payment
-            </Button>
-          </footer>
-        </>
-      )}
+            Reject Payment
+          </Button>
+        </footer>
+      </Modal>
 
       {/* Delivery evidence modal */}
-      {evidenceModal && (
-        <>
-          <Modal
-            open={evidenceModal}
-            onClose={closeEvidence}
-            title="Add Delivery Evidence"
-            subtitle="Paste a photo or screenshot link showing delivery was completed."
-            width="max-w-md"
+      <Modal
+        open={evidenceModal}
+        onClose={closeEvidence}
+        title="Add Delivery Evidence"
+        subtitle="Paste a photo or screenshot link showing delivery was completed."
+        width="max-w-md"
+      >
+        <Field label="Delivery evidence URL">
+          <TextInput
+            value={evidenceUrl}
+            onChange={(e) => setEvidenceUrl(e.target.value)}
+            placeholder="https://..."
+            className="flex-1"
+          />
+        </Field>
+        <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4 mt-2">
+          <Button variant="outline" onClick={closeEvidence} size="sm">
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleEvidenceSubmit}
+            disabled={busyIds.has(evidenceOrderId ?? "") || !evidenceUrl.trim()}
+            size="sm"
           >
-            <Field label="Delivery evidence URL">
-              <TextInput
-                value={evidenceUrl}
-                onChange={(e) => setEvidenceUrl(e.target.value)}
-                placeholder="https://..."
-                className="flex-1"
-              />
-            </Field>
-          </Modal>
-          <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-border px-5 py-4 sm:px-6">
-            <Button variant="outline" onClick={closeEvidence} size="sm">
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleEvidenceSubmit}
-              disabled={busyIds.has(evidenceOrderId ?? "") || !evidenceUrl.trim()}
-              size="sm"
-            >
-              Save Evidence
-            </Button>
-          </footer>
-        </>
-      )}
+            Save Evidence
+          </Button>
+        </footer>
+      </Modal>
     </StoreShell>
   );
 }

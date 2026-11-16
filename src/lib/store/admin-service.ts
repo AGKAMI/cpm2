@@ -42,6 +42,18 @@ export async function listAdmins(): Promise<AdminRecord[]> {
   return result.rows.map(rowToAdmin);
 }
 
+/** Update an admin's stored Telegram username (refreshed from the live profile). */
+export async function updateAdminUsername(
+  id: number,
+  telegramUsername: string,
+): Promise<void> {
+  const db = await getStoreDb();
+  await db.execute({
+    sql: `UPDATE vanta_admins SET telegram_username = ? WHERE id = ?`,
+    args: [telegramUsername, id],
+  });
+}
+
 /** Add an admin (owner only). Returns the new record. */
 export async function addAdmin(
   telegramUserId: string,

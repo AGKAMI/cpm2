@@ -157,7 +157,7 @@ export function CategoriesClient({
             )}
             {chip(
               <>
-                <span className="text-[11px]" dangerouslySetInnerHTML={{ __html: ICONS.tag }} />
+                <span className="text-[11.5px]" dangerouslySetInnerHTML={{ __html: ICONS.tag }} />
                 On offer
               </>,
               promo,
@@ -290,7 +290,7 @@ export function CategoriesClient({
                   <Link
                     key={c.id}
                     href={`/store/products/${c.id}`}
-                    className="product-card group block snap-start stagger-item min-w-[360px] max-w-[400px]"
+                    className="product-card group block snap-start stagger-item min-w-[260px] max-w-[300px]"
                     style={{ animationDelay: `${index * 40}ms` }}
                   >
                     <div className="relative overflow-hidden rounded-[24px] border border-border mb-4">

@@ -1208,7 +1208,7 @@ html {
   flex: 0 0 auto;
   scroll-snap-align: start;
   scroll-snap-stop: always;
-  width: calc(100% - 2rem);
+  width: calc(50% - 1rem);
 }
 @media (min-width: 640px) {
   .featured-carousel {
@@ -1218,7 +1218,7 @@ html {
     gap: 1.5rem;
   }
   .featured-carousel-item {
-    width: calc(50% - 2.25rem);
+    width: calc(33.33% - 1.5rem);
   }
 }
 @media (min-width: 1024px) {
@@ -1229,18 +1229,18 @@ html {
     gap: 2rem;
   }
   .featured-carousel-item {
-    width: calc(33.33% - 3.34rem);
+    width: calc(20% - 2rem);
   }
 }
 
-/* Carousel navigation arrows */
+/* Carousel navigation arrows — absolute overlay centered over the carousel
+   (an in-flow strip collapsed to zero height, which pinned the buttons
+   against the section header and let them overlap it) */
 .featured-nav {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 0 0 0.5rem 0;
+  position: absolute;
+  inset: 0;
   pointer-events: none;
+  z-index: 20;
 }
 .featured-nav button {
   pointer-events: auto;
@@ -1280,9 +1280,6 @@ html {
   right: 0.5rem;
 }
 @media (min-width: 640px) {
-  .featured-nav {
-    margin: 0 0 0.75rem 0;
-  }
   .featured-prev {
     left: 1rem;
   }
@@ -1291,9 +1288,6 @@ html {
   }
 }
 @media (min-width: 1024px) {
-  .featured-nav {
-    margin: 0 0 1rem 0;
-  }
   .featured-prev {
     left: 1.5rem;
   }
@@ -2292,11 +2286,10 @@ html {
   }
 }
 
-/* Promotion card - always metallic with shine */
+/* Promotion card - admin background color applies; shine effect kept */
 .promotion-card {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(105deg, #a8a292 0%, #7a7466 20%, #4a4436 38%, #a8a292 50%, #7a7466 66%, #4a4436 84%, #a8a292 100%);
 }
 
 .promotion-card::before {

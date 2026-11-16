@@ -25,7 +25,11 @@ export async function GET(request: Request) {
     const result = await db.execute({
       sql: `
         SELECT w.product_id, w.created_at,
-               p.name, p.base_price_cents, p.currency, p.is_published, p.stock_quantity
+               p.name, p.description, p.base_price_cents, p.currency,
+               p.is_published, p.stock_quantity,
+               (SELECT m.public_url FROM vanta_product_media m
+                WHERE m.product_id = p.id AND m.is_published = 1
+                ORDER BY m.sort_order LIMIT 1) AS cover_url
         FROM vanta_wishlist w
         JOIN vanta_products p ON w.product_id = p.id
         WHERE w.customer_id = ?
@@ -37,6 +41,8 @@ export async function GET(request: Request) {
     const items = result.rows.map((row) => ({
       productId: Number(row.product_id),
       name: String(row.name ?? ""),
+      description: String(row.description ?? ""),
+      imageUrl: row.cover_url ? String(row.cover_url) : null,
       basePriceCents: Number(row.base_price_cents ?? 0),
       currency: String(row.currency ?? "ZAR"),
       isPublished: Number(row.is_published ?? 0) === 1,

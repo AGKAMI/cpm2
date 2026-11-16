@@ -171,6 +171,27 @@ export const vantaApi = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  // Cart (customer-gated via Telegram)
+  cart: () => request<CartSummary>("/cart"),
+  cartAdd: (productId: number, quantity?: number) =>
+    request<{ cart: CartSummary; added: boolean }>("/cart", {
+      method: "POST",
+      body: JSON.stringify({ productId, quantity }),
+    }),
+  cartUpdate: (productId: number, quantity: number) =>
+    request<{ cart: CartSummary; updated: boolean }>("/cart", {
+      method: "PATCH",
+      body: JSON.stringify({ productId, quantity }),
+    }),
+  cartRemove: (productId: number) =>
+    request<{ cart: CartSummary; removed: boolean }>(`/cart?productId=${productId}`, {
+      method: "DELETE",
+    }),
+  cartCheckout: (body: { playerId: string; inGameName: string; paymentMethod?: "payfast" | "eft" }) =>
+    request<{ orders: VantaOrder[]; orderIds: string[]; subtotalCents: number; currency: string; itemCount: number }>("/cart/checkout", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   media: (productId: number) =>
     request<{ media: VantaProductMedia[] }>(`/media?productId=${productId}`),
   mediaCovers: (ids: number[]) =>
@@ -319,6 +340,25 @@ export type VantaOrder = {
   appointmentId: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+export type CartItem = {
+  productId: number;
+  name: string;
+  coverImage: string | null;
+  basePriceCents: number;
+  currency: string;
+  stockQuantity: number;
+  quantity: number;
+  exclusivity: string;
+  addedAt: string;
+};
+
+export type CartSummary = {
+  items: CartItem[];
+  itemCount: number;
+  subtotalCents: number;
+  currency: string;
 };
 
 export type VantaCustomer = {

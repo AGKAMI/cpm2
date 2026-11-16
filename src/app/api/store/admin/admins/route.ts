@@ -7,7 +7,7 @@
 
 import { fail, ok, readJson } from "@/lib/route";
 import { requireStoreAdmin } from "@/lib/store/auth";
-import { listAdmins, addAdmin } from "@/lib/store/admin-service";
+import { listAdmins, addAdmin, updateAdminUsername } from "@/lib/store/admin-service";
 import { fetchTelegramUser } from "@/lib/telegram";
 import { notifyAdminPromoted } from "@/lib/store/notifications";
 
@@ -16,7 +16,30 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   try {
     await requireStoreAdmin(request);
-    const admins = await listAdmins();
+    let admins = await listAdmins();
+    // Refresh stored usernames against the live Telegram profile so the
+    // owner page never shows a stale handle (usernames can change any time).
+    const fresh = await Promise.all(
+      admins.map(async (a) => {
+        if (!a.telegramUserId) return a;
+        try {
+          const userInfo = await fetchTelegramUser(Number(a.telegramUserId));
+          const liveName = userInfo?.username
+            ? userInfo.username
+            : userInfo?.first_name
+              ? userInfo.first_name + (userInfo.last_name ? ` ${userInfo.last_name}` : "")
+              : "";
+          if (liveName && liveName !== a.telegramUsername) {
+            await updateAdminUsername(a.id, liveName);
+            return { ...a, telegramUsername: liveName };
+          }
+        } catch {
+          // Telegram lookup failed — keep the stored value
+        }
+        return a;
+      }),
+    );
+    admins = fresh;
     return ok({ admins }, 200);
   } catch (err) {
     return fail(err);

@@ -2,11 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { vantaApi, formatPrice, type VantaProduct } from "@/lib/store/client";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
+import { addToCartLocal } from "@/lib/store/cart-client";
 
 const EXCLUSIVITY_LABELS: Record<string, string> = {
   limited: "Limited Edition",
@@ -96,19 +97,22 @@ export function ProductPageClient({ productId }: { productId: string }) {
         >
           <div
             className="flex transition-transform duration-500 ease-in-out"
-            style={{ transform: `translateX(${translateX}px)`, width: `${media.length * 100}%` }}
+            style={{ transform: `translateX(${translateX}px)` }}
           >
             {media.map((m, i) => (
-              <Image
-                key={i}
-                src={m.publicUrl}
-                alt={product.name}
-                className="w-[25vw] min-w-[25vw] h-full object-cover"
-                loading={i === 0 ? "eager" : "lazy"}
-                width={250}
-                height={250}
-                style={{ width: "25vw", height: "25vw", objectFit: "cover" }}
-              />
+              <div key={i} className="relative w-full shrink-0 h-full">
+                <Image
+                  src={m.publicUrl}
+                  alt={product.name}
+                  className="h-full w-full object-cover"
+                  loading={i === 0 ? "eager" : "lazy"}
+                  priority={i === 0}
+                  width={1200}
+                  height={1500}
+                  sizes="(max-width: 768px) 100vw, 900px"
+                  style={{ objectFit: "cover" }}
+                />
+              </div>
             ))}
           </div>
           {media.length > 1 && (
@@ -239,6 +243,19 @@ export function ProductPageClient({ productId }: { productId: string }) {
                 {checkoutBusy ? "Processing…" : product.stockQuantity === 0 ? "Sold out" : "Buy now"}
               </Button>
             </Link>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                void addToCartLocal(product.id, 1);
+              }}
+              disabled={product.stockQuantity === 0 || checkoutBusy}
+              className={`w-full h-10 text-xs font-bold mt-2 border border-input rounded-lg ${product.stockQuantity === 0 ? "bg-background text-foreground cursor-not-allowed" : "bg-brand-gold text-primary-foreground hover:bg-brand-gold/90 transition-colors cursor-pointer"}`}
+              aria-label={`Add ${product.name} to cart`}
+            >
+              {product.stockQuantity === 0 ? "Sold out" : "Add to cart"}
+            </button>
             <Button
               variant="outline"
               className="w-full h-10 text-xs font-bold mt-2"

@@ -6,7 +6,7 @@
 
 import { fail, ok } from "@/lib/route";
 import { assertTelegramAuth } from "@/lib/telegram";
-import { getStoreCustomer } from "@/lib/store/auth";
+import { getStoreCustomer, requireStoreAdmin } from "@/lib/store/auth";
 import { getCustomerByPlayerId } from "@/lib/store/customers";
 import { listOrders, getOrder } from "@/lib/store/checkout";
 
@@ -49,6 +49,13 @@ export async function GET(request: Request) {
       }
       const telegramUserId = await assertTelegramAuth(request);
       if (telegramUserId !== null) {
+        // Admins/owner review every order (EFT queue) — allow reading any order.
+        try {
+          await requireStoreAdmin(request);
+          return ok({ order });
+        } catch {
+          // not an admin — fall through to the ownership check
+        }
         const linked = await getStoreCustomer(request);
         if (linked && order.customerId === linked.customer.id) {
           return ok({ order });

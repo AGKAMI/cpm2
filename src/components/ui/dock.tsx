@@ -11,6 +11,7 @@ interface DockProps {
     label: string;
     href: string;
     active?: boolean;
+    badge?: number;
   }[];
 }
 
@@ -21,13 +22,14 @@ interface DockIconButtonProps {
   active?: boolean;
   mode?: "night" | "paper";
   className?: string;
+  badge?: number;
 }
 
 const DockIconButton = React.forwardRef<
   HTMLButtonElement,
   DockIconButtonProps
 >(
-  ({ icon: Icon, label, href, active, mode, className }, ref) => {
+  ({ icon: Icon, label, href, active, mode, className, badge }, ref) => {
     return (
       <button
         ref={ref}
@@ -50,6 +52,13 @@ const DockIconButton = React.forwardRef<
               : "text-foreground"
           )}
         />
+        {badge && badge > 0 && (
+          <span className="absolute -top-1 -right-1 z-20 flex items-center justify-center">
+            <span className="px-1.5 py-0.5 rounded-full bg-destructive text-[10px] text-primary-foreground border border-background">
+              {badge > 9 ? "9+" : badge}
+            </span>
+          </span>
+        )}
         <span
           className={cn(
             "absolute -top-8 left-1/2 -translate-x-1/2 z-20",

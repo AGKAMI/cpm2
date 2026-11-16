@@ -212,10 +212,14 @@ export default function OwnerPage() {
                     )}
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    {a.nickname ? a.nickname : "-"}
-                    {a.telegramUsername ? (
-                      <span className="text-ink-faint">· @{a.telegramUsername}</span>
-                    ) : null}
+                    {/* Set nickname wins; otherwise the live Telegram handle */}
+                    {a.nickname ? (
+                      a.nickname
+                    ) : a.telegramUsername ? (
+                      <span className="text-ink-faint">@{a.telegramUsername}</span>
+                    ) : (
+                      "-"
+                    )}
                     <span className="text-ink-faint">· {a.role}</span>
                   </div>
                   <div className="flex items-center gap-2">

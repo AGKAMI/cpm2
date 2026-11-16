@@ -832,12 +832,35 @@ export default function AdminPage() {
                           />
                           <div
                           onClick={() => promoFileInputRef.current?.click()}
-                          className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${promotionConverterFile ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}
+                          className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${promotionConverterFile ? "border-emerald-500 text-emerald-500 bg-emerald-50" : promotionForm.imageUrl ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}
                           >
                           {promotionConverterFile ? (
                           <>
                             <span className="text-xs font-bold text-emerald-500">✓</span>
                             {promotionConverterFile.name}
+                          </>
+                          ) : promotionForm.imageUrl ? (
+                          <>
+                            <span className="text-xs font-bold text-emerald-500">✓</span>
+                            Image attached
+                            <span
+                              role="button"
+                              tabIndex={0}
+                              onClick={(ev) => {
+                                ev.stopPropagation();
+                                setPromotionForm((f) => ({ ...f, imageUrl: "" }));
+                              }}
+                              onKeyDown={(ev) => {
+                                if (ev.key === "Enter" || ev.key === " ") {
+                                  ev.preventDefault();
+                                  ev.stopPropagation();
+                                  setPromotionForm((f) => ({ ...f, imageUrl: "" }));
+                                }
+                              }}
+                              className="text-[10px] text-destructive underline underline-offset-2 ml-2 cursor-pointer"
+                            >
+                              remove
+                            </span>
                           </>
                           ) : (
                           "Choose image"
@@ -1036,7 +1059,7 @@ export default function AdminPage() {
               />
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${productConverterUploading ? "border-amber-500 text-amber-500 bg-amber-50" : productConverterFile ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}
+                className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${productConverterUploading ? "border-amber-500 text-amber-500 bg-amber-50" : productConverterFile || form.imageUrl ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}
               >
                 {productConverterUploading ? (
                   <>
@@ -1048,6 +1071,29 @@ export default function AdminPage() {
                     <span className="text-xs font-bold">✓</span>
                     {productConverterFile.name}
                     {productConverterResult && <span className="text-[10px] text-ink-soft ml-2">→ converted to URL</span>}
+                  </>
+                ) : form.imageUrl ? (
+                  <>
+                    <span className="text-xs font-bold text-emerald-500">✓</span>
+                    Image attached
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(ev) => {
+                        ev.stopPropagation();
+                        setForm((f) => ({ ...f, imageUrl: "" }));
+                      }}
+                      onKeyDown={(ev) => {
+                        if (ev.key === "Enter" || ev.key === " ") {
+                          ev.preventDefault();
+                          ev.stopPropagation();
+                          setForm((f) => ({ ...f, imageUrl: "" }));
+                        }
+                      }}
+                      className="text-[10px] text-destructive underline underline-offset-2 ml-2 cursor-pointer"
+                    >
+                      remove
+                    </span>
                   </>
                 ) : (
                   "Choose image"
@@ -1369,7 +1415,7 @@ export default function AdminPage() {
                           />
                           <div
                             onClick={() => fileInputRef.current?.click()}
-                            className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${productConverterUploading ? "border-amber-500 text-amber-500 bg-amber-50" : productConverterFile ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}
+                            className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${productConverterUploading ? "border-amber-500 text-amber-500 bg-amber-50" : productConverterFile || form.imageUrl ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}
                           >
                             {productConverterUploading ? (
                               <>
@@ -1381,6 +1427,29 @@ export default function AdminPage() {
                                 <span className="text-xs font-bold">✓</span>
                                 {productConverterFile.name}
                                 {productConverterResult && <span className="text-[10px] text-ink-soft ml-2">→ converted to URL</span>}
+                              </>
+                            ) : form.imageUrl ? (
+                              <>
+                                <span className="text-xs font-bold text-emerald-500">✓</span>
+                                Image attached
+                                <span
+                                  role="button"
+                                  tabIndex={0}
+                                  onClick={(ev) => {
+                                    ev.stopPropagation();
+                                    setForm((f) => ({ ...f, imageUrl: "" }));
+                                  }}
+                                  onKeyDown={(ev) => {
+                                    if (ev.key === "Enter" || ev.key === " ") {
+                                      ev.preventDefault();
+                                      ev.stopPropagation();
+                                      setForm((f) => ({ ...f, imageUrl: "" }));
+                                    }
+                                  }}
+                                  className="text-[10px] text-destructive underline underline-offset-2 ml-2 cursor-pointer"
+                                >
+                                  remove
+                                </span>
                               </>
                             ) : (
                               "Choose image"

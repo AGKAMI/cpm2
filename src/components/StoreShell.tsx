@@ -7,15 +7,23 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Dock } from "@/components/ui/dock";
 import { LucideIcon } from "lucide-react";
-import { Home, Grid, List } from "lucide-react";
+import { Home, Grid, List, ShoppingCart } from "lucide-react";
 
 import { NotificationBell } from "@/components/NotificationBell";
 import { vantaApi } from "@/lib/store/client";
+import { cartCountLocal, loadServerCart, subscribeCart } from "@/lib/store/cart-client";
 import { AdminIcon } from "@/components/ui/admin-icon";
 import { OwnerIcon } from "@/components/ui/owner-icon";
 import { ProfileIcon } from "@/components/ui/profile-icon";
 
-type StoreTab = "home" | "categories" | "orders" | "profile" | "admin" | "owner";
+type StoreTab =
+  | "home"
+  | "categories"
+  | "orders"
+  | "profile"
+  | "admin"
+  | "owner"
+  | "cart";
 
 type StoreIcon = React.ComponentType<{ className?: string }>;
 
@@ -23,6 +31,7 @@ const STORE_NAV: { key: StoreTab; href: string; label: string; icon: StoreIcon }
   { key: "home", href: "/store", label: "HOME", icon: Home },
   { key: "categories", href: "/store/categories", label: "CATEGORIES", icon: Grid },
   { key: "orders", href: "/store/orders", label: "ORDERS", icon: List },
+  { key: "cart", href: "/store/cart", label: "CART", icon: ShoppingCart },
   { key: "profile", href: "/store/profile", label: "PROFILE", icon: ProfileIcon },
   { key: "admin", href: "/store/admin", label: "ADMIN", icon: AdminIcon },
   { key: "owner", href: "/store/owner", label: "OWNER", icon: OwnerIcon },
@@ -32,6 +41,7 @@ const ICON_MAP: Record<StoreTab, StoreIcon> = {
   home: Home,
   categories: Grid,
   orders: List,
+  cart: ShoppingCart,
   profile: ProfileIcon,
   admin: AdminIcon,
   owner: OwnerIcon,
@@ -52,6 +62,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
   const [profile, setProfile] = useState<{ photoUrl?: string; displayName?: string; username?: string } | null>(null);
   const [customerLoggedIn, setCustomerLoggedIn] = useState<boolean>(false);
   const [loaded, setLoaded] = useState<boolean>(true);
+  const [cartCount, setCartCount] = useState<number>(0);
 
   // localStorage must NEVER be read during render: the server can't see it,
   // so an admin's first client render computed a different dock than the SSR
@@ -147,9 +158,17 @@ export function StoreShell({ children, dock }: StoreShellProps) {
     return () => window.removeEventListener("storage", checkLogin);
   }, []);
 
-  // Re-check admin when session flag appears from another tab.
+  // Cart count badge — syncs with local cart + server cart changes.
   useEffect(() => {
-    const onAdminSessionStorage = () => {
+    setCartCount(cartCountLocal());
+    const unsub = subscribeCart(() => setCartCount(cartCountLocal()));
+    return () => unsub();
+  }, []);
+
+  // Re-check admin when session flag appears (other tab via storage event,
+  // same tab via the explicit vanta-admin-session event from admin login).
+  useEffect(() => {
+    const onAdminSession = () => {
       if (typeof window !== "undefined") {
         const nowActive = adminSessionActive();
         if (nowActive && isAdmin !== true && isOwner !== true) {
@@ -157,15 +176,22 @@ export function StoreShell({ children, dock }: StoreShellProps) {
         }
       }
     };
-    window.addEventListener("storage", onAdminSessionStorage);
-    return () =>
-      window.removeEventListener("storage", onAdminSessionStorage);
+    window.addEventListener("storage", onAdminSession);
+    window.addEventListener("vanta-admin-session", onAdminSession);
+    return () => {
+      window.removeEventListener("storage", onAdminSession);
+      window.removeEventListener("vanta-admin-session", onAdminSession);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin, isOwner]);
 
   const visibleNav = STORE_NAV.filter(
     (t) =>
+      // ADMIN: server-verified admin or the mirrored session flag (hydration-safe).
       (t.key !== "admin" || isAdmin === true || adminSessionFlag) &&
-      (t.key !== "owner" || isOwner === true || adminSessionFlag),
+      // OWNER: only the server-verified owner result — a plain admin must
+      // never see the owner dock entry just because vanta_admin_session is set.
+      (t.key !== "owner" || isOwner === true),
   );
 
   const activeTab: StoreTab | undefined =
@@ -198,6 +224,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
                         loading="eager"
                         width={80}
                         height={80}
+                        unoptimized
                         style={{ objectFit: "cover" }}
                       />
                     ) : (
@@ -262,6 +289,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
             item.label.charAt(0).toUpperCase() + item.label.slice(1),
           href: item.href,
           active: activeTab === item.key,
+          badge: item.key === "cart" ? cartCount : undefined,
         }))}
       />
     </div>

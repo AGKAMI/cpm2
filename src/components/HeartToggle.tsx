@@ -1,38 +1,73 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import {
+  loadServerWishlist,
+  subscribeWishlist,
+  toggleWishlist,
+} from "@/lib/store/wishlist-client";
 
 /**
- * Heart toggle for wishlist. Pure UI — reads/writes to localStorage
- * so wishlist state persists until Nemotron's wishlist API is wired up.
+ * Heart toggle for wishlist.
  *
- * Visual: circular button with a heart icon; on hover it expands into a
- * gradient "Favourite" pill (see .heart-fav in globals.css). Expansion is
- * overlay-only so card layout never shifts.
+ * State source: the shared wishlist client — one server fetch per page
+ * (`/api/store/wishlist`, customer-linked via Telegram), mirrored into
+ * localStorage so hearts are right for guests too and render instantly.
+ *
+ * Hydration rule: never read localStorage during render — start from a
+ * server-safe default and mirror stored state after mount.
+ *
+ * Cards render this button inside their <Link>. The click handler must
+ * preventDefault() as well as stopPropagation(): stopPropagation alone
+ * blocks React's Link onClick, but the browser still performs the
+ * anchor's DEFAULT navigation, so the card would open instead of the
+ * wishlist toggling.
  */
 export function HeartToggle({ productId }: { productId: number }) {
-  const key = `vanta_wishlist_${productId}`;
-  const [isWishlisted, setIsWishlisted] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    const stored = localStorage.getItem(key);
-    return stored === "true";
-  });
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  const toggle = useCallback(() => {
-    const next = !isWishlisted;
-    setIsWishlisted(next);
-    localStorage.setItem(key, String(next));
-  }, [isWishlisted, key]);
+  useEffect(() => {
+    setMounted(true);
+    let alive = true;
+    // Pull the page's shared server wishlist once, then subscribe to
+    // cross-card toggles so every heart for the same product stays in sync.
+    void loadServerWishlist().then((ids) => {
+      if (alive) setIsWishlisted(ids.has(productId));
+    });
+    const unsubscribe = subscribeWishlist((changed) => {
+      if (changed.has(productId)) {
+        setIsWishlisted(localStorage.getItem(`vanta_wishlist_${productId}`) === "true");
+      }
+    });
+    return () => {
+      alive = false;
+      unsubscribe();
+    };
+  }, [productId]);
+
+  const onToggle = useCallback(
+    (e: React.MouseEvent) => {
+      // We sit inside the card's <Link> — swallow the event entirely so the
+      // card never navigates. preventDefault is the one that stops the
+      // browser's anchor default action; stopPropagation keeps it away
+      // from React's Link handler too.
+      e.preventDefault();
+      e.stopPropagation();
+      setIsWishlisted((prev) => {
+        toggleWishlist(productId, !prev);
+        return !prev;
+      });
+    },
+    [productId],
+  );
 
   return (
     <span className="heart-fav-wrap">
       <button
         type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          toggle();
-        }}
-        className={`heart-fav ${isWishlisted ? "is-active" : ""}`}
+        onClick={onToggle}
+        className={`heart-fav ${mounted && isWishlisted ? "is-active" : ""}`}
         aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
         aria-pressed={isWishlisted}
       >

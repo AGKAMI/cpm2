@@ -36,6 +36,8 @@ export default function AdminLoginForm() {
 
         if (!cancelled) {
           localStorage.setItem("vanta_admin_session", "true");
+          // Same-tab dock refresh: storage events only fire in OTHER tabs.
+          window.dispatchEvent(new Event("vanta-admin-session"));
           router.push(data.isOwner ? "/store/owner" : "/store/admin");
         }
       } catch {

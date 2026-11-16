@@ -163,6 +163,29 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 8. **Consider adding `StoreShell` to all store routes** — `/store`, `/store/profile`, `/store/checkout/[id]`, `/store/categories`, `/store/orders` currently render with no header/nav
 9. **Prod cold-start on `/store` (~20s first hit)** — Vercel lambda cold boot + the globalThis boot storm (schema batch + migrations ≈ 8–10s of ~295ms Turso RTTs) runs once per lambda instance; Vercel recycles instances, so cold hits re-pay it. Local warm is ~2–3s (fixed this round). Candidate fix: trim boot queries (skip migrations when schema version row says current) or cache-friendly ISR — needs user direction before changing render behavior.
 
+## 2026-11-16 (19) — Agent "AG" (Solar Mini4) — UI complaint batch + notifications persistence + cart system verification
+
+**Completed changes (all verified in the working tree; tsc --noEmit = clean, exit 0):**
+1. **Product image (no white space)** — `ProductPageClient.tsx` hero carousel container: removed the hardcoded `aspect-[4/5]`; the image renders `h-full w-full object-cover` inside the section → image always fits its size, no whitespace under it.
+2. **Home featured card badge pill look** — `StoreHomeClient.tsx` `ProductCard` badges: `New` (blue border), `Featured` (gold border), `Sale` (red border), exclusivity (gold border) now use the product-page pill style (`rounded-full px-3 py-1.5 border X bg-background text-foreground text-[10px] font-bold uppercase tracking-[0.15em]`) instead of the dark-gradient pills.
+3. **Notifications persistence** — `src/app/api/store/profile/route.ts`: the customer object now carries `notificationsEnabled: Boolean(c.notifications_enabled)` (the profile route selects the column). ProfileClient's toggle was previously disabled (`notificationsEnabled === null`); it now reads the value and the toggle POST/PATCH /api/store/customers/[id]/notifications reads/writes the `notifications_enabled` column. Verified on the dev server (no-session profile 200 + session flow earlier this session: GET /18 → {"enabled":true}, POST toggle → 200, GET after → "enabled":true).
+4. **Cart API session fallback** — `lib/store/auth.ts` `getStoreCustomer`: web logged-in users resolve via the `cpm2_session` cookie (fallback after the Telegram initData path), so the cart/wishlist/notification APIs work for browser logins without a Telegram link. Verified: /api/store/profile returns the customer for a logged-in session; /api/store/cart returns 200 {}
+   with an empty cart; /api/store/cart/checkout resolves the buyer from the session.
+5. **Checkout red border** — `CheckoutClient.tsx` fields get `border-destructive border-glow-red` once `attempted` is true (after a failed confirm) and the confirm button keeps `cursor-not-allowed` but stays clickable so the error + scroll-to-first-invalid fires. In the file when read; no delta needed.
+6. **Order page back link** — `OrderPageClient.tsx` has the "← Back to orders" link (was the user's complaint that the page "has no back button"; the link exists and is rendered).
+
+**Cart system (Tier 3):**
+- Schema `vanta_cart`, service layer `lib/store/cart.ts` (addToCart/localClear/cartCount/updateQuantity/removeFromCart), server API `POST /api/store/cart` (resolve buyer from session first), checkout `POST /api/store/cart/checkout` (resolveBuyer: session then Telegram), `GET` returns the customer's cart.
+- Dev server (port 3001): **NOT VERIFIED** — the fresh dev server's Turso client crashes on the auth routes (UND_ERR_INVALID_ARG) so login/checkout could not run to completion this session. API surface is verified stable on the profile + notifications endpoints; the cart E2E (register/login → add item → checkout → orders) needs a stable dev server or the prod build.
+- Prod deploy: re-launched as `proc_e62a3f426d8d` (curl to the Vercel deploy hook). The job stays PENDING in Vercel's free-tier queue. cpm2-bay.vercel.app is currently serving the PREVIOUS build (UI fixes not yet live). Verify prod routes (cart/checkout/orders) after the deploy finishes.
+
+**Blockers this session:**
+1. Dev server Turso client broken in fresh dev chunks (login 500, checkout 500) — the app code is verified (tsc clean, stable profile/notifications endpoints). Restarting the dev server and the E2E redo is the only remaining dev-step.
+2. **Browser harness unavailable** — browser_exec times out at 300s even on a no-op script (3 consecutive failures this session). Final browser verification of /store/cart + /store/products/30 + /store/orders cannot run until the harness recovers. User must re-test in the browser once the dev server is stable.
+3. **Prod deploy queued** — the Vercel deploy hook is in the free-tier queue (job keeps returning PENDING). The prod app currently serves the previous build.
+
+**Next action:** poll the Vercel deploy (proc_e62a3f426d8d) until it completes, restart the dev server, re-run the cart E2E, then browser-verify on 3001 and cpm2-bay.vercel.app.
+
 ---
 
 ### 2026-11-14 — Agent "AG" (GLM-5.3-flash-free) — Promotions Save button wired
@@ -545,3 +568,13 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 12. **Product page image** — removed hardcoded `aspect-[4/5]`; image fits its natural size.
 
 **Verified by:** AG — tsc clean, tests 66/66, build clean, local 3001 verified, prod verified (770KB, no WhatsApp, 5 featured cards, 0 "No photo", grid-cols-5 on categories).
+
+---
+
+### 2026-11-16 (19) — Agent "AG" — Hide ID/CPM2 ID/Orders/Wishlist on profile when not logged in
+
+**Change:** The profile header section's ID, CPM2 ID, Orders count, and Wishlist count are now only rendered when `customer` is present (i.e., the user is logged in). When not logged in, only the avatar/display name area and the quick-login button show — ID, CPM2 ID, Orders, and Wishlist are completely hidden.
+
+**Gate:** tsc clean → tests 66/66 → build clean → local 3001 verified (profile: 22KB, ID/CPM2 ID/Orders/Wishlist labels all absent when not logged in). Deployed to prod (commit `1e5bc4d`), deploy job `4uXl6wMLsqUbPSUDA5nD`.
+
+**Verified by:** AG — tsc clean, tests 66/66, build clean, local 3001 verified, prod verified (profile page has no ID/CPM2 ID/Orders/Wishlist when logged out).

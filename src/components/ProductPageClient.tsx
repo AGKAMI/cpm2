@@ -256,17 +256,6 @@ export function ProductPageClient({ productId }: { productId: string }) {
             >
               {product.stockQuantity === 0 ? "Sold out" : "Add to cart"}
             </button>
-            <Button
-              variant="outline"
-              className="w-full h-10 text-xs font-bold mt-2"
-              onClick={() => {
-                const text = `VANTA GARAGE — ${product.name} — ${formatPrice(product.basePriceCents, product.currency)}\n${product.description}\n\nOrder here: ${typeof window !== "undefined" ? window.location.origin : ""}/store/products/${product.id}`;
-                const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-                if (typeof window !== "undefined") window.open(url, "_blank");
-              }}
-            >
-              Share to WhatsApp
-            </Button>
             <p className="mt-4 text-[10px] text-muted-foreground text-center">
               Secured checkout · EFT or card via PayFast
             </p>

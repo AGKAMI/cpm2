@@ -17,6 +17,7 @@ export type AdminRecord = {
   addedBy: string | null;
   addedAt: string;
   isActive: boolean;
+  lastSeen: string | null;
 };
 
 function rowToAdmin(row: Record<string, unknown>): AdminRecord {
@@ -29,7 +30,18 @@ function rowToAdmin(row: Record<string, unknown>): AdminRecord {
     addedBy: row.added_by ? String(row.added_by) : null,
     addedAt: String(row.added_at ?? ""),
     isActive: Number(row.is_active ?? 0) === 1,
+    lastSeen: row.last_seen ? String(row.last_seen) : null,
   };
+}
+
+/** Heartbeat: mark an admin as online right now. */
+export async function adminHeartbeat(telegramUserId: string): Promise<void> {
+  const db = await getStoreDb();
+  const now = new Date().toISOString();
+  await db.execute({
+    sql: `UPDATE vanta_admins SET last_seen = ? WHERE telegram_user_id = ?`,
+    args: [now, telegramUserId],
+  });
 }
 
 /** List active admins (owner + admins). */

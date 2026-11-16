@@ -41,6 +41,7 @@ function rowToCategory(row: Record<string, unknown>): Category {
     name: String(row.name ?? ""),
     slug: String(row.slug ?? ""),
     description: String(row.description ?? ""),
+    imageUrl: String(row.image_url ?? ""),
     sortOrder: Number(row.sort_order ?? 0),
     isActive: Number(row.is_active ?? 1) === 1,
     createdAt: String(row.created_at ?? ""),
@@ -66,17 +67,49 @@ function rowToMedia(row: Record<string, unknown>): ProductMedia {
   };
 }
 
-export async function createCategory(input: { name: string; slug: string; description?: string; sortOrder?: number }): Promise<Category> {
+export async function createCategory(input: { name: string; slug: string; description?: string; sortOrder?: number; imageUrl?: string }): Promise<Category> {
   const db = await getStoreDb();
   const now = new Date().toISOString();
   const result = await db.execute({
-    sql: `INSERT INTO vanta_categories (name, slug, description, sort_order, is_active, created_at)
-          VALUES (?, ?, ?, ?, 1, ?)`,
-    args: [input.name.trim(), input.slug.trim(), input.description ?? "", input.sortOrder ?? 0, now],
+    sql: `INSERT INTO vanta_categories (name, slug, description, sort_order, image_url, is_active, created_at)
+          VALUES (?, ?, ?, ?, ?, 1, ?)`,
+    args: [input.name.trim(), input.slug.trim(), input.description ?? "", input.sortOrder ?? 0, input.imageUrl ?? "", now],
   });
   const id = result.lastInsertRowid;
   if (id === null) throw new Error("Category insert returned no id");
-  return rowToCategory({ id, name: input.name.trim(), slug: input.slug.trim(), description: input.description ?? "", sort_order: input.sortOrder ?? 0, is_active: true, created_at: now });
+  return rowToCategory({ id, name: input.name.trim(), slug: input.slug.trim(), description: input.description ?? "", image_url: input.imageUrl ?? "", sort_order: input.sortOrder ?? 0, is_active: true, created_at: now });
+}
+
+export async function updateCategory(id: number, input: { name?: string; slug?: string; description?: string; sortOrder?: number; imageUrl?: string }): Promise<Category> {
+  const db = await getStoreDb();
+  const sets: string[] = [];
+  const args: unknown[] = [];
+  if (input.name !== undefined) { sets.push("name = ?"); args.push(input.name.trim()); }
+  if (input.slug !== undefined) { sets.push("slug = ?"); args.push(input.slug.trim()); }
+  if (input.description !== undefined) { sets.push("description = ?"); args.push(input.description); }
+  if (input.sortOrder !== undefined) { sets.push("sort_order = ?"); args.push(input.sortOrder); }
+  if (input.imageUrl !== undefined) { sets.push("image_url = ?"); args.push(input.imageUrl); }
+  if (sets.length === 0) throw new Error("No fields to update");
+  args.push(id);
+  await db.execute({
+    sql: `UPDATE vanta_categories SET ${sets.join(", ")} WHERE id = ?`,
+    args,
+  });
+  // Return the updated row.
+  const result = await db.execute({
+    sql: `SELECT * FROM vanta_categories WHERE id = ?`,
+    args: [id],
+  });
+  if (result.rows.length === 0) throw new Error("Category not found");
+  return rowToCategory(result.rows[0]);
+}
+
+export async function deleteCategory(id: number): Promise<void> {
+  const db = await getStoreDb();
+  await db.execute({
+    sql: `UPDATE vanta_categories SET is_active = 0 WHERE id = ?`,
+    args: [id],
+  });
 }
 
 export async function listCategories(): Promise<Category[]> {

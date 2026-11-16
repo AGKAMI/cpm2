@@ -72,6 +72,7 @@ type CategoryForm = {
   slug: string;
   description: string;
   sortOrder: string;
+  imageUrl: string;
 };
 
 const EMPTY_CATEGORY_FORM: CategoryForm = {
@@ -79,6 +80,7 @@ const EMPTY_CATEGORY_FORM: CategoryForm = {
   slug: "",
   description: "",
   sortOrder: "0",
+  imageUrl: "",
 };
 
 type PromotionForm = {
@@ -179,8 +181,13 @@ export default function AdminPage() {
   const [promotionConverterFile, setPromotionConverterFile] = useState<File | null>(null);
   const [promotionConverterResult, setPromotionConverterResult] = useState<string | null>(null);
   const [promotionConverterError, setPromotionConverterError] = useState<string | null>(null);
+  const [categoryConverterFile, setCategoryConverterFile] = useState<File | null>(null);
+  const [categoryConverterResult, setCategoryConverterResult] = useState<string | null>(null);
+  const [categoryConverterError, setCategoryConverterError] = useState<string | null>(null);
+  const [categoryConverterUploading, setCategoryConverterUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const promoFileInputRef = useRef<HTMLInputElement>(null);
+  const categoryFileInputRef = useRef<HTMLInputElement>(null);
   // Toggle for the add/edit product form (behind a button, not always open)
   const [showProductForm, setShowProductForm] = useState(false);
 
@@ -284,6 +291,10 @@ export default function AdminPage() {
     const resetCategoryForm = () => {
       setCategoryForm(EMPTY_CATEGORY_FORM);
       setShowCategoryForm(false);
+      setCategoryConverterFile(null);
+      setCategoryConverterResult(null);
+      setCategoryConverterError(null);
+      setCategoryConverterUploading(false);
     };
 
     const selectProduct = async (p: VantaProduct) => {
@@ -412,20 +423,60 @@ export default function AdminPage() {
           return;
         }
         const v = validated.data;
+        let imageUrl = categoryForm.imageUrl;
+        // Upload image if a new file was selected.
+        if (categoryConverterFile) {
+          try {
+            setCategoryConverterUploading(true);
+            const uploadFile = await compressImageForUpload(categoryConverterFile);
+            const formData = new FormData();
+            formData.append("file", uploadFile);
+            const res = await fetch("/api/store/admin/upload-image", {
+              method: "POST",
+              body: formData,
+            });
+            if (!res.ok) {
+              const errBody = await res.json().catch(() => ({}));
+              throw new Error(errBody.error?.message || "Upload failed");
+            }
+            const { url } = (await res.json()) as { url: string };
+            imageUrl = url;
+          } catch (err) {
+            setCategoryConverterError(err instanceof Error ? err.message : "Failed to upload image.");
+            setCategorySaving(false);
+            setCategoryConverterUploading(false);
+            return;
+          } finally {
+            setCategoryConverterUploading(false);
+          }
+        }
         try {
-          await vantaApi.createCategory({
-            name: v.name,
-            slug: v.slug,
-            description: v.description,
-            sortOrder: parseInt(v.sortOrder, 10),
-          });
-          setMsg("Category created.");
+          if (editingCategoryId) {
+            await vantaApi.updateCategory(editingCategoryId, {
+              name: v.name,
+              slug: v.slug,
+              description: v.description,
+              sortOrder: parseInt(v.sortOrder, 10),
+              imageUrl: imageUrl || undefined,
+            });
+            setMsg("Category updated.");
+          } else {
+            await vantaApi.createCategory({
+              name: v.name,
+              slug: v.slug,
+              description: v.description,
+              sortOrder: parseInt(v.sortOrder, 10),
+              imageUrl: imageUrl || undefined,
+            });
+            setMsg("Category created.");
+          }
           resetCategoryForm();
+          setEditingCategoryId(null);
           await load();
         } catch (err) {
           toast.error(
             "Category failed",
-            err instanceof Error ? err.message : "Failed to create category."
+            err instanceof Error ? err.message : "Failed to save category."
           );
         } finally {
           setCategorySaving(false);
@@ -632,6 +683,80 @@ export default function AdminPage() {
                   className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
                 />
               </Field>
+              <Field label="Category image (optional)">
+                <div className="relative group cursor-pointer">
+                  <input
+                    ref={categoryFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0] ?? null;
+                      if (!file) return;
+                      setCategoryConverterFile(file);
+                      setCategoryConverterError(null);
+                      try {
+                        const dataUrl = await convertFileToDataUrl(await compressImageForUpload(file));
+                        setCategoryConverterResult(dataUrl);
+                        setCategoryForm((f) => ({ ...f, imageUrl: dataUrl }));
+                        setCategoryConverterFile(null);
+                        setCategoryConverterResult(null);
+                      } catch {
+                        setCategoryConverterError("Failed to read image file.");
+                      }
+                    }}
+                  />
+                  <div
+                    onClick={() => categoryFileInputRef.current?.click()}
+                    className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${categoryConverterUploading ? "border-amber-500 text-amber-500 bg-amber-50" : categoryConverterFile || categoryForm.imageUrl ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}
+                  >
+                    {categoryConverterUploading ? (
+                      <>
+                        <span className="text-xs font-bold animate-pulse">⟳</span>
+                        Converting image…
+                      </>
+                    ) : categoryConverterFile ? (
+                      <>
+                        <span className="text-xs font-bold">✓</span>
+                        {categoryConverterFile.name}
+                        {categoryConverterResult && <span className="text-[10px] text-ink-soft ml-2">→ converted to URL</span>}
+                      </>
+                    ) : categoryForm.imageUrl ? (
+                      <>
+                        <span className="text-xs font-bold text-emerald-500">✓</span>
+                        Image attached
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            setCategoryForm((f) => ({ ...f, imageUrl: "" }));
+                          }}
+                          onKeyDown={(ev) => {
+                            if (ev.key === "Enter" || ev.key === " ") {
+                              ev.preventDefault();
+                              ev.stopPropagation();
+                              setCategoryForm((f) => ({ ...f, imageUrl: "" }));
+                            }
+                          }}
+                          className="text-[10px] text-destructive underline underline-offset-2 ml-2 cursor-pointer"
+                        >
+                          remove
+                        </span>
+                      </>
+                    ) : (
+                      "Choose image"
+                    )}
+                  </div>
+                </div>
+                {categoryConverterError && <p className="text-xs text-destructive mt-1">{categoryConverterError}</p>}
+                {categoryConverterResult && (
+                  <div className="mt-3 border border-input rounded-md p-3 bg-background">
+                    <img src={categoryConverterResult} alt="Preview" className="max-w-full max-h-32 rounded-md border border-border object-cover" />
+                    <p className="text-[10px] text-ink-soft mt-2">Live preview from URL</p>
+                  </div>
+                )}
+              </Field>
               <div className="flex gap-2">
                 <Button
                               variant="primary"
@@ -655,9 +780,36 @@ export default function AdminPage() {
                 {categories.map((cat) => (
                   <span
                     key={cat.id}
-                    className="text-xs px-2 py-1 rounded-full border border-border bg-background text-foreground"
+                    className="flex items-center gap-2 px-3 py-2 rounded-full border border-border bg-background text-foreground"
                   >
+                    {cat.imageUrl ? (
+                      <img
+                        src={cat.imageUrl}
+                        alt=""
+                        className="w-6 h-6 rounded-full object-cover border border-background/50"
+                      />
+                    ) : (
+                      <span className="w-6 h-6 rounded-full bg-background border border-background/50 flex items-center justify-center text-[10px] font-bold text-ink-soft">
+                        {cat.name.charAt(0).toUpperCase()}
+                      </span>
+                    )}
                     {cat.name} ({cat.slug})
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => {
+                        if (!window.confirm(`Delete category "${cat.name}"?`)) return;
+                        vantaApi.deleteCategory(cat.id).then(() => {
+                          setMsg("Category deleted.");
+                          load();
+                        });
+                      }}
+                      aria-label={`Delete ${cat.name}`}
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v3M4 7h16" />
+                      </svg>
+                    </Button>
                   </span>
                 ))}
                 <Button
@@ -699,6 +851,7 @@ export default function AdminPage() {
                       slug: cat.slug,
                       description: cat.description,
                       sortOrder: String(cat.sortOrder),
+                      imageUrl: cat.imageUrl,
                     });
                     setShowCategoryForm(true);
                     setShowCategoryEditSelect(false);

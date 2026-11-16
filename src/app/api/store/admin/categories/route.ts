@@ -14,6 +14,7 @@ const categorySchema = z.object({
   slug: z.string().min(1),
   description: z.string().optional(),
   sortOrder: z.coerce.number().int().nonnegative().default(0),
+  imageUrl: z.string().optional(),
 });
 
 export const dynamic = "force-dynamic";

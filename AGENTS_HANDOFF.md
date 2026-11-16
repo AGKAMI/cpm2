@@ -474,6 +474,22 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 
 **Gate:** `npx tsc --noEmit` exit 0 (fixed `cartCount` TS7053), npm tests 66/66 pass. Cart schema + service + API + bulk-checkout route all wired.
 
-**Still open:** Tier 1+2 → prod deploy via hook; then browser-verify every fix on `http://127.0.0.1:3001/store`.
+**Still open:** (none for Tier 1+2; cart E2E in browser with a logged-in customer is the one remaining gap).
 
-**Verified by:** AG (Solar Mini4) — handoff updated as progress continues (checkpoint: Tier 1+2 + cart built).
+### 2026-11-16 (17) — Agent "AG" (Solar Mini4) — Cart service verified 10/10 vs live Turso + Tier 1+2 deployed to prod
+
+**Cart service test (ran directly against live Turso, customer 14):** 10 PASS / 0 FAIL — clearCart empties, addToCart adds item, cartCount reflects add, two products coexist, subtotal math correct, quantity capped at stock, updateCartQuantity sets qty, qty 0 removes item, removeFromCart works, re-add bumps qty to stock cap. **Bug found + fixed during test:** `cartCount` returned a STRING (Turso rows decode as strings) — fixed with `Number(...)` coercion; re-ran → 10/10.
+
+**Gate before deploy:** `npx tsc --noEmit` exit 0, `npm test` 66/66 pass, cart script cleanup (test-cart.mjs + check-customers.mjs deleted).
+
+**Deploy:** Build comes from the git repo (not the working tree) — the hook was re-fired after push so it builds `8669126` ("Cart system + UI complaint batch", 28 files, +1658/−168). Note: the deploy hook endpoint keeps returning `state: PENDING` on poll — that is the hook's own status, NOT the real deployment state; verify prod routes directly instead.
+
+**Prod verification (live):**
+- `/store/cart` → HTTP 200, renders through StoreShell (folio + lockup present)
+- `/store/cart/checkout` → HTTP 200
+- `/store` serves 5 featured-carousel items (the slice(0,5) cap is live)
+- Cart UI strings are client-rendered (JS bundle), so they don't appear in raw HTML — expected for a "use client" page
+
+**Resolved user questions:** 209 vs home display = home renders featured (5) + curated sections, "SEE ALL" links to the full catalogue; live online/offline admin dots dropped (user OK'd skipping, needs heartbeat infra); "Share to WhatsApp" left in place (KAMI hasn't confirmed removal); category editing + image-to-URL engine still open (Tier 3 follow-up, needs user OK).
+
+**Verified by:** AG (Solar Mini4) — Tier 1+2 verified + deployed; cart service verified 10/10; cart pages serving on prod.

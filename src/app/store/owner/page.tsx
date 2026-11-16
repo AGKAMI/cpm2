@@ -220,6 +220,7 @@ export default function OwnerPage() {
                     ) : (
                       "-"
                     )}
+                    <AdminStatusDot lastSeen={a.lastSeen} />
                     <span className="text-ink-faint">· {a.role}</span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -256,4 +257,28 @@ function OwnerStatCard({ label, value }: { label: string; value: string }) {
       <p className="text-xl font-bold text-foreground mt-1">{value}</p>
     </article>
   );
+}
+
+/** Admin presence dot: pulsing green = online (seen within last 5 min), static red = offline. */
+function AdminStatusDot({ lastSeen }: { lastSeen: string | null }) {
+  const online = isAdminOnline(lastSeen);
+  return (
+    <span
+      className="flex items-center gap-1 text-[10px] font-semibold"
+      title={online ? "Online" : "Offline"}
+    >
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${online ? "bg-green-500 animate-pulse" : "bg-red-500"}`}
+        aria-hidden="true"
+      />
+      {online ? "online" : "offline"}
+    </span>
+  );
+}
+
+/** An admin is "online" if they've sent a heartbeat within the last 5 minutes. */
+function isAdminOnline(lastSeen: string | null): boolean {
+  if (!lastSeen) return false;
+  const fiveMinAgo = Date.now() - 5 * 60 * 1000;
+  return new Date(lastSeen).getTime() > fiveMinAgo;
 }

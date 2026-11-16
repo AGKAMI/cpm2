@@ -307,9 +307,21 @@ export function StoreHomeClient({
                   className="block h-full w-full text-center"
                 >
                   <div className="vanta-card-media">
-                    <span className="text-[11px] font-bold text-center text-ink-soft absolute inset-0 flex items-center justify-center">
-                      {cat.name.charAt(0)}
-                    </span>
+                    {cat.imageUrl ? (
+                      <img
+                        src={cat.imageUrl}
+                        alt={cat.name}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        width={200}
+                        height={250}
+                        style={{ objectFit: "cover" }}
+                      />
+                    ) : (
+                      <span className="text-[11px] font-bold text-center text-ink-soft absolute inset-0 flex items-center justify-center">
+                        {cat.name.charAt(0).toUpperCase()}
+                      </span>
+                    )}
                   </div>
                   <div className="vanta-card-body">
                     <p className="vanta-card-subtitle">{cat.name}</p>
@@ -320,6 +332,37 @@ export function StoreHomeClient({
           </div>
         </section>
       )}
+
+      {/* More vehicles — everything published that isn't already in the featured carousel */}
+      {(() => {
+        const rest = allProducts.filter((p: VantaProduct) => !p.isFeatured).slice(0, 24);
+        if (rest.length === 0) return null;
+        return (
+          <section className="vanta-section">
+            <div className="vanta-section-header">
+              <div>
+                <span className="eyebrow">More vehicles</span>
+                <h3 className="font-serif font-bold text-[20px] leading-none mt-[6px]">
+                  All available builds
+                </h3>
+              </div>
+              <Link href="/store/categories" className="vanta-section-see-all">
+                See all
+              </Link>
+            </div>
+            <div className="vanta-card-list">
+              {rest.map((c: VantaProduct) => (
+                <ProductCard
+                  key={c.id}
+                  product={c}
+                  coverImage={coverMap[c.id] ?? c.imageUrl ?? undefined}
+                  variant="standard"
+                />
+              ))}
+            </div>
+          </section>
+        );
+      })()}
 
       {newArrivals.length > 0 && (
         <section className="vanta-section">

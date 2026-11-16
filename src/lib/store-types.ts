@@ -29,6 +29,7 @@ export type Category = {
   name: string;
   slug: string;
   description: string;
+  imageUrl: string;
   sortOrder: number;
   isActive: boolean;
   createdAt: string;

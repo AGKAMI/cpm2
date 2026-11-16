@@ -115,10 +115,19 @@ export const vantaApi = {
     return request<{ products: VantaProduct[]; total: number }>(url);
   },
   categories: () => request<{ categories: VantaCategory[] }>("/categories"),
-  createCategory: (body: { name: string; slug: string; description?: string; sortOrder?: number }) =>
+  createCategory: (body: { name: string; slug: string; description?: string; sortOrder?: number; imageUrl?: string }) =>
     request<{ category: VantaCategory }>("/admin/categories", {
       method: "POST",
       body: JSON.stringify(body),
+    }),
+  updateCategory: (id: number, body: { name?: string; slug?: string; description?: string; sortOrder?: number; imageUrl?: string }) =>
+    request<{ category: VantaCategory }>(`/admin/categories/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+  deleteCategory: (id: number) =>
+    request<{ deleted: boolean }>(`/admin/categories/${id}`, {
+      method: "DELETE",
     }),
   promotions: () => request<{ promotions: VantaPromotion[] }>("/promotions"),
   createPromotion: (body: unknown) =>
@@ -224,6 +233,9 @@ export const vantaApi = {
         method: "POST",
         body: JSON.stringify(body),
       }),
+    adminHeartbeat: () => request<{ ok: boolean }>("/admin/heartbeat", {
+      method: "POST",
+    }),
     adminDashboardStats: () =>
     request<DashboardStats>("/admin/dashboard/stats"),
   adminDashboardAlerts: () =>
@@ -287,6 +299,7 @@ export type VantaCategory = {
   name: string;
   slug: string;
   description: string;
+  imageUrl: string;
   sortOrder: number;
   isActive: boolean;
   createdAt: string;
@@ -321,6 +334,7 @@ export type VantaAdminRecord = {
   addedBy: string | null;
   addedAt: string;
   isActive: boolean;
+  lastSeen: string | null;
 };
 
 export type VantaOrder = {

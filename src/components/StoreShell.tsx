@@ -144,6 +144,14 @@ export function StoreShell({ children, dock }: StoreShellProps) {
     };
   }, []);
 
+  // Admin presence heartbeat: ping the server every 60s so the owner page can
+  // show live online/offline dots. Only fires when the user is verified admin/owner.
+  useEffect(() => {
+    if (isAdmin !== true && isOwner !== true) return;
+    const t = setInterval(() => void vantaApi.adminHeartbeat(), 60_000);
+    return () => clearInterval(t);
+  }, [isAdmin, isOwner]);
+
   // Customer login state via localStorage.
   useEffect(() => {
     const checkLogin = () => {

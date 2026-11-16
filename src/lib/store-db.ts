@@ -167,6 +167,26 @@ export async function runStoreMigrations(storeArg?: TursoHttpClient): Promise<vo
     // Backfill already applied — safe to ignore
   }
 
+  // Migration: add image_url to vanta_categories (category images).
+  try {
+    await store.execute({
+      sql: `ALTER TABLE vanta_categories ADD COLUMN image_url TEXT NOT NULL DEFAULT ''`,
+      args: [],
+    });
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: add last_seen to vanta_admins (admin online/offline presence).
+  try {
+    await store.execute({
+      sql: `ALTER TABLE vanta_admins ADD COLUMN last_seen TEXT NOT NULL DEFAULT ''`,
+      args: [],
+    });
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
   // Migration: seed vanta_cpm2_cars with CPM2 catalog names (idempotent — INSERT OR IGNORE)
   try {
     await store.execute({

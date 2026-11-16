@@ -1,21 +1,41 @@
 /**
  * VANTA GARAGE — store auth helper.
- * Maps a Telegram Mini App initData signature to a VANTA customer
- * via the platform-identity link. Returns null when no customer is linked
- * yet (caller shows onboarding).
+ * Resolves the calling customer from either auth path:
+ * 1. Telegram Mini App initData → linked customer (or null until onboarded).
+ * 2. Web login session cookie (`cpm2_session`, set by the email/password
+ *    login) → that customer. Without this fallback every cart/wishlist route
+ *    was Telegram-only, which locked logged-in web customers out — the store
+ *    is reachable in any browser, so the cart must be too.
  */
 
 import { ApiError } from "../api.ts";
 import { assertTelegramAuth } from "../telegram";
-import { getCustomerByPlatformIdentity } from "./customers";
-import type { Platform } from "../store-types";
+import { readRequestCookie, verifySessionToken, SESSION_COOKIE } from "../auth";
+import { getCustomer, getCustomerByPlatformIdentity } from "./customers";
+import type { Customer, PlatformIdentity } from "../store-types";
 
-export async function getStoreCustomer(request: Request) {
-  const telegramUserId = await assertTelegramAuth(request);
-  if (telegramUserId === null) return null;
+ export type StoreCustomer = {
+   customer: Customer;
+   identity: PlatformIdentity | null;
+ };
 
-  return await getCustomerByPlatformIdentity("telegram", String(telegramUserId));
-}
+ export async function getStoreCustomer(request: Request): Promise<StoreCustomer | null> {
+   const telegramUserId = await assertTelegramAuth(request);
+   if (telegramUserId !== null) {
+     return await getCustomerByPlatformIdentity("telegram", String(telegramUserId));
+   }
+
+   // Web session fallback — the customer logged in with email + password.
+   const sessionUserId = verifySessionToken(readRequestCookie(request, SESSION_COOKIE));
+     if (sessionUserId) {
+       const customer = await getCustomer(sessionUserId);
+       if (customer) {
+         return { customer, identity: null };
+       }
+     }
+
+     return null;
+   }
 
 export async function requireStoreCustomer(request: Request) {
   const customer = await getStoreCustomer(request);

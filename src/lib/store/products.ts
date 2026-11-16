@@ -126,7 +126,7 @@ export async function createProduct(input: ProductInput): Promise<Product> {
   const now = new Date().toISOString();
   const result = await db.execute({
     sql: `INSERT INTO vanta_products (category_id, cpm2_car_code, name, description, base_price_cents, currency, stock_quantity, initial_stock, availability_state, exclusivity, is_featured, is_new, is_sale, is_published, air_suspension, unlocked_bodykits, created_at, updated_at, spec_hp, spec_top_speed, spec_zero_hundred, spec_drive)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '${now}', ?, ?, ?, ?, ?)`,
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, '${now}', ?, ?, ?, ?, ?)`,
     args: [
       input.categoryId ?? null,
       input.cpm2CarCode ?? null,
@@ -140,7 +140,6 @@ export async function createProduct(input: ProductInput): Promise<Product> {
       input.availabilityState ?? "available",
       input.exclusivity ?? "standard",
       input.isFeatured ? 1 : 0,
-      input.isNew ? 1 : 0,
       input.isSale ? 1 : 0,
       input.isPublished ? 1 : 0,
       input.airSuspension ? 1 : 0,
@@ -154,10 +153,12 @@ export async function createProduct(input: ProductInput): Promise<Product> {
   });
   const id = result.lastInsertRowid;
   if (id === null) throw new Error("Product insert returned no id");
-  return rowToProduct({ id, category_id: input.categoryId ?? null, cpm2_car_code: input.cpm2CarCode ?? null, name: input.name.trim(), description: input.description ?? "", base_price_cents: input.basePriceCents ?? 0, currency: input.currency ?? "ZAR", stock_quantity: input.stockQuantity ?? 0, initial_stock: input.stockInitial ?? input.stockQuantity ?? 0, availability_state: input.availabilityState ?? "available", exclusivity: input.exclusivity ?? "standard", is_featured: input.isFeatured ? 1 : 0, is_new: input.isNew ? 1 : 0, is_sale: input.isSale ? 1 : 0, is_published: input.isPublished ? 1 : 0, air_suspension: input.airSuspension ? 1 : 0, unlocked_bodykits: input.unlockedBodykits ? 1 : 0, version: 1, spec_hp: input.specHp ?? null, spec_top_speed: input.specTopSpeed ?? null, spec_zero_hundred: input.specZeroHundred ?? null, spec_drive: input.specDrive ?? null, created_at: now, updated_at: now });
+  return rowToProduct({ id, category_id: input.categoryId ?? null, cpm2_car_code: input.cpm2CarCode ?? null, name: input.name.trim(), description: input.description ?? "", base_price_cents: input.basePriceCents ?? 0, currency: input.currency ?? "ZAR", stock_quantity: input.stockQuantity ?? 0, initial_stock: input.stockInitial ?? input.stockQuantity ?? 0, availability_state: input.availabilityState ?? "available", exclusivity: input.exclusivity ?? "standard", is_featured: input.isFeatured ? 1 : 0, is_new: 1, is_sale: input.isSale ? 1 : 0, is_published: input.isPublished ? 1 : 0, air_suspension: input.airSuspension ? 1 : 0, unlocked_bodykits: input.unlockedBodykits ? 1 : 0, version: 1, spec_hp: input.specHp ?? null, spec_top_speed: input.specTopSpeed ?? null, spec_zero_hundred: input.specZeroHundred ?? null, spec_drive: input.specDrive ?? null, created_at: now, updated_at: now });
 }
 
 export async function getProduct(id: number): Promise<Product | null> {
+  // Expire "New" tags on products older than 3 days.
+  await expireOldNewTags();
   const db = await getStoreDb();
   const result = await db.execute({
     sql: `SELECT * FROM vanta_products WHERE id = ?`,
@@ -168,6 +169,9 @@ export async function getProduct(id: number): Promise<Product | null> {
 }
 
 export async function listProducts({ onlyPublished = true, featuredOnly = false }: { onlyPublished?: boolean; featuredOnly?: boolean } = {}): Promise<Product[]> {
+  // Expire "New" tags on products older than 3 days (auto-tag: new products
+  // get the tag at creation, it is removed automatically after 3 days).
+  await expireOldNewTags();
   const db = await getStoreDb();
   let sql = `SELECT * FROM vanta_products WHERE 1=1`;
   const args: unknown[] = [];
@@ -180,6 +184,16 @@ export async function listProducts({ onlyPublished = true, featuredOnly = false 
   sql += ` ORDER BY is_featured DESC, created_at DESC`;
   const result = await db.execute({ sql, args });
   return result.rows.map(rowToProduct);
+}
+
+/** Remove the "New" tag from products created more than 3 days ago. */
+async function expireOldNewTags(): Promise<void> {
+  const db = await getStoreDb();
+  const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+  await db.execute({
+    sql: `UPDATE vanta_products SET is_new = 0 WHERE is_new = 1 AND created_at < ?`,
+    args: [threeDaysAgo],
+  });
 }
 
 export async function searchProducts(query: string): Promise<Product[]> {

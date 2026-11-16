@@ -172,17 +172,7 @@ export function CartClient() {
       <StoreShell>
         <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-6">
           <div className="w-16 h-16 rounded-full bg-background border border-border flex items-center justify-center mb-4">
-            <svg
-              className="w-8 h-8 text-muted-foreground"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 3.3 0 1.65 1.65 0 0 0-3.3 0z" />
-              <path d="M21 15a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4" />
-            </svg>
+            <img src="/cart-xmark.svg" alt="Empty cart" className="w-8 h-8 text-muted-foreground" />
           </div>
           <h2 className="text-xl font-bold text-foreground mb-2">Your cart is empty</h2>
           <p className="text-muted-foreground mb-6">

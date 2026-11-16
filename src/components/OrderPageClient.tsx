@@ -6,6 +6,7 @@ import { vantaApi, formatPrice, type VantaOrder } from "@/lib/store/client";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
+import Link from "next/link";
 
 export function OrderPageClient({ orderId }: { orderId: string }) {
   const [order, setOrder] = useState<VantaOrder | null>(null);
@@ -39,7 +40,10 @@ export function OrderPageClient({ orderId }: { orderId: string }) {
 
   return (
     <StoreShell>
-      <PageHeading folio="03" title={`Order ${order.id}`} />
+      <PageHeading folio="03" title={`Order ${order.id}`} backHref="/store/orders" />
+      <Link href="/store/orders" className="mb-4 inline-flex items-center gap-1 text-[10px] text-gold underline underline-offset-4 hover:text-gold/80">
+        <span>← Back to orders</span>
+      </Link>
       <div className="grid gap-6 md:grid-cols-2">
         <div className="panel rounded-xl border border-border p-6 bg-background">
           <h3 className="text-sm font-semibold text-foreground mb-4">Vehicle</h3>

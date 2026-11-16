@@ -280,64 +280,59 @@ export function CategoriesClient({
             </select>
           </div>
 
-          <div id="res" className="carousel px-4">
-            <div
-              className="flex flex-nowrap gap-6 snap-x snap-mandatory pb-6 overflow-x-auto scrollbar-hide"
-              style={{ scrollPaddingLeft: "16px", scrollPaddingRight: "16px" }}
-            >
-              {sorted.length ? (
-                sorted.map((c, index) => (
-                  <Link
-                    key={c.id}
-                    href={`/store/products/${c.id}`}
-                    className="product-card group block snap-start stagger-item min-w-[260px] max-w-[300px]"
-                    style={{ animationDelay: `${index * 40}ms` }}
-                  >
-                    <div className="relative overflow-hidden rounded-[24px] border border-border mb-4">
-                      {clientCoverMap[c.id] ? (
-                        <>
-                          <img
-                            src={clientCoverMap[c.id] || ""}
-                            alt={c.name}
-                            className="w-full h-[260px] object-cover group-hover:scale-105 transition-transform duration-500"
-                            loading="lazy"
-                            decoding="async"
-                            width={200}
-                            height={260}
-                            style={{ objectFit: "cover", display: "block" }}
-                          />
-                        </>
-                      ) : (
-                        <div className="w-full h-[260px] bg-surface-deep relative aspect-[4/5]">
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                          <span className="absolute bottom-4 left-4 text-[10px] text-white/50 uppercase tracking-[0.2em]">No photo</span>
-                        </div>
-                      )}
-                      <div className="absolute top-2 left-2 flex flex-col gap-1">
+          <div id="res" className="grid grid-cols-5 gap-4 px-4">
+            {sorted.length ? (
+              sorted.map((c, index) => (
+                <Link
+                  key={c.id}
+                  href={`/store/products/${c.id}`}
+                  className="product-card group block col-span-1"
+                  style={{ animationDelay: `${index * 40}ms` }}
+                >
+                  <div className="relative overflow-hidden rounded-[24px] border border-border mb-4 aspect-[4/5]">
+                    {clientCoverMap[c.id] ? (
+                      <>
+                        <img
+                          src={clientCoverMap[c.id] || ""}
+                          alt={c.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          loading="lazy"
+                          decoding="async"
+                          width={200}
+                          height={260}
+                          style={{ objectFit: "cover", display: "block" }}
+                        />
+                      </>
+                    ) : (
+                      <div className="w-full h-full bg-surface-deep relative">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                        <span className="absolute bottom-4 left-4 text-[10px] text-white/50 uppercase tracking-[0.2em]">No photo</span>
                       </div>
+                    )}
+                    <div className="absolute top-2 left-2 flex flex-col gap-1">
                     </div>
-                    <div className="mt-3 px-1">
-                      <h4 className="font-bold text-sm text-ink leading-snug">{c.name}</h4>
-                      <div className="flex items-baseline flex-wrap gap-2 mt-2">
-                        <HeartToggle productId={c.id} />
-                        <span className="price-primary text-base font-bold tabular-nums">
-                          {formatPrice(c.basePriceCents, c.currency)}
-                        </span>
-                        <span
-                          className={`stock-indicator ${stockTier(c.stockQuantity, c.stockInitial ?? 0)}`}>
-                          {stockLabel(c.stockQuantity, stockTier(c.stockQuantity, c.stockInitial ?? 0))}
-                        </span>
-                      </div>
+                  </div>
+                  <div className="mt-3 px-1">
+                    <h4 className="font-bold text-sm text-ink leading-snug">{c.name}</h4>
+                    <div className="flex items-baseline flex-wrap gap-2 mt-2">
+                      <HeartToggle productId={c.id} />
+                      <span className="price-primary text-base font-bold tabular-nums">
+                        {formatPrice(c.basePriceCents, c.currency)}
+                      </span>
+                      <span
+                        className={`stock-indicator ${stockTier(c.stockQuantity, c.stockInitial ?? 0)}`}>
+                        {stockLabel(c.stockQuantity, stockTier(c.stockQuantity, c.stockInitial ?? 0))}
+                      </span>
                     </div>
-                  </Link>
-                ))
-              ) : (
-                <div className="empty text-center py-10 text-muted-foreground stagger-item">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.1em] mb-2 block">search</span>
-                  <p>No vehicles match your filters.</p>
-                </div>
-              )}
-            </div>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <div className="empty text-center py-10 text-muted-foreground stagger-item col-span-5">
+                <span className="text-[10px] font-bold uppercase tracking-[0.1em] mb-2 block">search</span>
+                <p>No vehicles match your filters.</p>
+              </div>
+            )}
           </div>
         </section>
       </>

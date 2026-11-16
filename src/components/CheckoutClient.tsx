@@ -229,11 +229,11 @@ export function CheckoutClient({ productId }: { productId: number }) {
               maxLength={8}
               className={
                 playerIdError
-                  ? "border-destructive"
+                  ? "border-destructive border-glow-red"
                   : !validatePlayerId(playerId)
                     ? "border-ok"
                     : attempted
-                      ? "border-destructive"
+                      ? "border-destructive border-glow-red"
                       : ""
               }
             />
@@ -249,11 +249,11 @@ export function CheckoutClient({ productId }: { productId: number }) {
               placeholder="e.g. Thino M"
               className={
                 inGameNameError
-                  ? "border-destructive"
+                  ? "border-destructive border-glow-red"
                   : !validateInGameName(inGameName)
                     ? "border-ok"
                     : attempted
-                      ? "border-destructive"
+                      ? "border-destructive border-glow-red"
                       : ""
               }
             />
@@ -287,7 +287,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
                 EFT Proof Upload
               </h3>
               <div className="flex flex-col gap-3">
-                <label id="checkout-proof-upload" className={`flex items-center gap-3 cursor-pointer border border-dashed rounded-md p-4 text-center transition-colors ${proofFileName ? "border-ok hover:border-ok" : attempted ? "border-destructive hover:border-destructive" : "border-border hover:border-primary"}`}>
+                <label id="checkout-proof-upload" className={`flex items-center gap-3 cursor-pointer border border-dashed rounded-md p-4 text-center transition-colors ${proofFileName ? "border-ok hover:border-ok" : attempted ? "border-destructive border-glow-red hover:border-destructive" : "border-border hover:border-primary"}`}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="w-5 h-5 text-primary"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                   <span className="text-xs font-medium text-foreground">Choose file</span>
                   <input type="file" accept=".png,.jpg,.jpeg,.pdf" className="hidden" onChange={(e) => {

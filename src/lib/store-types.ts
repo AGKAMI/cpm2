@@ -148,7 +148,6 @@ export type ProductInput = {
   availabilityState?: AvailabilityState;
   exclusivity?: Exclusivity;
   isFeatured?: boolean;
-  isNew?: boolean;
   isSale?: boolean;
   isPublished?: boolean;
   airSuspension?: boolean;      // Air suspension installation included

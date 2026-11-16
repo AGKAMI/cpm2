@@ -1538,19 +1538,39 @@ html {
   gap: 4px;
 }
 .vanta-card-badge {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.15em;
-  padding: 2px 8px;
-  border-radius: 4px;
+  padding: 1.5px 3px;
+  border-radius: 9999px;
   color: #fff;
   white-space: nowrap;
+  /* Metallic gold pill look with shine sweep */
+  background: linear-gradient(105deg, #a8a292 0%, #7a7466 20%, #4a4436 38%, #a8a292 50%, #7a7466 66%, #4a4436 84%, #a8a292 100%);
+  border: 1px solid #d4af4f;
+  color: #000;
+  position: relative;
+  overflow: hidden;
 }
-.vanta-card-badge.new { background: var(--success); }
-.vanta-card-badge.featured { background: var(--brand-gold); color: #000; }
-.vanta-card-badge.sale { background: var(--destructive); }
-.vanta-card-badge.exclusive { background: var(--primary); }
+.vanta-card-badge::before {
+  content: "";
+  position: absolute;
+  top: 0; left: -100%; width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%);
+  animation: tagShine 3s infinite linear;
+  pointer-events: none;
+  z-index: 1;
+}
+@keyframes tagShine {
+  0% { left: -100%; }
+  20% { left: 100%; }
+  100% { left: 100%; }
+}
+.vanta-card-badge.new { background: linear-gradient(105deg, #a8a292 0%, #7a7466 20%, #4a4436 38%, #a8a292 50%, #7a7466 66%, #4a4436 84%, #a8a292 100%); border-color: #d4af4f; color: #000; }
+.vanta-card-badge.featured { background: linear-gradient(105deg, #a8a292 0%, #7a7466 20%, #4a4436 38%, #a8a292 50%, #7a7466 66%, #4a4436 84%, #a8a292 100%); border-color: #d4af4f; color: #000; }
+.vanta-card-badge.sale { background: linear-gradient(105deg, #a8a292 0%, #7a7466 20%, #4a4436 38%, #a8a292 50%, #7a7466 66%, #4a4436 84%, #a8a292 100%); border-color: #d4af4f; color: #000; }
+.vanta-card-badge.exclusive { background: linear-gradient(105deg, #a8a292 0%, #7a7466 20%, #4a4436 38%, #a8a292 50%, #7a7466 66%, #4a4436 84%, #a8a292 100%); border-color: #d4af4f; color: #000; }
 .vanta-card-title {
   font-family: var(--font-display);
   font-size: 16px;
@@ -1608,9 +1628,9 @@ html {
   text-decoration: none;
 }
 .vanta-card-list {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
   gap: 16px;
-  flex-wrap: nowrap;
   overflow-x: auto;
   scrollbar-width: none;
   padding-bottom: 8px;
@@ -2286,10 +2306,11 @@ html {
   }
 }
 
-/* Promotion card - admin background color applies; shine effect kept */
+/* Promotion card - always metallic background */
 .promotion-card {
   position: relative;
   overflow: hidden;
+  background: linear-gradient(105deg, #a8a292 0%, #7a7466 20%, #4a4436 38%, #a8a292 50%, #7a7466 66%, #4a4436 84%, #a8a292 100%);
 }
 
 .promotion-card::before {
@@ -2441,9 +2462,9 @@ html {
 .heart-fav.is-active {
   width: 150px;
   box-shadow: 0 10px 25px rgba(212, 175, 79, 0.35);
-  border-color: #d4af4f;
-  background: #d4af4f;
-  color: #000;
+  border-color: #ff69b4;
+  background: #ff69b4;
+  color: #fff;
 }
 .heart-fav:hover::before,
 .heart-fav:focus-visible::before,
@@ -2462,6 +2483,12 @@ html {
   color: inherit;
   transition: transform 0.5s, color 0.5s;
   transition-delay: 0.25s;
+}
+.heart-fav .heart-outline {
+  color: #d4af4f;
+}
+.heart-fav .heart-filled {
+  color: #ff69b4;
 }
 .heart-fav:hover .heart-icon,
 .heart-fav:focus-visible .heart-icon,
@@ -2487,4 +2514,15 @@ html {
 .heart-fav.is-active .heart-title {
   transform: scale(1);
   transition-delay: 0.25s;
+}
+
+/* Checkout: red glowing border on invalid fields after confirm attempt */
+.border-glow-red {
+  border-color: #ff0000;
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.6);
+  animation: pulseRed 1.5s infinite;
+}
+@keyframes pulseRed {
+  0%, 100% { box-shadow: 0 0 8px rgba(255, 0, 0, 0.6); }
+  50% { box-shadow: 0 0 16px rgba(255, 0, 0, 0.9); }
 }

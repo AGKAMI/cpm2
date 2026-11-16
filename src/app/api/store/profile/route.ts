@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   if (sessionUserId) {
     const db = await getStoreDb();
     const customer = await db.execute({
-      sql: `SELECT id, in_game_name, player_id, email, currency_pref FROM vanta_customers WHERE id = ?`,
+      sql: `SELECT id, in_game_name, player_id, email, currency_pref, notifications_enabled FROM vanta_customers WHERE id = ?`,
       args: [sessionUserId],
     });
     if (customer.rows.length > 0) {

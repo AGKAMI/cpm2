@@ -71,7 +71,7 @@ export function StoreHomeClient({
     const el = carouselRef.current;
     const target = el?.children[index] as HTMLElement | undefined;
     if (target) {
-      target.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
+      target.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
     }
   }, []);
 
@@ -509,7 +509,7 @@ const ProductCard = React.memo(
                       className="cart-add-btn flex h-8 w-8 items-center justify-center rounded-lg border border-input bg-background text-foreground hover:bg-secondary transition-colors cursor-pointer active:scale-95"
                       aria-label={`Add ${product.name} to cart`}
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                       </svg>
                     </button>
@@ -652,9 +652,18 @@ function AddToCartMini({ productId }: { productId: number }) {
       size="sm"
       onClick={handleAdd}
       disabled={busy || added}
-      className="text-[10px] h-7 px-2"
+      className="h-7 w-7 p-0"
+      aria-label={added ? "Added to cart" : "Add to cart"}
     >
-      {added ? "Added" : "+ Cart"}
+      {added ? (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 3" />
+        </svg>
+      ) : (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+      )}
     </Button>
   );
 }

@@ -33,7 +33,6 @@ const productSchema = z.object({
     .default("available"),
   exclusivity: z.enum(["standard", "limited_edition", "one_of_one"]).default("standard"),
   isFeatured: z.boolean().default(false),
-  isNew: z.boolean().default(false),
   isSale: z.boolean().default(false),
   isPublished: z.boolean().default(false),
   airSuspension: z.boolean().default(false),   // Air suspension installation included
@@ -103,7 +102,6 @@ export async function POST(request: Request) {
           availabilityState: body.availabilityState,
           exclusivity: body.exclusivity,
           isFeatured: body.isFeatured,
-          isNew: body.isNew,
           isSale: body.isSale,
           isPublished: body.isPublished,
           airSuspension: body.airSuspension,
@@ -168,7 +166,6 @@ export async function PUT(request: Request) {
           availabilityState: body.availabilityState,
           exclusivity: body.exclusivity,
           isFeatured: body.isFeatured,
-          isNew: body.isNew,
           isSale: body.isSale,
           isPublished: body.isPublished,
           airSuspension: body.airSuspension,

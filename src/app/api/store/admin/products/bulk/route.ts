@@ -22,7 +22,6 @@ const bulkProductSchema = z.array(
       .default("available"),
     exclusivity: z.enum(["standard", "limited_edition", "one_of_one"]).default("standard"),
     isFeatured: z.boolean().default(false),
-    isNew: z.boolean().default(false),
     isSale: z.boolean().default(false),
     isPublished: z.boolean().default(false),
     cpm2CarCode: z.coerce.number().int().nonnegative().optional(),
@@ -50,7 +49,6 @@ export async function POST(request: Request) {
           availabilityState: input.availabilityState,
           exclusivity: input.exclusivity,
           isFeatured: input.isFeatured,
-          isNew: input.isNew,
           isSale: input.isSale,
           isPublished: input.isPublished,
         };

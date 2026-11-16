@@ -81,7 +81,7 @@ export function ProfileClient({
         const data = await res.json();
         if (data.customer) {
           setCustomer(data.customer);
-          setNotificationsEnabled(!!data.customer.notificationsEnabled);
+          setNotificationsEnabled(data.customer?.notificationsEnabled ?? true);
         }
         if (data.telegramUser) setTelegramUser(data.telegramUser);
 
@@ -243,6 +243,7 @@ export function ProfileClient({
       await fetch("/api/store/auth/logout", { method: "POST", credentials: "include" });
       setCustomer(null);
       setTelegramUser(null);
+      setNotificationsEnabled(null);
       setSuccess("Logged out.");
     } catch {
       setError("Logout failed.");

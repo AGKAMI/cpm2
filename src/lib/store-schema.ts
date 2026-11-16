@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS vanta_customers (
   player_id      TEXT    NOT NULL DEFAULT '',
   currency_pref  TEXT    NOT NULL DEFAULT 'ZAR',
   email          TEXT    NOT NULL DEFAULT '',
+  notifications_enabled INTEGER NOT NULL DEFAULT 1,
   created_at     TEXT    NOT NULL,
   updated_at     TEXT    NOT NULL
 );

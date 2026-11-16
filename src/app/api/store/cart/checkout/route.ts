@@ -21,6 +21,7 @@ import {
 } from "@/lib/store/customers";
 import { createOrder } from "@/lib/store/checkout";
 import { getCart, clearCart } from "@/lib/store/cart";
+import { getStoreCustomer } from "@/lib/store/auth";
 import type { Customer } from "@/lib/store-types";
 
 const cartCheckoutSchema = z.object({
@@ -36,10 +37,17 @@ async function resolveBuyer(
   playerId: string,
   inGameName: string,
 ): Promise<Customer> {
+  // Session/Telegram customer first — the cart is keyed by CUSTOMER id, so a
+  // logged-in web shopper must resolve to the same customer their cart belongs
+  // to. Falling through to playerId here would create a fresh customer with an
+  // empty cart (the classic "your cart is empty" false negative).
+  const linked = await getStoreCustomer(request);
+  if (linked) return linked.customer;
+
   const telegramUserId = await assertTelegramAuth(request);
   if (telegramUserId !== null) {
-    const linked = await getCustomerByPlatformIdentity("telegram", String(telegramUserId));
-    if (linked) return linked.customer;
+    const tgLinked = await getCustomerByPlatformIdentity("telegram", String(telegramUserId));
+    if (tgLinked) return tgLinked.customer;
     const created = await createCustomer({ inGameName, playerId });
     await linkPlatformIdentity(created.id, "telegram", String(telegramUserId), "");
     return created;

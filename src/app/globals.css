@@ -1601,6 +1601,20 @@ html {
   gap: 8px;
   margin-top: auto;
 }
+.pad {
+  padding: 0 1rem 2rem 1rem;
+}
+@media (min-width: 640px) {
+  .pad {
+    padding: 0 1.5rem 2.5rem 1.5rem;
+  }
+}
+@media (min-width: 1024px) {
+  .pad {
+    padding: 0 2rem 3rem 2rem;
+  }
+}
+
 /* Section header consistency */
 .vanta-section {
   margin-bottom: 24px;
@@ -1629,18 +1643,33 @@ html {
 }
 .vanta-card-list {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(1, 1fr);
   gap: 16px;
   overflow-x: auto;
   scrollbar-width: none;
   padding-bottom: 8px;
+}
+@media (min-width: 640px) {
+  .vanta-card-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .vanta-card-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (min-width: 1280px) {
+  .vanta-card-list {
+    grid-template-columns: repeat(5, 1fr);
+  }
 }
 .vanta-card-list::-webkit-scrollbar {
   display: none;
 }
 .vanta-card-list > .vanta-card {
   flex: 0 0 auto;
-  width: 260px;
+  width: 100%;
 }
 
 /* Animated border shine on store card hover */
@@ -2525,4 +2554,24 @@ html {
 @keyframes pulseRed {
   0%, 100% { box-shadow: 0 0 8px rgba(255, 0, 0, 0.6); }
   50% { box-shadow: 0 0 16px rgba(255, 0, 0, 0.9); }
+}
+
+/* Catalog grid — not squeezed: 2 cols mobile → 3 (640px) → 4 (1024px) → 5 (1280px+) */
+#res {
+  grid-template-columns: repeat(2, 1fr);
+}
+@media (min-width: 640px) {
+  #res {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  #res {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+@media (min-width: 1280px) {
+  #res {
+    grid-template-columns: repeat(5, 1fr);
+  }
 }

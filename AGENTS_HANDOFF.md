@@ -523,3 +523,25 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 **Resolved user questions:** 209 vs home display = home renders featured (5) + curated sections, "SEE ALL" links to the full catalogue; live online/offline admin dots dropped (user OK'd skipping, needs heartbeat infra); "Share to WhatsApp" left in place (KAMI hasn't confirmed removal); category editing + image-to-URL engine still open (Tier 3 follow-up, needs user OK).
 
 **Verified by:** AG (Solar Mini4) — Tier 1+2 verified + deployed; cart service verified 10/10; cart pages serving on prod.
+
+---
+
+### 2026-11-16 (18) — Agent "AG" — Auto-tag new products, metallic tags, 5-per-row grids, SVG cart buttons, back button, notifications persistence
+
+**Gate:** tsc clean → tests 66/66 → build clean → local 3001 verified (store: 200, home has "More vehicles", 5 featured cards, no WhatsApp, grid-cols-5 on categories). Deployed to prod (commit `5d77646`), deploy job `6k3uIbekjdhBJYkRMtIE`.
+
+**Changes:**
+1. **Auto-tag new products** — `createProduct` now forces `is_new=1` at creation (removed from `ProductInput` so admins can't set it). `expireOldNewTags()` sets `is_new=0` for products older than 3 days; called in both `listProducts` (home/categories) and `getProduct` (direct product page views).
+2. **Metallic tags with shine** — `vanta-card-badge` now uses metallic gradient background + shine animation, pill shape (`rounded-full`), gold border, dark text — matching the product page tag look.
+3. **5-per-row grids** — Categories page uses `grid-cols-5`; home page `vanta-card-list` already uses CSS grid with 5 columns.
+4. **Heart not filled until wishlisted** — heart outline is gold (`#d4af4f`), fills pink (`#ff69b4`) only when wishlisted.
+5. **Promotion card** — always metallic background (not just solid color).
+6. **Add to cart: SVG only** — removed "+ Cart" text from `cart-add-btn` and `AddToCartMini`; both now show cart SVG only.
+7. **Featured dots center image** — `scrollIntoView({ inline: "center" })` so the active slide centers on the dots.
+8. **Order page back button** — added "← Back to orders" link on `/store/orders/[id]`.
+9. **Cart empty SVG** — replaced inline SVG with `/cart-xmark.svg` (custom file in public/).
+10. **Notifications persistence** — `logout()` now resets `notificationsEnabled` to null so it re-reads from DB on re-login.
+11. **Checkout validation** — red glowing border (`border-glow-red`) on invalid fields after confirm attempt.
+12. **Product page image** — removed hardcoded `aspect-[4/5]`; image fits its natural size.
+
+**Verified by:** AG — tsc clean, tests 66/66, build clean, local 3001 verified, prod verified (770KB, no WhatsApp, 5 featured cards, 0 "No photo", grid-cols-5 on categories).

@@ -578,3 +578,13 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 **Gate:** tsc clean → tests 66/66 → build clean → local 3001 verified (profile: 22KB, ID/CPM2 ID/Orders/Wishlist labels all absent when not logged in). Deployed to prod (commit `1e5bc4d`), deploy job `4uXl6wMLsqUbPSUDA5nD`.
 
 **Verified by:** AG — tsc clean, tests 66/66, build clean, local 3001 verified, prod verified (profile page has no ID/CPM2 ID/Orders/Wishlist when logged out).
+
+---
+
+### 2026-11-16 (20) — Agent "AG" — Increase dock frost on mobile
+
+**Change:** Dock backdrop blur increased from `backdrop-blur-lg` to `backdrop-blur-xl`, background opacity from `bg-background/90` to `bg-background/[0.95]`, making the dock less transparent and more frost-glass on mobile per user request.
+
+**Gate:** tsc clean → tests 66/66 → build clean → deploy job `FYAlXSsSQgH0e8S7ugR7` triggered.
+
+**Verified by:** AG — tsc clean, tests 66/66, build clean.

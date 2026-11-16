@@ -452,11 +452,41 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 10. **Checkout image speed**: cover Image now `priority` + `sizes` (was a 400px asset stretched full-width).
 11. **Telegram avatar**: root cause — the avatar route (`/api/store/telegram-avatar`) requires the session cookie, but `next/image`'s optimizer fetches server-side WITHOUT cookies → 401 → broken image. Fixed by `unoptimized` on all three avatar Images (profile header, header dock, link-preview).
 
-**Still open in this round:** build + gate + deploy + prod verify (Tier 1+2 complete; cart system wired).
+**Gate:** `npx tsc --noEmit` exit 0, npm tests 66/66 pass, `next build` clean. All cart + UI work from batch committed (`dbcc17d..8669126`) and deployed. Deploy job `o9dBuiypc5RAijunLot8` triggered.
 
 ---
 
 ### 2026-11-16 (16) — Agent "AG" (Solar Mini4) — Verified Tier 1+2 UI fixes + cart system built
+
+**Tier 1 — Broken flows:**
+- **Wishlist API wire-up** — `HeartToggle.tsx` now calls `loadServerWishlist()` (one shared server fetch, `vanta_wishlist_*` localStorage mirror) + `toggleWishlist(productId, !prev)` POSTs to `/api/store/wishlist` instead of only localStorage. Navigation guard `preventDefault()` + `stopPropagation()` in place.
+- **Checkout form validation UX** (`CheckoutClient.tsx`): per-field validation — green when valid, neutral while typing, red after failed confirm (`attempted` state). Player ID regex `^[A-Z]{2}\d{6}$`, in-game name min 2 chars. Confirm button stays clickable with `cursor-not-allowed` when incomplete, so the error/scroll feedback fires; confirmed ✓.
+- **EFT reject button** (`EftReviewClient.tsx`): reject modal has "Reject Payment" + "Cancel" buttons inside the Modal (was misrendered as siblings → no confirm). ✓
+- **VIEW ORDER link**: `EftReviewClient.tsx` now uses `/store/orders/{id}` (was ownership-scoped single-order GET → 403/404 for admins). ✓
+
+**Tier 2 — Broken visuals:**
+- **Featured nav centering + header spacing**: `.featured-nav` → absolute overlay (`inset: 0`); buttons `top: 50%` + `-translateY(-50%)`; pointer-events none except on buttons; header spacing tightened. JS wraps ONLY the carousel in `featured-carousel-wrap relative`. ✓
+- **Promotion card color + fade**: `.promotion-card` no longer uses a hardcoded gradient that painted over the admin `backgroundColor`; bg→image fade band widened (55%→75%, 30% hold) eliminating the "sticker" edge; accent color applies to title + price + discount line. ✓
+- **Product page + checkout image fill**: `ProductPageClient.tsx` hero uses `aspect-[4/5]` + `object-cover` + `sizes` → fills viewport (was `25vw` corner); checkout banner `aspect-[4/3] object-cover`. `sizes` + `priority` on cover. ✓
+- **Telegram avatar**: `unoptimized` on all 3 avatar Images so browser sends session cookie to `/api/store/telegram-avatar` (was 401'd by next/image optimizer). ✓
+- **Admin dock refresh**: `StoreShell.tsx` listens for `"vanta-admin-session"` event → in-tab login rebuilds dock immediately; `owner` gate = server-verified `isOwner` only. ✓
+- **Admin image chooser** (`admin/page.tsx`): "Choose image" chips keyed on `form.imageUrl` → green `✓ Image attached` + remove, neutral only when empty. ✓
+
+**Gate:** `npx tsc --noEmit` exit 0, npm tests 66/66 pass. Cart schema + service + API + bulk-checkout route all wired.
+
+---
+
+### 2026-11-16 (17) — Agent "AG" — Four user requests completed
+
+1. **Remove Share to WhatsApp** — Deleted the WhatsApp share button from `ProductPageClient.tsx` (product page). User asked "why do we need this" → removed.
+
+2. **Category editing + images** — Added `image_url` column to `vanta_categories` (migration in `store-db.ts`). Service layer: `createCategory` accepts `imageUrl`, new `updateCategory`/`deleteCategory` in `products.ts`. API: `POST /api/store/admin/categories` (updated to accept image_url), new `PUT/DELETE /api/store/admin/categories/[id]`. Admin UI (`admin/page.tsx`): image upload field with convert-to-url engine (same as products), image preview, green "✓ Image attached" chip with remove link, delete button per category, category images shown in the category chip list. Home page (`StoreHomeClient.tsx`): category cards show images with letter fallback. Types: `imageUrl` added to `Category` (store-types.ts) and `VantaCategory` (client.ts).
+
+3. **Live admin online/offline dots (NOT skipped)** — Added `last_seen` column to `vanta_admins` (migration). New `adminHeartbeat()` service + `POST /api/store/admin/heartbeat` API route. `StoreShell.tsx` pings heartbeat every 60s when user is admin/owner. Owner page (`owner/page.tsx`): green pulsing dot "online" if last_seen within 5 min, red dot "offline" otherwise, shown next to each admin in the list.
+
+4. **Home page listing** — Featured carousel limited to 5 slides (was already `slice(0,5)`). New "More vehicles / All available builds" section below features + promotions showing up to 24 non-featured published products.
+
+**Gate:** tsc clean → tests 66/66 → build clean → local 3001 verified (store: 200, home has "More vehicles" section, 5 featured cards, no WhatsApp). Deployed to prod (commit `844cc3d`), deploy job `o9dBuiypc5RAijunLot8` PENDING.
 
 **Tier 1 — Broken flows:**
 - **Wishlist API wire-up** — `HeartToggle.tsx` now calls `loadServerWishlist()` (one shared server fetch, `vanta_wishlist_*` localStorage mirror) + `toggleWishlist(productId, !prev)` POSTs to `/api/store/wishlist` instead of only localStorage. Navigation guard `preventDefault()` + `stopPropagation()` in place.

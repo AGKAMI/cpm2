@@ -588,3 +588,16 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 **Gate:** tsc clean → tests 66/66 → build clean → deploy job `FYAlXSsSQgH0e8S7ugR7` triggered.
 
 **Verified by:** AG — tsc clean, tests 66/66, build clean.
+
+---
+
+### 2026-11-16 (21) — Agent "AG" — Fix mobile squeeze on categories page
+
+**Change:** User reported everything squeezed together on mobile on `/store/categories`. Three fixes:
+1. Added `.pad` CSS class with responsive padding (was undefined — a no-op — so sections had no vertical padding). Now `padding: 0 1rem 2rem 1rem` mobile, scaling up on larger screens.
+2. `vanta-card-list` (home page sections): `grid-template-columns: repeat(5, 1fr)` → responsive (1 col mobile, 2 sm, 3 md, 5 xl) with `width: 100%` cards instead of fixed `260px`.
+3. Categories page grid: `grid-cols-5` → `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5`.
+
+**Gate:** tsc clean → tests 66/66 → build clean → deploy job `zCVMKUS1fLh1SUjkRdtf` triggered. Prod verified: categories grid is `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5`, `.pad` class present, home page 774KB, 5 featured cards.
+
+**Verified by:** AG — tsc clean, tests 66/66, build clean, prod verified.

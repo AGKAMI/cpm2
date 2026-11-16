@@ -660,56 +660,60 @@ export function ProfileClient({
           {username && <span className="text-ink-soft text-sm">@{username}</span>}
 
           <div className="w-full max-w-xs space-y-2">
-            <div className="flex items-center justify-between px-3 py-2 rounded-lg border border-border bg-background">
-              <span className="text-xs font-medium text-muted-foreground">ID</span>
-              <span className="text-sm font-mono text-foreground">{tgId ?? "—"}</span>
-            </div>
-            <div className="flex items-center justify-between px-3 py-2 rounded-lg border border-border bg-background group">
-              <span className="text-xs font-medium text-muted-foreground">CPM2 ID</span>
-              <div className="flex items-center gap-2">
-                {editingCpm2Id ? (
-                  <input
-                    type="text"
-                    value={cpm2IdValue}
-                    onChange={(e) => setCpm2IdValue(e.target.value)}
-                    className="flex-1 border border-input bg-background px-2 py-1 rounded text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") saveCpm2Id();
-                      if (e.key === "Escape") cancelEditingCpm2Id();
-                    }}
-                  />
-                ) : (
-                  <span className="text-sm font-mono text-foreground">{customer?.playerId ?? "—"}</span>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={editingCpm2Id ? cancelEditingCpm2Id : startEditingCpm2Id}
-                  disabled={saving}
-                  aria-label={editingCpm2Id ? "Cancel edit" : "Edit CPM2 ID"}
-                >
-                  {editingCpm2Id ? "✕" : "✎"}
-                </Button>
-              </div>
-            </div>
-          </div>
+            {customer && (
+              <>
+                <div className="flex items-center justify-between px-3 py-2 rounded-lg border border-border bg-background">
+                  <span className="text-xs font-medium text-muted-foreground">ID</span>
+                  <span className="text-sm font-mono text-foreground">{tgId ?? "—"}</span>
+                </div>
+                <div className="flex items-center justify-between px-3 py-2 rounded-lg border border-border bg-background group">
+                  <span className="text-xs font-medium text-muted-foreground">CPM2 ID</span>
+                  <div className="flex items-center gap-2">
+                    {editingCpm2Id ? (
+                      <input
+                        type="text"
+                        value={cpm2IdValue}
+                        onChange={(e) => setCpm2IdValue(e.target.value)}
+                        className="flex-1 border border-input bg-background px-2 py-1 rounded text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") saveCpm2Id();
+                          if (e.key === "Escape") cancelEditingCpm2Id();
+                        }}
+                      />
+                    ) : (
+                      <span className="text-sm font-mono text-foreground">{customer?.playerId ?? "—"}</span>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={editingCpm2Id ? cancelEditingCpm2Id : startEditingCpm2Id}
+                      disabled={saving}
+                      aria-label={editingCpm2Id ? "Cancel edit" : "Edit CPM2 ID"}
+                    >
+                      {editingCpm2Id ? "✕" : "✎"}
+                    </Button>
+                  </div>
+                </div>
 
-          {/* Stats row */}
-          <div className="mt-6 w-full max-w-xs grid grid-cols-2 gap-4">
-            <div className="px-4 py-3 rounded-lg border border-border bg-background">
-              <span className="text-xs font-medium text-muted-foreground">Orders</span>
-              <span className="text-lg font-bold text-foreground mt-1 block">{ordersCount}</span>
-            </div>
-            <div className="px-4 py-3 rounded-lg border border-border bg-background">
-              <span className="text-xs font-medium text-muted-foreground">Wishlist</span>
-              <span className="text-lg font-bold text-foreground mt-1 block">{wishlistCount}</span>
-            </div>
-          </div>
+                {/* Stats row */}
+                <div className="mt-6 w-full max-w-xs grid grid-cols-2 gap-4">
+                  <div className="px-4 py-3 rounded-lg border border-border bg-background">
+                    <span className="text-xs font-medium text-muted-foreground">Orders</span>
+                    <span className="text-lg font-bold text-foreground mt-1 block">{ordersCount}</span>
+                  </div>
+                  <div className="px-4 py-3 rounded-lg border border-border bg-background">
+                    <span className="text-xs font-medium text-muted-foreground">Wishlist</span>
+                    <span className="text-lg font-bold text-foreground mt-1 block">{wishlistCount}</span>
+                  </div>
+                </div>
 
-          <p className={`mt-2 text-xs ${isActive ? "text-racing font-medium" : "text-muted-foreground"}`}>
-            {isActive ? "Active buyer" : "No orders yet — browse the catalogue"}
-          </p>
+                <p className={`mt-2 text-xs ${isActive ? "text-racing font-medium" : "text-muted-foreground"}`}>
+                  {isActive ? "Active buyer" : "No orders yet — browse the catalogue"}
+                </p>
+              </>
+            )}
+          </div>
 
           {/* Quick login for owner/admin — skip email/password */}
           {!customer &&

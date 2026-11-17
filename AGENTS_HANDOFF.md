@@ -615,3 +615,17 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 **Note:** `next build` was temporarily blocked by another agent's in-flight uncommitted JSX errors in `src/app/store/admin/page.tsx` (not this agent's work — do not touch). Committed only `globals.css`; Vercel builds the committed tree, which is clean. Deploy job `jn2acJtraELdQIThveG2`.
 
 **Verified by:** AG — CSS-only change, browser-measured before/after alignment (4px → 0px), deployed (commit `3f8313f`).
+
+---
+
+### 2026-11-17 (23) — Agent "AG" — Skeleton shine slower/diagonal, badges side-by-side with per-type colors, promo metal fades into image
+
+**Changes** (user's 4 requests in one batch):
+1. **Skeleton loader shine** — too fast and vertical → now slower + diagonal. `@keyframes skeleton-shine` rewritten from transform-based (translateX, 1.5s, caused the fill layer to slide out of the box) to background-position drift (100% 0% → 0% 100%, diagonal, 3.2s ease-in-out). `SkeletonBox` gradient 90deg → 115deg, `backgroundSize` 200% 200%. `SkeletonBlock` shine gradient 90deg → 115deg; scoped slow-down `.t-skel-skeleton .shine-sweep { animation-duration: 3.4s }` so badges/promos keep their 2.2–3s sweeps. Applies to every page skeleton (both skeleton building blocks are shared by all pages).
+2. **Card badges side-by-side + distinct colors** — `.vanta-card-badges` `flex-direction: column → row` with `flex-wrap: wrap`. Tag colors now per-type metallic tints (never the same colour): new = green, featured = blue, sale = red, exclusive (one of one) = purple. Each keeps the 105deg metallic gradient + gold-style shine sweep.
+3. **Promotion card background fades into image** — replaced the flat `backgroundColor` fade overlay with `.promo-metal-fade`: full metallic layer over the card with `mask-image: linear-gradient(90deg, #000 0%, #000 42%, transparent 80%)` so the metal dissolves INTO the photo (no hard sticker edge). Keeps AGENTS rule that promo cards always have metallic background.
+4. **Chip alignment (follow-up)** — user still saw the old chip layout because local 3001 served the pre-entry-22 build; rebuilt + restarted 3001 this round, re-verified: all 5 chips topOffset 0, height 34, tag SVG 14px (real build, no CSS injection).
+
+**Gate:** tsc clean → tests 66/66 → build clean → local 3001 verified via browser (chips aligned; badge row direction=row, green NEW + blue FEATURED side by side confirmed in screenshot; promo metal-fade layer + mask present). Deploy job `EAkwQO2kcu4QUCPXij1j` triggered, commit `74a03ba`.
+
+**Verified by:** AG — tsc clean, tests 66/66, build clean, browser-verified on local 3001 (badges side-by-side with green/blue/red/purple metallics, promo mask fade, fresh chip alignment).

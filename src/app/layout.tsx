@@ -61,6 +61,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        {/* Capture Telegram's initData from the URL hash BEFORE the SDK loads.
+            In a desktop browser the SDK replaces window.Telegram with an object
+            whose initData is empty, so the auth header would be lost — stash it
+            (global + sessionStorage) and read it back via clientInitData(). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var m=/(?:^|[?&#])tgWebAppData=([^&]+)/.exec(location.hash);if(m){var r=decodeURIComponent(m[1]);if(r){window.__CPM2_INITDATA=r;try{sessionStorage.setItem("cpm2_tg_initdata",r)}catch(e){}}}}catch(e){}})();`,
+          }}
+        />
       </head>
       <body className={`min-h-screen antialiased bg-background ${mono.variable}`}>
         <Script

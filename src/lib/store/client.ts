@@ -15,10 +15,12 @@ function getCacheKey(path: string): string {
   return path;
 }
 
+import { clientInitData } from "../client-initdata";
+
+// In a desktop browser the official SDK empties window.Telegram.WebApp.initData,
+// so read the initData captured from the URL hash first (see client-initdata.ts).
 function telegramInitData(): string {
-  if (typeof window === "undefined" || typeof window.Telegram === "undefined") return "";
-  const webApp = window.Telegram?.WebApp;
-  return typeof webApp?.initData === "string" ? webApp.initData : "";
+  return clientInitData();
 }
 
 /**

@@ -38,9 +38,12 @@ export class ApiRequestError extends Error {
  */
 const TELEGRAM_INIT_DATA_HEADER = "X-Telegram-Init-Data";
 
+import { clientInitData } from "./client-initdata";
+
+// In a desktop browser the official SDK empties window.Telegram.WebApp.initData,
+// so read the initData captured from the URL hash first (see client-initdata.ts).
 function telegramInitData(): string {
-  const webApp = window.Telegram?.WebApp;
-  return typeof webApp?.initData === "string" ? webApp.initData : "";
+  return clientInitData();
 }
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {

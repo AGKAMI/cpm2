@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { carByCode, type CarEntry } from "@/lib/car-catalog";
 import { vantaApi, formatPrice, type VantaProduct, type VantaCategory, type VantaPromotion } from "@/lib/store/client";
+import { clientInitData } from "@/lib/client-initdata";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
@@ -123,10 +124,7 @@ export default function AdminPage() {
   // Force kick: non-admin/owner users are redirected to the store home
   useEffect(() => {
     const checkAdmin = async () => {
-      const initData =
-        typeof window !== "undefined" && typeof window.Telegram !== "undefined"
-          ? window.Telegram.WebApp?.initData ?? ""
-          : "";
+      const initData = clientInitData();
       const headers: HeadersInit = {};
       if (initData) headers["X-Telegram-Init-Data"] = initData;
       try {
@@ -1101,8 +1099,8 @@ export default function AdminPage() {
               </div>
             </section>
 
-      {/* Create / Edit form - hidden when editing inline within a card */}
-                  {!inlineEditingId && showProductForm && (
+      {/* Create / Edit form - always shown when toggled */}
+                        {showProductForm && (
                     <section className="admin-section panel rounded-xl border border-border p-6 mb-8">
                       <h3 className="admin-section-title mb-4">
                         {editingId ? "Edit product" : "Add product"}
@@ -1466,7 +1464,6 @@ export default function AdminPage() {
       categoryId: String(p.categoryId ?? ""),
       imageUrl: p.imageUrl ?? "",
     });
-    setInlineEditingId(p.id);
     setShowProductForm(true);
   }}
   className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"

@@ -254,7 +254,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
               <Image
                 src={VANTA_LOCKUP}
                 alt="Vanta Garage"
-                className="h-16 w-auto sm:h-24 sm:w-auto"
+                className="h-auto w-full max-w-[512px] sm:h-24 sm:w-auto"
                 width={512}
                 height={272}
                 style={{ objectFit: "contain" }}

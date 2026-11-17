@@ -1,5 +1,5 @@
 import { LIMITS, MAX_CARS, type GameType } from "./constants.ts";
-import { Agent } from "undici";
+import { Agent, fetch as undiciFetch } from "undici";
 
 /**
  * Long-lived keep-alive agent for Turso. Node's default pool closes idle
@@ -244,7 +244,7 @@ export class TursoHttpClient {
         stmtArgs = sqlOrStmt.args || [];
       }
       const hranaArgs = stmtArgs.map((v) => this.toHranaValue(v));
-      const resp = await fetch(`${this.url}/v2/pipeline`, {
+      const resp = await undiciFetch(`${this.url}/v2/pipeline`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${this.token}`,
@@ -254,11 +254,24 @@ export class TursoHttpClient {
           requests: [{ type: "execute", stmt: { sql, args: hranaArgs } }],
         }),
         dispatcher: tursoDispatcher(),
-      } as RequestInit & { dispatcher: Agent });
+      } as Parameters<typeof undiciFetch>[1]);
       if (!resp.ok) {
         throw new Error(`Turso HTTP ${resp.status}: ${await resp.text()}`);
       }
-      const data = await resp.json();
+      // undici's Response.json() is typed `unknown` (DOM's is `any`) — narrow it once.
+      const data = (await resp.json()) as {
+        results?: {
+          type: string;
+          response: {
+            result: {
+              cols: { name: string }[];
+              rows: { value: unknown }[][];
+              affected_row_count?: number;
+              last_insert_rowid?: number | null;
+            };
+          };
+        }[];
+      };
       const result = data.results?.[0];
       if (!result || result.type !== "ok") {
         throw new Error(`Turso error: ${JSON.stringify(data)}`);
@@ -282,7 +295,7 @@ export class TursoHttpClient {
    * Do not pass user-supplied SQL; all data mutations must use parameterized execute() calls.
    */
   async batch(sqls: string[]): Promise<void> {
-      const resp = await fetch(`${this.url}/v2/pipeline`, {
+      const resp = await undiciFetch(`${this.url}/v2/pipeline`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${this.token}`,
@@ -292,7 +305,7 @@ export class TursoHttpClient {
           requests: sqls.map((s) => ({ type: "execute", stmt: { sql: s, args: [] } })),
         }),
         dispatcher: tursoDispatcher(),
-      } as RequestInit & { dispatcher: Agent });
+      } as Parameters<typeof undiciFetch>[1]);
     if (!resp.ok) {
       throw new Error(`Turso batch HTTP ${resp.status}: ${await resp.text()}`);
     }

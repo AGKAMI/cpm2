@@ -723,7 +723,7 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 7. `vanta_products` — 220 rows
 8. `vanta_categories` — 6 rows
 
-**Gate:** tsc clean → tests 66/66 → build clean → 3001 restarted. API verified: `GET /api/store/products` returns `"products":[],"total":0`. Browser page shows cached HTML until cache expires/rebuild.
+**Gate:** tsc clean → tests 66/66 → build clean → 3001 restarted. API verified: `GET /api/store/products` returns `"products":[],"total":0`. Deploy job `CK00EDZa8SPPhUYteOWf` triggered via Vercel deploy hook — prod API confirmed empty.
 
-**Committed:** `00d0f64` (previous entry) — this entry not yet committed.
+**Committed:** `b450b11` — pushed to master, deployed via Vercel hook.
 

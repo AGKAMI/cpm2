@@ -91,7 +91,7 @@ export function StoreHomeClient({
     <>
       <section className="hero relative px-4 pt-6 pb-8">
         <span className="eyebrow">VANTA GARAGE</span>
-        <h1 className="font-serif font-bold text-[32px] leading-[1.05] mb-3 tracking-tight">
+        <h1 className="font-serif font-bold mb-3 tracking-tight">
           Custom builds on the floor.
         </h1>
         <p className="text-ink-mid max-w-[30ch]">
@@ -107,9 +107,8 @@ export function StoreHomeClient({
           <div className="vanta-section-header">
             <div>
               <span className="eyebrow">Featured</span>
-              <h3 className="font-serif font-bold text-[20px] leading-none mt-[6px]">
-                Featured Vehicles
-              </h3>
+              <h3 className="font-serif font-bold mt-[6px]">
+                Featured Vehicles</h3>
             </div>
             <Link href="/store/categories" className="vanta-section-see-all">
               See all
@@ -222,14 +221,10 @@ export function StoreHomeClient({
                         style={{ objectFit: "cover" }}
                         loading="eager"
                       />
-                      {/* Fade the card background into the image over a wide
-                          band so there is no hard "sticker" edge */}
-                      <div
-                        className="absolute inset-y-0 right-0 w-[75%] pointer-events-none"
-                        style={{
-                          background: `linear-gradient(90deg, ${promo.backgroundColor || "var(--color-paper-raised)"} 0%, ${promo.backgroundColor || "var(--color-paper-raised)"} 30%, transparent 100%)`,
-                        }}
-                      />
+                      {/* Metallic surface dissolving INTO the image — a mask
+                          fades the metal out over the photo so there is no
+                          hard "sticker" edge */}
+                      <div className="promo-metal-fade absolute inset-0 pointer-events-none" />
                     </>
                   )}
                   <div className="relative z-10">
@@ -473,7 +468,7 @@ const ProductCard = React.memo(
                 style={{ objectFit: "cover" }}
               />
             ) : (
-              <div className="no-photo">No photo</div>
+              <div className="no-photo-svg"></div>
             )}
             <div className="vanta-card-badges">
               {product.isNew && <span className="vanta-card-badge new">New</span>}
@@ -492,7 +487,8 @@ const ProductCard = React.memo(
                 {showSubtitle && (
                   <p className="vanta-card-subtitle">{showSubtitle}</p>
                 )}
-                <h3 className="vanta-card-title">{product.name}</h3>
+                <h3 className="vanta-card-title">
+                  {product.name}</h3>
                 <div className="flex items-end gap-2">
                   <HeartToggle productId={product.id} />
                   <span className="vanta-card-price">

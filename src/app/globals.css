@@ -1559,8 +1559,10 @@ html {
   left: 10px;
   z-index: 10;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
   gap: 4px;
+  max-width: calc(100% - 20px);
 }
 .vanta-card-badge {
   font-size: 10px;
@@ -1592,10 +1594,28 @@ html {
   20% { left: 100%; }
   100% { left: 100%; }
 }
-.vanta-card-badge.new { background: linear-gradient(105deg, #a8a292 0%, #7a7466 20%, #4a4436 38%, #a8a292 50%, #7a7466 66%, #4a4436 84%, #a8a292 100%); border-color: #d4af4f; color: #000; }
-.vanta-card-badge.featured { background: linear-gradient(105deg, #a8a292 0%, #7a7466 20%, #4a4436 38%, #a8a292 50%, #7a7466 66%, #4a4436 84%, #a8a292 100%); border-color: #d4af4f; color: #000; }
-.vanta-card-badge.sale { background: linear-gradient(105deg, #a8a292 0%, #7a7466 20%, #4a4436 38%, #a8a292 50%, #7a7466 66%, #4a4436 84%, #a8a292 100%); border-color: #d4af4f; color: #000; }
-.vanta-card-badge.exclusive { background: linear-gradient(105deg, #a8a292 0%, #7a7466 20%, #4a4436 38%, #a8a292 50%, #7a7466 66%, #4a4436 84%, #a8a292 100%); border-color: #d4af4f; color: #000; }
+/* Each tag type gets its own metallic tint — never the same colour.
+   New = green, Featured = blue, Sale = red, One of One (exclusive) = purple. */
+.vanta-card-badge.new {
+  background: linear-gradient(105deg, #b7e4c7 0%, #74c69d 20%, #2d6a4f 38%, #b7e4c7 50%, #74c69d 66%, #2d6a4f 84%, #b7e4c7 100%);
+  border-color: #2d6a4f;
+  color: #08351f;
+}
+.vanta-card-badge.featured {
+  background: linear-gradient(105deg, #bcd9f5 0%, #6fa8dc 20%, #1c4e80 38%, #bcd9f5 50%, #6fa8dc 66%, #1c4e80 84%, #bcd9f5 100%);
+  border-color: #1c4e80;
+  color: #06213a;
+}
+.vanta-card-badge.sale {
+  background: linear-gradient(105deg, #f5c1c1 0%, #e08a8a 20%, #8f1d1d 38%, #f5c1c1 50%, #e08a8a 66%, #8f1d1d 84%, #f5c1c1 100%);
+  border-color: #8f1d1d;
+  color: #3a0a0a;
+}
+.vanta-card-badge.exclusive {
+  background: linear-gradient(105deg, #d9c2f0 0%, #a678d8 20%, #5b2a86 38%, #d9c2f0 50%, #a678d8 66%, #5b2a86 84%, #d9c2f0 100%);
+  border-color: #5b2a86;
+  color: #2a0a45;
+}
 .vanta-card-title {
   font-family: var(--font-display);
   font-size: 16px;
@@ -2367,6 +2387,14 @@ html {
   background: linear-gradient(105deg, #a8a292 0%, #7a7466 20%, #4a4436 38%, #a8a292 50%, #7a7466 66%, #4a4436 84%, #a8a292 100%);
 }
 
+/* Metallic layer that fades INTO the promo image: opaque metal on the
+   content side, dissolving to transparent over the photo (no hard edge). */
+.promo-metal-fade {
+  background: linear-gradient(105deg, #a8a292 0%, #7a7466 20%, #4a4436 38%, #a8a292 50%, #7a7466 66%, #4a4436 84%, #a8a292 100%);
+  -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 42%, transparent 80%);
+  mask-image: linear-gradient(90deg, #000 0%, #000 42%, transparent 80%);
+}
+
 .promotion-card::before {
   content: "";
   position: absolute;
@@ -2601,13 +2629,19 @@ html {
   }
 }
 
-/* Skeleton shine effect — pulses across box/block elements */
+/* Skeleton shine effect — a diagonal band drifting slowly across the block
+   (background-position based so the fill layer never slides out of the box). */
 @keyframes skeleton-shine {
-  0% { transform: translateX(-100%); }
-  40%, 100% { transform: translateX(100%); }
+  0% { background-position: 100% 0%; }
+  100% { background-position: 0% 100%; }
 }
 .animate-skeleton-shine {
-  animation: skeleton-shine 1.5s infinite;
+  animation: skeleton-shine 3.2s ease-in-out infinite;
+}
+/* Skeletons get a slower glare sweep than badges/promos — the shared
+   .shine-sweep stays 2.2s elsewhere. */
+.t-skel-skeleton .shine-sweep {
+  animation-duration: 3.4s;
 }
 
 /* ==============================

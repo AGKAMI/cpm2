@@ -258,6 +258,7 @@ export default function AccountPage() {
           inputRef={fileInputRef}
           accept="image/*"
           multiple
+          variant="fleet"
           disabled={uploading || archived}
           busy={uploading ? "Uploading…" : null}
           label={archived ? "Uploads locked" : "Click to upload images"}

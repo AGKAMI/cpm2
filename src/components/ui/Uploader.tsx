@@ -24,6 +24,8 @@ export interface UploaderProps {
   busy?: string | null;
   /** Validation error — red glowing border */
   error?: boolean;
+  /** "vanta" (default, gold) or "fleet" (follows the active --primary theme) */
+  variant?: "vanta" | "fleet";
   onFiles: (files: FileList | null) => void;
   className?: string;
   label?: string;
@@ -54,29 +56,66 @@ export function Uploader({
   fileName,
   busy,
   error = false,
+  variant = "vanta",
   onFiles,
   className = "",
   label = "Click to upload image",
   id,
 }: UploaderProps) {
   const [dragOver, setDragOver] = React.useState(false);
+  // Fleet variant mirrors the active theme accent (--primary) after mount,
+  // mirroring the hydration rule: never read window during render.
+  // Inline style (not a Tailwind arbitrary-value class) is required here
+  // because border-[${dynamic}] / text-[${dynamic}] cannot be statically
+  // extracted by Tailwind at build time.
+  const [accent, setAccent] = React.useState<string | null>(null);
   const hasFile = Boolean(fileName);
   const isBusy = Boolean(busy);
+  const isFleet = variant === "fleet";
+
+  React.useEffect(() => {
+    if (!isFleet || typeof document === "undefined") return;
+    const p = getComputedStyle(document.documentElement)
+      .getPropertyValue("--primary")
+      .trim();
+    if (p) setAccent(p);
+  }, [isFleet]);
+
+  const resolvedAccent = (isFleet && accent) || "#d4af4f";
+  const fleetInline: React.CSSProperties = isFleet && !disabled && accent
+    ? { borderColor: accent, color: accent }
+    : {};
+
+  // VANTA keeps its exact class-based behaviour (no regression); fleet uses
+  // the inline style above for its dynamic theme colour.
+  const vantaBorderCls = disabled
+    ? "border-border"
+    : error
+      ? "border-destructive border-glow-red"
+      : dragOver
+        ? "border-[#d4af4f]"
+        : "border-[#8f6f26]/45";
+  const vantaHoverCls = disabled
+    ? ""
+    : dragOver
+      ? "bg-[#1a170e]"
+      : "hover:border-[#d4af4f] hover:bg-[#171410]";
+  const vantaTextCls = hasFile ? "text-[#74c69d]" : "text-[#d4af4f]";
+  const vantaBusyCls = "text-[#d4af4f]";
+  const vantaReplaceCls = "text-[#d4af4f]/70";
+  const vantaLabelCls = "text-[#d4af4f]/85";
+
+  const textCls = isFleet ? vantaTextCls.replace("text-[#d4af4f]", "text-current") : vantaTextCls;
 
   return (
     <label
       htmlFor={id}
-      className={`relative flex flex-col items-center justify-center gap-2 rounded-[14px] border-2 border-dashed text-center transition-colors duration-150 ${
+      className={`relative flex flex-col items-center justify-center gap-2 rounded-[14px] border-2 border-dashed text-center transition-colors duration-150 cursor-pointer ${
         compact ? "min-h-[104px] px-4 py-4" : "min-h-[200px] px-6 py-8"
-      } ${
-        disabled
-          ? "cursor-not-allowed opacity-50 border-border bg-secondary"
-          : error
-            ? "cursor-pointer border-destructive border-glow-red bg-[#17100e]"
-            : dragOver
-              ? "cursor-pointer border-[#d4af4f] bg-[#1a170e]"
-              : "cursor-pointer border-[#8f6f26]/45 bg-[#131315] hover:border-[#d4af4f] hover:bg-[#171410]"
+      } ${isFleet ? "" : vantaBorderCls} ${disabled ? "opacity-50 cursor-not-allowed" : vantaHoverCls} ${
+        disabled ? "bg-secondary" : "bg-[#131315]"
       } ${className}`}
+      style={fleetInline}
       onDragOver={(e) => {
         e.preventDefault();
         if (!disabled) setDragOver(true);
@@ -98,7 +137,7 @@ export function Uploader({
         className="sr-only"
         onChange={(e) => onFiles(e.target.files)}
       />
-      {/* Diagonal gold glare sweep */}
+      {/* Diagonal glare sweep — gold for VANTA, subtle white gleam for fleet */}
       {!disabled && (
         <span
           aria-hidden="true"
@@ -108,14 +147,14 @@ export function Uploader({
             className="shine-sweep absolute inset-0"
             style={{
               background:
-                "linear-gradient(105deg, transparent 30%, rgba(246,227,160,0.14) 50%, transparent 70%)",
+                isFleet && accent
+                  ? "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.10) 50%, transparent 70%)"
+                  : "linear-gradient(105deg, transparent 30%, rgba(246,227,160,0.14) 50%, transparent 70%)",
             }}
           />
         </span>
       )}
-      <span
-        className={`relative flex items-center justify-center ${hasFile ? "text-[#74c69d]" : "text-[#d4af4f]"}`}
-      >
+      <span className={`relative flex items-center justify-center ${textCls}`} style={isFleet ? fleetInline : {}}>
         {hasFile ? (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ height: compact ? 26 : 44, width: compact ? 26 : 44 }} aria-hidden="true">
             <path d="M20 6 9 17l-5-5" />
@@ -126,7 +165,7 @@ export function Uploader({
       </span>
       <span className="relative flex flex-col items-center gap-0.5">
         {isBusy ? (
-          <span className="text-[11px] font-bold text-[#d4af4f] animate-pulse">
+          <span className={`text-[11px] font-bold animate-pulse ${isFleet ? "" : vantaBusyCls}`} style={isFleet ? fleetInline : {}}>
             {busy}
           </span>
         ) : hasFile ? (
@@ -134,12 +173,12 @@ export function Uploader({
             <span className="text-[11px] font-bold text-foreground max-w-[220px] truncate">
               {fileName}
             </span>
-            <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#d4af4f]/70">
+            <span className={`text-[9px] font-bold uppercase tracking-[0.18em] ${isFleet ? "" : vantaReplaceCls}`} style={isFleet ? fleetInline : {}}>
               Click to replace
             </span>
           </>
         ) : (
-          <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#d4af4f]/85">
+          <span className={`text-[11px] font-bold uppercase tracking-[0.14em] ${isFleet ? "" : vantaLabelCls}`} style={isFleet ? fleetInline : {}}>
             {label}
           </span>
         )}

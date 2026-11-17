@@ -49,15 +49,21 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const initData = telegramInitData();
   if (initData) headers.set(TELEGRAM_INIT_DATA_HEADER, initData);
 
+  let controller: AbortController | null = null;
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
   let response: Response;
   try {
-    response = await fetch(url, { ...init, headers });
+    controller = new AbortController();
+    timeoutId = setTimeout(() => controller?.abort(), 8000);
+    response = await fetch(url, { ...init, headers, signal: controller.signal });
   } catch {
     throw new ApiRequestError(
       "Cannot reach the server. Is it still running?",
       0,
       "NETWORK_ERROR",
     );
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
   }
 
   const payload = await response.json().catch(() => null);

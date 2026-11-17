@@ -46,6 +46,13 @@ function describe(err: unknown): string {
   return "Unexpected error.";
 }
 
+/** fetch with an abort timeout — Turso hangs without one, leaving pages stuck on "LOADING…". */
+function fetchWithTimeout(url: string, init?: RequestInit, ms = 8000): Promise<Response> {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), ms);
+  return fetch(url, { ...init, signal: controller.signal }).finally(() => clearTimeout(id));
+}
+
 export function FleetProvider({ children }: { children: ReactNode }) {
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [archived, setArchived] = useState<AccountSummary[]>([]);
@@ -79,7 +86,7 @@ export function FleetProvider({ children }: { children: ReactNode }) {
     // when the session itself is signed out; GuestGate handles the prompt.
     let authed = false;
     try {
-      authed = (await fetch("/api/auth/owner")).ok;
+      authed = (await fetchWithTimeout("/api/auth/owner")).ok;
     } catch {
       authed = false;
     }
@@ -343,7 +350,29 @@ export function FleetProvider({ children }: { children: ReactNode }) {
     ],
   );
 
-  return <FleetContext.Provider value={value}>{children}</FleetContext.Provider>;
+  return <FleetContext.Provider value={value}><ErrorBoundary>{children}</ErrorBoundary></FleetContext.Provider>;
+}
+
+function ErrorBoundary({ children }: { children: ReactNode }) {
+  const [error, setError] = useState<Error | null>(null);
+  if (error) {
+    return (
+      <div className="panel rounded-[20px] p-6 text-center">
+        <h2 className="text-lg font-medium text-destructive mb-2">Fleet temporarily unavailable</h2>
+        <p className="text-sm text-ink-soft mb-4">{error.message}</p>
+        <button
+          onClick={() => {
+            setError(null);
+            window.location.reload();
+          }}
+          className="Button-rounded bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+  return <>{children}</>;
 }
 
 export function useFleet(): FleetContextValue {

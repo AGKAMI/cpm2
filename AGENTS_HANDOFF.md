@@ -727,3 +727,21 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 
 **Committed:** `b450b11` — pushed to master, deployed via Vercel hook.
 
+
+### 2026-11-17 (entry 31) — Agent "AG" — Fix product duplication on home page + categories not showing
+
+**Issue 1 — Product duplication on home page:**
+**Root cause:** Two problems:
+1. Duplicate rows in `vanta_products` — 3 identical "VW JETTA VR6" entries (IDs 239, 240, 241) created seconds apart. Each appeared in both "More vehicles" AND "New arrivals" sections = 6 total appearances.
+2. Home page sections overlapped — a product could appear in multiple sections (featured, new arrivals, on sale, more vehicles).
+
+**Fix:**
+- Deduped `vanta_products` — kept one row per `cpm2_car_code`+`name`, deleted duplicates. Went from 3 VW Jetta VR6 entries to 1.
+- `src/components/StoreHome.tsx`: Made sections mutually exclusive — `arrivals` excludes featured; `saleItems` excludes featured+new; `rest` (More vehicles) excludes featured+new+sale. Each product now appears at most once.
+- Gate: tsc clean → tests 66/66 → build clean → 3001 restarted.
+
+**Issue 2 — Categories not showing in admin product form:**
+**Root cause:** Categories were cleared from DB earlier (entry 30). 5 categories exist in DB (Coupes, Sedans, SUVs, Hatchbacks, 4x4s) but `GET /api/store/categories` returns garbled binary data instead of JSON. Needs further investigation — possibly a middleware or response serialization issue.
+
+**Still open:** Categories API returns garbled data — needs investigation. Categories table has 5 rows but API doesn't return valid JSON.
+

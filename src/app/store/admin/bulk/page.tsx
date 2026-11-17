@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
+import { Uploader } from "@/components/ui/Uploader";
 
 type BulkResult = {
   created: number;
@@ -78,19 +79,16 @@ export default function BulkUploadPage() {
           Header row required.
         </p>
         <form onSubmit={handleUpload} className="space-y-3">
-          <label className="block">
-            <span className="text-xs text-muted-foreground mb-1 block">CSV File</span>
-            <input
-              type="file"
-              accept=".csv"
-              onChange={(e) => {
-                const f = e.target.files?.[0] ?? null;
-                setFile(f);
-                if (f) setError(null);
-              }}
-              className="block w-full text-sm text-foreground file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gold file:text-background hover:file:bg-gold/90"
-            />
-          </label>
+          <Uploader
+            accept=".csv"
+            label="Click to upload CSV file"
+            fileName={file?.name ?? null}
+            onFiles={(files) => {
+              const f = files?.[0] ?? null;
+              setFile(f);
+              if (f) setError(null);
+            }}
+          />
           <Button type="submit" variant="primary" disabled={uploading || !file}>
             {uploading ? "Uploading…" : "Import Products"}
           </Button>

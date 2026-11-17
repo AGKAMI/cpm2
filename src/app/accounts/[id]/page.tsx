@@ -12,6 +12,7 @@ import { GaragePanel } from "@/components/GaragePanel";
 import { TrophyCabinet } from "@/components/TrophyCabinet";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
+import { Uploader } from "@/components/ui/Uploader";
 import { useToast } from "@/components/ui/Toaster";
 import { LIMITS, GARAGE_RULES, formatNumber } from "@/lib/constants";
 
@@ -52,7 +53,7 @@ export default function AccountPage() {
         <p className="mt-2 text-sm text-ink-faint">
           It may have been archived away, or the link is stale.
         </p>
-        <Link href="/fleet" className="num mt-5 inline-block text-[11px] text-racing hover:underline">
+        <Link href="/fleet" className="num mt-5 inline-block text-[11px] text-racing hover:underline underline-link">
           ← back to the fleet
         </Link>
       </div>
@@ -252,24 +253,16 @@ export default function AccountPage() {
         </span>
       </div>
 
-      <div className="mb-3 flex gap-2">
-        <input
-          ref={fileInputRef}
-          type="file"
+      <div className="mb-3 flex flex-col gap-2">
+        <Uploader
+          inputRef={fileInputRef}
           accept="image/*"
           multiple
           disabled={uploading || archived}
-          onChange={(e) => handleUpload(e.target.files)}
-          className="sr-only"
+          busy={uploading ? "Uploading…" : null}
+          label={archived ? "Uploads locked" : "Click to upload images"}
+          onFiles={(files) => handleUpload(files)}
         />
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={uploading || archived}
-          onClick={() => fileInputRef.current?.click()}
-        >
-          {uploading ? "Uploading…" : "Add images"}
-        </Button>
         {archived && (
           <span className="text-[10px] text-ink-faint">archived — uploads locked</span>
         )}

@@ -7,7 +7,9 @@ import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Field";
 import { useTheme } from "@/hooks/useTheme";
+import { ThemeGallery } from "@/components/ThemeGallery";
 import { useToast } from "@/components/ui/Toaster";
+import { ProfileSkeleton } from "@/components/skeleton";
 import { vantaApi, formatPrice, type VantaCustomer, type TelegramUser } from "@/lib/store/client";
 
 type Order = {
@@ -67,6 +69,7 @@ export function ProfileClient({
   const [quickLoginBusy, setQuickLoginBusy] = useState(false);
   const [adminRole, setAdminRole] = useState<"owner" | "admin" | null>(null);
   const [notificationsSaving, setNotificationsSaving] = useState(false);
+  const [profileTab, setProfileTab] = useState<"account" | "appearance" | "security">("account");
 
   async function checkSession() {
     try {
@@ -565,8 +568,7 @@ export function ProfileClient({
   if (loading)
     return (
       <StoreShell>
-        <PageHeading folio="04" title="Profile" backHref="/store" />
-        <div className="p-4 text-center text-muted-foreground">Loading profile…</div>
+        <ProfileSkeleton />
       </StoreShell>
     );
 
@@ -597,12 +599,10 @@ export function ProfileClient({
       )}
 
       {/* ============ PROFILE HEADER ============ */}
-      <section className="mb-8 px-4">
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative group">
-            <div
-              className="h-32 w-32 rounded-full overflow-hidden border-4 border-gold bg-secondary"
-            >
+      <section className="mb-5 px-4">
+        <div className="flex items-center gap-4">
+          <div className="relative shrink-0">
+            <div className="h-20 w-20 rounded-full overflow-hidden border-4 border-gold bg-secondary">
               {photoUrl ? (
                 <Image
                   src={photoUrl}
@@ -623,129 +623,100 @@ export function ProfileClient({
                 </div>
               )}
             </div>
-
-            {/* Role badge — pinned to the avatar's bottom edge */}
-            {(() => {
-              const role = customer?.role ?? "customer";
-              if (role === "owner" || role === "admin") {
-                return (
-                  <span
-                    className={`absolute -bottom-2 left-1/2 -translate-x-1/2 z-10 overflow-hidden rounded-2xl px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] border-2 border-background ${role === "owner" ? "metallic-gold text-black" : "metallic-indigo text-white"}`}
-                  >
-                    {role}
-                    <span
-                      aria-hidden="true"
-                      className="pointer-events-none absolute top-0 h-full w-[60%] -skew-x-[22deg] bg-gradient-to-r from-transparent via-white/45 to-transparent shine-sweep"
-                    />
-                  </span>
-                );
-              }
-              return (
-                <span
-                  className={`absolute -bottom-2 left-1/2 -translate-x-1/2 z-10 overflow-hidden rounded-2xl px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] border-2 border-background metallic-silver text-white`}
-                >
-                  Customer
-                  <span
-                    aria-hidden="true"
-                    className="pointer-events-none absolute top-0 h-full w-[60%] -skew-x-[22deg] bg-gradient-to-r from-transparent via-white/45 to-transparent shine-sweep"
-                  />
-                </span>
-              );
-            })()}
-          </div>
-
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">
-            {displayName}
-          </h1>
-          {username && <span className="text-ink-soft text-sm">@{username}</span>}
-
-          <div className="w-full max-w-xs space-y-2">
             {customer && (
-              <>
-                <div className="flex items-center justify-between px-3 py-2 rounded-lg border border-border bg-background">
-                  <span className="text-xs font-medium text-muted-foreground">ID</span>
-                  <span className="text-sm font-mono text-foreground">{tgId ?? "—"}</span>
-                </div>
-                <div className="flex items-center justify-between px-3 py-2 rounded-lg border border-border bg-background group">
-                  <span className="text-xs font-medium text-muted-foreground">CPM2 ID</span>
-                  <div className="flex items-center gap-2">
-                    {editingCpm2Id ? (
-                      <input
-                        type="text"
-                        value={cpm2IdValue}
-                        onChange={(e) => setCpm2IdValue(e.target.value)}
-                        className="flex-1 border border-input bg-background px-2 py-1 rounded text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") saveCpm2Id();
-                          if (e.key === "Escape") cancelEditingCpm2Id();
-                        }}
-                      />
-                    ) : (
-                      <span className="text-sm font-mono text-foreground">{customer?.playerId ?? "—"}</span>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={editingCpm2Id ? cancelEditingCpm2Id : startEditingCpm2Id}
-                      disabled={saving}
-                      aria-label={editingCpm2Id ? "Cancel edit" : "Edit CPM2 ID"}
-                    >
-                      {editingCpm2Id ? "✕" : "✎"}
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Stats row */}
-                <div className="mt-6 w-full max-w-xs grid grid-cols-2 gap-4">
-                  <div className="px-4 py-3 rounded-lg border border-border bg-background">
-                    <span className="text-xs font-medium text-muted-foreground">Orders</span>
-                    <span className="text-lg font-bold text-foreground mt-1 block">{ordersCount}</span>
-                  </div>
-                  <div className="px-4 py-3 rounded-lg border border-border bg-background">
-                    <span className="text-xs font-medium text-muted-foreground">Wishlist</span>
-                    <span className="text-lg font-bold text-foreground mt-1 block">{wishlistCount}</span>
-                  </div>
-                </div>
-
-                <p className={`mt-2 text-xs ${isActive ? "text-racing font-medium" : "text-muted-foreground"}`}>
-                  {isActive ? "Active buyer" : "No orders yet — browse the catalogue"}
-                </p>
-              </>
+              <span
+                className={`absolute -bottom-2 left-1/2 -translate-x-1/2 z-10 overflow-hidden rounded-2xl px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] border-2 border-background ${
+                  (customer.role ?? "customer") === "owner"
+                    ? "metallic-gold text-black"
+                    : (customer.role ?? "customer") === "admin"
+                      ? "metallic-indigo text-white"
+                      : "metallic-silver text-white"
+                }`}
+              >
+                {customer.role ?? "customer"}
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute top-0 h-full w-[60%] -skew-x-[22deg] bg-gradient-to-r from-transparent via-white/45 to-transparent shine-sweep"
+                />
+              </span>
             )}
           </div>
-
-          {/* Quick login for owner/admin — skip email/password */}
-          {!customer &&
-            (adminRole ||
-              (typeof window !== "undefined" &&
-                localStorage.getItem("vanta_admin_session") === "true")) && (
-            <Button
-              variant="outline"
-              onClick={quickLogin}
-              disabled={quickLoginBusy}
-              className={`relative overflow-hidden mt-4 w-full flex items-center justify-center gap-2 border-2 border-background transition-all ${adminRole === "owner" ? "metallic-gold text-black" : "metallic-indigo text-white"}`}
-            >
-              <span className="relative z-10">
-                {quickLoginBusy ? "Logging in…" : "Quick Login"}
-              </span>
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute top-0 h-full w-[60%] -skew-x-[22deg] bg-gradient-to-r from-transparent via-white/50 to-transparent shine-sweep"
-              />
-            </Button>
-          )}
+          <div className="min-w-0">
+            {customer ? (
+              <>
+                <h1 className="text-xl font-bold text-foreground tracking-tight truncate">
+                  {displayName}
+                </h1>
+                <p className="text-xs text-ink-soft font-mono mt-0.5">ID {tgId ?? "—"}</p>
+              </>
+            ) : (
+              <h1 className="text-xl font-bold text-foreground tracking-tight">Signed out</h1>
+            )}
+          </div>
         </div>
+        {customer && customer.createdAt && !Number.isNaN(new Date(customer.createdAt).getTime()) && (
+          <p className="mt-3 inline-flex items-center gap-1 px-2 py-1 rounded-full border border-border bg-secondary text-[10px] text-ink-soft">
+            Member since{" "}
+            {new Date(customer.createdAt).toLocaleDateString("en-ZA", {
+              month: "long",
+              year: "numeric",
+            })}
+          </p>
+        )}
       </section>
 
-      {/* ============ ACCOUNT SETTINGS ============ */}
-      <section className="mb-8 px-4">
-        <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-4">
-          Account
-        </h3>
+      {/* Quick login for owner/admin — skip email/password */}
+      {!customer &&
+        (adminRole ||
+          (typeof window !== "undefined" &&
+            localStorage.getItem("vanta_admin_session") === "true")) && (
+        <div className="mb-5 px-4">
+          <Button
+            variant="outline"
+            onClick={quickLogin}
+            disabled={quickLoginBusy}
+            className={`relative overflow-hidden w-full flex items-center justify-center gap-2 border-2 border-background transition-all ${adminRole === "owner" ? "metallic-gold text-black" : "metallic-indigo text-white"}`}
+          >
+            <span className="relative z-10">
+              {quickLoginBusy ? "Logging in…" : "Quick Login"}
+            </span>
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute top-0 h-full w-[60%] -skew-x-[22deg] bg-gradient-to-r from-transparent via-white/50 to-transparent shine-sweep"
+            />
+          </Button>
+        </div>
+      )}
 
-        {!customer ? (
-          /* Logged out — sign in or create an account */
+      {/* ============ TAB BAR ============ */}
+      {customer && (
+        <div className="mb-5 px-4">
+          <div className="flex gap-1 border-b border-border overflow-x-auto scrollbar-hide">
+            {(["account", "appearance", "security"] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setProfileTab(t)}
+                aria-pressed={profileTab === t}
+                className={`shrink-0 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] border-b-2 -mb-px cursor-pointer transition-colors ${
+                  profileTab === t
+                    ? "border-gold text-foreground"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ============ LOGGED-OUT LOGIN CARD ============ */}
+      {!customer && (
+        <section className="mb-8 px-4">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-4">
+            Account
+          </h3>
           <div className="space-y-3">
             <p className="text-xs text-muted-foreground">
               Log in to see your orders and delivery history.
@@ -801,8 +772,63 @@ export function ProfileClient({
               Inside Telegram? Open the store in the app to link automatically — or log in here and link your Telegram ID after.
             </p>
           </div>
-        ) : (
-          <>
+        </section>
+      )}
+
+      {/* ============ ACCOUNT TAB ============ */}
+      {customer && profileTab === "account" && (
+        <section className="mb-8 px-4">
+          {/* Edit profile card — CPM2 ID + stats */}
+          <div className="panel rounded-[20px] p-5 mb-4">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-4">
+              Edit profile
+            </h3>
+            <div className="flex items-center justify-between px-3 py-2 rounded-lg border border-border bg-background group">
+              <span className="text-xs font-medium text-muted-foreground">CPM2 ID</span>
+              <div className="flex items-center gap-2">
+                {editingCpm2Id ? (
+                  <input
+                    type="text"
+                    value={cpm2IdValue}
+                    onChange={(e) => setCpm2IdValue(e.target.value)}
+                    className="flex-1 border border-input bg-background px-2 py-1 rounded text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") saveCpm2Id();
+                      if (e.key === "Escape") cancelEditingCpm2Id();
+                    }}
+                  />
+                ) : (
+                  <span className="text-sm font-mono text-foreground">{customer.playerId ?? "—"}</span>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={editingCpm2Id ? cancelEditingCpm2Id : startEditingCpm2Id}
+                  disabled={saving}
+                  aria-label={editingCpm2Id ? "Cancel edit" : "Edit CPM2 ID"}
+                >
+                  {editingCpm2Id ? "✕" : "✎"}
+                </Button>
+              </div>
+            </div>
+
+            {/* Stats row */}
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="px-4 py-3 rounded-lg border border-border bg-background">
+                <span className="text-xs font-medium text-muted-foreground">Orders</span>
+                <span className="text-lg font-bold text-foreground mt-1 block">{ordersCount}</span>
+              </div>
+              <div className="px-4 py-3 rounded-lg border border-border bg-background">
+                <span className="text-xs font-medium text-muted-foreground">Wishlist</span>
+                <span className="text-lg font-bold text-foreground mt-1 block">{wishlistCount}</span>
+              </div>
+            </div>
+            <p className={`mt-2 text-xs ${isActive ? "text-racing font-medium" : "text-muted-foreground"}`}>
+              {isActive ? "Active buyer" : "No orders yet — browse the catalogue"}
+            </p>
+          </div>
+          <div className="space-y-3">
             {customer.email && (
               <div className="mb-4 px-3 py-2 rounded-lg border border-border bg-background flex items-center justify-between">
                 <div>
@@ -1074,43 +1100,66 @@ export function ProfileClient({
                 </div>
               </form>
             )}
-          </>
-        )}
-
-        <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
-          <div>
-            <span className="text-sm font-medium text-foreground">Preferred mode</span>
-            <p className="text-[10px] text-ink-soft">Choose between dark and light theme</p>
           </div>
-          <select
-            value={mode}
-            onChange={(e) => setMode(e.target.value as "night" | "paper")}
-            className="rounded-md border border-border px-2 py-1 text-sm text-foreground bg-background focus:outline-none"
-            aria-label="Preferred display mode"
-          >
-            <option value="night">Dark</option>
-            <option value="paper">Light</option>
-          </select>
-        </div>
+        </section>
+      )}
 
-        <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
-          <div>
-            <span className="text-sm font-medium text-foreground">Telegram notifications</span>
-            <p className="text-[10px] text-ink-soft">Get order updates via Telegram bot</p>
+      {/* ============ APPEARANCE TAB ============ */}
+      {profileTab === "appearance" && (
+        <section className="mb-8 px-4">
+          <div className="panel rounded-[20px] p-5 mb-4">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-4">
+              Display mode
+            </h3>
+            <div className="grid grid-cols-2 gap-2">
+              {(["night", "paper"] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setMode(m)}
+                  aria-pressed={mode === m}
+                  className={`flex items-center justify-center gap-2 px-3 py-3 rounded-[14px] border text-sm font-bold cursor-pointer transition-colors ${
+                    mode === m
+                      ? "border-gold bg-gold/10 text-foreground"
+                      : "border-border text-muted-foreground hover:border-gold/50 hover:text-foreground"
+                  }`}
+                >
+                  {m === "night" ? "Dark" : "Light"}
+                </button>
+              ))}
+            </div>
           </div>
-          <label className="switch">
-            <input
-              type="checkbox"
-              checked={notificationsEnabled === true}
-              onChange={toggleNotifications}
-              disabled={notificationsSaving || notificationsEnabled === null}
-              aria-pressed={notificationsEnabled === true}
-              aria-label="Toggle Telegram notifications"
-            />
-            <span className="slider" />
-          </label>
-        </div>
-      </section>
+          <ThemeGallery />
+        </section>
+      )}
+
+      {/* ============ SECURITY TAB ============ */}
+      {profileTab === "security" && (
+        <section className="mb-8 px-4">
+          <div className="panel rounded-[20px] p-5">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-4">
+              Notifications
+            </h3>
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-sm font-medium text-foreground">Telegram notifications</span>
+                <p className="text-[10px] text-ink-soft">Get order updates via Telegram bot</p>
+              </div>
+              <label className="switch">
+                <input
+                  type="checkbox"
+                  checked={notificationsEnabled === true}
+                  onChange={toggleNotifications}
+                  disabled={notificationsSaving || notificationsEnabled === null}
+                  aria-pressed={notificationsEnabled === true}
+                  aria-label="Toggle Telegram notifications"
+                />
+                <span className="slider" />
+              </label>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ============ ACTIONS ============ */}
       {customer && (

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
+import { Uploader } from "@/components/ui/Uploader";
 import { api, ApiRequestError } from "@/lib/client";
 import { carsForGame, searchCars } from "@/lib/car-catalog";
 import type { CarMatch, TradePrice } from "@/lib/types";
@@ -273,26 +274,14 @@ export function TradeCarPickerModal({
             />
 
             {!preview ? (
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                className="flex cursor-pointer flex-col items-center gap-3 rounded-[16px] border border-dashed border-border px-6 py-10 hover:border-primary hover:text-primary-foreground"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-7 w-7 text-ink-faint"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  aria-hidden="true"
-                >
-                  <rect x="3" y="6" width="18" height="13" rx="2.5" />
-                  <circle cx="12" cy="12.5" r="3.2" />
-                  <path d="M8.5 6l1.2-2h4.6L15.5 6" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <span className="text-[13px] text-ink">Choose a screenshot of the car</span>
-                <span className="text-[11px] text-ink-faint">PNG, JPEG or WebP · up to 5MB</span>
-              </button>
+              <Uploader
+                accept="image/png,image/jpeg,image/webp"
+                label="Click to upload car screenshot"
+                onFiles={(files) => {
+                  const file = files?.[0];
+                  if (file) void handleFile(file);
+                }}
+              />
             ) : (
               <div className="flex flex-col gap-3">
                 <div className="flex items-start gap-3">

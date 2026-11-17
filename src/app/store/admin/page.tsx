@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Field";
 import { Toast } from "@/components/ui/Toast";
 import { useToast } from "@/components/ui/Toaster";
+import { Uploader } from "@/components/ui/Uploader";
 import {
   validateProductForm,
   validateCategoryForm,
@@ -300,7 +301,7 @@ export default function AdminPage() {
     const selectProduct = async (p: VantaProduct) => {
       setForm({
         cpm2CarCode: String(p.cpm2CarCode ?? ""),
-        imageUrl: "",
+        imageUrl: p.imageUrl ?? "",
         name: p.name,
         description: p.description,
         basePriceCents: String(p.basePriceCents / 100),
@@ -315,8 +316,8 @@ export default function AdminPage() {
         isPublished: p.isPublished,
         categoryId: String(p.categoryId ?? ""),
       });
+
       setEditingId(p.id);
-      setInlineEditingId(p.id);
       setMsg(null);
 
       // Load existing media for the product so the image isn't lost on edit
@@ -684,71 +685,39 @@ export default function AdminPage() {
                 />
               </Field>
               <Field label="Category image (optional)">
-                <div className="relative group cursor-pointer">
-                  <input
-                    ref={categoryFileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="sr-only"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0] ?? null;
-                      if (!file) return;
-                      setCategoryConverterFile(file);
-                      setCategoryConverterError(null);
-                      try {
-                        const dataUrl = await convertFileToDataUrl(await compressImageForUpload(file));
-                        setCategoryConverterResult(dataUrl);
-                        setCategoryForm((f) => ({ ...f, imageUrl: dataUrl }));
-                        setCategoryConverterFile(null);
-                        setCategoryConverterResult(null);
-                      } catch {
-                        setCategoryConverterError("Failed to read image file.");
-                      }
-                    }}
-                  />
-                  <div
-                    onClick={() => categoryFileInputRef.current?.click()}
-                    className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${categoryConverterUploading ? "border-amber-500 text-amber-500 bg-amber-50" : categoryConverterFile || categoryForm.imageUrl ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}
-                  >
-                    {categoryConverterUploading ? (
-                      <>
-                        <span className="text-xs font-bold animate-pulse">⟳</span>
-                        Converting image…
-                      </>
-                    ) : categoryConverterFile ? (
-                      <>
-                        <span className="text-xs font-bold">✓</span>
-                        {categoryConverterFile.name}
-                        {categoryConverterResult && <span className="text-[10px] text-ink-soft ml-2">→ converted to URL</span>}
-                      </>
-                    ) : categoryForm.imageUrl ? (
-                      <>
-                        <span className="text-xs font-bold text-emerald-500">✓</span>
-                        Image attached
-                        <span
-                          role="button"
-                          tabIndex={0}
-                          onClick={(ev) => {
-                            ev.stopPropagation();
-                            setCategoryForm((f) => ({ ...f, imageUrl: "" }));
-                          }}
-                          onKeyDown={(ev) => {
-                            if (ev.key === "Enter" || ev.key === " ") {
-                              ev.preventDefault();
-                              ev.stopPropagation();
-                              setCategoryForm((f) => ({ ...f, imageUrl: "" }));
-                            }
-                          }}
-                          className="text-[10px] text-destructive underline underline-offset-2 ml-2 cursor-pointer"
-                        >
-                          remove
-                        </span>
-                      </>
-                    ) : (
-                      "Choose image"
-                    )}
+                <Uploader
+                  inputRef={categoryFileInputRef}
+                  compact
+                  accept="image/*"
+                  busy={categoryConverterUploading ? "Converting image…" : null}
+                  fileName={categoryConverterFile?.name ?? (categoryForm.imageUrl ? "Image attached" : null)}
+                  onFiles={async (files) => {
+                    const file = files?.[0] ?? null;
+                    if (!file) return;
+                    setCategoryConverterFile(file);
+                    setCategoryConverterError(null);
+                    try {
+                      const dataUrl = await convertFileToDataUrl(await compressImageForUpload(file));
+                      setCategoryConverterResult(dataUrl);
+                      setCategoryForm((f) => ({ ...f, imageUrl: dataUrl }));
+                      setCategoryConverterFile(null);
+                      setCategoryConverterResult(null);
+                    } catch {
+                      setCategoryConverterError("Failed to read image file.");
+                    }
+                  }}
+                />
+                {categoryForm.imageUrl && !categoryConverterFile && (
+                  <div className="mt-1">
+                    <button
+                      type="button"
+                      onClick={() => setCategoryForm((f) => ({ ...f, imageUrl: "" }))}
+                      className="text-[10px] text-destructive underline underline-offset-2 cursor-pointer"
+                    >
+                      remove image
+                    </button>
                   </div>
-                </div>
+                )}
                 {categoryConverterError && <p className="text-xs text-destructive mt-1">{categoryConverterError}</p>}
                 {categoryConverterResult && (
                   <div className="mt-3 border border-input rounded-md p-3 bg-background">
@@ -772,102 +741,42 @@ export default function AdminPage() {
               </div>
             </form>
           )}
+<select
+            id="category-edit"
+            value={editingCategoryId ?? ""}
+            onChange={(e) => setEditingCategoryId(e.target.value ? Number(e.target.value) : null)}
+            className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
+          >
+            <option value="">Pick a category to edit…</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={String(cat.id)}>{cat.name}</option>
+            ))}
+          </select>
           <div className="flex flex-wrap gap-2">
-            {categories.length === 0 ? (
-              <span className="text-xs text-muted-foreground">No categories yet. Click &quot;Add Category&quot; to create one.</span>
-            ) : (
-              <>
-                {categories.map((cat) => (
-                  <span
-                    key={cat.id}
-                    className="flex items-center gap-2 px-3 py-2 rounded-full border border-border bg-background text-foreground"
-                  >
-                    {cat.imageUrl ? (
-                      <img
-                        src={cat.imageUrl}
-                        alt=""
-                        className="w-6 h-6 rounded-full object-cover border border-background/50"
-                      />
-                    ) : (
-                      <span className="w-6 h-6 rounded-full bg-background border border-background/50 flex items-center justify-center text-[10px] font-bold text-ink-soft">
-                        {cat.name.charAt(0).toUpperCase()}
-                      </span>
-                    )}
-                    {cat.name} ({cat.slug})
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      onClick={() => {
-                        if (!window.confirm(`Delete category "${cat.name}"?`)) return;
-                        vantaApi.deleteCategory(cat.id).then(() => {
-                          setMsg("Category deleted.");
-                          load();
-                        });
-                      }}
-                      aria-label={`Delete ${cat.name}`}
-                    >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v3M4 7h16" />
-                      </svg>
-                    </Button>
-                  </span>
-                ))}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    // Single edit button: open select to pick which category to edit
-                    setEditingCategoryId(null);
-                    setShowCategoryEditSelect(true);
-                  }}
-                >
-                  Edit Category
-                </Button>
-              </>
-            )}
-            {showCategoryEditSelect && categories.length > 0 && (
-              <div className="mt-2 flex items-center gap-2">
-                <select
-                  value={editingCategoryId ?? ""}
-                  onChange={(e) => setEditingCategoryId(Number(e.target.value))}
-                  className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
-                >
-                  <option value="">Pick a category to edit…</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={String(cat.id)}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => {
-                    if (!editingCategoryId) return;
-                    const cat = categories.find((c) => c.id === editingCategoryId);
-                    if (!cat) return;
-                    setCategoryForm({
-                      name: cat.name,
-                      slug: cat.slug,
-                      description: cat.description,
-                      sortOrder: String(cat.sortOrder),
-                      imageUrl: cat.imageUrl,
-                    });
-                    setShowCategoryForm(true);
-                    setShowCategoryEditSelect(false);
-                    setEditingCategoryId(null);
-                  }}
-                  disabled={!editingCategoryId}
-                >
-                  Edit
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setShowCategoryEditSelect(false)}>
-                  Cancel
-                </Button>
-              </div>
-            )}
-          </div>
-        </section>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                if (!editingCategoryId) return;
+                const cat = categories.find((c) => c.id === editingCategoryId);
+                if (!cat) return;
+                setCategoryForm({
+                  name: cat.name,
+                  slug: cat.slug,
+                  description: cat.description,
+                  sortOrder: String(cat.sortOrder),
+                  imageUrl: cat.imageUrl,
+                });
+                setShowCategoryForm(true);
+                setShowCategoryEditSelect(false);
+                setEditingCategoryId(null);
+              }}
+              disabled={!editingCategoryId}
+            >
+              Edit
+            </Button>
+            </div>
+                    </section>
 
                 {/* Promotions Management */}
                 <section className="admin-section panel rounded-xl border border-border p-4 mb-6">
@@ -887,6 +796,28 @@ export default function AdminPage() {
                       &quot;Add Promotion&quot;
                     </Button>
                   </div>
+
+                  {/* Dropdown: pick which promotion to edit */}
+                  <select
+                    id="promotion-edit"
+                    value={editingPromotionId ?? ""}
+                    onChange={(e) => {
+                      const id = e.target.value ? Number(e.target.value) : null;
+                      const p = id ? promotions.find((x) => x.id === id) : null;
+                      if (p) {
+                        setShowPromotionForm(true);
+                        selectPromotion(p);
+                      } else {
+                        setEditingPromotionId(null);
+                      }
+                    }}
+                    className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground mb-3 cursor-pointer"
+                  >
+                    <option value="">Pick a promotion to edit…</option>
+                    {promotions.map((p) => (
+                      <option key={p.id} value={String(p.id)}>{p.title}</option>
+                    ))}
+                  </select>
 
               {showPromotionForm && (
                 <form onSubmit={handlePromotionSubmit} className="flex flex-col gap-3 mb-4">
@@ -960,14 +891,13 @@ export default function AdminPage() {
                     />
                   </Field>
                   <Field label="Image URL (optional background image)">
-                    <div className="relative group cursor-pointer">
-                      <input
-                        ref={promoFileInputRef}
-                        type="file"
-                        accept="image/*"
-                        className="sr-only"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0] ?? null;
+                    <Uploader
+                      inputRef={promoFileInputRef}
+                      compact
+                      accept="image/*"
+                      fileName={promotionConverterFile?.name ?? (promotionForm.imageUrl ? "Image attached" : null)}
+                      onFiles={async (files) => {
+                          const file = files?.[0] ?? null;
                           if (!file) return;
                           setPromotionConverterFile(file);
                           setPromotionConverterError(null);
@@ -981,45 +911,19 @@ export default function AdminPage() {
                           } catch {
                             setPromotionConverterError("Failed to read image file.");
                           }
-                          }}
-                          />
-                          <div
-                          onClick={() => promoFileInputRef.current?.click()}
-                          className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${promotionConverterFile ? "border-emerald-500 text-emerald-500 bg-emerald-50" : promotionForm.imageUrl ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}
-                          >
-                          {promotionConverterFile ? (
-                          <>
-                            <span className="text-xs font-bold text-emerald-500">✓</span>
-                            {promotionConverterFile.name}
-                          </>
-                          ) : promotionForm.imageUrl ? (
-                          <>
-                            <span className="text-xs font-bold text-emerald-500">✓</span>
-                            Image attached
-                            <span
-                              role="button"
-                              tabIndex={0}
-                              onClick={(ev) => {
-                                ev.stopPropagation();
-                                setPromotionForm((f) => ({ ...f, imageUrl: "" }));
-                              }}
-                              onKeyDown={(ev) => {
-                                if (ev.key === "Enter" || ev.key === " ") {
-                                  ev.preventDefault();
-                                  ev.stopPropagation();
-                                  setPromotionForm((f) => ({ ...f, imageUrl: "" }));
-                                }
-                              }}
-                              className="text-[10px] text-destructive underline underline-offset-2 ml-2 cursor-pointer"
-                            >
-                              remove
-                            </span>
-                          </>
-                          ) : (
-                          "Choose image"
-                          )}
-                          </div>
-                          </div>
+                        }}
+                    />
+                    {promotionForm.imageUrl && (
+                      <div className="mt-1">
+                        <button
+                          type="button"
+                          onClick={() => setPromotionForm((f) => ({ ...f, imageUrl: "" }))}
+                          className="text-[10px] text-destructive underline underline-offset-2 cursor-pointer"
+                        >
+                          remove image
+                        </button>
+                      </div>
+                    )}
                           {promotionConverterError && <p className="text-xs text-destructive mt-1">{promotionConverterError}</p>}
                           {promotionConverterResult && (
                           <div
@@ -1090,62 +994,106 @@ export default function AdminPage() {
                 </form>
               )}
 
-              <div className="flex flex-wrap gap-3">
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 auto-rows-fr">
                 {promotions.length === 0 ? (
                   <span className="text-xs text-muted-foreground">No promotions yet. Click &quot;Add Promotion&quot; to create one.</span>
                 ) : (
                   promotions.map((p) => (
                     <div
                       key={p.id}
-                      className={`promotion-card flex items-center justify-between gap-2 px-3 py-2 rounded-md border border-border`}
+                      className="flex flex-col h-full rounded-[22px] border border-border overflow-hidden bg-raised shadow-sm"
                     >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1">
+                      {/* Miniature of the live home promotion card */}
+                      <div
+                        className="promotion-card relative overflow-hidden p-5 flex-1 min-h-[160px]"
+                        style={{
+                          backgroundColor: p.backgroundColor || "var(--color-paper-raised)",
+                          color: p.accentColor ? "var(--color-paper-sunken)" : undefined,
+                        }}
+                      >
+                        {p.imageUrl && (
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={p.imageUrl}
+                              alt=""
+                              className="absolute inset-y-0 right-0 h-full w-[55%] object-cover pointer-events-none"
+                            />
+                            <div className="promo-metal-fade absolute inset-0 pointer-events-none" />
+                          </>
+                        )}
+                        <div className="relative z-10">
+                          <span
+                            className="text-[9px] uppercase tracking-[0.2em]"
+                            style={{ color: p.accentColor || "#d4af4f" }}
+                          >
+                            {p.subtitle || "Special offer"}
+                          </span>
+                          <h4
+                            className="font-serif font-bold text-[18px] leading-none mt-0.5"
+                            style={{ color: p.accentColor || undefined }}
+                          >
+                            {p.title}
+                          </h4>
+                          {p.description && (
+                            <p className="text-[10px] text-ink mt-1">{p.description}</p>
+                          )}
+                          {(p.discountPercent > 0 || p.discountCode) && (
+                            <p
+                              className="text-[10px] mt-1"
+                              style={{ color: p.accentColor || undefined }}
+                            >
+                              {p.discountCode ? (
+                                <>
+                                  Code <b className="text-[10px] font-bold tracking-[0.12em]">{p.discountCode}</b>
+                                  {p.discountPercent > 0 ? ` · ${p.discountPercent}% off` : ""}
+                                </>
+                              ) : (
+                                `${p.discountPercent}% off`
+                              )}
+                            </p>
+                          )}
+                          <span
+                            className="inline-block mt-2 text-[10px] font-bold tracking-wider border rounded-full px-3 py-1"
+                            style={{
+                              borderColor: p.accentColor || undefined,
+                              color: p.accentColor || undefined,
+                            }}
+                          >
+                            {p.ctaText || "Shop now"} ▸
+                          </span>
+                        </div>
+                      </div>
+                      {/* Meta + actions row */}
+                      <div className="flex items-center justify-between gap-2 px-3 py-2 border-t border-border bg-background">
+                        <div className="flex items-center gap-1 min-w-0">
                           <span className="text-xs font-mono text-muted-foreground">#{p.id}</span>
                           {p.isActive ? (
                             <span className="text-[10px] text-primary font-bold">ACTIVE</span>
                           ) : (
-                            <span className="text-[10px] text-muted-foreground">INACTIVE</span>
+                            <span className="text-[10px] text-muted-foreground font-bold">INACTIVE</span>
                           )}
                         </div>
-                        <h4 className="text-sm font-medium text-foreground truncate">{p.title}</h4>
-                        <p className="text-[10px] text-ink-soft truncate">
-                          {p.description || p.subtitle || ""}
-                        </p>
-                        <div className="flex items-center gap-1 mt-1">
-                          {p.discountCode && (
-                            <span className="text-[10px] font-bold text-gold">{p.discountCode}</span>
-                          )}
-                          {p.discountPercent > 0 && (
-                            <span className="text-[10px] text-muted-foreground">{p.discountPercent}% off</span>
-                          )}
-                          <span className="text-[10px] text-muted-foreground">{p.ctaText}</span>
+                        <div className="flex gap-1 shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setShowPromotionForm(true);
+                              selectPromotion(p);
+                            }}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handlePromotionDelete(p.id)}
+                            className="text-destructive hover:bg-destructive/10"
+                          >
+                            Delete
+                          </Button>
                         </div>
-                        <div className="flex items-center gap-1 mt-1">
-                          <span className="text-[10px] text-ink-faint">bg: {p.backgroundColor}</span>
-                          <span className="text-[10px] text-ink-faint">accent: {p.accentColor}</span>
-                          {p.imageUrl && <span className="text-[10px] text-ink-faint">image</span>}
-                        </div>
-                      </div>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setShowPromotionForm(true);
-                            selectPromotion(p);
-                          }}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handlePromotionDelete(p.id)}
-                          className="text-destructive hover:bg-destructive/10"
-                        >
-                          Delete
-                        </Button>
                       </div>
                     </div>
                   ))
@@ -1159,100 +1107,68 @@ export default function AdminPage() {
                       <h3 className="admin-section-title mb-4">
                         {editingId ? "Edit product" : "Add product"}
                       </h3>
-                      <form onSubmit={handleSubmit} className="grid gap-4">
+                      <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {/* Errors now shown as floating toasts */}
           <Field label="Image" error={productErrors.imageUrl}>
-            <div className="relative group cursor-pointer">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                onChange={async (e) => {
-                    const file = e.target.files?.[0] ?? null;
-                    if (!file) return;
-                    setProductConverterError(null);
-                    setProductConverterResult(null);
-                    setProductConverterFile(null);
-                    setProductConverterUploading(true);
-                    try {
-                      // Upload to server and get a real public URL
-                      const uploadFile = await compressImageForUpload(file);
-                      const formData = new FormData();
-                      formData.append("file", uploadFile);
-                      const res = await fetch("/api/store/admin/upload-image", {
-                        method: "POST",
-                        body: formData,
-                      });
-                      if (!res.ok) {
-                        const errBody = await res.json().catch(() => ({}));
-                        throw new Error(errBody.error?.message || "Upload failed");
-                      }
-                      const { url } = (await res.json()) as { url: string };
-                      // Set the real URL into the form
-                      setForm((f) => ({ ...f, imageUrl: url }));
-                      // Keep preview + filename visible
-                      setProductConverterFile(file);
-                      setProductConverterResult(url);
-                    } catch (err) {
-                      // Server upload failed — fall back to local data URL
-                      const msg = err instanceof Error ? err.message : "Upload failed";
-                      try {
-                        const dataUrl = await convertFileToDataUrl(file);
-                        setForm((f) => ({ ...f, imageUrl: dataUrl }));
-                        setProductConverterFile(file);
-                        setProductConverterResult(dataUrl);
-                      } catch {
-                        setProductConverterError(`Failed to upload image: ${msg}`);
-                      }
-                    } finally {
-                      setProductConverterUploading(false);
+            <Uploader
+              inputRef={fileInputRef}
+              compact
+              accept="image/*"
+              busy={productConverterUploading ? "Converting image…" : null}
+              fileName={productConverterFile?.name ?? (form.imageUrl ? "Image attached" : null)}
+              onFiles={async (files) => {
+                  const file = files?.[0] ?? null;
+                  if (!file) return;
+                  setProductConverterError(null);
+                  setProductConverterResult(null);
+                  setProductConverterFile(null);
+                  setProductConverterUploading(true);
+                  try {
+                    // Upload to server and get a real public URL
+                    const uploadFile = await compressImageForUpload(file);
+                    const formData = new FormData();
+                    formData.append("file", uploadFile);
+                    const res = await fetch("/api/store/admin/upload-image", {
+                      method: "POST",
+                      body: formData,
+                    });
+                    if (!res.ok) {
+                      const errBody = await res.json().catch(() => ({}));
+                      throw new Error(errBody.error?.message || "Upload failed");
                     }
-                  }}
-              />
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${productConverterUploading ? "border-amber-500 text-amber-500 bg-amber-50" : productConverterFile || form.imageUrl ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}
-              >
-                {productConverterUploading ? (
-                  <>
-                    <span className="text-xs font-bold animate-pulse">⟳</span>
-                    Converting image…
-                  </>
-                ) : productConverterFile ? (
-                  <>
-                    <span className="text-xs font-bold">✓</span>
-                    {productConverterFile.name}
-                    {productConverterResult && <span className="text-[10px] text-ink-soft ml-2">→ converted to URL</span>}
-                  </>
-                ) : form.imageUrl ? (
-                  <>
-                    <span className="text-xs font-bold text-emerald-500">✓</span>
-                    Image attached
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      onClick={(ev) => {
-                        ev.stopPropagation();
-                        setForm((f) => ({ ...f, imageUrl: "" }));
-                      }}
-                      onKeyDown={(ev) => {
-                        if (ev.key === "Enter" || ev.key === " ") {
-                          ev.preventDefault();
-                          ev.stopPropagation();
-                          setForm((f) => ({ ...f, imageUrl: "" }));
-                        }
-                      }}
-                      className="text-[10px] text-destructive underline underline-offset-2 ml-2 cursor-pointer"
-                    >
-                      remove
-                    </span>
-                  </>
-                ) : (
-                  "Choose image"
-                )}
+                    const { url } = (await res.json()) as { url: string };
+                    // Set the real URL into the form
+                    setForm((f) => ({ ...f, imageUrl: url }));
+                    // Keep preview + filename visible
+                    setProductConverterFile(file);
+                    setProductConverterResult(url);
+                  } catch (err) {
+                    // Server upload failed — fall back to local data URL
+                    const msg = err instanceof Error ? err.message : "Upload failed";
+                    try {
+                      const dataUrl = await convertFileToDataUrl(file);
+                      setForm((f) => ({ ...f, imageUrl: dataUrl }));
+                      setProductConverterFile(file);
+                      setProductConverterResult(dataUrl);
+                    } catch {
+                      setProductConverterError(`Failed to upload image: ${msg}`);
+                    }
+                  } finally {
+                    setProductConverterUploading(false);
+                  }
+                }}
+            />
+            {form.imageUrl && !productConverterFile && (
+              <div className="mt-1">
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, imageUrl: "" }))}
+                  className="text-[10px] text-destructive underline underline-offset-2 cursor-pointer"
+                >
+                  remove image
+                </button>
               </div>
-            </div>
+            )}
             {productConverterError && <p className="text-xs text-destructive mt-1">{productConverterError}</p>}
             {productConverterResult && (
               <div className="mt-3 border border-input rounded-md p-3 bg-background">
@@ -1526,407 +1442,40 @@ export default function AdminPage() {
                   {products.length === 0 ? (
                     <p className="text-muted-foreground">No products yet. Add your first above.</p>
                   ) : (
-                    <div className="grid gap-3">
-                      {products.map((p) => {
-                        const isInline = inlineEditingId === p.id;
-                        if (isInline) {
-                          return (
-                            <article key={p.id} className="panel rounded-xl border border-border p-4">
-                              <div className="flex items-baseline justify-between mb-3">
-                                <span className="text-xs font-mono text-muted-foreground">#{p.id}</span>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setInlineEditingId(null)}
-                                >
-                                  Cancel
-                                </Button>
-                              </div>
-                              <form onSubmit={(e) => { e.preventDefault(); handleSubmit(e); }} className="flex flex-col gap-3">
-                      <Field label="Image" error={productErrors.imageUrl}>
-                        <div className="relative group cursor-pointer">
-                          <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/*"
-                            className="sr-only"
-                            onChange={async (e) => {
-                              const file = e.target.files?.[0] ?? null;
-                              if (!file) return;
-                              setProductConverterFile(file);
-                              setProductConverterError(null);
-                              try {
-                                const dataUrl = await convertFileToDataUrl(await compressImageForUpload(file));
-                                setProductConverterResult(dataUrl);
-                                setForm((f) => ({ ...f, imageUrl: dataUrl }));
-                                setProductConverterFile(null);
-                                setProductConverterResult(null);
-                              } catch {
-                                setProductConverterError("Failed to read image file.");
-                              }
-                            }}
-                          />
-                          <div
-                            onClick={() => fileInputRef.current?.click()}
-                            className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${productConverterUploading ? "border-amber-500 text-amber-500 bg-amber-50" : productConverterFile || form.imageUrl ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}
-                          >
-                            {productConverterUploading ? (
-                              <>
-                                <span className="text-xs font-bold animate-pulse">⟳</span>
-                                Converting image…
-                              </>
-                            ) : productConverterFile ? (
-                              <>
-                                <span className="text-xs font-bold">✓</span>
-                                {productConverterFile.name}
-                                {productConverterResult && <span className="text-[10px] text-ink-soft ml-2">→ converted to URL</span>}
-                              </>
-                            ) : form.imageUrl ? (
-                              <>
-                                <span className="text-xs font-bold text-emerald-500">✓</span>
-                                Image attached
-                                <span
-                                  role="button"
-                                  tabIndex={0}
-                                  onClick={(ev) => {
-                                    ev.stopPropagation();
-                                    setForm((f) => ({ ...f, imageUrl: "" }));
-                                  }}
-                                  onKeyDown={(ev) => {
-                                    if (ev.key === "Enter" || ev.key === " ") {
-                                      ev.preventDefault();
-                                      ev.stopPropagation();
-                                      setForm((f) => ({ ...f, imageUrl: "" }));
-                                    }
-                                  }}
-                                  className="text-[10px] text-destructive underline underline-offset-2 ml-2 cursor-pointer"
-                                >
-                                  remove
-                                </span>
-                              </>
-                            ) : (
-                              "Choose image"
-                            )}
-                          </div>
-                          </div>
-                          {productConverterError && <p className="text-xs text-destructive mt-1">{productConverterError}</p>}
-                          {productConverterResult && (
-                          <div className="mt-3 border border-input rounded-md p-3 bg-background">
-                            <img src={productConverterResult} alt="Preview" className="max-w-full max-h-48 rounded-md border border-border object-cover" />
-                            <p className="text-[10px] text-ink-soft mt-2">Live preview from URL</p>
-                          </div>
-                          )}
-                      </Field>
-                      <Field
-                        label="Car (CPM2 catalog)"
-                        error={productErrors.cpm2CarCode}
-                        hint={carLocked ? "Car code is locked - set once at creation" : "Pick a car from the catalog - name auto-fills below"}
-                      >
-                        {carLocked ? (
-                          <select
-                            id="cpm2-car-code"
-                            disabled
-                            defaultValue={form.cpm2CarCode}
-                            aria-readonly="true"
-                            className="w-full border border-input bg-secondary px-3 py-2 rounded-md text-sm text-foreground cursor-not-allowed"
-                          >
-                            <option value={form.cpm2CarCode}>
-                              {carByCode(Number(form.cpm2CarCode), "cpm2")?.name ?? `#${form.cpm2CarCode}`}
-                            </option>
-                          </select>
-                        ) : pickedCar ? (
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="font-mono text-muted-foreground">#{pickedCar.code}</span>
-                              <span className="text-foreground">{pickedCar.name}</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={clearPickedCar}
-                                aria-label="Clear picked car"
-                                >
-                                Clear
-                              </Button>
-                            </div>
-                            <div className="border border-input rounded-md px-2 py-1 bg-background">
-                              <span className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
-                                Picked from catalog - name below is editable
-                              </span>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="relative" onBlur={(e) => {
-                            if (!e.currentTarget.contains(e.relatedTarget as Node)) setCarOpen(false);
-                          }}>
-                            <input
-                              id="cpm2-car-code"
-                              value={carQuery}
-                              onChange={(e) => {
-                                const v = e.target.value;
-                                setCarQuery(v);
-                                setCarOpen(true);
-                                if (v === "") {
-                                  setForm((f) => ({ ...f, cpm2CarCode: "", name: "" }));
-                                  setPickedCar(null);
-                                }
-                              }}
-                              onFocus={() => setCarOpen(true)}
-                              placeholder="Type a car name or code…"
-                              autoComplete="off"
-                              className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
-                            />
-                            {carOpen && (carMatches.length > 0 ? (
-                              <div
-                                className="absolute z-20 mt-1 w-full max-h-64 overflow-y-auto border border-border rounded-md bg-background shadow-lg"
-                                onMouseDown={(e) => e.preventDefault()}
-                              >
-                                {carMatches.map((car) => (
-                                  <button
-                                    key={car.code}
-                                    type="button"
-                                    onClick={() => pickCar(car)}
-                                    className="block w-full text-left px-3 py-2 text-sm bg-background/95 hover:bg-background hover:border-primary border-b border-border last:border-b-0"
-                                  >
-                                    <span className="text-foreground">{car.name}</span>
-                                  </button>
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="absolute z-20 mt-1 w-full border border-border rounded-md bg-background px-3 py-2 text-sm text-muted-foreground">
-                                No car in the CPM2 catalog matches &quot;{carQuery}&quot;.
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </Field>
-                      <Field label="Name" error={productErrors.name} hint='Auto-filled from the catalog pick above - edit for custom design names (e.g. "GOLF GTI III - Midnight Chrome")'>
-                        <TextInput
-                          id="name"
-                          value={form.name}
-                          onChange={(e) => handleChange("name", e.target.value)}
-                          placeholder="Toyota Supra MK4"
-                        />
-                      </Field>
-                      <Field label="Price (ZAR)" error={productErrors.basePriceCents}>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={form.basePriceCents}
-                          onChange={(e) => handleChange("basePriceCents", e.target.value)}
-                          className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
-                        />
-                      </Field>
-                      <Field
-                        label="Stock"
-                        error={productErrors.stockQuantity}
-                        hint={editingId === null ? "Locked at 1 for new products" : "How many available - set to 0 to mark out of stock"}
-                      >
-                        <input
-                          type="number"
-                          min={editingId === null ? 1 : 0}
-                          value={editingId === null ? "1" : form.stockQuantity}
-                          onChange={editingId === null ? undefined : (e) => handleChange("stockQuantity", e.target.value)}
-                          readOnly={editingId === null}
-                          className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
-                        />
-                      </Field>
-                      <Field label="Category" hint={categories.length === 0 ? "No categories yet - add some via the Categories tab" : "Select a category"}>
-                        <select
-                          value={form.categoryId}
-                          onChange={(e) => handleChange("categoryId", e.target.value)}
-                          className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
-                        >
-                          <option value="">Select a category</option>
-                          {categories.map((cat) => (
-                            <option key={cat.id} value={String(cat.id)}>{cat.name}</option>
-                          ))}
-                        </select>
-                      </Field>
-                      <Field label="Air suspension install">
-                        <label className="custom-checkbox">
-                          <input
-                            type="checkbox"
-                            checked={form.airSuspension}
-                            onChange={(e) => handleChange("airSuspension", e.target.checked)}
-                          />
-                          <div className="checkmark"></div>
-                          <span className="text-base font-bold text-foreground">Include air suspension</span>
-                        </label>
-                      </Field>
-                      <Field label="Unlocked bodykits">
-                        <label className="custom-checkbox">
-                          <input
-                            type="checkbox"
-                            checked={form.unlockedBodykits}
-                            onChange={(e) => handleChange("unlockedBodykits", e.target.checked)}
-                          />
-                          <div className="checkmark"></div>
-                          <span className="text-base font-bold text-foreground">Include unlocked bodykits</span>
-                        </label>
-                      </Field>
-                      <Field label="HD Logo">
-                        <label className="custom-checkbox">
-                          <input
-                            type="checkbox"
-                            checked={form.hdLogo}
-                            onChange={(e) => handleChange("hdLogo", e.target.checked)}
-                          />
-                          <div className="checkmark"></div>
-                          <span className="text-base font-bold text-foreground">Include HD logo</span>
-                        </label>
-                      </Field>
-                      <Field label="New Arrival">
-                        <label className="custom-checkbox">
-                          <input
-                            type="checkbox"
-                            checked={form.isNew}
-                            onChange={(e) => handleChange("isNew", e.target.checked)}
-                          />
-                          <div className="checkmark"></div>
-                          <span className="text-base font-bold text-foreground">Show &quot;New&quot; badge</span>
-                        </label>
-                      </Field>
-                      <Field label="Sale">
-                        <label className="custom-checkbox">
-                          <input
-                            type="checkbox"
-                            checked={form.isSale}
-                            onChange={(e) => handleChange("isSale", e.target.checked)}
-                          />
-                          <div className="checkmark"></div>
-                          <span className="text-base font-bold text-foreground">Show &quot;Sale&quot; badge</span>
-                        </label>
-                      </Field>
-                      <Field label="Published">
-                        <label className="custom-checkbox">
-                          <input
-                            type="checkbox"
-                            checked={form.isPublished}
-                            onChange={(e) => handleChange("isPublished", e.target.checked)}
-                          />
-                          <div className="checkmark"></div>
-                          <span className="text-base font-bold text-foreground">Visible to customers</span>
-                        </label>
-                      </Field>
-                      <div className="flex flex-col gap-2">
-                                              <Button type="submit" variant="primary" disabled={saving} className="w-full sm:w-auto">
-                                                {saving ? "Saving…" : "Update product"}
-                                              </Button>
-                                              <Button variant="destructive" type="button" size="sm" onClick={async () => {
-                                                if (!window.confirm(`Delete "${p.name}"? This will unpublish and mark unavailable.`)) return;
-                                                setError(null);
-                                                const scrollY = window.scrollY;
-                                                try {
-                                                  await vantaApi.deleteProduct(p.id);
-                                                  setMsg("Product deleted (unpublished & marked unavailable).");
-                                                  await load();
-                                                  window.scrollTo(0, scrollY);
-                                                  setInlineEditingId(null);
-                                                } catch (err) {
-                                                  setError(err instanceof Error ? err.message : "Failed to delete product.");
-                                                }
-                                              }} className="w-full sm:w-auto">
-                                                Delete
-                                              </Button>
-                                            </div>
-                    </form>
-                  </article>
-                );
-              }
-              return (
-                <article
-                  key={p.id}
-                  className={`panel rounded-xl border p-4 ${
-                    p.stockQuantity === 0
-                      ? "border-oxblood bg-oxblood/5"
-                      : "border-border"
-                  }`}
-                >
-                  <div className="flex items-baseline justify-between mb-2">
-                    <span className="text-xs font-mono text-muted-foreground">#{p.id}</span>
-                    <span className={`text-xs ${p.isPublished ? "text-primary" : "text-muted-foreground"} font-medium capitalize`}>
-                      {p.isPublished ? "published" : "unpublished"}
-                    </span>
-                  </div>
-                  <h4 className="text-sm font-medium text-foreground truncate">{p.name}</h4>
-                                    <div className="flex items-baseline gap-2 mb-3 flex-wrap">
-                                      <span className="text-primary font-semibold">{formatPrice(p.basePriceCents, p.currency)}</span>
-                                      <span
-                                        className={`text-xs ml-2 font-medium ${
-                                          p.stockQuantity === 0
-                                            ? "text-oxblood"
-                                            : "text-muted-foreground"
-                                        }`}
-                                      >
-                                        {p.stockQuantity === 0 ? "Out of stock" : `${p.stockQuantity} left`}
-                                      </span>
-                                      {p.categoryId && categories.length > 0 && (
-                                        <span className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground border border-border px-2 py-0.5 rounded ml-2">
-                                          {categories.find((c) => c.id === p.categoryId)?.name ?? "Category"}
-                                        </span>
-                                      )}
-                                      {p.exclusivity !== "standard" && (
-                                        <span className="text-[10px] uppercase tracking-[0.15em] text-accent-foreground border border-accent px-2 py-0.5 rounded ml-2">
-                                          {p.exclusivity.replace("_", " ")}
-                                        </span>
-                                      )}
-                                      {p.isNew && (
-                                        <span className="bd bd-new text-[10px] font-bold px-2 py-0.5 rounded">New</span>
-                                      )}
-                                      {p.isSale && (
-                                        <span className="bd bd-sale text-[10px] font-bold px-2 py-0.5 rounded">Sale</span>
-                                      )}
-                                      {p.isFeatured && (
-                                        <span className="bd bd-featured text-[10px] font-bold px-2 py-0.5 rounded">Featured</span>
-                                      )}
-                                    </div>
-                                    {p.stockQuantity === 0 && (
-                                      <p className="text-[10px] uppercase tracking-[0.15em] text-oxblood mt-1">
-                                        Out of stock - edit to restock
-                                      </p>
-                                    )}
-                                    <div className="flex gap-2 flex-wrap">
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => selectProduct(p)}
-                                      >
-                                        Edit
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => handlePublish(p.id, !p.isPublished)}
-                                      >
-                                        {p.isPublished ? "Unpublish" : "Publish"}
-                                      </Button>
-                                      <Button
-                                                                              variant="ghost"
-                                                                              size="sm"
-                                                                              onClick={async () => {
-                                                                                if (!window.confirm(`Delete "${p.name}"? This will unpublish and mark unavailable.`)) return;
-                                                                                setError(null);
-                                                                                // Remember scroll position so the page doesn't jump to top after refresh
-                                                                                const scrollY = window.scrollY;
-                                                                                try {
-                                                                                  await vantaApi.deleteProduct(p.id);
-                                                                                  setMsg("Product deleted (unpublished & marked unavailable).");
-                                                                                  await load();
-                                                                                  window.scrollTo(0, scrollY);
-                                                                                } catch (err) {
-                                                                                  setError(err instanceof Error ? err.message : "Failed to delete product.");
-                                                                                }
-                                                                              }}
-                                                                              className="text-destructive hover:bg-destructive/10"
-                                                                            >
-                                                                              Delete
-                                      </Button>
-                                    </div>
-                                  </article>
-                                );
-                              })}
-                            </div>
+                    <select
+  id="product-edit"
+  value={editingId ?? ""}
+  onChange={(e) => {
+    setEditingId(Number(e.target.value));
+    const p = products.find((x) => x.id === Number(e.target.value));
+    if (!p) return;
+    setForm({
+      cpm2CarCode: String(p.cpm2CarCode ?? ""),
+      name: p.name,
+      description: p.description,
+      basePriceCents: String(p.basePriceCents),
+      currency: p.currency,
+      stockQuantity: String(p.stockQuantity),
+      airSuspension: p.airSuspension,
+      unlockedBodykits: p.unlockedBodykits,
+      hdLogo: false,
+      isFeatured: p.isFeatured,
+      isNew: p.isNew,
+      isSale: p.isSale,
+      isPublished: p.isPublished,
+      categoryId: String(p.categoryId ?? ""),
+      imageUrl: p.imageUrl ?? "",
+    });
+    setInlineEditingId(p.id);
+    setShowProductForm(true);
+  }}
+  className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
+>
+  <option value="">Pick a product to edit…</option>
+  {products.map((p) => (
+    <option key={p.id} value={String(p.id)}>{p.name} ({p.cpm2CarCode})</option>
+  ))}
+</select>
                           )}
                         </section>
 

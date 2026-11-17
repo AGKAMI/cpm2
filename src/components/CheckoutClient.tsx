@@ -6,7 +6,9 @@ import { useEffect, useState } from "react";
 import { vantaApi, formatPrice, type VantaProduct } from "@/lib/store/client";
 import { StoreShell } from "@/components/StoreShell";
 import { Button } from "@/components/ui/Button";
+import { CheckoutSkeleton } from "@/components/skeleton";
 import { Field, TextInput } from "@/components/ui/Field";
+import { Uploader } from "@/components/ui/Uploader";
 
 export function CheckoutClient({ productId }: { productId: number }) {
   const [product, setProduct] = useState<VantaProduct | null>(null);
@@ -163,15 +165,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
   if (loading)
     return (
       <StoreShell>
-        <div className="panel rounded-xl border border-border p-6">
-          <div className="h-3 w-1/2 rounded-sm bg-background mb-4 animate-pulse" />
-          <div className="h-3 w-1/3 rounded-sm bg-background mb-2 animate-pulse" />
-          <div className="h-3 w-2/3 rounded-sm bg-background mb-4 animate-pulse" />
-          <div className="space-y-3">
-            <div className="h-4 w-24 rounded-sm bg-background animate-pulse" />
-            <div className="h-4 w-32 rounded-sm bg-background animate-pulse" />
-          </div>
-        </div>
+        <CheckoutSkeleton />
       </StoreShell>
     );
   if (!product) return <StoreShell><p className="text-muted-foreground">Vehicle not found.</p></StoreShell>;
@@ -182,7 +176,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
     <StoreShell>
       {/* Header */}
       <div className="flex items-center justify-between px-4 sm:px-6 mb-6">
-        <Link href="/store" className="flex items-center gap-2 text-primary hover:underline cursor-pointer">
+        <Link href="/store" className="flex items-center gap-2 text-primary hover:underline underline-link cursor-pointer">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="w-4 h-4"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
           Back
         </Link>
@@ -287,15 +281,18 @@ export function CheckoutClient({ productId }: { productId: number }) {
                 EFT Proof Upload
               </h3>
               <div className="flex flex-col gap-3">
-                <label id="checkout-proof-upload" className={`flex items-center gap-3 cursor-pointer border border-dashed rounded-md p-4 text-center transition-colors ${proofFileName ? "border-ok hover:border-ok" : attempted ? "border-destructive border-glow-red hover:border-destructive" : "border-border hover:border-primary"}`}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="w-5 h-5 text-primary"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                  <span className="text-xs font-medium text-foreground">Choose file</span>
-                  <input type="file" accept=".png,.jpg,.jpeg,.pdf" className="hidden" onChange={(e) => {
-                    const file = e.target.files?.[0] ?? null;
+                <Uploader
+                  id="checkout-proof-upload"
+                  accept=".png,.jpg,.jpeg,.pdf"
+                  error={attempted && !proofFileName}
+                  fileName={proofFileName || null}
+                  label="Click to upload proof of payment"
+                  onFiles={(files) => {
+                    const file = files?.[0] ?? null;
                     setProofFile(file);
                     setProofFileName(file?.name ?? "");
-                  }} />
-                </label>
+                  }}
+                />
                 {proofFileName && (
                   <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
                     <span className="num">{proofFileName}</span>

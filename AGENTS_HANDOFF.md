@@ -706,3 +706,24 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 
 **Gate:** tsc clean → tests 66/66 → build clean → 3001 restarted → browser-verified: trade screenshot uploader border color matches `--primary` (titanium palette night theme), hover no longer shows gold.
 
+
+### 2026-11-17 (entry 30) — Agent "AG" — Clear all products and promotions
+
+**What:** User requested clearing all products and promotions from the VANTA Garage storefront.
+
+**Where:** Turso database — `vanta_products`, `vanta_promotions`, `vanta_product_media`, `vanta_inventory`, `vanta_cart_items`, `vanta_wishlist`, `vanta_orders`, `vanta_pricing`, `vanta_categories`.
+
+**Change:** Wrote and ran a temporary migration script (`scripts/clear-all-store.mjs`, deleted after use) that deletes all store data in FK-safe order:
+1. `vanta_promotions` — 3 rows
+2. `vanta_product_media` — 216 rows
+3. `vanta_inventory` — 5 rows
+4. `vanta_cart_items` — 2 rows
+5. `vanta_wishlist` — 1 row
+6. `vanta_orders` — 8 rows
+7. `vanta_products` — 220 rows
+8. `vanta_categories` — 6 rows
+
+**Gate:** tsc clean → tests 66/66 → build clean → 3001 restarted. API verified: `GET /api/store/products` returns `"products":[],"total":0`. Browser page shows cached HTML until cache expires/rebuild.
+
+**Committed:** `00d0f64` (previous entry) — this entry not yet committed.
+

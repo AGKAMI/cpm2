@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Security upgrade marker (agent-driven upgrade run)
+  experimental: {
+    agentUpgrade: "security",
+  },
   serverExternalPackages: ["better-sqlite3"],
   images: {
     formats: ["image/avif", "image/webp"],

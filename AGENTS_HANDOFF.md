@@ -601,3 +601,17 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 **Gate:** tsc clean → tests 66/66 → build clean → deploy job `zCVMKUS1fLh1SUjkRdtf` triggered. Prod verified: categories grid is `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5`, `.pad` class present, home page 774KB, 5 featured cards.
 
 **Verified by:** AG — tsc clean, tests 66/66, build clean, prod verified.
+
+---
+
+### 2026-11-16 (22) — Agent "AG" — Align "On offer" filter chip with its neighbors
+
+**Change:** User reported the "On offer" chip on `/store/categories` not aligning with the chips on its left. Two root causes, both CSS-only in `globals.css`:
+1. The `.hs` chip-row container was never defined as a flex container (like `.pad` earlier), so `inline-flex` chips aligned by text baseline — the chip containing the tag SVG had a different baseline and sat ~4px lower than text-only chips. Fixed: `.hs { display: flex; align-items: center; }`.
+2. The tag icon SVG had no width/height and rendered at 0px width. Fixed: `.chip svg { width: 14px; height: 14px; flex: 0 0 auto; }`.
+
+**Verification:** Browser-measured before/after in live tab — before: "On offer" topOffset 4px vs 0px for neighbors, SVG 0px wide; after: all 5 chips topOffset 0px, SVG 14px.
+
+**Note:** `next build` was temporarily blocked by another agent's in-flight uncommitted JSX errors in `src/app/store/admin/page.tsx` (not this agent's work — do not touch). Committed only `globals.css`; Vercel builds the committed tree, which is clean. Deploy job `jn2acJtraELdQIThveG2`.
+
+**Verified by:** AG — CSS-only change, browser-measured before/after alignment (4px → 0px), deployed (commit `3f8313f`).

@@ -665,3 +665,16 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 **Gate:** tsc clean → tests 66/66 → build clean (one SecurityFatalError interrupt, retry clean) → 3001 restarted → browser-verified profile tabs/badge/uploader and admin dropdown/equal cards/uploaders. Commit `7d6ad75` (entry 24 batch), deploy job `frwX7h3N3ujQ13VflJ2L`. Commit `4caf0a0` (entry 25 fleet-theme uploader) pushed to master.
 
 **Still open:** prod cold-start 20–38s (awaiting user direction); CLS ~0.14 needs DevTools trace; PayFast keys pending approval email; products 237/238 "No photo" = missing cover images (data, not code); Telegram notification emoji conflict (`src/lib/store/notifications.ts`) awaiting direction; `/accounts/[id]` shows Next.js error UI when Turso is unreachable or user isn't fleet-authenticated (401) — FleetProvider now has 8s fetch timeouts + error boundary with retry; verify fleet uploader end-to-end once the route loads.
+
+### 2026-11-17 (entry 27) — Agent "AG" — Trade screenshot uploader: progressive Gemini scanning spinner
+
+**What:** User complained the trade screenshot picker shows no progressive live update while Gemini identifies the car — just static small text ("Gemini is reading the car…") with no visual feedback during the API call.
+
+**Where:** `src/components/TradeCarPickerModal.tsx` (screenshot tab, lines ~295-302)
+
+**Change:** Replaced the static scanning `<p>` with a visible animated SVG spinner (rotating ring + dash animation via CSS keyframes) alongside the "Gemini is reading the car…" text, so the user sees live progress while `api.identifyCar()` is in flight. The spinner spins and the ring dash animates until `scanning` flips to false, then the "Gemini read" result + match cards render as before.
+
+**Gate:** tsc clean → tests 66/66 → build clean (no SecurityFatalError interrupt this run) → 3001 restarted → browser-verified trade/guest screenshot tab renders.
+
+**Committed:** not yet — will commit with the AGENTS_HANDOFF.md update.
+

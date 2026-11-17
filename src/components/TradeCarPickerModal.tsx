@@ -293,7 +293,28 @@ export function TradeCarPickerModal({
                   />
                   <div className="min-w-0 flex-1">
                     {scanning ? (
-                      <p className="num text-[11px] text-racing">Gemini is reading the car…</p>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="relative flex h-5 w-5 shrink-0"
+                          style={{ animation: "rotate 1s linear infinite" }}
+                        >
+                          <circle
+                            className="animate-[dash_1.5s_ease-in-out_infinite]"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            fill="none"
+                            strokeLinecap="round"
+                          />
+                        </span>
+                        <p className="num text-[11px] font-semibold text-racing">Gemini is reading the car…</p>
+                        <style>{`
+                          @keyframes rotate { to { transform: rotate(360deg); } }
+                          @keyframes dash { 0% { stroke-dasharray: 1, 150; stroke-dashoffset: 0; } 50% { stroke-dasharray: 90, 150; stroke-dashoffset: -35; } 100% { stroke-dasharray: 90, 150; stroke-dashoffset: -125; } }
+                        `}</style>
+                      </div>
                     ) : geminiName ? (
                       <>
                         <p className="label-caps">Gemini read</p>

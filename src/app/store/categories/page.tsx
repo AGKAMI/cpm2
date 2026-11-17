@@ -3,6 +3,7 @@ import { CategoriesClient } from "@/components/CategoriesClient";
 import {
   listCategories,
   listProducts,
+  listCoverImageMap,
 } from "@/lib/store/products";
 
 export const metadata: Metadata = {
@@ -26,5 +27,8 @@ export default async function CategoriesPage() {
     listProducts({ onlyPublished: true }),
   ]);
   const initialProducts = products.slice(0, 24);
-  return <CategoriesClient categories={categories} products={initialProducts} />;
+  const coverMap: Record<number, string> = Object.fromEntries(
+    (await listCoverImageMap(initialProducts.map((p) => p.id))).entries()
+  );
+  return <CategoriesClient categories={categories} products={initialProducts} coverMap={coverMap} />;
 }

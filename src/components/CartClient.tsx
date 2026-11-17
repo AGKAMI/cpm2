@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { vantaApi, formatPrice } from "@/lib/store/client";
+import { CartSkeleton } from "@/components/skeleton";
 import {
   addToCartLocal,
   cartCountLocal,
@@ -160,9 +161,7 @@ export function CartClient() {
     return (
       <StoreShell>
         <div className="panel rounded-xl border border-border p-6">
-          <div className="h-3 w-1/2 rounded-sm bg-background mb-4 animate-pulse" />
-          <div className="h-3 w-2/3 rounded-sm bg-background mb-2 animate-pulse" />
-          <div className="h-3 w-full rounded-sm bg-background animate-pulse" />
+          <CartSkeleton />
         </div>
       </StoreShell>
     );
@@ -230,7 +229,7 @@ export function CartClient() {
               <div className="col-span-2 text-right">
                 <Link
                   href={`/store/products/${item.productId}`}
-                  className="text-sm font-semibold text-foreground hover:underline block mb-1"
+                  className="text-sm font-semibold text-foreground hover:underline underline-link block mb-1"
                 >
                   {item.name}
                 </Link>

@@ -30,7 +30,7 @@ export function errorPayload(err: unknown): { status: number; body: ErrorBody } 
   if (err instanceof ApiError) {
     return {
       status: err.status,
-      body: { error: { code: err.code, message: err.message, ...(err.fields ? { fields: err.fields } : {}) } },
+      body: { error: { code: err.code, message: err.message } },
     };
   }
 
@@ -55,6 +55,6 @@ export function errorPayload(err: unknown): { status: number; body: ErrorBody } 
   console.error("[cpm2] unexpected error:", err);
   return {
     status: 500,
-    body: { error: { code: "INTERNAL_ERROR", message: "Server error — try again." } },
+    body: { error: { code: "INTERNAL_ERROR", message: "Hmm, something went wrong on our end. Give it another try." } },
   };
 }

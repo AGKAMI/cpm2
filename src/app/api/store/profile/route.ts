@@ -56,6 +56,7 @@ export async function GET(request: NextRequest) {
           playerId: String(c.player_id ?? ""),
           email: String(c.email ?? ""),
           currencyPref: String(c.currency_pref ?? "ZAR"),
+          notificationsEnabled: Boolean(c.notifications_enabled),
           telegramLinked,
           telegramId: telegramLinked ? String(identity.rows[0].platform_user_id) : null,
           role,

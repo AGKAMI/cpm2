@@ -20,8 +20,14 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
+import { Suspense } from "react";
 import DashboardClient from "./page.client";
+import { DashboardSkeleton } from "@/components/skeleton";
 
 export default function DashboardPage() {
-  return <DashboardClient />;
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <DashboardClient />
+    </Suspense>
+  );
 }

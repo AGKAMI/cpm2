@@ -26,7 +26,11 @@ interface TelegramMessage {
 }
 
 /** WhatsApp channel (newsletter) JID for broadcasting notifications. */
-const WHATSAPP_CHANNEL_ID = "0029Vb9MVBOGpLHVobbY3e0s@newsletter";
+// Vanta Garage newsletter. This is the raw invite code from
+// whatsapp.com/channel/0029Vb9MVBOGpLHVobbY3e0s — NOT a JID. An invite code
+// with '@newsletter' appended is not a real JID and silently never delivers;
+// the KAMI-Bot webhook resolves the code to the live channel JID at send time.
+const WHATSAPP_CHANNEL_ID = "0029Vb9MVBOGpLHVobbY3e0s";
 
 /** KAMI-Bot webhook URL on bot-hosting.net — set via env in Vercel/dashboard. */
 const VANTA_WHATSAPP_WEBHOOK_URL = process.env.VANTA_WHATSAPP_WEBHOOK_URL || "";

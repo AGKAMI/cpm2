@@ -1,5 +1,7 @@
 import { Metadata } from "next";
+import { Suspense } from "react";
 import { StoreHome } from "@/components/StoreHome";
+import { StoreHomeSkeleton } from "@/components/skeleton";
 import {
   listProducts,
   listCategories,
@@ -13,18 +15,25 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function StorePage() {
+async function StoreContent() {
   const [products, categories, promotions] = await Promise.all([
     listProducts({ onlyPublished: true }),
     listCategories(),
     listPromotions(),
   ]);
-
   return (
     <StoreHome
       products={products}
       categories={categories}
       promotions={promotions}
     />
+  );
+}
+
+export default function StorePage() {
+  return (
+    <Suspense fallback={<StoreHomeSkeleton />}>
+      <StoreContent />
+    </Suspense>
   );
 }

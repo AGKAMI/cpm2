@@ -63,3 +63,14 @@ scripts/apply-prices.cjs
 .vercel
 dev.log
 nul
+
+# scratch / local probes (contain endpoints, cookies, or local paths)
+cache/scratch/
+dev-run*.log
+*.bak
+e2e-*.py
+probe-cookies.py
+probe-notif*.py
+verify-notif-cols.mjs
+scripts/probe-db.mjs
+scripts/cleanup-e2e-probes.mjs

@@ -381,7 +381,7 @@ export default function LegalPage({ params }: { params: { doc: string } }) {
   return (
     <div className="p-8 max-w-2xl mx-auto">
       <nav className="mb-8">
-        <a href="/store" className="text-[11px] text-primary hover:underline">
+        <a href="/store" className="text-[11px] text-primary hover:underline underline-link">
           ← Back to store
         </a>
       </nav>

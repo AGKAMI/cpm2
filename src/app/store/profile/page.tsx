@@ -1,6 +1,8 @@
 import { Metadata } from "next";
+import { Suspense } from "react";
 import { headers } from "next/headers";
 import { ProfileClient } from "@/components/ProfileClient";
+import { ProfileSkeleton } from "@/components/skeleton";
 
 export const metadata: Metadata = {
   title: "Profile - VANTA GARAGE",
@@ -8,7 +10,7 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function ProfilePage() {
+async function ProfileContent() {
   const headerList = await headers();
   const initData = headerList.get("x-telegram-init-data");
 
@@ -33,5 +35,13 @@ export default async function ProfilePage() {
       initialCustomer={customer}
       initialTelegramUser={telegramUser}
     />
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={<ProfileSkeleton />}>
+      <ProfileContent />
+    </Suspense>
   );
 }

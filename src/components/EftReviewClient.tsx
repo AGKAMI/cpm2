@@ -392,7 +392,7 @@ function EftOrderCard({
       <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
         <Link
           href={`/store/orders/${order.id}`}
-          className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground hover:text-primary hover:underline cursor-pointer"
+          className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground hover:text-primary hover:underline underline-link cursor-pointer"
         >
           View order
         </Link>

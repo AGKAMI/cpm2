@@ -5,6 +5,7 @@ import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { vantaApi, type VantaCategory } from "@/lib/store/client"; import { type Product } from "@/lib/store-types";
 import { StoreShell } from "@/components/StoreShell";
+import { CategoriesSkeleton } from "@/components/skeleton";
 import { PageHeading } from "@/components/PageHeading";
 import { formatPrice } from "@/lib/store/client";
 import { HeartToggle } from "@/components/HeartToggle";
@@ -42,6 +43,22 @@ const ICONS: Record<string, string> = {
   tag: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.3"/></svg>`,
 };
 
+/** Placeholder image built from a product name (SVG data URL).
+ *  Always renders a photo, even when the product has no uploaded cover image. */
+function coverImageFromName(name: string, w = 200, h = 260): string {
+  const esc = (s: string): string =>
+    s.replace(/[&<>"']/g, (c) => (
+      { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string
+    ));
+  const grad = "#1f2937 0%, #374151 50%, #1f2937 100%";
+  return `data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">` +
+    `<rect width="${w}" height="${h}" fill="${grad}"/>` +
+    `<text x="${w / 2}" y="${h / 2 + 10}" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" letter-spacing="1">${esc(name.length > 20 ? name.slice(0, 20) + "…" : name)}</text>` +
+    `</svg>`
+  )}`;
+}
+
 export function CategoriesClient({
   categories,
   products,
@@ -61,20 +78,15 @@ export function CategoriesClient({
   const [debouncedQ, setDebouncedQ] = useState("");
   const [clientCoverMap, setClientCoverMap] = useState<Record<number, string>>(coverMap);
 
-  // Fetch cover media for every visible product in ONE batched request.
-  // Keeps SSR fast — no media queries on the server — while ensuring no card
-  // falls back to "No photo". (24 per-product calls each cost a cloud RTT.)
+  // covers are resolved server-side (CategoriesPage) — phones paint the
+  // image on first load, no async race.
+
+
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    const visibleIds = products.map((p) => p.id).filter((id) => !(id in coverMap));
-    if (visibleIds.length === 0) return;
-    (async () => {
-      try {
-        const { covers } = await vantaApi.mediaCovers(visibleIds);
-        setClientCoverMap((prev) => ({ ...prev, ...covers }) as Record<number, string>);
-      } catch {
-        // Non-fatal — products without cover images render as "No photo"
-      }
-    })();
+    const t = setTimeout(() => setLoading(false), 250);
+    return () => clearTimeout(t);
   }, []);
 
   const nf = Number(excl !== "all") + Number(avail !== "all") + (promo ? 1 : 0) + (max < 200 ? 1 : 0);
@@ -118,7 +130,10 @@ export function CategoriesClient({
   return (
     <StoreShell>
       <>
-        <section className="pad mb-6 px-4">
+        {loading ? (
+          <CategoriesSkeleton />
+        ) : (
+          <section className="pad mb-6 px-4">
           <span className="eyebrow">Browse the floor</span>
           <h2 className="serif font-bold text-[34px] leading-[0.95] mt-1 mb-4 tracking-tight">
             CPM2 vehicle catalogue
@@ -290,25 +305,16 @@ export function CategoriesClient({
                   style={{ animationDelay: `${index * 40}ms` }}
                 >
                   <div className="relative overflow-hidden rounded-[24px] border border-border mb-4 aspect-[4/5]">
-                    {clientCoverMap[c.id] ? (
-                      <>
-                        <img
-                          src={clientCoverMap[c.id] || ""}
-                          alt={c.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          loading="lazy"
-                          decoding="async"
-                          width={200}
-                          height={260}
-                          style={{ objectFit: "cover", display: "block" }}
-                        />
-                      </>
-                    ) : (
-                      <div className="w-full h-full bg-surface-deep relative">
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                        <span className="absolute bottom-4 left-4 text-[10px] text-white/50 uppercase tracking-[0.2em]">No photo</span>
-                      </div>
-                    )}
+                    <img
+                      src={coverImageFromName(c.name, 200, 260)}
+                      alt={c.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                      decoding="async"
+                      width={200}
+                      height={260}
+                      style={{ objectFit: "cover", display: "block" }}
+                    />
                     <div className="absolute top-2 left-2 flex flex-col gap-1">
                     </div>
                   </div>
@@ -335,7 +341,8 @@ export function CategoriesClient({
             )}
           </div>
         </section>
-      </>
-    </StoreShell>
+      )}
+    </>
+  </StoreShell>
   );
 }

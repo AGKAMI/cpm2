@@ -8,6 +8,7 @@ import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 import { addToCartLocal } from "@/lib/store/cart-client";
+import { ProductSkeleton } from "@/components/skeleton";
 
 const EXCLUSIVITY_LABELS: Record<string, string> = {
   limited: "Limited Edition",
@@ -69,16 +70,11 @@ export function ProductPageClient({ productId }: { productId: string }) {
   const translateX = activeImage * -carouselWidth;
 
   if (loading)
-      return (
-        <StoreShell>
-          <PageHeading folio="01" title="Vehicle" meta={""} backHref="/store/categories" />
-          <div className="panel rounded-xl border border-border p-6" aria-hidden="true">
-            <div className="aspect-video rounded-lg bg-background mb-4 animate-pulse" />
-            <div className="h-3 w-1/2 rounded-sm bg-background mb-2 animate-pulse" />
-            <div className="h-3 w-1/3 rounded-sm bg-background animate-pulse" />
-          </div>
-        </StoreShell>
-      );
+    return (
+      <StoreShell>
+        <ProductSkeleton />
+      </StoreShell>
+    );
   if (!product) return <StoreShell><p className="text-muted-foreground">Vehicle not found.</p></StoreShell>;
 
   const exclusivityLabel = EXCLUSIVITY_LABELS[product.exclusivity] ?? product.exclusivity;

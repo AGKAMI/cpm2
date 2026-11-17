@@ -155,7 +155,7 @@ export function NotificationBell() {
             <span className="text-sm font-semibold text-foreground">Notifications</span>
             <button
               onClick={markAllRead}
-              className="text-[10px] text-gold font-medium hover:underline"
+              className="text-[10px] text-gold font-medium hover:underline underline-link"
               disabled={unread === 0}
             >
               Mark all as read

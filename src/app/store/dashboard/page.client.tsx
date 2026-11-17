@@ -32,7 +32,7 @@ function OrderCard({ order }: OrderCardProps) {
       <div className="flex items-baseline justify-between mb-2">
         <Link
           href={`/store/orders/${order.id}`}
-          className="font-semibold text-foreground hover:underline"
+          className="font-semibold text-foreground hover:underline underline-link"
         >
           Order #{order.id.slice(-6)}
         </Link>

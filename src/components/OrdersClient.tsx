@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { vantaApi, formatPrice, type VantaOrder } from "@/lib/store/client";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
+import { OrdersSkeleton } from "@/components/skeleton";
 
 const ORDER_STAGES: Array<{
   key: VantaOrder["orderState"];
@@ -45,15 +46,7 @@ export function OrdersClient() {
   if (loading)
     return (
       <StoreShell>
-        <PageHeading folio="03" title="My Orders" backHref="/store" />
-        <div className="space-y-3" aria-hidden="true">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="panel rounded-xl border border-border p-4 stagger-item stagger-{i+1}">
-              <div className="h-2 w-24 rounded-sm bg-background mb-3 animate-pulse" />
-              <div className="h-3 w-32 rounded-sm bg-background animate-pulse" />
-            </div>
-          ))}
-        </div>
+        <OrdersSkeleton />
       </StoreShell>
     );
   if (orders.length === 0)
@@ -67,7 +60,7 @@ export function OrdersClient() {
           </p>
           <Link
             href="/store"
-            className="inline-block mt-4 text-xs uppercase tracking-[0.15em] text-primary hover:underline cursor-pointer"
+            className="inline-block mt-4 text-xs uppercase tracking-[0.15em] text-primary hover:underline underline-link cursor-pointer"
           >
             Back to the garage
           </Link>

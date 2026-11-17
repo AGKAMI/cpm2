@@ -32,7 +32,7 @@ export function PageHeading({
               </svg>
             </Link>
           )}
-          <h1 className="display-title min-w-0 text-[30px] leading-[0.95] text-ink sm:text-[40px]">
+          <h1 className="display-title min-w-0 leading-tight text-ink sm:text-[40px]">
             {title}
           </h1>
         </div>

@@ -99,7 +99,9 @@ export function Uploader({
     ? ""
     : dragOver
       ? "bg-[#1a170e]"
-      : "hover:border-[#d4af4f] hover:bg-[#171410]";
+      : isFleet
+        ? "hover:bg-[#171410]"
+        : "hover:border-[#d4af4f] hover:bg-[#171410]";
   const vantaTextCls = hasFile ? "text-[#74c69d]" : "text-[#d4af4f]";
   const vantaBusyCls = "text-[#d4af4f]";
   const vantaReplaceCls = "text-[#d4af4f]/70";

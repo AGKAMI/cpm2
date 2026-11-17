@@ -692,3 +692,17 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 **Gate:** tsc clean → tests 66/66 → build clean → 3001 restarted → browser-verified: fleet header shows `/cpm-logo.svg`, app card shows `/cpm-logo.svg`.
 
 
+### 2026-11-17 (entry 29) — Agent "AG" — Trade screenshot uploader follows fleet theme color
+
+**What:** User complained the trade screenshot picker uploader (VANTA gold dashed block) didn't follow the fleet ledger's selected theme color — it was hardcoded to gold regardless of the active cabin theme (titanium/ember/crimson/...).
+
+**Where:**
+- `src/components/ui/Uploader.tsx`: added `variant="fleet"` support (reads active `--primary` via hydration-safe `getComputedStyle` in `useEffect`, applies to border/icon/text via inline style; hover only changes background, not border color)
+- `src/components/TradeCarPickerModal.tsx`: trade screenshot uploader now passes `variant="fleet"`
+
+**Change:**
+- `Uploader.tsx`: fleet variant already existed (from entry 25) but hover state hardcoded `hover:border-[#d4af4f]` (gold). Fixed hover to only change background (`hover:bg-[#171410]`) for fleet, keeping the theme-colored border.
+- `TradeCarPickerModal.tsx`: added `variant="fleet"` prop to the screenshot Uploader so its border/icon/text/shine match the user's active cabin theme instead of hardcoded VANTA gold.
+
+**Gate:** tsc clean → tests 66/66 → build clean → 3001 restarted → browser-verified: trade screenshot uploader border color matches `--primary` (titanium palette night theme), hover no longer shows gold.
+

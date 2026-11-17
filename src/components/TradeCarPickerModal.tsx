@@ -276,6 +276,7 @@ export function TradeCarPickerModal({
             {!preview ? (
               <Uploader
                 accept="image/png,image/jpeg,image/webp"
+                variant="fleet"
                 label="Click to upload car screenshot"
                 onFiles={(files) => {
                   const file = files?.[0];

@@ -17,7 +17,15 @@ async function ProfileContent() {
   const fetchHeaders: HeadersInit = {};
   if (initData) fetchHeaders["X-Telegram-Init-Data"] = initData;
 
-  const res = await fetch("http://localhost:3000/api/store/profile", {
+  // Same-origin self-fetch. Resolve the host from the request headers instead
+  // of hardcoding one: a fixed localhost:3000 only works where something
+  // answers on that port. On a hostless deploy nothing listens there, the
+  // fetch throws, and the route dies through an error boundary.
+  const host =
+    headerList.get("x-forwarded-host") ?? headerList.get("host") ?? "localhost:3001";
+  const proto = headerList.get("x-forwarded-proto") ?? "http";
+
+  const res = await fetch(`${proto}://${host}/api/store/profile`, {
     headers: fetchHeaders,
     cache: "no-store",
   });

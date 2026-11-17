@@ -24,6 +24,8 @@ import { Field, TextInput } from "@/components/ui/Field";
 import { Toast } from "@/components/ui/Toast";
 import { useToast } from "@/components/ui/Toaster";
 import { Uploader } from "@/components/ui/Uploader";
+import { AdminSkeleton } from "@/components/skeleton";
+import { PlusCircleIcon, MinusCircleIcon } from "@/components/ui/icons";
 import {
   validateProductForm,
   validateCategoryForm,
@@ -58,7 +60,7 @@ const EMPTY_FORM: ProductForm = {
   description: "",
   basePriceCents: "",
   currency: "ZAR",
-  stockQuantity: "",
+  stockQuantity: "1",
   airSuspension: false,
   unlockedBodykits: false,
   hdLogo: false,
@@ -223,6 +225,16 @@ export default function AdminPage() {
 
   const handleChange = (k: keyof ProductForm, v: string | boolean) => {
     setForm((f) => ({ ...f, [k]: v }));
+  };
+
+  /** +/- stepper for the stock field. Creating clamps at 1; editing allows 0. */
+  const stepStock = (dir: number) => {
+    const min = editingId === null ? 1 : 0;
+    setForm((f) => {
+      const cur = parseInt(f.stockQuantity, 10);
+      const base = Number.isFinite(cur) ? cur : editingId === null ? 1 : 0;
+      return { ...f, stockQuantity: String(Math.max(min, base + dir)) };
+    });
   };
 
   const pickCar = (car: CarEntry) => {
@@ -609,7 +621,7 @@ export default function AdminPage() {
           return (
             <StoreShell>
               <PageHeading folio="AD" title="Admin - Product Manager" backHref="/store" />
-              <div className="p-4 text-center text-muted-foreground">Loading admin…</div>
+              <AdminSkeleton />
             </StoreShell>
           );
         }
@@ -646,7 +658,10 @@ export default function AdminPage() {
                           size="sm"
                           onClick={() => setShowCategoryForm(!showCategoryForm)}
                         >
-                          {showCategoryForm ? "Hide" : "Add Category"}
+                          <span className="inline-flex items-center gap-1.5">
+                            <PlusCircleIcon className="w-4 h-4" />
+                            {showCategoryForm ? "Hide" : "Add Category"}
+                          </span>
                         </Button>
                       </div>
           {showCategoryForm && (
@@ -1102,9 +1117,18 @@ export default function AdminPage() {
       {/* Create / Edit form - always shown when toggled */}
                         {showProductForm && (
                     <section className="admin-section panel rounded-xl border border-border p-6 mb-8">
-                      <h3 className="admin-section-title mb-4">
-                        {editingId ? "Edit product" : "Add product"}
-                      </h3>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="admin-section-title">
+                          {editingId ? "Edit product" : "Add product"}
+                        </h3>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowProductForm(false)}
+                        >
+                          Hide
+                        </Button>
+                      </div>
                       <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {/* Errors now shown as floating toasts */}
           <Field label="Image" error={productErrors.imageUrl}>
@@ -1263,7 +1287,7 @@ export default function AdminPage() {
               </div>
             )}
           </Field>
-          <Field label="Name" error={productErrors.name} hint='Auto-filled from the catalog pick above - edit for custom design names (e.g. "GOLF GTI III - Midnight Chrome")'>
+          <Field label="Name" error={productErrors.name} hint="Auto-filled from the catalog pick">
             <TextInput
               id="name"
               value={form.name}
@@ -1271,7 +1295,7 @@ export default function AdminPage() {
               placeholder="Toyota Supra MK4"
             />
           </Field>
-          <Field label="Price (ZAR)" error={productErrors.basePriceCents} hint="Enter price in Rands, e.g. 60.00">
+          <Field label="Price (ZAR)" error={productErrors.basePriceCents}>
             <input
               id="price"
               type="number"
@@ -1285,25 +1309,50 @@ export default function AdminPage() {
           <Field
             label="Stock"
             error={productErrors.stockQuantity}
-            hint="How many available - set to 0 to mark out of stock"
+            hint={editingId === null ? undefined : "0 = out of stock"}
           >
-            <input
-              id="stock"
-              type="number"
-              min={editingId === null ? 1 : 0}
-              value={form.stockQuantity}
-              onChange={(e) => {
-                const v = e.target.value;
-                if (v === "") {
-                  setForm((f) => ({ ...f, stockQuantity: v }));
-                  return;
-                }
-                setForm((f) => ({ ...f, stockQuantity: v }));
-              }}
-              className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
-            />
+            <div className="flex items-stretch gap-1.5">
+              <button
+                type="button"
+                onClick={() => stepStock(-1)}
+                disabled={saving}
+                aria-label="Decrease stock"
+                className="flex w-[42px] shrink-0 items-center justify-center rounded-md border border-input bg-background text-foreground hover:bg-secondary transition-colors cursor-pointer"
+              >
+                <MinusCircleIcon className="w-5 h-5" />
+              </button>
+              <input
+                id="stock"
+                type="number"
+                inputMode="numeric"
+                min={editingId === null ? 1 : 0}
+                value={form.stockQuantity}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === "") {
+                    setForm((f) => ({ ...f, stockQuantity: v }));
+                    return;
+                  }
+                  const n = parseInt(v, 10);
+                  if (!Number.isFinite(n)) return;
+                  // Creating: never below 1. Editing: 0 allowed = out of stock.
+                  const min = editingId === null ? 1 : 0;
+                  setForm((f) => ({ ...f, stockQuantity: String(Math.max(min, n)) }));
+                }}
+                className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground text-center"
+              />
+              <button
+                type="button"
+                onClick={() => stepStock(1)}
+                disabled={saving}
+                aria-label="Increase stock"
+                className="flex w-[42px] shrink-0 items-center justify-center rounded-md border border-input bg-background text-foreground hover:bg-secondary transition-colors cursor-pointer"
+              >
+                <PlusCircleIcon className="w-5 h-5" />
+              </button>
+            </div>
           </Field>
-          <Field label="Category" hint={categories.length === 0 ? "No categories yet - add some via the Categories tab" : "Select a category for filtering"}>
+          <Field label="Category" hint={categories.length === 0 ? "No categories yet" : undefined}>
             <select
               id="category"
               value={form.categoryId}
@@ -1318,7 +1367,7 @@ export default function AdminPage() {
               ))}
             </select>
           </Field>
-          <Field label="Air suspension install" hint="This design includes air suspension installation">
+          <Field label="Air suspension install">
             <label className="custom-checkbox">
               <input
                 type="checkbox"
@@ -1330,7 +1379,7 @@ export default function AdminPage() {
               <span className="text-base font-bold text-foreground">Include air suspension</span>
             </label>
           </Field>
-          <Field label="Unlocked bodykits" hint="This design unlocks bodykits">
+          <Field label="Unlocked bodykits">
             <label className="custom-checkbox">
               <input
                 type="checkbox"
@@ -1342,7 +1391,7 @@ export default function AdminPage() {
               <span className="text-base font-bold text-foreground">Include unlocked bodykits</span>
             </label>
           </Field>
-          <Field label="HD Logo" hint="This design includes a high-definition logo">
+          <Field label="HD Logo">
             <label className="custom-checkbox">
               <input
                 type="checkbox"

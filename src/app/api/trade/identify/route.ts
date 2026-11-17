@@ -22,7 +22,7 @@ Reply with JSON only: {"carName": "<the car's exact displayed name>"}.
 Rules:
 - Use the name exactly as it appears in CPM2 (make + model + generation, e.g. "VOLKSWAGEN GOLF MK7 GTI", not "MK2" or "MK6").
 - Do not invent generations or trims not shown.
-- CPM2 has a Golf MK7 GTI (code 157), not MK2/MK6 - do not guess those.
+- CPM2 has a Golf MK7 GTI (code 113) and a Golf MK2 GTI (code 157) - nothing in between.
 - If several cars are visible, pick the most prominent one.`;
 
 type GeminiResponse = {

@@ -76,8 +76,8 @@ function hexClose(cssColor: string, pickerHex: string): boolean {
 }
 
 describe("theme palettes", () => {
-  it("ships eight unique palettes with the default in the list", () => {
-    assert.equal(PALETTES.length, 8);
+  it("ships nine unique palettes with the default in the list", () => {
+    assert.equal(PALETTES.length, 9);
     assert.deepEqual(
       PALETTES.map((palette) => palette.id),
       [...PALETTE_IDS],

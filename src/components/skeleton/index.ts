@@ -7,3 +7,4 @@ export { WishlistSkeleton } from "./WishlistSkeleton";
 export { CartSkeleton } from "./CartSkeleton";
 export { DashboardSkeleton } from "./DashboardSkeleton";
 export { SettingsSkeleton, ProfileSkeleton, AccountsSkeleton } from "./ProfileSkeleton";
+export { AdminSkeleton } from "./AdminSkeleton";

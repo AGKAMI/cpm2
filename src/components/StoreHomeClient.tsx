@@ -21,6 +21,7 @@ import { StoreShell } from "@/components/StoreShell";
 import { HeartToggle } from "@/components/HeartToggle";
 import { addToCartLocal } from "@/lib/store/cart-client";
 import { Button } from "@/components/ui/Button";
+import { CartPlusIcon } from "@/components/ui/icons";
 
 export function StoreHomeClient({
   featured,
@@ -40,16 +41,16 @@ export function StoreHomeClient({
   const carouselRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // Media already resolved on server — build lookup map from featured AND
-  // allProducts so every section (featured / new arrivals / on sale) gets covers.
+  // Media already resolved on server — build lookup map from every section
+  // (featured / allProducts / new arrivals / on sale) so every card gets covers.
   const coverMap: Record<number, string> = useMemo(() => {
       const map: Record<number, string> = {};
-      for (const p of [...featured, ...allProducts]) {
+      for (const p of [...featured, ...allProducts, ...newArrivals, ...onSale]) {
         const cover = (p as { coverImage?: string }).coverImage;
         if (cover) map[p.id] = cover;
       }
       return map;
-    }, [featured, allProducts]);
+    }, [featured, allProducts, newArrivals, onSale]);
 
   // Track which carousel item is currently visible via scroll position.
   // scroll-snap carousels align items to the start, so scrollLeft / step
@@ -457,7 +458,10 @@ const ProductCard = React.memo(
     return (
       <div key={product.id} className={`vanta-card group ${isFeatured ? "featured-carousel-item" : ""}`}>
         <Link href={`/store/products/${product.id}`} className="block h-full w-full">
-          <div className="vanta-card-media" style={{ aspectRatio: 4 / 5 }}>
+          <div
+            className={`vanta-card-media ${product.stockQuantity === 0 ? "out-of-stock-media" : ""}`}
+            style={{ aspectRatio: 4 / 5 }}
+          >
             {coverImage ? (
               <Image
                 src={coverImage}
@@ -471,6 +475,7 @@ const ProductCard = React.memo(
               <div className="no-photo-svg"></div>
             )}
             <div className="vanta-card-badges">
+              {product.stockQuantity === 0 && <span className="vanta-card-badge out">Out of stock</span>}
               {product.isNew && <span className="vanta-card-badge new">New</span>}
               {product.isFeatured && <span className="vanta-card-badge featured">Featured</span>}
               {product.isSale && <span className="vanta-card-badge sale">Sale</span>}
@@ -505,9 +510,7 @@ const ProductCard = React.memo(
                       className="cart-add-btn flex h-8 w-8 items-center justify-center rounded-lg border border-input bg-background text-foreground hover:bg-secondary transition-colors cursor-pointer active:scale-95"
                       aria-label={`Add ${product.name} to cart`}
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                      </svg>
+                      <CartPlusIcon className="w-5 h-5" />
                     </button>
                   )}
                 </div>
@@ -656,9 +659,7 @@ function AddToCartMini({ productId }: { productId: number }) {
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 3" />
         </svg>
       ) : (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-        </svg>
+        <CartPlusIcon className="w-4 h-4" />
       )}
     </Button>
   );

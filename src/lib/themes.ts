@@ -2,6 +2,7 @@ export type ThemeMode = "night" | "paper";
 export type ThemeTone = "single" | "double";
 
 export const PALETTE_IDS = [
+  "vanta",
   "titanium",
   "ember",
   "crimson",
@@ -29,7 +30,7 @@ export type Palette = {
   paper: PaletteColors;
 };
 
-export const DEFAULT_PALETTE: PaletteId = "titanium";
+export const DEFAULT_PALETTE: PaletteId = "vanta";
 
 /** Neutral surfaces shared by every palette. Keep in sync with globals.css. */
 export const PALETTE_BASE: Record<ThemeMode, { bg: string; surface: string; ink: string }> = {
@@ -43,6 +44,14 @@ export const PALETTE_BASE: Record<ThemeMode, { bg: string; surface: string; ink:
  * Keep both copies in sync.
  */
 export const PALETTES: Palette[] = [
+  {
+    id: "vanta",
+    name: "Vanta",
+    tone: "single",
+    note: "House gold on black steel.",
+    night: { primary: "#d4af4f", deep: "#a8863a", secondary: "#e6c976" },
+    paper: { primary: "#8a6d1f", deep: "#6b5418", secondary: "#a8863a" },
+  },
   {
     id: "titanium",
     name: "Titanium",

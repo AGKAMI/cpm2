@@ -5,7 +5,7 @@ import "@/app/globals.css";
 import { TelegramBridge } from "@/components/TelegramBridge";
 import { TelegramInit } from "@/components/TelegramInit";
 import { ToastProvider } from "@/components/ui/Toaster";
-import { VantaThemeLock } from "@/components/VantaThemeLock";
+import { DEFAULT_PALETTE, PALETTE_IDS } from "@/lib/themes";
 
 const mono = JetBrains_Mono({
   subsets: ["latin"],
@@ -14,11 +14,10 @@ const mono = JetBrains_Mono({
   display: "swap",
 });
 
-// VANTA Garage has its own fixed identity — gold metallic, black, dark steel.
-// Fleet Ledger's saved theme must never bleed into store pages, so the
-// palette attribute is forced to "vanta" (matches no palette block, so the
-// base gold/black tokens apply) before first paint.
-const themeScript = `(function(){try{var d=document.documentElement;d.setAttribute("data-theme","night");d.setAttribute("data-palette","vanta");}catch(e){}})();`;
+// Theme is user-selectable everywhere now (profile → Appearance). The script
+// applies the saved theme before first paint; with nothing saved it falls
+// back to the house VANTA identity (gold metallic, black, dark steel).
+const themeScript = `(function(){try{var d=document.documentElement;var m=localStorage.getItem("cpm2:theme:v2");d.setAttribute("data-theme",m==="paper"?"paper":"night");var p=localStorage.getItem("cpm2:palette:v1");var ids=${JSON.stringify(PALETTE_IDS)};d.setAttribute("data-palette",ids.indexOf(p)>=0?p:"${DEFAULT_PALETTE}");}catch(e){}})();`;
 
 export const metadata: Metadata = {
   title: "VANTA GARAGE - CPM2 vehicles for sale",
@@ -46,7 +45,6 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
         />
       </head>
       <body className={`min-h-screen antialiased bg-background ${mono.variable}`}>
-        <VantaThemeLock />
         <TelegramInit />
         <ToastProvider>
           {children}

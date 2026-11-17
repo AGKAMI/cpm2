@@ -299,7 +299,7 @@ export async function runStoreMigrations(storeArg?: TursoHttpClient): Promise<vo
         (110, 'RANGE ROVER SPORT SVR'),
         (111, 'ACURA / HONDA NSX (NC1)'),
         (112, 'MERCEDES-BENZ S-CLASS (W140)'),
-        (113, 'VOLKSWAGEN GOLF MK6 GTI')`,
+        (113, 'VOLKSWAGEN GOLF MK7 GTI')`,
       args: [],
     });
   } catch {

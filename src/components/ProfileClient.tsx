@@ -6,7 +6,6 @@ import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Field";
-import { useTheme } from "@/hooks/useTheme";
 import { ThemeGallery } from "@/components/ThemeGallery";
 import { useToast } from "@/components/ui/Toaster";
 import { ProfileSkeleton } from "@/components/skeleton";
@@ -20,6 +19,24 @@ type Order = {
   currency: string;
   createdAt: string;
 };
+
+/** Detect which platform the customer logged in from (Telegram app, browser). */
+function detectPlatform(): string {
+  if (typeof window === "undefined") return "browser";
+  const tg = (window as { Telegram?: { WebApp?: { initData?: string; platform?: string } } })
+    .Telegram?.WebApp;
+  if (tg && (tg.initData || (tg.platform && tg.platform !== "unknown"))) {
+    const p = String(tg.platform || "").trim();
+    return p && p !== "unknown" && p !== "web" ? `Telegram (${p})` : "Telegram";
+  }
+  const ua = navigator.userAgent;
+  if (/comet/i.test(ua)) return "Comet";
+  if (/edg\//i.test(ua)) return "Edge";
+  if (/firefox\//i.test(ua)) return "Firefox";
+  if (/chrome|crios/i.test(ua)) return "Chrome";
+  if (/safari/i.test(ua)) return "Safari";
+  return "browser";
+}
 
 const ShowIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
@@ -64,7 +81,6 @@ export function ProfileClient({
   const [passwordValue, setPasswordValue] = useState("");
   const [saving, setSaving] = useState(false);
     const [notificationsEnabled, setNotificationsEnabled] = useState<boolean | null>(null);
-    const { mode, setMode } = useTheme();
   const toast = useToast();
   const [quickLoginBusy, setQuickLoginBusy] = useState(false);
   const [adminRole, setAdminRole] = useState<"owner" | "admin" | null>(null);
@@ -553,7 +569,11 @@ export function ProfileClient({
       }
       rememberEmail(emailVal);
       setAuthPassword("");
-      setSuccess(mode === "login" ? "Logged in." : "Account created — you're logged in.");
+      setSuccess(
+        mode === "login"
+          ? `Logged in on ${detectPlatform()}.`
+          : `Account created — you're logged in on ${detectPlatform()}.`,
+      );
       await checkSession();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Authentication failed.";
@@ -663,6 +683,13 @@ export function ProfileClient({
             })}
           </p>
         )}
+        {customer && (
+          <div className="mt-4">
+            <Button variant="outline" size="sm" onClick={logout} disabled={saving}>
+              {saving ? "Logging out…" : "Log out"}
+            </Button>
+          </div>
+        )}
       </section>
 
       {/* Quick login for owner/admin — skip email/password */}
@@ -691,7 +718,7 @@ export function ProfileClient({
       {/* ============ TAB BAR ============ */}
       {customer && (
         <div className="mb-5 px-4">
-          <div className="flex gap-1 border-b border-border overflow-x-auto scrollbar-hide">
+          <div className="flex gap-1 border-b border-border">
             {(["account", "appearance", "security"] as const).map((t) => (
               <button
                 key={t}
@@ -1107,28 +1134,6 @@ export function ProfileClient({
       {/* ============ APPEARANCE TAB ============ */}
       {profileTab === "appearance" && (
         <section className="mb-8 px-4">
-          <div className="panel rounded-[20px] p-5 mb-4">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-4">
-              Display mode
-            </h3>
-            <div className="grid grid-cols-2 gap-2">
-              {(["night", "paper"] as const).map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setMode(m)}
-                  aria-pressed={mode === m}
-                  className={`flex items-center justify-center gap-2 px-3 py-3 rounded-[14px] border text-sm font-bold cursor-pointer transition-colors ${
-                    mode === m
-                      ? "border-gold bg-gold/10 text-foreground"
-                      : "border-border text-muted-foreground hover:border-gold/50 hover:text-foreground"
-                  }`}
-                >
-                  {m === "night" ? "Dark" : "Light"}
-                </button>
-              ))}
-            </div>
-          </div>
           <ThemeGallery />
         </section>
       )}
@@ -1158,17 +1163,10 @@ export function ProfileClient({
               </label>
             </div>
           </div>
-          {/* Log out — only in Security tab */}
-          <div className="mt-6">
-            <Button variant="destructive" onClick={logout} disabled={saving} className="w-full">
-              {saving ? "Logging out…" : "Log out"}
-            </Button>
-          </div>
         </section>
       )}
 
-      {/* ============ ACTIONS ============ */}
-      {/* Logout moved into Security tab — no actions section needed here */}
+      {/* Log out lives in the profile header (all tabs) */}
     </StoreShell>
   );
 }

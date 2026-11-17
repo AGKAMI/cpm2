@@ -181,102 +181,87 @@ export function CategoriesClient({
           </div>
 
           {fopen && (
-            <div className="fp mt-4 px-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="l flex justify-between mb-1 text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                  Price range <b id="mxl" className="text-gold">
-                    Up to R {max.toLocaleString()}
-                  </b>
-                </label>
-                <input
-                  id="mx"
-                  type="range"
-                  min="1000"
-                  max="4000"
-                  step="50"
-                  value={max}
-                  onChange={(e) => setMax(parseInt(e.target.value, 10))}
-                  className="range-slider w-full h-[4px] rounded-[2px] bg-border appearance-none cursor-pointer"
-                />
-              </div>
-              <div>
-                <label className="l flex justify-between mb-1 text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                  Exclusivity
-                </label>
-                <div className="chips flex gap-2 flex-wrap">
-                  {["all", "any", "ltd", "one"].map((v) => (
-                    <div
-                      key={v}
-                      onClick={() => setExcl(v)}
-                      className={`chip ${excl === v ? "active" : ""} flex items-center gap-1 h-[34px] px-[14px] rounded-[9999px] border border-border bg-secondary text-muted-foreground font-bold text-[11.5px] cursor-pointer transition-all duration-160`}
-                    >
-                      {v === "all"
-                        ? "All"
-                        : v === "any"
-                          ? "Any exclusive"
-                          : v === "ltd"
-                            ? "Limited Edition"
-                            : "One of One"}
-                    </div>
-                  ))}
+            <div className="fp mt-4 px-4">
+              <div className="rounded-[20px] border border-border bg-secondary/40 p-4 flex flex-col gap-5">
+                <div>
+                  <label className="l flex justify-between mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                    Price <b id="mxl" className="text-gold">
+                      Up to R {max.toLocaleString()}
+                    </b>
+                  </label>
+                  <input
+                    id="mx"
+                    type="range"
+                    min="1000"
+                    max="4000"
+                    step="50"
+                    value={max}
+                    onChange={(e) => setMax(parseInt(e.target.value, 10))}
+                    className="range-slider w-full h-[4px] rounded-[2px] bg-border appearance-none cursor-pointer"
+                  />
                 </div>
-              </div>
-              <div>
-                <label className="l flex justify-between mb-1 text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                  Stock & availability
-                </label>
-                <div className="chips flex gap-2 flex-wrap">
-                  {["all", "in", "low"].map((v) => (
-                    <div
-                      key={v}
-                      onClick={() => setAvail(v)}
-                      className={`chip ${avail === v ? "active" : ""} flex items-center gap-1 h-[34px] px-[14px] rounded-[9999px] border border-border bg-secondary text-muted-foreground font-bold text-[11.5px] cursor-pointer transition-all duration-160`}
-                    >
-                      {v === "all"
-                        ? "Everything"
-                        : v === "in"
-                          ? "In stock"
-                          : "Low stock"}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="l flex justify-between mb-1 text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                  Promotions
-                </label>
-                <div className="chips flex gap-2">
-                  <div
-                    onClick={() => setPromo(!promo)}
-                    className={`chip ${promo ? "active" : ""} flex items-center gap-1 h-[34px] px-[14px] rounded-[9999px] border border-border bg-secondary text-muted-foreground font-bold text-[11.5px] cursor-pointer transition-all duration-160`}
-                  >
-                    <span
-                      className="text-[11px]"
-                      dangerouslySetInnerHTML={{ __html: ICONS.tag }}
-                    />{" "}
-                    Discounted only
+                <div>
+                  <label className="l block mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                    Exclusivity
+                  </label>
+                  <div className="chips flex gap-2 flex-wrap">
+                    {["all", "any", "ltd", "one"].map((v) => (
+                      <div
+                        key={v}
+                        onClick={() => setExcl(v)}
+                        className={`chip ${excl === v ? "active" : ""} flex items-center gap-1 h-[34px] px-[14px] rounded-[9999px] border border-border bg-secondary text-muted-foreground font-bold text-[11.5px] cursor-pointer transition-all duration-160`}
+                      >
+                        {v === "all"
+                          ? "All"
+                          : v === "any"
+                            ? "Any exclusive"
+                            : v === "ltd"
+                              ? "Limited Edition"
+                              : "One of One"}
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </div>
-              <div style={{ gridColumn: "1 / -1" }} className="flex gap-[8px]">
-                <button
-                  onClick={() => {
-                    setExcl("all");
-                    setAvail("all");
-                    setPromo(false);
-                    setMax(4000);
-                    setQ("");
-                  }}
-                  className="btn btn-line sm flex-1 h-[38px] text-[11.5px] font-bold uppercase tracking-[0.18em] text-muted-foreground rounded-[12px] px-[14px] w-auto"
-                >
-                  Reset
-                </button>
-                <button
-                  onClick={() => setFopen(false)}
-                  className="btn btn-gold-gradient flex-2 h-[38px] rounded-full text-[11.5px] font-bold tracking-wider"
-                >
-                  Show {sorted.length} results
-                </button>
+                <div>
+                  <label className="l block mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                    Stock
+                  </label>
+                  <div className="chips flex gap-2 flex-wrap">
+                    {["all", "in", "low"].map((v) => (
+                      <div
+                        key={v}
+                        onClick={() => setAvail(v)}
+                        className={`chip ${avail === v ? "active" : ""} flex items-center gap-1 h-[34px] px-[14px] rounded-[9999px] border border-border bg-secondary text-muted-foreground font-bold text-[11.5px] cursor-pointer transition-all duration-160`}
+                      >
+                        {v === "all"
+                          ? "Everything"
+                          : v === "in"
+                            ? "In stock"
+                            : "Low stock"}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-[8px] pt-1 border-t border-border">
+                  <button
+                    onClick={() => {
+                      setExcl("all");
+                      setAvail("all");
+                      setPromo(false);
+                      setMax(4000);
+                      setQ("");
+                    }}
+                    className="btn btn-line sm flex-1 h-[38px] text-[11.5px] font-bold uppercase tracking-[0.18em] text-muted-foreground rounded-[12px] px-[14px] w-auto"
+                  >
+                    Reset
+                  </button>
+                  <button
+                    onClick={() => setFopen(false)}
+                    className="btn btn-gold-gradient flex-2 h-[38px] rounded-full text-[11.5px] font-bold tracking-wider"
+                  >
+                    Show {sorted.length} results
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -308,7 +293,7 @@ export function CategoriesClient({
                     <img
                       src={coverImageFromName(c.name, 200, 260)}
                       alt={c.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${c.stockQuantity === 0 ? "out-of-stock-media" : ""}`}
                       loading="lazy"
                       decoding="async"
                       width={200}
@@ -316,6 +301,9 @@ export function CategoriesClient({
                       style={{ objectFit: "cover", display: "block" }}
                     />
                     <div className="absolute top-2 left-2 flex flex-col gap-1">
+                      {c.stockQuantity === 0 && (
+                        <span className="vanta-card-badge out">Out of stock</span>
+                      )}
                     </div>
                   </div>
                   <div className="mt-3 px-1">

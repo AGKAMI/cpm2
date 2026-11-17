@@ -763,3 +763,21 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 
 **Gate:** tsc clean → tests 66/66 → build clean → 3001 restarted → browser-verified home page no longer shows products without photos.
 
+### 2026-11-18 (entry 33) — Agent "AG" — Batch UI fixes (themes, admin UX, add-to-cart icon, heart pill, filters)
+
+**User decisions:** Themes now apply EVERYWHERE (user picked "Themes apply everywhere" — supersedes the old VANTA fixed-theme lock for the store).
+
+**Changes:**
+1. **Theme switcher unlocked**: deleted `src/components/VantaThemeLock.tsx`, store `layout.tsx` theme script now reads saved localStorage theme (defaults night + vanta). Added `vanta` as PALETTE_ID + PALETTES entry (gold #d4af4f) and made it DEFAULT_PALETTE; added `[data-palette="vanta"]` + daylight blocks to globals.css; updated themes.test (8→9 palettes). Removed the redundant Dark/Light "Display mode" panel from ProfileClient (ThemeGallery's Midnight/Daylight is the only mode switcher). Verified live: picking Ember changes `--primary` on store pages.
+2. **Add-to-cart icon**: new shared `src/components/ui/icons.tsx` (CartPlusIcon / PlusCircleIcon / MinusCircleIcon — user-supplied SVG paths). Applied to product-card cart button, AddToCartMini, and product page "Add to cart".
+3. **Profile**: tab bar no longer `overflow-x-auto`; login success message now says "Logged in on Telegram (android)/Comet/Chrome/…" via new `detectPlatform()`; Log out button moved to profile header (all tabs, single instance) — removed from Security tab.
+4. **Admin page**: real `AdminSkeleton` (new `src/components/skeleton/AdminSkeleton.tsx`) instead of "Loading admin…" text; plus SVG on "Add Category"/"Add product" buttons; Hide button on the ADD PRODUCT card header; verbose Field hints trimmed.
+5. **Stock rules**: default 1; creating clamps to ≥1 (input + +/- stepper); editing allows 0. +/- stepper buttons (user SVGs) replace native spinners; native number spinners hidden globally via CSS. Out-of-stock (stock=0) → red metallic `.vanta-card-badge.out` pill + `.out-of-stock-media` greyscale on home cards, categories cards, and product-page carousel.
+6. **Car catalog**: code 113 "VOLKSWAGEN GOLF MK6 GTI" → "VOLKSWAGEN GOLF MK7 GTI" (game only has MK7 + MK2) in `car-catalog.ts`, `store-db.ts` seed, Turso `vanta_cpm2_cars` row, and the product row (id 244) renamed; trade identify prompt corrected (MK7=113, MK2=157).
+7. **Home no-photo render bug**: root cause was StoreHomeClient's client coverMap built only from `featured`+`allProducts`, so products only in New arrivals/On sale got `no-photo-svg` even with media. Map now includes `newArrivals`+`onSale`. Featured also filtered by `coverMap.has(id)` in StoreHome.tsx.
+8. **Heart pill freeze**: CSS only — expanded gold/pink pill now shows on hover/focus only; `.is-active` just tints the border; wishlisted heart stays filled and collapses back when the pointer leaves.
+9. **Categories filter panel**: single rounded stack (Price slider / Exclusivity / Stock + Reset/Show results); dropped the duplicated "Discounted only" block (the "On offer" chip covers it).
+
+**DB note:** products table now has 4 rows — 242 "AUDIT-TEST-DELETE-ME" and 243 "PRICE-CAP-TEST" look like another agent's test junk; left untouched (not mine to delete).
+
+**Gate:** tsc clean → tests 66/66 → build clean ×2 → 3001 restarted → browser-verified: admin skeleton + plus icons + stepper (clamps at 1) + Hide button; profile tabs/logout/platform message; theme switch changes `--primary` live; home card renders the MK7 photo (0 no-photo cards); filter panel clean.

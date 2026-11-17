@@ -9,6 +9,7 @@ import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 import { addToCartLocal } from "@/lib/store/cart-client";
 import { ProductSkeleton } from "@/components/skeleton";
+import { CartPlusIcon } from "@/components/ui/icons";
 
 const EXCLUSIVITY_LABELS: Record<string, string> = {
   limited: "Limited Edition",
@@ -100,7 +101,7 @@ export function ProductPageClient({ productId }: { productId: string }) {
                 <Image
                   src={m.publicUrl}
                   alt={product.name}
-                  className="h-full w-full object-cover"
+                  className={`h-full w-full object-cover ${product.stockQuantity === 0 ? "out-of-stock-media" : ""}`}
                   loading={i === 0 ? "eager" : "lazy"}
                   priority={i === 0}
                   width={1200}
@@ -250,7 +251,14 @@ export function ProductPageClient({ productId }: { productId: string }) {
               className={`w-full h-10 text-xs font-bold mt-2 border border-input rounded-lg ${product.stockQuantity === 0 ? "bg-background text-foreground cursor-not-allowed" : "bg-brand-gold text-primary-foreground hover:bg-brand-gold/90 transition-colors cursor-pointer"}`}
               aria-label={`Add ${product.name} to cart`}
             >
-              {product.stockQuantity === 0 ? "Sold out" : "Add to cart"}
+              {product.stockQuantity === 0 ? (
+                "Sold out"
+              ) : (
+                <span className="inline-flex items-center justify-center gap-2">
+                  <CartPlusIcon className="w-4 h-4" />
+                  Add to cart
+                </span>
+              )}
             </button>
             <p className="mt-4 text-[10px] text-muted-foreground text-center">
               Secured checkout · EFT or card via PayFast

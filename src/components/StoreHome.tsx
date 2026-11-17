@@ -34,7 +34,7 @@ export async function StoreHome({
     ...p,
     coverImage: coverMap.get(p.id) ?? null,
   }));
-  const featuredWithMedia = productsWithMedia.filter((p) => p.isFeatured);
+  const featuredWithMedia = productsWithMedia.filter((p) => p.isFeatured && coverMap.has(p.id));
 
   // Compute derived data on the server — sections are mutually exclusive so
   // each product appears at most once on the home page.

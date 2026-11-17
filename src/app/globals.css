@@ -255,6 +255,21 @@
 }
 
 /* Accent palettes — keep in sync with src/lib/themes.ts */
+/* Vanta = the house gold identity (also the default palette). */
+[data-palette="vanta"] {
+  --primary: oklch(0.7686 0.1218 88.0826);
+  --ring: oklch(0.7686 0.1218 88.0826);
+  --color-racing: oklch(0.7686 0.1218 88.0826);
+  --color-racing-deep: oklch(0.6373 0.1026 84.8258);
+  --color-blueprint: oklch(0.8430 0.1079 90.7259);
+}
+[data-theme="paper"][data-palette="vanta"] {
+  --primary: oklch(0.5491 0.0996 87.3809);
+  --ring: oklch(0.5491 0.0996 87.3809);
+  --color-racing: oklch(0.5491 0.0996 87.3809);
+  --color-racing-deep: oklch(0.4579 0.0816 87.0241);
+  --color-blueprint: oklch(0.6373 0.1026 84.8258);
+}
 [data-palette="titanium"] {
   --primary: oklch(0.91 0.013 251.6);
   --ring: oklch(0.91 0.013 251.6);
@@ -1616,6 +1631,16 @@ html {
   border-color: #5b2a86;
   color: #2a0a45;
 }
+/* Out of stock — red metallic pill */
+.vanta-card-badge.out {
+  background: linear-gradient(105deg, #ffb3ab 0%, #e5544a 20%, #7a1410 38%, #ffb3ab 50%, #e5544a 66%, #7a1410 84%, #ffb3ab 100%);
+  border-color: #7a1410;
+  color: #fff;
+}
+/* Sold-out cards render greyscale so the car reads as unavailable at a glance */
+.out-of-stock-media {
+  filter: grayscale(1) brightness(0.75);
+}
 .vanta-card-title {
   font-family: var(--font-display);
   font-size: 16px;
@@ -2539,23 +2564,25 @@ html {
   opacity: 0;
   transition: opacity 0.5s;
 }
+/* Expanded pill only while hovered/focused — a wishlisted heart simply stays
+   filled (pink) instead of staying stuck in the expanded state. */
 .heart-fav:hover,
-.heart-fav:focus-visible,
-.heart-fav.is-active {
+.heart-fav:focus-visible {
   width: 150px;
   box-shadow: 0 10px 25px rgba(212, 175, 79, 0.35);
   border-color: #ff69b4;
   background: #ff69b4;
   color: #fff;
 }
+.heart-fav.is-active {
+  border-color: #ff69b4;
+}
 .heart-fav:hover::before,
-.heart-fav:focus-visible::before,
-.heart-fav.is-active::before {
+.heart-fav:focus-visible::before {
   opacity: 1;
 }
 .heart-fav:hover::after,
-.heart-fav:focus-visible::after,
-.heart-fav.is-active::after {
+.heart-fav:focus-visible::after {
   opacity: 0.5;
 }
 .heart-fav .heart-icon {
@@ -2573,8 +2600,7 @@ html {
   color: #ff69b4;
 }
 .heart-fav:hover .heart-icon,
-.heart-fav:focus-visible .heart-icon,
-.heart-fav.is-active .heart-icon {
+.heart-fav:focus-visible .heart-icon {
   transform: scale(0);
   color: #000;
   transition-delay: 0s;
@@ -2592,10 +2618,20 @@ html {
   white-space: nowrap;
 }
 .heart-fav:hover .heart-title,
-.heart-fav:focus-visible .heart-title,
-.heart-fav.is-active .heart-title {
+.heart-fav:focus-visible .heart-title {
   transform: scale(1);
   transition-delay: 0.25s;
+}
+
+/* Hide native number-input spinners — steppers use custom +/- buttons */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 /* Checkout: red glowing border on invalid fields after confirm attempt */

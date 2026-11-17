@@ -299,7 +299,12 @@ export default function AdminPage() {
     setProductConverterError(null);
   };
 
-    const resetCategoryForm = () => {
+    const openProductForm = () => {
+    resetForm();
+    setShowProductForm(true);
+  };
+
+  const resetCategoryForm = () => {
       setCategoryForm(EMPTY_CATEGORY_FORM);
       setShowCategoryForm(false);
       setCategoryConverterFile(null);
@@ -641,7 +646,7 @@ export default function AdminPage() {
 
                     {/* Top actions — EFT review with clear borders and background */}
                     <div className="mb-6 flex items-center gap-2">
-                      <Link href="/store/admin/eft" className="inline-flex items-center gap-2 px-4 py-2 text-[9px] uppercase tracking-[0.15em] whitespace-nowrap cursor-pointer font-bold border-2 border-primary bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+                      <Link href="/store/admin/eft" className="inline-flex items-center gap-2 px-4 py-2 text-xs uppercase tracking-[0.1em] whitespace-nowrap cursor-pointer font-bold border-2 border-primary bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
                         EFT Review
                       </Link>
                       <Button variant="outline" onClick={() => router.push("/store")} size="sm">
@@ -1287,15 +1292,15 @@ export default function AdminPage() {
               </div>
             )}
           </Field>
-          <Field label="Name" error={productErrors.name} hint="Auto-filled from the catalog pick">
+          <Field label="Name" htmlFor="name" error={productErrors.name} hint="Auto-filled from the catalog pick">
             <TextInput
               id="name"
               value={form.name}
               onChange={(e) => handleChange("name", e.target.value)}
-              placeholder="Toyota Supra MK4"
+              placeholder="Vehicle or design name"
             />
           </Field>
-          <Field label="Price (ZAR)" error={productErrors.basePriceCents}>
+          <Field label="Price (ZAR)" htmlFor="price" error={productErrors.basePriceCents}>
             <input
               id="price"
               type="number"
@@ -1308,6 +1313,7 @@ export default function AdminPage() {
           </Field>
           <Field
             label="Stock"
+            htmlFor="stock"
             error={productErrors.stockQuantity}
             hint={editingId === null ? undefined : "0 = out of stock"}
           >
@@ -1352,7 +1358,7 @@ export default function AdminPage() {
               </button>
             </div>
           </Field>
-          <Field label="Category" hint={categories.length === 0 ? "No categories yet" : undefined}>
+          <Field label="Category" htmlFor="category" hint={categories.length === 0 ? "No categories yet" : undefined}>
             <select
               id="category"
               value={form.categoryId}
@@ -1473,48 +1479,32 @@ export default function AdminPage() {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => {
-                                      setShowProductForm(true);
-                                      setEditingId(null);
-                                      setForm(EMPTY_FORM);
-                                      setPickedCar(null);
-                                      setMsg(null);
-                                      setError(null);
-                                    }}
+                                    onClick={openProductForm}
                                   >
-                                    {showProductForm ? "Hide form" : "Add product"}
+                                    Add product
                                   </Button>
                                 </div>
                               </div>
                   {products.length === 0 ? (
-                    <p className="text-muted-foreground">No products yet. Add your first above.</p>
+                    <div className="flex flex-col items-center gap-3 py-6 text-center">
+                      <p className="text-muted-foreground">No products yet.</p>
+                      <Button variant="primary" size="sm" onClick={openProductForm}>
+                        Add your first product
+                      </Button>
+                    </div>
                   ) : (
                     <select
   id="product-edit"
   value={editingId ?? ""}
   onChange={(e) => {
-    setEditingId(Number(e.target.value));
-    const p = products.find((x) => x.id === Number(e.target.value));
-    if (!p) return;
-    setForm({
-      cpm2CarCode: String(p.cpm2CarCode ?? ""),
-      name: p.name,
-      description: p.description,
-      basePriceCents: String(p.basePriceCents),
-      currency: p.currency,
-      stockQuantity: String(p.stockQuantity),
-      airSuspension: p.airSuspension,
-      unlockedBodykits: p.unlockedBodykits,
-      hdLogo: false,
-      isFeatured: p.isFeatured,
-      isNew: p.isNew,
-      isSale: p.isSale,
-      isPublished: p.isPublished,
-      categoryId: String(p.categoryId ?? ""),
-      imageUrl: p.imageUrl ?? "",
-    });
-    setShowProductForm(true);
-  }}
+      const p = products.find((x) => x.id === Number(e.target.value));
+      if (p) {
+        setShowProductForm(true);
+        void selectProduct(p);
+      } else {
+        setEditingId(null);
+      }
+    }}
   className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
 >
   <option value="">Pick a product to edit…</option>

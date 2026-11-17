@@ -25,7 +25,10 @@ const productSchema = z.object({
   imageUrl: z.string().optional(),
   name: z.string().min(1),
   description: z.string().optional(),
-  basePriceCents: z.coerce.number().int().nonnegative().max(20000),
+  // Cents. The cap is R100 000, not R200 (20000 cents) — rands are converted to
+  // cents client-side (price * 100), so the cap has to be read in cents.
+  basePriceCents: z.coerce.number().int().nonnegative().max(10_000_000),
+  categoryId: z.coerce.number().int().positive().optional(),
   currency: z.string().default("ZAR"),
   stockQuantity: z.coerce.number().int().nonnegative().default(1),
   availabilityState: z
@@ -33,6 +36,7 @@ const productSchema = z.object({
     .default("available"),
   exclusivity: z.enum(["standard", "limited_edition", "one_of_one"]).default("standard"),
   isFeatured: z.boolean().default(false),
+  isNew: z.boolean().default(false),
   isSale: z.boolean().default(false),
   isPublished: z.boolean().default(false),
   airSuspension: z.boolean().default(false),   // Air suspension installation included
@@ -94,6 +98,7 @@ export async function POST(request: Request) {
     if (badCode) return badCode;
     const input: ProductInput = {
           cpm2CarCode: body.cpm2CarCode,
+          categoryId: body.categoryId,
           name: body.name,
           description: body.description,
           basePriceCents: body.basePriceCents,
@@ -102,6 +107,7 @@ export async function POST(request: Request) {
           availabilityState: body.availabilityState,
           exclusivity: body.exclusivity,
           isFeatured: body.isFeatured,
+          isNew: body.isNew,
           isSale: body.isSale,
           isPublished: body.isPublished,
           airSuspension: body.airSuspension,
@@ -158,6 +164,7 @@ export async function PUT(request: Request) {
     }
     const updated = await updateProduct(Number(id), {
           cpm2CarCode: body.cpm2CarCode,
+          categoryId: body.categoryId,
           name: body.name,
           description: body.description,
           basePriceCents: body.basePriceCents,
@@ -166,6 +173,7 @@ export async function PUT(request: Request) {
           availabilityState: body.availabilityState,
           exclusivity: body.exclusivity,
           isFeatured: body.isFeatured,
+          isNew: body.isNew,
           isSale: body.isSale,
           isPublished: body.isPublished,
           airSuspension: body.airSuspension,

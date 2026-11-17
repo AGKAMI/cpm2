@@ -743,5 +743,23 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 **Issue 2 — Categories not showing in admin product form:**
 **Root cause:** Categories were cleared from DB earlier (entry 30). 5 categories exist in DB (Coupes, Sedans, SUVs, Hatchbacks, 4x4s) but `GET /api/store/categories` returns garbled binary data instead of JSON. Needs further investigation — possibly a middleware or response serialization issue.
 
+**Issue 2 — Categories not showing in admin product form:**
+**Root cause:** Categories were cleared from DB earlier (entry 30). 5 categories exist in DB (Coupes, Sedans, SUVs, Hatchbacks, 4x4s) but `GET /api/store/categories` returns garbled binary data instead of JSON. Needs further investigation — possibly a middleware or response serialization issue.
+
 **Still open:** Categories API returns garbled data — needs investigation. Categories table has 5 rows but API doesn't return valid JSON.
+
+
+### 2026-11-17 (entry 32) — Agent "AG" — Fix home page no-photo products, logout tab, categories scroll
+
+**What:** User reported three issues:
+1. Products with no photo appear on the home page until a photo is added — user wants them hidden until a photo exists.
+2. Logout button appears on every section of the profile page — user wants it only in the Security tab.
+3. Categories page filter options have their own horizontal scroll — user doesn't like it.
+
+**Where:**
+- `src/components/StoreHome.tsx`: `arrivals`, `saleItems`, `rest` filters now also check `coverMap.has(p.id)` — products without a cover image are excluded from all home page sections.
+- `src/components/ProfileClient.tsx`: Log out button moved from top-level `ACTIONS` section (rendered for all tabs) into the Security tab only.
+- `src/components/CategoriesClient.tsx`: Filter chip row changed from `overflow-x-auto scrollbar-hide` (horizontal scroll) to `flex-wrap` (chips wrap to next line instead of scrolling).
+
+**Gate:** tsc clean → tests 66/66 → build clean → 3001 restarted → browser-verified home page no longer shows products without photos.
 

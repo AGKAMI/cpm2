@@ -44,7 +44,6 @@ type ProductForm = {
   unlockedBodykits: boolean;
   hdLogo: boolean;
   isFeatured: boolean;
-  isNew: boolean;
   isSale: boolean;
   isPublished: boolean;
   categoryId: string;
@@ -62,7 +61,6 @@ const EMPTY_FORM: ProductForm = {
   unlockedBodykits: false,
   hdLogo: false,
   isFeatured: false,
-  isNew: false,
   isSale: false,
   isPublished: true,
   categoryId: "",
@@ -122,10 +120,10 @@ const ProductListItem = memo(({ p, categories, onEdit, onPublish, onDelete }: {
   return (
     <article
       key={p.id}
-      className={`panel rounded-xl border p-4 ${p.stockQuantity === 0 ? "border-oxblood bg-oxblood/5" : "border-border"}`}
+      className={`panel rounded-xl border p-4 min-w-0 ${p.stockQuantity === 0 ? "border-oxblood bg-oxblood/5" : "border-border"}`}
     >
-      <div className="flex items-baseline justify-between mb-2">
-        <span className="text-xs font-mono text-muted-foreground">#{p.id}</span>
+      <div className="flex items-baseline justify-between mb-2 min-w-0">
+        <span className="text-xs font-mono text-muted-foreground truncate min-w-0">#{p.id}</span>
         <span className={`text-xs ${p.isPublished ? "text-primary" : "text-muted-foreground"} font-medium capitalize`}>
           {p.isPublished ? "published" : "unpublished"}
         </span>
@@ -187,6 +185,8 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
   const [categorySaving, setCategorySaving] = useState(false);
   const [showCategoryEditSelect, setShowCategoryEditSelect] = useState(false);
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
   const [showPromotionForm, setShowPromotionForm] = useState(false);
   const [editingPromotionId, setEditingPromotionId] = useState<number | null>(null);
   const [promotionForm, setPromotionForm] = useState<PromotionForm>(EMPTY_PROMOTION_FORM);
@@ -312,7 +312,6 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
       unlockedBodykits: p.unlockedBodykits,
       hdLogo: false,
       isFeatured: p.isFeatured,
-      isNew: p.isNew,
       isSale: p.isSale,
       isPublished: p.isPublished,
       categoryId: String(p.categoryId ?? ""),
@@ -367,7 +366,6 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
         unlockedBodykits: form.unlockedBodykits,
         hdLogo: form.hdLogo,
         isFeatured: form.isFeatured,
-        isNew: form.isNew,
         isSale: form.isSale,
         isPublished: form.isPublished,
         categoryId: v.categoryId ? Number(v.categoryId) : undefined,
@@ -596,19 +594,29 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
             </div>
           </form>
         )}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex items-center gap-3">
           {categories.length === 0 ? (
-            <span className="text-xs text-muted-foreground">No categories yet. Click &quot;Add Category&quot; to create one.</span>
+            <span className="text-xs text-muted-foreground">No categories yet. Click "Add Category" to create one.</span>
           ) : (
             <>
-              {categories.map((cat) => (
-                <span key={cat.id} className="text-xs px-2 py-1 rounded-full border border-border bg-background text-foreground">
-                  {cat.name} ({cat.slug})
-                </span>
-              ))}
-              <Button variant="outline" size="sm" onClick={() => { setEditingCategoryId(null); setShowCategoryEditSelect(true); }}>
-                Edit Category
-              </Button>
+              <label className="text-xs font-medium text-muted-foreground">Category</label>
+              <select
+                value={selectedCategoryId ?? ""}
+                onChange={(e) => setSelectedCategoryId(Number(e.target.value) || null)}
+                className="border border-input bg-background px-3 py-1.5 rounded-md text-sm"
+              >
+                <option value="">Select a category</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name} ({cat.slug})
+                  </option>
+                ))}
+              </select>
+              {selectedCategoryId && (
+                <Button variant="outline" size="sm" onClick={() => { setEditingCategoryId(selectedCategoryId); setShowCategoryEditSelect(true); }}>
+                  Edit Category
+                </Button>
+              )}
             </>
           )}
           {showCategoryEditSelect && categories.length > 0 && (
@@ -760,7 +768,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
       {!inlineEditingId && showProductForm && (
         <section className="admin-section panel rounded-xl border border-border p-6 mb-8">
           <h3 className="admin-section-title mb-4">{editingId ? "Edit product" : "Add product"}</h3>
-          <form onSubmit={handleSubmit} className="grid gap-4">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Field label="Image" error={productErrors.imageUrl}>
               <div className="relative group cursor-pointer">
                 <input ref={fileInputRef} type="file" accept="image/*" className="sr-only" onChange={async (e) => {
@@ -900,18 +908,11 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
                 <span className="text-base font-bold text-foreground">Featured on home page</span>
               </label>
             </Field>
-            <Field label="New Arrival">
-              <label className="custom-checkbox">
-                <input type="checkbox" id="is-new" checked={form.isNew} onChange={(e) => handleChange("isNew", e.target.checked)} />
-                <div className="checkmark"></div>
-                <span className="text-base font-bold text-foreground">Show &quot;New&quot; badge</span>
-              </label>
-            </Field>
             <Field label="Sale">
               <label className="custom-checkbox">
                 <input type="checkbox" id="is-sale" checked={form.isSale} onChange={(e) => handleChange("isSale", e.target.checked)} />
                 <div className="checkmark"></div>
-                <span className="text-base font-bold text-foreground">Show &quot;Sale&quot; badge</span>
+                <span className="text-base font-bold text-foreground">Show "Sale" badge</span>
               </label>
             </Field>
             <Field label="Published">
@@ -944,12 +945,29 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
         {products.length === 0 ? (
           <p className="text-muted-foreground">No products yet. Add your first above.</p>
         ) : (
-          <div className="grid gap-3">
-            {products.map((p) => {
-              const isInline = inlineEditingId === p.id;
+          <>
+            <div className="flex items-center gap-3 mb-4">
+              <label className="text-xs font-medium text-muted-foreground">Product</label>
+              <select
+                value={selectedProductId ?? ""}
+                onChange={(e) => setSelectedProductId(Number(e.target.value) || null)}
+                className="flex-1 border border-input bg-background px-3 py-1.5 rounded-md text-sm"
+              >
+                <option value="">Select a product</option>
+                {products.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    #{p.id} · {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {selectedProductId && (
+              <div className="grid grid-cols-1 gap-3">
+                {products.filter((p) => p.id === selectedProductId).map((p) => {
+                  const isInline = inlineEditingId === p.id;
               if (isInline) {
                 return (
-                  <article key={p.id} className="panel rounded-xl border border-border p-4">
+                  <article key={p.id} className="panel rounded-xl border p-4 min-w-0">
                     <div className="flex items-baseline justify-between mb-3">
                       <span className="text-xs font-mono text-muted-foreground">#{p.id}</span>
                       <Button variant="ghost" size="sm" onClick={() => setInlineEditingId(null)}>Cancel</Button>
@@ -1068,18 +1086,11 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
                           <span className="text-base font-bold text-foreground">Include HD logo</span>
                         </label>
                       </Field>
-                      <Field label="New Arrival">
-                        <label className="custom-checkbox">
-                          <input type="checkbox" checked={form.isNew} onChange={(e) => handleChange("isNew", e.target.checked)} />
-                          <div className="checkmark"></div>
-                          <span className="text-base font-bold text-foreground">Show &quot;New&quot; badge</span>
-                        </label>
-                      </Field>
                       <Field label="Sale">
                         <label className="custom-checkbox">
                           <input type="checkbox" checked={form.isSale} onChange={(e) => handleChange("isSale", e.target.checked)} />
                           <div className="checkmark"></div>
-                          <span className="text-base font-bold text-foreground">Show &quot;Sale&quot; badge</span>
+                          <span className="text-base font-bold text-foreground">Show "Sale" badge</span>
                         </label>
                       </Field>
                       <Field label="Published">
@@ -1101,6 +1112,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
                             await load();
                             window.scrollTo(0, scrollY);
                             setInlineEditingId(null);
+                            setSelectedProductId(null);
                           } catch (err) {
                             setError(err instanceof Error ? err.message : "Failed to delete product.");
                           }
@@ -1125,6 +1137,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
                       setMsg("Product deleted (unpublished & marked unavailable).");
                       await load();
                       window.scrollTo(0, scrollY);
+                      setSelectedProductId(null);
                     } catch (err) {
                       setError(err instanceof Error ? err.message : "Failed to delete product.");
                     }
@@ -1132,7 +1145,9 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
                 />
               );
             })}
-          </div>
+              </div>
+            )}
+          </>
         )}
       </section>
 

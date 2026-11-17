@@ -629,3 +629,30 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 **Gate:** tsc clean → tests 66/66 → build clean → local 3001 verified via browser (chips aligned; badge row direction=row, green NEW + blue FEATURED side by side confirmed in screenshot; promo metal-fade layer + mask present). Deploy job `EAkwQO2kcu4QUCPXij1j` triggered, commit `74a03ba`.
 
 **Verified by:** AG — tsc clean, tests 66/66, build clean, browser-verified on local 3001 (badges side-by-side with green/blue/red/purple metallics, promo mask fade, fresh chip alignment).
+
+### 2026-11-17 (24) — Agent "AG" (GLM-5.3-flash-free) — Next.js 16.4.6 security upgrade + VANTA uploaders + tabbed profile + admin promos fixes
+
+**Next.js 16.4.2 → 16.4.6 security upgrade (COMPLETE, commit `9987261`):**
+- Duplicate checks all clear (no `next-upgrade:` markers, no open PRs, branch `upgrade/next-16.4.6-security` was a pre-created empty worktree `cpm2-next-1646`).
+- Installed exact `next@16.4.6` (`next --version` verified), `eslint-config-next` aligned 16.4.6, `experimental.agentUpgrade: "security"` set in `next.config.ts` (supported in 16.4.6 per config schema).
+- `better-sqlite3` native build fails on this machine (no MSVC toolchain); package is unused by app code (only legacy scripts) → installed with `--ignore-scripts`. **If a fresh `npm install` ever runs with scripts enabled it will fail on this package — use `--ignore-scripts`.**
+- Gate: tsc clean → tests 66/66 → build clean → boot smoke on port 3011 (home 200 in 0.24s, store 200 in 13s cold). Merged ff-only to master, pushed, deploy job `6XUnTAe5lx8lzF7m0YtS`, telemetry reported.
+- **Note:** with `agentUpgrade: "security"` set, `next build` fires a one-time `SecurityFatalError` interrupt showing an upgrade recommendation, then continues on retry — advisory GHSA-mfr8-8qww-v76h affects only `<=16.4.4`, 16.4.6 is clean per the npm bulk advisory endpoint. Expect one failed build attempt per fresh session, retry passes.
+
+**VANTA uploaders (user-approved batch):**
+- New shared component `src/components/ui/Uploader.tsx` — gold dashed drop block (#d4af4f border, dark steel bg, gold upload icon, diagonal shine sweep), drag-drop + label-wrapped native click, hidden input kept via `inputRef` for legacy triggers. Props: `compact` (104px vs 200px), `busy` (pulsing status), `error` (red `border-glow-red`), `fileName` (green check icon + "Click to replace").
+- Integrated into all 6 live upload spots: admin product/category/promo image fields (`src/app/store/admin/page.tsx`, compact), bulk CSV import (`admin/bulk/page.tsx`), fleet account images (`src/app/accounts/[id]/page.tsx`, large, multi), trade-in screenshot picker (`src/components/TradeCarPickerModal.tsx`, replaces dashed button; hidden input still used by "Choose a different screenshot"), checkout EFT proof (`src/components/CheckoutClient.tsx`, error glow when `attempted && !proofFileName`).
+- `AdminPageClient.tsx` remains ORPHANED (never imported) — deliberately untouched.
+
+**Profile tabbed redesign (`src/components/ProfileClient.tsx`):**
+- New header: avatar left with role badge attached to avatar bottom (metallic-gold OWNER / indigo ADMIN / silver customer), name + `ID {tgId}` right, **@AG_KAMI handle removed everywhere**, Member-since pill from `customer.createdAt`.
+- Tab bar ACCOUNT / APPEARANCE / SECURITY (`profileTab` state). Account = Edit-profile card (CPM2 ID inline edit + Orders/Wishlist stats) + Email/Telegram/credentials rows. Appearance = Dark/Light segmented buttons + `ThemeGallery`. Security = notifications toggle. Logged-out users get the login card + Quick Login (no tabs).
+- Browser-verified: badge overlaps avatar bottom edge, no @handle, all 3 tabs render their content.
+
+**Admin promotions (`src/app/store/admin/page.tsx`):**
+- Dropdown `#promotion-edit` bound to `editingPromotionId` — picking a promo opens the form and fills it via `selectPromotion`.
+- Card list replaced with equal-size grid (`sm:grid-cols-2 xl:grid-cols-3 auto-rows-fr`) of mini home-style preview cards: `.promotion-card` metallic bg + `.promo-metal-fade` + image right-55% + eyebrow subtitle/serif title/description/code line/CTA pill, meta+Edit/Delete row below. Browser-verified: all 3 cards exactly 160×283px.
+
+**Gate:** tsc clean → tests 66/66 → build clean (one SecurityFatalError interrupt, retry clean) → 3001 restarted → browser-verified profile tabs/badge/uploader and admin dropdown/equal cards/uploaders. Commit `7d6ad75`, deploy job `frwX7h3N3ujQ13VflJ2L`.
+
+**Still open:** prod cold-start 20–38s (awaiting user direction); CLS ~0.14 needs DevTools trace; PayFast keys pending approval email; products 237/238 "No photo" = missing cover images (data, not code); Telegram notification emoji conflict (`src/lib/store/notifications.ts`) awaiting direction.

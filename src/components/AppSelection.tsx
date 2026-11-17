@@ -20,7 +20,7 @@ export function AppSelection() {
           description="Track every account, every balance, every car. Two games, two registers."
           label="Open register"
           href="/fleet/cpm2"
-          iconSrc="/app/icon.svg"
+          iconSrc="/cpm-logo.svg"
         />
 
         {/* VANTA Garage card - gold */}

@@ -676,5 +676,19 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 
 **Gate:** tsc clean → tests 66/66 → build clean (no SecurityFatalError interrupt this run) → 3001 restarted → browser-verified trade/guest screenshot tab renders.
 
-**Committed:** not yet — will commit with the AGENTS_HANDOFF.md update.
+**Committed:** `b9859cf` — pushed to master.
+
+### 2026-11-17 (entry 28) — Agent "AG" — Replace fleet header + app card icons with new SVG
+
+**What:** User complained the fleet header logo (AppShell) and the Fleet Ledger app card icon (AppSelection) were using old generic icons. Both should use the new SVG at `public/cpm-logo.svg`.
+
+**Where:**
+- `src/components/AppShell.tsx` line 317: fleet header logo `src="/icon.svg"` → `src="/cpm-logo.svg"`
+- `src/components/AppSelection.tsx` line 23: Fleet Ledger card `iconSrc="/app/icon.svg"` → `iconSrc="/cpm-logo.svg"`
+- New file: `public/cpm-logo.svg` (copy of user's `Picsart_26-11-17_09-04-54-664.svg`)
+
+**Change:** Replaced both `src="/icon.svg"` and `iconSrc="/app/icon.svg"` with `src="/cpm-logo.svg"` / `iconSrc="/cpm-logo.svg"`. The VANTA Garage card (`/kami-vanta-logo-no-wings.svg`) was left unchanged — that's the garage's own logo.
+
+**Gate:** tsc clean → tests 66/66 → build clean → 3001 restarted → browser-verified: fleet header shows `/cpm-logo.svg`, app card shows `/cpm-logo.svg`.
+
 

@@ -314,7 +314,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="relative mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-4 gap-y-2 px-4 pb-3 pt-3 sm:px-6">
             <Link href="/fleet" className="flex items-center gap-3">
               <img
-                src="/icon.svg"
+                src="/cpm-logo.svg"
                 alt=""
                 aria-hidden="true"
                 width={40}

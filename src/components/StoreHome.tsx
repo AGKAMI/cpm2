@@ -36,18 +36,26 @@ export async function StoreHome({
   }));
   const featuredWithMedia = productsWithMedia.filter((p) => p.isFeatured);
 
-  // Compute derived data on the server
+  // Compute derived data on the server — sections are mutually exclusive so
+  // each product appears at most once on the home page.
+  const featuredIds = new Set(featuredWithMedia.map((p) => p.id));
+  const coverMapIds = new Set(allProducts.map((p) => p.id).filter((id) => coverMap.has(id)));
+  const hasCover = (p: VantaProduct) => coverMapIds.has(p.id);
   const arrivals = productsWithMedia
-    .filter((p: VantaProduct) => p.isNew)
+    .filter((p: VantaProduct) => p.isNew && !p.isFeatured && hasCover(p))
     .slice(0, 8);
+  const arrivalIds = new Set(arrivals.map((p) => p.id));
   const saleItems = productsWithMedia
-    .filter((p: VantaProduct) => p.isSale)
+    .filter((p: VantaProduct) => p.isSale && !p.isFeatured && !p.isNew && hasCover(p))
     .slice(0, 8);
+  const rest = productsWithMedia.filter(
+    (p: VantaProduct) => !p.isFeatured && !p.isNew && !p.isSale && hasCover(p)
+  );
 
   return (
     <StoreHomeClient
       featured={featuredWithMedia}
-      allProducts={productsWithMedia}
+      allProducts={rest}
       categories={allCategories}
       promotions={allPromotions}
       newArrivals={arrivals as VantaProduct[]}

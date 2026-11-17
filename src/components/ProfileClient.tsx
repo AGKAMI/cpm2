@@ -1158,17 +1158,17 @@ export function ProfileClient({
               </label>
             </div>
           </div>
+          {/* Log out — only in Security tab */}
+          <div className="mt-6">
+            <Button variant="destructive" onClick={logout} disabled={saving} className="w-full">
+              {saving ? "Logging out…" : "Log out"}
+            </Button>
+          </div>
         </section>
       )}
 
       {/* ============ ACTIONS ============ */}
-      {customer && (
-        <section className="px-4">
-          <Button variant="destructive" onClick={logout} disabled={saving} className="w-full">
-            {saving ? "Logging out…" : "Log out"}
-          </Button>
-        </section>
-      )}
+      {/* Logout moved into Security tab — no actions section needed here */}
     </StoreShell>
   );
 }

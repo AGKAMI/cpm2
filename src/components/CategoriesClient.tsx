@@ -161,7 +161,7 @@ export function CategoriesClient({
               Filters{nf ? " · " + nf : ""}
             </button>
           </div>
-          <div className="hs mt-3 px-4 gap-2 overflow-x-auto scrollbar-hide" style={{ scrollPaddingLeft: "16px" }}>
+          <div className="hs mt-3 px-4 gap-2 flex-wrap" style={{ scrollPaddingLeft: "16px" }}>
             {chip("All", excl === "all", () => setExcl("all"))}
             {chip("Limited", excl === "ltd", () => setExcl("ltd"))}
             {chip("One of One", excl === "one", () => setExcl("one"))}

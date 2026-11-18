@@ -79,8 +79,9 @@ function levenshteinRatio(a: string, b: string): number {
  * - token Jaccard × 0.9  (word overlap, e.g. "BMW M3 GTR" vs "BMW M3 GTR 2005")
  * - 0.85 containment     (one name's words fully inside the other's)
  * - Levenshtein ratio    (catches one-off typos and misreads)
- * Matches below 0.4 are dropped — the user confirms the pick anyway, so the
- * list should stay short and plausible rather than exhaustive.
+ * Confident matches score ≥ 0.6. When nothing clears that floor, the closest
+ * candidates sharing at least one token are returned anyway — an empty list
+ * dead-ends the trade flow, and the user confirms the pick regardless.
  */
 /** Generation tokens used in catalog names (MK2, MK7, …). VR6 is mapped to
  *  MK7 because in the CPM2 catalog the VR6 badge only appears on the Mk7 Golf. */
@@ -107,13 +108,6 @@ export function matchCarName(query: string, game: GameType, limit = 5): CarMatch
     const tokens = tokenSet(car.name);
     const catGen = genTokenOf(tokens);
 
-    // A Mk7 VR6 / Golf R must not match an MK2 GTI — they are entirely
-    // different cars that happen to share "Volkswagen Golf" tokens. If both
-    // sides carry an explicit generation and they disagree, reject outright.
-    if (qGen && catGen && qGen !== catGen) {
-      return { code: car.code, name: car.name, score: 0 };
-    }
-
     let intersection = 0;
     for (const token of qTokens) if (tokens.has(token)) intersection += 1;
     const union = new Set([...qTokens, ...tokens]).size;
@@ -133,7 +127,7 @@ export function matchCarName(query: string, game: GameType, limit = 5): CarMatch
     // a genuine candidate even if the generation/trim differs; levenshtein and
     // jaccard fine-tune the score. The threshold (0.6) is high enough that
     // unrelated cars (Scirocco, MK2 when MK7 is the read) never qualify.
-    const score = Math.max(
+    const ungated = Math.max(
       exact ? 1 : 0,
       qContained ? 0.9 : 0,
       catalogContained ? 0.85 : 0,
@@ -142,15 +136,38 @@ export function matchCarName(query: string, game: GameType, limit = 5): CarMatch
       intersection >= 2 ? levenshteinRatio(q, normalized) * 0.8 : 0,
     );
 
+    // A Mk7 VR6 / Golf R must not CONFIRM as an MK2 GTI — they are entirely
+    // different cars that happen to share "Volkswagen Golf" tokens. When both
+    // sides carry an explicit generation and they disagree, the strict score
+    // is zero; the ungated score stays on record so the fallback tier (below)
+    // can still surface the make+model neighbours when nothing confirms.
+    const genMismatch = qGen !== null && catGen !== null && qGen !== catGen;
+    const score = genMismatch ? 0 : ungated;
+
     return {
       code: car.code,
       name: car.name,
       score,
+      /** Fallback rank: ungated score, halved for a generation mismatch. */
+      fallback: genMismatch ? ungated * 0.5 : score,
     };
   });
 
-  return scored
+  // Confident tier: the usual strict list.
+  const passing = scored
     .filter((match) => match.score >= 0.6)
     .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
     .slice(0, limit);
+  if (passing.length > 0) return passing;
+
+  // Fallback tier: Gemini read a name the strict floor can't confirm (missing
+  // generation, unknown trim, a car the catalog lacks). Returning nothing here
+  // dead-ends the flow — the user confirms the pick anyway, so hand them the
+  // closest candidates sharing tokens (make + model beat make-only via the
+  // halved generation mismatch) instead of an empty list.
+  return scored
+    .filter((match) => match.fallback > 0)
+    .sort((a, b) => b.fallback - a.fallback || a.name.localeCompare(b.name))
+    .slice(0, limit)
+    .map(({ code, name, fallback }) => ({ code, name, score: fallback }));
 }

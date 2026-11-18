@@ -46,7 +46,7 @@ function telegramInitData(): string {
   return clientInitData();
 }
 
-async function request<T>(url: string, init?: RequestInit): Promise<T> {
+async function request<T>(url: string, init?: RequestInit, timeoutMs = 8000): Promise<T> {
   const headers = new Headers(init?.headers);
   if (init?.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
   const initData = telegramInitData();
@@ -57,7 +57,9 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   let response: Response;
   try {
     controller = new AbortController();
-    timeoutId = setTimeout(() => controller?.abort(), 8000);
+    // Per-call timeout — Gemini screenshot reads routinely run past 8s, so
+    // identifyCar passes a wider window instead of aborting mid-read.
+    timeoutId = setTimeout(() => controller?.abort(), timeoutMs);
     response = await fetch(url, { ...init, headers, signal: controller.signal });
   } catch {
     throw new ApiRequestError(
@@ -169,8 +171,12 @@ export const api = {
       method: "DELETE",
     }),
   identifyCar: (payload: { imageBase64: string; mimeType: string }) =>
-    request<{ carName: string; matches: CarMatch[] }>("/api/trade/identify", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    }),
+    request<{ carName: string; matches: CarMatch[] }>(
+      "/api/trade/identify",
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+      35_000,
+    ),
 };

@@ -1,6 +1,13 @@
 {
   "version": 2,
   "skills": {
+    "android-kotlin": {
+      "source": "full-stack-skills/mobile-native-skills",
+      "commit": "b0ffa0c5b3a7c5d01daaa29a3e737a4ed4b9309a",
+      "sourceType": "github",
+      "skillPath": "skills/android-kotlin/SKILL.md",
+      "computedHash": "3cc9937b435ce9f81d51985bc8d5ed41d82a96c1303ffefb6d00354e157a2cf6"
+    },
     "animate": {
       "source": "emilkowalski/skills",
       "sourceType": "github",
@@ -73,11 +80,46 @@
       "skillPath": "skills/improve-animations/SKILL.md",
       "computedHash": "197db8a2e4a2f009ad5aeef57fb9aafbec83f9023bfff269a4bf5ede1106584a"
     },
+    "ios-swift": {
+      "source": "full-stack-skills/mobile-native-skills",
+      "commit": "b0ffa0c5b3a7c5d01daaa29a3e737a4ed4b9309a",
+      "sourceType": "github",
+      "skillPath": "skills/ios-swift/SKILL.md",
+      "computedHash": "1478b6e67e9e81fcc33bdd0e0ef10e5004c1fb543ae368917d8df05ba079ceed"
+    },
     "mobile-native": {
       "source": "emilkowalski/skills",
       "sourceType": "github",
       "skillPath": "skills/mobile-native/SKILL.md",
       "computedHash": "2141766c0a370128cbee3dc004d3f254a411e54f8352e154e73b040e52070e38"
+    },
+    "openspec-apply-change": {
+      "source": "full-stack-skills/mobile-native-skills",
+      "commit": "b0ffa0c5b3a7c5d01daaa29a3e737a4ed4b9309a",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/openspec-apply-change/SKILL.md",
+      "computedHash": "0a0307e447211b8c9e30aab39f7521ddc14c68458ee84982d84cc28f15bf920d"
+    },
+    "openspec-archive-change": {
+      "source": "full-stack-skills/mobile-native-skills",
+      "commit": "b0ffa0c5b3a7c5d01daaa29a3e737a4ed4b9309a",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/openspec-archive-change/SKILL.md",
+      "computedHash": "6d066b645b8328a96588934bdab235c69f5567b5894481efe55e789cb0a79b59"
+    },
+    "openspec-explore": {
+      "source": "full-stack-skills/mobile-native-skills",
+      "commit": "b0ffa0c5b3a7c5d01daaa29a3e737a4ed4b9309a",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/openspec-explore/SKILL.md",
+      "computedHash": "ab4d00600960f050f7c01a231e03cc3efa6bb1f2a0591cf24aa1ede3915327eb"
+    },
+    "openspec-propose": {
+      "source": "full-stack-skills/mobile-native-skills",
+      "commit": "b0ffa0c5b3a7c5d01daaa29a3e737a4ed4b9309a",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/openspec-propose/SKILL.md",
+      "computedHash": "02b282e7e88189a8e5af7e835bb13267cf717ec9cc8bfed057b748aa17b91fae"
     },
     "pick-ui-library": {
       "source": "emilkowalski/skills",

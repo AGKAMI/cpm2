@@ -781,3 +781,20 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 **DB note:** products table now has 4 rows — 242 "AUDIT-TEST-DELETE-ME" and 243 "PRICE-CAP-TEST" look like another agent's test junk; left untouched (not mine to delete).
 
 **Gate:** tsc clean → tests 66/66 → build clean ×2 → 3001 restarted → browser-verified: admin skeleton + plus icons + stepper (clamps at 1) + Hide button; profile tabs/logout/platform message; theme switch changes `--primary` live; home card renders the MK7 photo (0 no-photo cards); filter panel clean.
+
+### 2026-11-18 (entry 34) — Agent "AG" — White logo corners fixed + trade identify dead-end fixed
+
+**User reports:** (1) white corners around the round KAMI logo in the fleet header — "the svg i gave u is round"; (2) after Gemini identifies a screenshot car, no models appear to choose from.
+
+**Fix 1 — `public/cpm-logo.svg`:** the file was a Picsart export wrapping two base64 raster PNGs (104KB mask + 10MB artwork) inside SVG filters. Root cause of the corners: it painted **two full-canvas `<path fill="#ffffff">` background rects** before layering the round badge through a luminance mask — the white square corners were literal painted background. Fix: replaced both rects with a single `<circle cx="1154.5" cy="1149" r="1149" fill="#ffffff"/>` matching the badge outline. Verified via canvas pixel probe: all 4 corners alpha=0, badge rim/center opaque. Backup kept briefly at `public/cpm-logo.svg.bak` (delete before commit). NOTE: the SVG is 13.5MB (10MB artwork shown at 40px) — worth downsizing later, flagged not done.
+
+**Fix 2 — trade identify flow** (user's "then what" dead-end):
+- `src/lib/client.ts`: `request()` now takes per-call `timeoutMs` (default 8000 unchanged); `identifyCar` passes 35s — Gemini vision reads routinely run past the old 8s abort, which killed the request before the car name/matches ever arrived.
+- `src/lib/trade.ts` `matchCarName()`: when no candidate clears the strict 0.6 floor, a fallback tier now returns the closest candidates sharing tokens instead of an empty list (generation-mismatch cars use ungated score × 0.5 so "MK6 GTI" → MK2/MK7 GTI first, make-only junk last). The user confirms the pick, so a wider shortlist is safe. Empty list now only happens when the car's brand genuinely isn't in the catalog (the "Search the catalog for…" handoff covers that).
+- Confirmed by probe script: exact hits still 100%, "MK6 GTI"/"Golf 8 GTI"/"M5 CS" now surface the right neighbours instead of stranding.
+
+**Skills:** installed `full-stack-skills/mobile-native-skills` via `npx skills add` → 6 skills in `cpm2/.agents/skills/` (android-kotlin, ios-swift + 4 openspec helpers). Untracked — commit decision pending.
+
+**Open (carried):** categories API garbled-binary response unexplained; `/accounts/[id]` 401/Turso errors; test rows 242/243 deletion pending user answer; prod cold-start 20-38s; PayFast keys pending approval email.
+
+**Gate:** tsc clean → tests 66/66 → build clean → 3001 restarted (prod build) → logo corners alpha=0 verified via canvas probe on /fleet header. Deploy hook pending.

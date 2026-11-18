@@ -5,13 +5,14 @@ import { FleetProvider } from "@/components/FleetProvider";
 import { AppShell } from "@/components/AppShell";
 import { TelegramBridge } from "@/components/TelegramBridge";
 import { ToastProvider } from "@/components/ui/Toaster";
-import { FLEET_DEFAULT_PALETTE, PALETTE_IDS } from "@/lib/themes";
+import { DEFAULT_PALETTE, FLEET_DEFAULT_PALETTE, PALETTE_IDS } from "@/lib/themes";
 
 const mono = { variable: "" };
 
-// Nothing saved → Fleet Ledger opens in Neon 2 TONE. /store re-applies the
-// house VANTA identity with its own later script (src/app/store/layout.tsx).
-const themeScript = `(function(){try{var d=document.documentElement;var m=localStorage.getItem("cpm2:theme:v2");d.setAttribute("data-theme",m==="paper"?"paper":"night");var p=localStorage.getItem("cpm2:palette:v1");var ids=${JSON.stringify(PALETTE_IDS)};d.setAttribute("data-palette",ids.indexOf(p)>=0?p:"${FLEET_DEFAULT_PALETTE}");}catch(e){}})();`;
+// Nothing saved → Fleet Ledger opens in Neon 2 TONE; /store keeps the
+// house VANTA identity. Path-aware so the result is identical no matter
+// whether this script or the store layout's later script runs last.
+const themeScript = `(function(){try{var d=document.documentElement;var m=localStorage.getItem("cpm2:theme:v2");d.setAttribute("data-theme",m==="paper"?"paper":"night");var p=localStorage.getItem("cpm2:palette:v1");var ids=${JSON.stringify(PALETTE_IDS)};var def=location.pathname.indexOf("/store")===0?"${DEFAULT_PALETTE}":"${FLEET_DEFAULT_PALETTE}";d.setAttribute("data-palette",ids.indexOf(p)>=0?p:def);}catch(e){}})();`;
 
 export const metadata: Metadata = {
   title: "CPM // FLEET LEDGER",

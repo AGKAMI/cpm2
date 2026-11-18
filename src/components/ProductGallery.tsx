@@ -96,7 +96,7 @@ export function ProductGallery({ productId }: { productId: number }) {
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-bold text-ink">{product.name}</h1>
-          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-background bg-brand-gold border border-brand-gold px-2 py-0.5 rounded">
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#17120a] bg-abs-gold border border-abs-gold px-2 py-0.5 rounded">
             {product.exclusivity.replace("_", " ")}
           </span>
         </div>

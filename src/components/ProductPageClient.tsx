@@ -146,7 +146,7 @@ export function ProductPageClient({ productId }: { productId: string }) {
           )}
           <div className="absolute top-4 left-4 z-10 flex flex-col gap-1">
             {isExclusive && (
-                          <span className="rounded-full px-3 py-1.5 border border-gold bg-background text-foreground text-[10px] font-bold uppercase tracking-[0.15em]">
+                          <span className="rounded-full px-3 py-1.5 border border-abs-gold bg-background text-foreground text-[10px] font-bold uppercase tracking-[0.15em]">
                             {exclusivityLabel}
                           </span>
                         )}
@@ -161,7 +161,7 @@ export function ProductPageClient({ productId }: { productId: string }) {
                           </span>
                         )}
                         {product.isFeatured && (
-                          <span className="rounded-full px-3 py-1.5 border border-gold bg-background text-foreground text-[10px] font-bold uppercase tracking-[0.15em]">
+                          <span className="rounded-full px-3 py-1.5 border border-abs-gold bg-background text-foreground text-[10px] font-bold uppercase tracking-[0.15em]">
                             Featured
                           </span>
                         )}
@@ -181,7 +181,7 @@ export function ProductPageClient({ productId }: { productId: string }) {
             <div className="flex items-baseline justify-between gap-2 mb-5">
               <span className="text-2xl font-bold text-primary">{formatPrice(product.basePriceCents, product.currency)}</span>
               {isExclusive && (
-                <span className="text-[10px] uppercase tracking-[0.15em] text-background bg-gold px-2 py-0.5 rounded text-ink font-extrabold">
+                <span className="text-[10px] uppercase tracking-[0.15em] text-[#17120a] bg-abs-gold px-2 py-0.5 rounded font-extrabold">
                   {exclusivityLabel}
                 </span>
               )}
@@ -248,7 +248,7 @@ export function ProductPageClient({ productId }: { productId: string }) {
                 void addToCartLocal(product.id, 1);
               }}
               disabled={product.stockQuantity === 0 || checkoutBusy}
-              className={`w-full h-10 text-xs font-bold mt-2 border border-input rounded-lg ${product.stockQuantity === 0 ? "bg-background text-foreground cursor-not-allowed" : "bg-brand-gold text-primary-foreground hover:bg-brand-gold/90 transition-colors cursor-pointer"}`}
+              className={`w-full h-10 text-xs font-bold mt-2 border border-input rounded-lg ${product.stockQuantity === 0 ? "bg-background text-foreground cursor-not-allowed" : "bg-gold text-primary-foreground hover:opacity-90 transition-all cursor-pointer"}`}
               aria-label={`Add ${product.name} to cart`}
             >
               {product.stockQuantity === 0 ? (

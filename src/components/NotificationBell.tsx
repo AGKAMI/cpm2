@@ -151,15 +151,24 @@ export function NotificationBell() {
           className="absolute right-0 mt-2 w-80 rounded-lg border border-border bg-background shadow-lg z-50 flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="px-4 py-2 border-b border-border flex items-center justify-between">
+          <div className="px-4 py-2 border-b border-border flex items-center justify-between gap-2">
             <span className="text-sm font-semibold text-foreground">Notifications</span>
-            <button
-              onClick={markAllRead}
-              className="text-[10px] text-gold font-medium hover:underline underline-link"
-              disabled={unread === 0}
-            >
-              Mark all as read
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={markAllRead}
+                className="text-[10px] text-gold font-medium hover:underline underline-link"
+                disabled={unread === 0}
+              >
+                Mark all as read
+              </button>
+              <a
+                href="/store/notifications"
+                className="text-[10px] text-gold font-medium hover:underline underline-link"
+                onClick={() => setOpen(false)}
+              >
+                View all
+              </a>
+            </div>
           </div>
 
           {notifications.length === 0 ? (

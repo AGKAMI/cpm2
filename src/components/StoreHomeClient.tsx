@@ -529,7 +529,7 @@ const ProductCard = React.memo(
                 )}
               </div>
               {hasArrow && (
-                <div className="w-10 h-10 rounded-full bg-brand-gold flex items-center justify-center text-primary-foreground">
+                <div className="w-10 h-10 rounded-full bg-gold flex items-center justify-center text-primary-foreground">
                   <span className="text-[12px]">▸</span>
                 </div>
               )}

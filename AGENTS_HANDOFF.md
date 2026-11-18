@@ -798,3 +798,33 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 **Open (carried):** categories API garbled-binary response unexplained; `/accounts/[id]` 401/Turso errors; test rows 242/243 deletion pending user answer; prod cold-start 20-38s; PayFast keys pending approval email.
 
 **Gate:** tsc clean → tests 66/66 → build clean → 3001 restarted (prod build) → logo corners alpha=0 verified via canvas probe on /fleet header. Committed `e3e16d0` (only cpm-logo.svg, client.ts, trade.ts, skills-lock.json, AGENTS_HANDOFF.md) → pushed → deploy job `IMAUkqohN9ynwqkigdGT` → PROD VERIFIED by content (served cpm-logo.svg has the circle, no white rect).
+
+### 2026-11-18 (entry 35) — Agent "AG" — 19-item UI batch (themes, admin dropdowns, notifications page, header)
+
+**User's 19-item list, all code-complete this run:**
+
+1. **Neon 2 TONE = default theme for Fleet Ledger** — `themes.ts` exports `FLEET_DEFAULT_PALETTE = "neon"`; root `layout.tsx` themeScript is now **path-aware**: `/store*` defaults to VANTA, everything else to Neon (order-independent vs the store layout's later script — result identical whichever runs last). `useTheme.ts` gained a per-route `routeFallback` (set from `usePathname()` each render) + `fallbackFor()`/`serverStateFor()` with `SERVER_VANTA`/`SERVER_NEON` snapshots. Stored user choice always wins over either fallback.
+2. **Trade identify shows no answer** — root cause was `src/proxy.ts` gating all `/api/*`; exemption for `/api/trade/identify` shipped earlier inside `5b7ac11`. Remaining local 503 = no `GEMINI_API_KEY` locally (Vercel-only); verify in prod.
+3. **Theme switch recolors metallic accents but not product/profile tags** — new `--abs-gold*` vars (fixed house gold) + palette-driven `--brand-gold*`/`--primary-hover` blocks for all 9 palettes (night + paper, incl. vanta-paper dark gold `#8a6d1f` for contrast); `--brand-gold-soft`, `--border-gradient-garage`, `--pulse-ring-color` derive from the live palette so every accent follows the switch. Absolute (unchanged): `.metallic-gold/-indigo/-silver`, `.vanta-card-badge` all variants, `.bd-one`/`.badge-one` → `--abs-gold-gradient`, `--accent` (admin product tag), new `.text-abs-gold/.bg-abs-gold/.border-abs-gold` utilities used by ProductGallery/ProductPageClient exclusivity+featured pills; dead `bg-brand-gold` classes eliminated from TSX (grep = 0).
+4. **Animated quick dark/light switch in store header** — kept the working-tree metallic-knob ☽/☀ button in StoreShell (before NotificationBell).
+5. **Category card subtitles bold** — `.vanta-card-subtitle` font-weight 700 (globals.css).
+6. **"ACCOUNT" heading removed when it's the only content** — earlier commit `0d0c617`.
+7. **Silver metallic customer tag on avatar** — role-tag code in ProfileClient uses `metallic-silver` for customer; browser verification pending.
+8. **Telegram login hint hidden unless in Telegram** — ProfileClient gating (working-tree edit).
+9. **Duplicate "Logged in on Chrome" pill removed** — commit `0d0c617`.
+10. **"ID" → "Telegram ID"** — commit `0d0c617`.
+11. **"Change email / password" button gets colored background** — ProfileClient primary variant (working-tree edit).
+12. **Log out → bottom of account tab, red** — ProfileClient bottom logout + header removal (`0d0c617` header half).
+13. **Admin: dropdowns removed, cards per option with Edit on every row** — `admin/page.tsx`: category `<select>` + Edit block → per-row category cards (name/slug/sort/description + own Edit); product `<select>` → per-row product cards (name/Hidden flag/code/price/stock + own Edit → `selectProduct`); promotion `<select>` deleted (cards already had per-row Edit). **Bug fixed:** row-Edit now *keeps* `editingCategoryId` (old code nulled it at the click handler → submit took the create branch); `resetCategoryForm()` clears it instead, "Add Category" resets too, submit label shows Update/Create accordingly.
+14. **"Add your first product" removed** — empty state is text-only (the section header's "Add product" button remains).
+15. **"Back to store" removed** — admin top-actions row now only has EFT Review.
+16. **Header Back links removed** — both admin `PageHeading backHref="/store"` gone + StoreShell header back arrow (and its now-unused `useRouter`/`Button` imports).
+17. **Header logo smaller** — StoreShell lockup max-width shrunk (working-tree edit).
+18. **Notifications get their own page** — new `src/app/store/notifications/page.tsx` (full list, unread count, mark-one/all read, StoreShell + PageHeading "NT"); NotificationBell popover header gained a **"View all"** link next to "Mark all as read" (closes popover).
+19. **Avatar ring metallic** — StoreShell pulse ring uses `border-gold` + metallic treatment (working-tree edit).
+
+**Side notes this run:** another agent's commit `189d524` (fleet DB-backed uploads) landed mid-run and absorbed this run's earlier ProfileClient.tsx edits; `cache/scratch/mksession.ts` (another instance's session-token helper, created 18:14, broken import path) breaks `tsc`/`next build` because tsconfig `include: **/*.ts` reaches the gitignored `cache/scratch/` — temporarily renamed to `.bak` around both gates and restored; **flagged: either delete it or add `cache/` to tsconfig `exclude`.**
+
+**Open (carried):** delete test rows `AUDIT-TEST-DELETE-ME` (242) / `PRICE-CAP-TEST` (243)? categories API garbled-binary response; `/accounts/[id]` 401/Turso; cpm-logo.svg 13.5MB downsizing; prod cold-start 20-38s; PayFast keys pending approval email.
+
+**Gate:** tsc clean → tests 66/66 → build clean (31 routes, `/store/notifications` present) → 3001 restarted on fresh prod build → `/store/notifications` HTTP 200 with title. Commit/push/deploy-hook/prod-verify pending this entry.

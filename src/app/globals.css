@@ -563,6 +563,49 @@ html {
   --stock-ok-foreground: #17120a;
 }
 
+/* ── Absolute gold — product & profile identity tags (item 3) ────────
+   Fixed house gold. The theme switch never recolors these: exclusivity
+   badges, role pills and anything else marked "absolute". */
+:root {
+  --abs-gold: #d4af4f;
+  --abs-gold-light: #f6e3a0;
+  --abs-gold-deep: #8f6f26;
+  --abs-gold-gradient: linear-gradient(135deg, #f6e3a0 0%, #d4af4f 45%, #9b7a2a 100%);
+}
+
+/* ── Theme-switchable metallic accents (item 3) ──────────────────────
+   --brand-gold* tracks the active palette (metallic blue on Neon, red
+   on Crimson, silver on Titanium…). Vanta keeps the house gold from the
+   :root defaults above. Soft tint, garage border gradient and pulse
+   ring derive from the live palette color so every accent follows the
+   switch without a per-palette copy. */
+:root {
+  --brand-gold-soft: color-mix(in srgb, var(--brand-gold) 12%, transparent);
+  --border-gradient-garage: linear-gradient(45deg, var(--brand-gold-light) 0%, var(--brand-gold) 25%, var(--brand-gold-deep) 50%, var(--brand-gold) 75%, var(--brand-gold-light) 100%);
+  --pulse-ring-color: var(--brand-gold);
+}
+
+[data-palette="titanium"] { --brand-gold: #dbe2ea; --brand-gold-light: #f4f7fa; --brand-gold-deep: #99a6b4; --primary-hover: #eef3f8; }
+[data-palette="ember"] { --brand-gold: #ffb35c; --brand-gold-light: #ffd8a8; --brand-gold-deep: #c97a1e; --primary-hover: #ffc684; }
+[data-palette="crimson"] { --brand-gold: #ff5d6c; --brand-gold-light: #ffb3b8; --brand-gold-deep: #c92f3f; --primary-hover: #ff8090; }
+[data-palette="azure"] { --brand-gold: #6cc7ff; --brand-gold-light: #a8e0ff; --brand-gold-deep: #2f8fd6; --primary-hover: #93d7ff; }
+[data-palette="monaco"] { --brand-gold: #f0e4c8; --brand-gold-light: #faf3e2; --brand-gold-deep: #a89468; --primary-hover: #f5ecd6; }
+[data-palette="solar"] { --brand-gold: #fac547; --brand-gold-light: #ffe08a; --brand-gold-deep: #c8942d; --primary-hover: #ffd06b; }
+[data-palette="neon"] { --brand-gold: #4d9aff; --brand-gold-light: #9cc7ff; --brand-gold-deep: #026fd7; --primary-hover: #7ab5ff; }
+[data-palette="grandprix"] { --brand-gold: #ef4b67; --brand-gold-light: #ff9db0; --brand-gold-deep: #b21f41; --primary-hover: #f57a90; }
+
+/* Vanta paper: daylight needs the darker house gold (matches the
+   themes.ts paper swatch) — bright #d4af4f fails contrast on paper. */
+[data-theme="paper"][data-palette="vanta"] { --brand-gold: #8a6d1f; --brand-gold-light: #a8863a; --brand-gold-deep: #6b5418; --primary-hover: #a8863a; }
+[data-theme="paper"][data-palette="titanium"] { --brand-gold: #3e4b52; --brand-gold-light: #6b7880; --brand-gold-deep: #283438; --primary-hover: #4f5d66; }
+[data-theme="paper"][data-palette="ember"] { --brand-gold: #9d4c40; --brand-gold-light: #bd8078; --brand-gold-deep: #7e413b; --primary-hover: #b06a5e; }
+[data-theme="paper"][data-palette="crimson"] { --brand-gold: #b90098; --brand-gold-light: #d14db9; --brand-gold-deep: #8e0077; --primary-hover: #c74daa; }
+[data-theme="paper"][data-palette="azure"] { --brand-gold: #00748d; --brand-gold-light: #4d97a8; --brand-gold-deep: #005a6f; --primary-hover: #1a869b; }
+[data-theme="paper"][data-palette="monaco"] { --brand-gold: #c900a1; --brand-gold-light: #d64db8; --brand-gold-deep: #930078; --primary-hover: #d133ad; }
+[data-theme="paper"][data-palette="solar"] { --brand-gold: #a5434e; --brand-gold-light: #bd7d75; --brand-gold-deep: #7e323c; --primary-hover: #b86b64; }
+[data-theme="paper"][data-palette="neon"] { --brand-gold: #be00e3; --brand-gold-light: #d04ded; --brand-gold-deep: #9000ac; --primary-hover: #cc3eed; }
+[data-theme="paper"][data-palette="grandprix"] { --brand-gold: #845d2b; --brand-gold-light: #a98256; --brand-gold-deep: #6c4924; --primary-hover: #96713f; }
+
 /* Modal open / close — transitions.dev 06-modal.md (verbatim) */
 .t-modal {
   transform-origin: center;
@@ -978,7 +1021,7 @@ html {
   display: inline-block;
 }
 .bd-one {
-  background: var(--brand-gold-gradient);
+  background: var(--abs-gold-gradient);
   color: #17120a;
 }
 .bd-new {
@@ -1044,6 +1087,12 @@ html {
 .text-gold { color: var(--brand-gold) !important; }
 .bg-gold { background-color: var(--brand-gold) !important; }
 .border-gold { border-color: var(--brand-gold) !important; }
+
+/* Absolute gold — product tags (exclusivity/featured) that must keep the
+   house identity no matter which palette is active. */
+.text-abs-gold { color: var(--abs-gold) !important; }
+.bg-abs-gold { background-color: var(--abs-gold) !important; }
+.border-abs-gold { border-color: var(--abs-gold) !important; }
 
 .text-oxblood { color: var(--oxblood) !important; }
 
@@ -1368,7 +1417,7 @@ html {
   text-transform: uppercase;
   white-space: nowrap;
 }
-.badge-one { background: var(--brand-gold-gradient); color: #17120a; }
+.badge-one { background: var(--abs-gold-gradient); color: #17120a; }
 .badge-limited { background: rgba(10,10,10,0.72); color: #e8c766; border: 1px solid rgba(232,199,102,0.55); backdrop-filter: blur(6px); }
 .badge-new { background: rgba(10,10,10,0.72); color: #fff; border: 1px solid rgba(255,255,255,0.3); backdrop-filter: blur(6px); }
 .badge-sale { background: #ef4444; color: #fff; }

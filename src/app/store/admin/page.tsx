@@ -163,7 +163,6 @@ export default function AdminPage() {
     const [showCategoryForm, setShowCategoryForm] = useState(false);
     const [categoryForm, setCategoryForm] = useState<CategoryForm>(EMPTY_CATEGORY_FORM);
     const [categorySaving, setCategorySaving] = useState(false);
-    const [showCategoryEditSelect, setShowCategoryEditSelect] = useState(false);
     const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
   // Promotion management state
   const [showPromotionForm, setShowPromotionForm] = useState(false);
@@ -307,6 +306,7 @@ export default function AdminPage() {
   const resetCategoryForm = () => {
       setCategoryForm(EMPTY_CATEGORY_FORM);
       setShowCategoryForm(false);
+      setEditingCategoryId(null);
       setCategoryConverterFile(null);
       setCategoryConverterResult(null);
       setCategoryConverterError(null);
@@ -625,7 +625,7 @@ export default function AdminPage() {
   if (loading) {
           return (
             <StoreShell>
-              <PageHeading folio="AD" title="Admin - Product Manager" backHref="/store" />
+              <PageHeading folio="AD" title="Admin - Product Manager" />
               <AdminSkeleton />
             </StoreShell>
           );
@@ -641,7 +641,7 @@ export default function AdminPage() {
 
     return (
           <StoreShell>
-            <PageHeading folio="AD" title="Admin - Product Manager" backHref="/store" />
+            <PageHeading folio="AD" title="Admin - Product Manager" />
             <Toast />
 
                     {/* Top actions — EFT review with clear borders and background */}
@@ -649,9 +649,6 @@ export default function AdminPage() {
                       <Link href="/store/admin/eft" className="inline-flex items-center gap-2 px-4 py-2 text-xs uppercase tracking-[0.1em] whitespace-nowrap cursor-pointer font-bold border-2 border-primary bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
                         EFT Review
                       </Link>
-                      <Button variant="outline" onClick={() => router.push("/store")} size="sm">
-                        Back to store
-                      </Button>
                     </div>
 
                     {/* Category Management */}
@@ -661,7 +658,17 @@ export default function AdminPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setShowCategoryForm(!showCategoryForm)}
+                          onClick={() => {
+                            if (showCategoryForm) {
+                              resetCategoryForm();
+                              setEditingCategoryId(null);
+                            } else {
+                              // Fresh "Add" — clear any edit picked from a row
+                              resetCategoryForm();
+                              setEditingCategoryId(null);
+                              setShowCategoryForm(true);
+                            }
+                          }}
                         >
                           <span className="inline-flex items-center gap-1.5">
                             <PlusCircleIcon className="w-4 h-4" />
@@ -751,7 +758,7 @@ export default function AdminPage() {
                               disabled={categorySaving}
                               className="w-full sm:w-auto"
                             >
-                              {categorySaving ? "Creating…" : "Create Category"}
+                              {categorySaving ? "Saving…" : editingCategoryId ? "Update Category" : "Create Category"}
                             </Button>
                             <Button variant="outline" type="button" onClick={resetCategoryForm} disabled={categorySaving} className="w-full sm:w-auto">
                               Cancel
@@ -759,41 +766,49 @@ export default function AdminPage() {
               </div>
             </form>
           )}
-<select
-            id="category-edit"
-            value={editingCategoryId ?? ""}
-            onChange={(e) => setEditingCategoryId(e.target.value ? Number(e.target.value) : null)}
-            className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
-          >
-            <option value="">Pick a category to edit…</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={String(cat.id)}>{cat.name}</option>
-            ))}
-          </select>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => {
-                if (!editingCategoryId) return;
-                const cat = categories.find((c) => c.id === editingCategoryId);
-                if (!cat) return;
-                setCategoryForm({
-                  name: cat.name,
-                  slug: cat.slug,
-                  description: cat.description,
-                  sortOrder: String(cat.sortOrder),
-                  imageUrl: cat.imageUrl,
-                });
-                setShowCategoryForm(true);
-                setShowCategoryEditSelect(false);
-                setEditingCategoryId(null);
-              }}
-              disabled={!editingCategoryId}
-            >
-              Edit
-            </Button>
+          {/* Category rows — every category listed with its own Edit (item 13) */}
+          {categories.length === 0 ? (
+            <p className="text-xs text-muted-foreground">No categories yet.</p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {categories.map((cat) => (
+                <div
+                  key={cat.id}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-foreground truncate">{cat.name}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">
+                      /{cat.slug} · sort {cat.sortOrder}
+                      {cat.description ? ` · ${cat.description}` : ""}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0"
+                    onClick={() => {
+                      setCategoryForm({
+                        name: cat.name,
+                        slug: cat.slug,
+                        description: cat.description,
+                        sortOrder: String(cat.sortOrder),
+                        imageUrl: cat.imageUrl,
+                      });
+                      // Keep editingCategoryId set — handleCategorySubmit
+                      // branches on it to update instead of create.
+                      setEditingCategoryId(cat.id);
+                      setShowCategoryForm(true);
+                      setMsg(null);
+                      setError(null);
+                    }}
+                  >
+                    Edit
+                  </Button>
+                </div>
+              ))}
             </div>
+          )}
                     </section>
 
                 {/* Promotions Management */}
@@ -818,27 +833,8 @@ export default function AdminPage() {
                     </Button>
                   </div>
 
-                  {/* Dropdown: pick which promotion to edit */}
-                  <select
-                    id="promotion-edit"
-                    value={editingPromotionId ?? ""}
-                    onChange={(e) => {
-                      const id = e.target.value ? Number(e.target.value) : null;
-                      const p = id ? promotions.find((x) => x.id === id) : null;
-                      if (p) {
-                        setShowPromotionForm(true);
-                        selectPromotion(p);
-                      } else {
-                        setEditingPromotionId(null);
-                      }
-                    }}
-                    className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground mb-3 cursor-pointer"
-                  >
-                    <option value="">Pick a promotion to edit…</option>
-                    {promotions.map((p) => (
-                      <option key={p.id} value={String(p.id)}>{p.title}</option>
-                    ))}
-                  </select>
+                  {/* Promotions are edited from each card's own Edit button —
+                      no picker dropdown (item 13). */}
 
               {showPromotionForm && (
                 <form onSubmit={handlePromotionSubmit} className="flex flex-col gap-3 mb-4">
@@ -1494,30 +1490,41 @@ export default function AdminPage() {
                   {products.length === 0 ? (
                     <div className="flex flex-col items-center gap-3 py-6 text-center">
                       <p className="text-muted-foreground">No products yet.</p>
-                      <Button variant="primary" size="sm" onClick={openProductForm}>
-                        Add your first product
-                      </Button>
                     </div>
                   ) : (
-                    <select
-  id="product-edit"
-  value={editingId ?? ""}
-  onChange={(e) => {
-      const p = products.find((x) => x.id === Number(e.target.value));
-      if (p) {
-        setShowProductForm(true);
-        void selectProduct(p);
-      } else {
-        setEditingId(null);
-      }
-    }}
-  className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
->
-  <option value="">Pick a product to edit…</option>
-  {products.map((p) => (
-    <option key={p.id} value={String(p.id)}>{p.name} ({p.cpm2CarCode})</option>
-  ))}
-</select>
+                    /* Every product listed as its own row with an Edit button —
+                       no picker dropdown (item 13). */
+                    <div className="flex flex-col gap-2">
+                      {products.map((p) => (
+                        <div
+                          key={p.id}
+                          className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-foreground truncate">
+                              {p.name}
+                              {!p.isPublished && (
+                                <span className="ml-2 text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Hidden</span>
+                              )}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground truncate">
+                              #{p.id} · {p.cpm2CarCode ? `Car ${p.cpm2CarCode}` : "No car code"} · {formatPrice(p.basePriceCents, p.currency)} · {p.stockQuantity} in stock
+                            </p>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="shrink-0"
+                            onClick={() => {
+                              setShowProductForm(true);
+                              void selectProduct(p);
+                            }}
+                          >
+                            Edit
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
                           )}
                         </section>
 

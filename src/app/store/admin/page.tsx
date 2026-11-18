@@ -601,6 +601,27 @@ export default function AdminPage() {
       }
     };
 
+    // Products always had a delete route and a client method but no control
+    // anywhere in the UI — nothing called vantaApi.deleteProduct, so a product
+    // could never be removed once created. The API soft-deletes (unpublish +
+    // unavailable + stock 0) to protect order history, so say "hide".
+    const handleProductDelete = async (id: number) => {
+      if (
+        !window.confirm(
+          "Hide this product? It will be unpublished and marked out of stock. Order history is kept — re-publish it any time from this list.",
+        )
+      )
+        return;
+      setError(null);
+      try {
+        await vantaApi.deleteProduct(id);
+        setMsg("Product hidden from the store.");
+        await load();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to delete product.");
+      }
+    };
+
     const handlePublish = async (id: number, publish: boolean) => {
       setError(null);
       try {
@@ -1511,10 +1532,10 @@ export default function AdminPage() {
                               #{p.id} · {p.cpm2CarCode ? `Car ${p.cpm2CarCode}` : "No car code"} · {formatPrice(p.basePriceCents, p.currency)} · {p.stockQuantity} in stock
                             </p>
                           </div>
+                          <div className="flex items-center gap-2 shrink-0">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="shrink-0"
                             onClick={() => {
                               setShowProductForm(true);
                               void selectProduct(p);
@@ -1522,6 +1543,16 @@ export default function AdminPage() {
                           >
                             Edit
                           </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => void handleProductDelete(p.id)}
+                            aria-label={`Hide ${p.name}`}
+                            className="border-destructive/60 text-destructive hover:bg-destructive/10"
+                          >
+                            Hide
+                          </Button>
+                          </div>
                         </div>
                       ))}
                     </div>

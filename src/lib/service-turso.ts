@@ -1162,23 +1162,38 @@ export async function addAccountImages(
   });
   const maxSort = Number((maxRow.rows[0] as { max_so: unknown }).max_so) + 1;
 
-  const inserted: NewAccountImage[] = [];
-  for (let i = 0; i < imageUrls.length; i += 1) {
-    const result = await db.execute({
-      sql: `INSERT INTO fleet_account_images (account_id, image_url, sort_order, is_cover, uploaded_at)
-            VALUES (?, ?, ?, 0, ?)`,
-      args: [accountId, imageUrls[i], maxSort + i, stamp],
-    });
-    const id = Number(result.lastInsertRowid);
-    inserted.push({
-      id,
-      accountId,
-      imageUrl: imageUrls[i],
-      sortOrder: maxSort + i,
-      isCover: false,
-      uploadedAt: stamp,
-    });
-  }
+  // A bulk upload of 30 images took ~118s: two serial round-trips per file
+  // (bytes, then metadata). Collapse the metadata into ONE multi-row INSERT.
+  const coverRow = await db.execute({
+    sql: `SELECT 1 FROM fleet_account_images WHERE account_id = ? AND is_cover = 1 LIMIT 1`,
+    args: [accountId],
+  });
+  const hasCover = coverRow.rows.length > 0;
+
+  const values = imageUrls.map(() => `(?, ?, ?, ?, ?)`).join(", ");
+  const args: unknown[] = [];
+  imageUrls.forEach((url, i) => {
+    // First image of the batch becomes the cover when the account has none,
+    // so a bulk upload never leaves an account with no photo.
+    const isCover = !hasCover && i === 0 ? 1 : 0;
+    args.push(accountId, url, maxSort + i, isCover, stamp);
+  });
+
+  const insert = await db.execute({
+    sql: `INSERT INTO fleet_account_images (account_id, image_url, sort_order, is_cover, uploaded_at)
+          VALUES ${values}`,
+    args,
+  });
+
+  const firstId = Number(insert.lastInsertRowid);
+  const inserted: NewAccountImage[] = imageUrls.map((url, i) => ({
+    id: firstId + i,
+    accountId,
+    imageUrl: url,
+    sortOrder: maxSort + i,
+    isCover: !hasCover && i === 0,
+    uploadedAt: stamp,
+  }));
 
   await logEvent(accountId, account.email, "image_added", `Added ${imageUrls.length} image(s) to account`, {
     count: { from: 0, to: imageUrls.length },
@@ -1208,7 +1223,10 @@ export async function listAccountImages(accountId: number): Promise<NewAccountIm
     accountId: row.account_id,
     imageUrl: row.image_url,
     sortOrder: row.sort_order,
-    isCover: row.is_cover === 1,
+    // getTursoDb() is the HTTP client: integer columns come back as strings
+    // ("1"), so a strict `=== 1` is always false for a real cover. Coerce
+    // like every other flag in this file.
+    isCover: Number(row.is_cover) === 1,
     uploadedAt: row.uploaded_at,
   }));
 }

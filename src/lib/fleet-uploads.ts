@@ -27,6 +27,14 @@ export function fleetContentTypeForFilename(filename: string): string {
   return "application/octet-stream";
 }
 
+/** Persist many image bytes in parallel. Each file is independent, so the
+ * round-trips overlap instead of stacking (30 files was ~118s serially). */
+export async function saveFleetUploads(
+  items: { filename: string; buffer: Buffer }[],
+): Promise<void> {
+  await Promise.all(items.map((i) => saveFleetUpload(i.filename, i.buffer)));
+}
+
 /** Persist image bytes. DB write is authoritative; disk write is best-effort. */
 export async function saveFleetUpload(filename: string, buffer: Buffer): Promise<void> {
   if (buffer.byteLength > MAX_BYTES) {

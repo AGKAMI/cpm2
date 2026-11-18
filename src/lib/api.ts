@@ -27,6 +27,22 @@ export type ErrorBody = {
  * Never leaks stack traces to the client.
  */
 export function errorPayload(err: unknown): { status: number; body: ErrorBody } {
+
+  // 83 call sites across 34 routes use the plain-object form
+  // `return fail({ status, body })`. errorPayload only understood ApiError
+  // and ZodError, so all of those fell through to the 500 branch below and
+  // logged "unexpected error" — a deliberate 400/404 became a 500.
+  if (
+    typeof err === "object" &&
+    err !== null &&
+    "status" in err &&
+    "body" in err &&
+    typeof (err as { status: unknown }).status === "number"
+  ) {
+    const shaped = err as { status: number; body: ErrorBody };
+    return shaped;
+  }
+
   if (err instanceof ApiError) {
     return {
       status: err.status,

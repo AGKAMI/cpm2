@@ -11,7 +11,7 @@ import {
   getAccount,
   listAccountImages,
 } from "@/lib/service-turso";
-import { saveFleetUpload } from "@/lib/fleet-uploads";
+import { fleetUploadsMaxBytes, saveFleetUploads } from "@/lib/fleet-uploads";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -56,7 +56,9 @@ export async function POST(
       });
     }
 
-    const imageUrls: string[] = [];
+    // Validate every file BEFORE writing any bytes — a rejected batch must
+    // not leave half its images stored.
+    const staged: { filename: string; buffer: Buffer }[] = [];
     for (const file of files) {
       if (!file.type.startsWith("image/")) {
         return fail({
@@ -75,12 +77,30 @@ export async function POST(
 
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
-      // DB-backed (see lib/fleet-uploads.ts) — the old disk write crashed with
-      // EROFS on serverless (read-only FS) and every upload 500'd.
-      await saveFleetUpload(filename, buffer);
-
-      imageUrls.push(`/api/accounts/${accountId}/images/${filename}`);
+      if (buffer.byteLength > fleetUploadsMaxBytes()) {
+        return fail({
+          status: 400,
+          body: {
+            error: {
+              code: "file_too_large",
+              message: `Image "${file.name}" is too large (max ${Math.round(
+                fleetUploadsMaxBytes() / 1048576,
+              )}MB).`,
+            },
+          },
+        });
+      }
+      staged.push({ filename, buffer });
     }
+
+    // DB-backed (see lib/fleet-uploads.ts) — the old disk write crashed with
+    // EROFS on serverless (read-only FS) and every upload 500'd. Written in
+    // parallel: the files are independent, so the round-trips overlap.
+    await saveFleetUploads(staged);
+
+    const imageUrls = staged.map(
+      (s) => `/api/accounts/${accountId}/images/${s.filename}`,
+    );
 
     const inserted = await addAccountImages(accountId, imageUrls, userId);
     return ok({ images: inserted }, 201);

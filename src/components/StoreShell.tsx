@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import { type ReactNode, useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/Button";
 import { Dock } from "@/components/ui/dock";
 import { LucideIcon } from "lucide-react";
 import { Home, Grid, List, ShoppingCart } from "lucide-react";
@@ -56,6 +57,7 @@ interface StoreShellProps {
 
 export function StoreShell({ children, dock }: StoreShellProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isOwner, setIsOwner] = useState<boolean | null>(null);
   const [profile, setProfile] = useState<{ photoUrl?: string; displayName?: string; username?: string } | null>(null);
@@ -261,7 +263,23 @@ export function StoreShell({ children, dock }: StoreShellProps) {
               />
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              {/* Quick dark/light switch — animated, persists via useTheme */}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => router.push("/")}
+                            aria-label="Back to app selection"
+                          >
+                            <svg
+                              className="h-4 w-4"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <path d="M19 12H5M12 19l-7-7 7-7" />
+                            </svg>
+                          </Button>
+                          {/* Quick dark/light switch — animated, persists via useTheme */}
               <button
                 type="button"
                 onClick={() => setThemeMode(themeMode === "night" ? "paper" : "night")}

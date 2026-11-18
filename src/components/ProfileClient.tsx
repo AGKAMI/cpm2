@@ -63,6 +63,20 @@ type ProfileClientProps = {
   initialTelegramUser?: TelegramUser | null;
 };
 
+// The app's policies — keys must match LEGAL_DOCS in src/app/legal/[doc]/page.tsx.
+// Shown inside the profile's Security tab so the rules of using the app are
+// findable from one place instead of only by direct URL.
+const POLICY_DOCS: Array<{ slug: string; title: string }> = [
+  { slug: "terms", title: "Terms & Conditions" },
+  { slug: "privacy", title: "Privacy Policy" },
+  { slug: "refund", title: "Refund Policy" },
+  { slug: "delivery", title: "Delivery Policy" },
+  { slug: "payment", title: "Payment Policy" },
+  { slug: "cancellation", title: "Cancellation Policy" },
+  { slug: "appointment", title: "Appointment Policy" },
+  { slug: "dispute", title: "Dispute Policy" },
+];
+
 export function ProfileClient({
   initialCustomer = null,
   initialTelegramUser = null,
@@ -687,8 +701,11 @@ export function ProfileClient({
         )}
       </section>
 
-      {/* Quick login for owner/admin — skip email/password */}
+      {/* Quick login for owner/admin — skip email/password.
+          Telegram-only: outside the app there's no initData to authenticate
+          with, so the button would just fail — hide it (user request). */}
       {!customer &&
+        isTelegramWebApp &&
         (adminRole ||
           (typeof window !== "undefined" &&
             localStorage.getItem("vanta_admin_session") === "true")) && (
@@ -732,8 +749,10 @@ export function ProfileClient({
           ))}
         </div>
       </div>
-      {/* ============ LOGGED-OUT LOGIN CARD ============ */}
-      {!customer && (
+      {/* ============ LOGGED-OUT LOGIN CARD ============
+          Account tab only — the other tabs are appearance/security and
+          shouldn't carry the auth form (user request). */}
+      {!customer && profileTab === "account" && (
         <section className="mb-8 px-4">
           <div className="space-y-3">
             <p className="text-xs text-muted-foreground">
@@ -1141,30 +1160,57 @@ export function ProfileClient({
         </section>
       )}
 
-      {/* ============ SECURITY TAB ============ */}
-      {customer && profileTab === "security" && (
+      {/* ============ SECURITY TAB ============
+          The policies of using the app live here (user request): this tab is
+          the home for account security AND the /legal doc links. Notifications
+          still need a signed-in customer; policies are public. */}
+      {profileTab === "security" && (
         <section className="mb-8 px-4">
-          <div className="panel rounded-[20px] p-5">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-4">
-              Notifications
-            </h3>
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-sm font-medium text-foreground">Telegram notifications</span>
-                <p className="text-[10px] text-ink-soft">Get order updates via Telegram bot</p>
+          {customer && (
+            <div className="panel rounded-[20px] p-5 mb-4">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-4">
+                Notifications
+              </h3>
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-sm font-medium text-foreground">Telegram notifications</span>
+                  <p className="text-[10px] text-ink-soft">Get order updates via Telegram bot</p>
+                </div>
+                <label className="switch">
+                  <input
+                    type="checkbox"
+                    checked={notificationsEnabled === true}
+                    onChange={toggleNotifications}
+                    disabled={notificationsSaving || notificationsEnabled === null}
+                    aria-pressed={notificationsEnabled === true}
+                    aria-label="Toggle Telegram notifications"
+                  />
+                  <span className="slider" />
+                </label>
               </div>
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  checked={notificationsEnabled === true}
-                  onChange={toggleNotifications}
-                  disabled={notificationsSaving || notificationsEnabled === null}
-                  aria-pressed={notificationsEnabled === true}
-                  aria-label="Toggle Telegram notifications"
-                />
-                <span className="slider" />
-              </label>
             </div>
+          )}
+
+          <div className="panel rounded-[20px] p-5">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-2">
+              Policies
+            </h3>
+            <p className="text-[10px] text-ink-soft mb-3">
+              The rules that apply when you use this app and buy from the store.
+            </p>
+            <ul className="flex flex-col">
+              {POLICY_DOCS.map((p) => (
+                <li key={p.slug}>
+                  <a
+                    href={`/legal/${p.slug}`}
+                    className="flex items-center justify-between gap-2 border-b border-border py-2.5 text-sm font-medium text-foreground hover:text-gold transition-colors"
+                  >
+                    <span>{p.title}</span>
+                    <span aria-hidden="true" className="text-ink-faint text-xs">→</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
       )}

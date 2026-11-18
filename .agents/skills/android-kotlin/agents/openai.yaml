@@ -1,0 +1,4 @@
+interface:
+  display_name: "Android Kotlin"
+  short_description: "Android development with Kotlin including activities…"
+  default_prompt: "Use $android-kotlin to help with my current task: Provides comprehensive guidance for Android development with Kotlin including activities, fragments, views, lifecycle, navigation, and Android app development."

@@ -34,22 +34,23 @@ export async function StoreHome({
     ...p,
     coverImage: coverMap.get(p.id) ?? null,
   }));
-  const featuredWithMedia = productsWithMedia.filter((p) => p.isFeatured && coverMap.has(p.id));
+  // A product with NO uploaded media must still appear — ProductCard renders a
+  // generated name thumbnail when coverImage is null, so filtering on
+  // coverMap.has(id) hid every media-less product from the whole storefront.
+  const featuredWithMedia = productsWithMedia.filter((p) => p.isFeatured);
 
   // Compute derived data on the server — sections are mutually exclusive so
   // each product appears at most once on the home page.
   const featuredIds = new Set(featuredWithMedia.map((p) => p.id));
-  const coverMapIds = new Set(allProducts.map((p) => p.id).filter((id) => coverMap.has(id)));
-  const hasCover = (p: VantaProduct) => coverMapIds.has(p.id);
   const arrivals = productsWithMedia
-    .filter((p: VantaProduct) => p.isNew && !p.isFeatured && hasCover(p))
+    .filter((p: VantaProduct) => p.isNew && !p.isFeatured)
     .slice(0, 8);
   const arrivalIds = new Set(arrivals.map((p) => p.id));
   const saleItems = productsWithMedia
-    .filter((p: VantaProduct) => p.isSale && !p.isFeatured && !p.isNew && hasCover(p))
+    .filter((p: VantaProduct) => p.isSale && !p.isFeatured && !p.isNew)
     .slice(0, 8);
   const rest = productsWithMedia.filter(
-    (p: VantaProduct) => !p.isFeatured && !p.isNew && !p.isSale && hasCover(p)
+    (p: VantaProduct) => !p.isFeatured && !p.isNew && !p.isSale
   );
 
   return (

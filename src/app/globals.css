@@ -1372,8 +1372,8 @@ html {
 .badge-limited { background: rgba(10,10,10,0.72); color: #e8c766; border: 1px solid rgba(232,199,102,0.55); backdrop-filter: blur(6px); }
 .badge-new { background: rgba(10,10,10,0.72); color: #fff; border: 1px solid rgba(255,255,255,0.3); backdrop-filter: blur(6px); }
 .badge-sale { background: #ef4444; color: #fff; }
-.badge-featured { background: #06b6d4; color: #fff; }
-.badge-promo { background: #f59e0b; color: #fff; }
+.badge-featured { background: #06b6d4; color: #06282e; }
+.badge-promo { background: #f59e0b; color: #17120a; }
 
 /* Stock indicator */
 .stock-indicator {

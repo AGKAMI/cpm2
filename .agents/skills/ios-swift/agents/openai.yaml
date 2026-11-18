@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ios Swift"
+  short_description: "iOS development with Swift including view controllers, views…"
+  default_prompt: "Use $ios-swift to help with my current task: Provides comprehensive guidance for iOS development with Swift including view controllers, views, navigation, lifecycle, and iOS app development."

@@ -9,6 +9,7 @@
  */
 
 import Image from "next/image";
+import { coverImageFromName } from "@/lib/image-fallback";
 import Link from "next/link";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
@@ -472,7 +473,16 @@ const ProductCard = React.memo(
                 style={{ objectFit: "cover" }}
               />
             ) : (
-              <div className="no-photo-svg"></div>
+              <div
+                className="no-photo-svg"
+                role="img"
+                aria-label={product.name}
+                style={{
+                  backgroundImage: `url("${coverImageFromName(product.name)}")`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }}
+              />
             )}
             <div className="vanta-card-badges">
               {product.stockQuantity === 0 && <span className="vanta-card-badge out">Out of stock</span>}

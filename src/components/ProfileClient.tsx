@@ -684,6 +684,11 @@ export function ProfileClient({
           </p>
         )}
         {customer && (
+          <p className="mt-2 inline-flex items-center gap-1 px-2 py-1 rounded-full border border-border bg-secondary text-[10px] text-ink-soft">
+            Logged in on {detectPlatform()}
+          </p>
+        )}
+        {customer && (
           <div className="mt-4">
             <Button variant="outline" size="sm" onClick={logout} disabled={saving}>
               {saving ? "Logging out…" : "Log out"}
@@ -716,28 +721,27 @@ export function ProfileClient({
       )}
 
       {/* ============ TAB BAR ============ */}
-      {customer && (
-        <div className="mb-5 px-4">
-          <div className="flex gap-1 border-b border-border">
-            {(["account", "appearance", "security"] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setProfileTab(t)}
-                aria-pressed={profileTab === t}
-                className={`shrink-0 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] border-b-2 -mb-px cursor-pointer transition-colors ${
-                  profileTab === t
-                    ? "border-gold text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
+      {/* Appearance/security tabs must be reachable when signed out too -
+          gating the bar on `customer` hid the theme switcher entirely. */}
+      <div className="mb-5 px-4">
+        <div className="flex gap-1 border-b border-border">
+          {(["account", "appearance", "security"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setProfileTab(t)}
+              aria-pressed={profileTab === t}
+              className={`shrink-0 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] border-b-2 -mb-px cursor-pointer transition-colors ${
+                profileTab === t
+                  ? "border-gold text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
         </div>
-      )}
-
+      </div>
       {/* ============ LOGGED-OUT LOGIN CARD ============ */}
       {!customer && (
         <section className="mb-8 px-4">
@@ -1139,7 +1143,7 @@ export function ProfileClient({
       )}
 
       {/* ============ SECURITY TAB ============ */}
-      {profileTab === "security" && (
+      {customer && profileTab === "security" && (
         <section className="mb-8 px-4">
           <div className="panel rounded-[20px] p-5">
             <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-4">

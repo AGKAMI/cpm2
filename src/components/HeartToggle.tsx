@@ -54,12 +54,15 @@ export function HeartToggle({ productId }: { productId: number }) {
       // from React's Link handler too.
       e.preventDefault();
       e.stopPropagation();
-      setIsWishlisted((prev) => {
-        toggleWishlist(productId, !prev);
-        return !prev;
-      });
+      // The side effect must not live inside the setState updater: React
+      // may invoke updaters twice (StrictMode), which toggled the wishlist
+      // twice and netted to nothing - the click looked dead. Compute next,
+      // set it, then toggle once.
+      const next = !isWishlisted;
+      setIsWishlisted(next);
+      toggleWishlist(productId, next);
     },
-    [productId],
+    [productId, isWishlisted],
   );
 
   return (

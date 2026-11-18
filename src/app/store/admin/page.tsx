@@ -811,7 +811,10 @@ export default function AdminPage() {
                         setError(null);
                       }}
                     >
-                      &quot;Add Promotion&quot;
+                      <span className="inline-flex items-center gap-1.5">
+                        <PlusCircleIcon className="w-4 h-4" />
+                        Add Promotion
+                      </span>
                     </Button>
                   </div>
 
@@ -1014,7 +1017,7 @@ export default function AdminPage() {
 
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 auto-rows-fr">
                 {promotions.length === 0 ? (
-                  <span className="text-xs text-muted-foreground">No promotions yet. Click &quot;Add Promotion&quot; to create one.</span>
+                  <span className="text-xs text-muted-foreground">No promotions yet. Click Add Promotion to create one.</span>
                 ) : (
                   promotions.map((p) => (
                     <div
@@ -1286,7 +1289,7 @@ export default function AdminPage() {
                   </div>
                 ) : (
                   <div className="absolute z-20 mt-1 w-full border border-border rounded-md bg-background px-3 py-2 text-sm text-muted-foreground">
-                    No car in the CPM2 catalog matches &quot;{carQuery}&quot;.
+                    No car in the CPM2 catalog matches {carQuery}.
                   </div>
                 ))}
               </div>
@@ -1428,7 +1431,7 @@ export default function AdminPage() {
                 onChange={(e) => handleChange("isNew", e.target.checked)}
               />
               <div className="checkmark"></div>
-              <span className="text-base font-bold text-foreground">Show &quot;New&quot; badge</span>
+              <span className="text-base font-bold text-foreground">New badge</span>
             </label>
           </Field>
           <Field label="Sale">
@@ -1439,7 +1442,7 @@ export default function AdminPage() {
                 onChange={(e) => handleChange("isSale", e.target.checked)}
               />
               <div className="checkmark"></div>
-              <span className="text-base font-bold text-foreground">Show &quot;Sale&quot; badge</span>
+              <span className="text-base font-bold text-foreground">Sale badge</span>
             </label>
           </Field>
           <Field label="Published">
@@ -1481,7 +1484,10 @@ export default function AdminPage() {
                                     size="sm"
                                     onClick={openProductForm}
                                   >
-                                    Add product
+                                    <span className="inline-flex items-center gap-1.5">
+                                      <PlusCircleIcon className="w-4 h-4" />
+                                      Add product
+                                    </span>
                                   </Button>
                                 </div>
                               </div>

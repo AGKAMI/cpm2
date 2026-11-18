@@ -192,9 +192,9 @@ export function CategoriesClient({
                   <input
                     id="mx"
                     type="range"
-                    min="1000"
-                    max="4000"
-                    step="50"
+                    min="0"
+                    max="2000"
+                    step="25"
                     value={max}
                     onChange={(e) => setMax(parseInt(e.target.value, 10))}
                     className="range-slider w-full h-[4px] rounded-[2px] bg-border appearance-none cursor-pointer"
@@ -248,7 +248,7 @@ export function CategoriesClient({
                       setExcl("all");
                       setAvail("all");
                       setPromo(false);
-                      setMax(4000);
+                      setMax(2000);
                       setQ("");
                     }}
                     className="btn btn-line sm flex-1 h-[38px] text-[11.5px] font-bold uppercase tracking-[0.18em] text-muted-foreground rounded-[12px] px-[14px] w-auto"

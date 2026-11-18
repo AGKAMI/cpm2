@@ -191,6 +191,14 @@ CREATE TABLE IF NOT EXISTS fleet_account_images (
 
 CREATE INDEX IF NOT EXISTS idx_fleet_account_images_account ON fleet_account_images (account_id);
 
+CREATE TABLE IF NOT EXISTS fleet_uploads (
+  filename     TEXT    PRIMARY KEY,
+  data_base64  TEXT    NOT NULL,
+  content_type TEXT    NOT NULL DEFAULT 'image/jpeg',
+  size_bytes   INTEGER NOT NULL DEFAULT 0,
+  created_at   TEXT    NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_account_cars_game
   ON account_cars (account_id, game);
 

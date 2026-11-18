@@ -1,7 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useSyncExternalStore } from "react";
-import { DEFAULT_PALETTE, isPaletteId, type PaletteId, type ThemeMode } from "@/lib/themes";
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
+import { usePathname } from "next/navigation";
+import {
+  DEFAULT_PALETTE,
+  FLEET_DEFAULT_PALETTE,
+  isPaletteId,
+  type PaletteId,
+  type ThemeMode,
+} from "@/lib/themes";
 
 export type ThemeName = ThemeMode;
 
@@ -12,15 +19,30 @@ type ThemeState = {
 
 const MODE_KEY = "cpm2:theme:v2";
 const PALETTE_KEY = "cpm2:palette:v1";
-const SERVER_STATE: ThemeState = { mode: "night", palette: DEFAULT_PALETTE };
+const SERVER_VANTA: ThemeState = { mode: "night", palette: DEFAULT_PALETTE };
+const SERVER_NEON: ThemeState = { mode: "night", palette: FLEET_DEFAULT_PALETTE };
 const listeners = new Set<() => void>();
 let cached: ThemeState | null = null;
 
+/** Fallback palette for the route on screen: /store keeps the house VANTA
+ *  identity, Fleet Ledger opens in Neon 2 TONE. Every useTheme() render
+ *  refreshes this so module-level readers (readState/write) agree with the
+ *  mounted route; a stored user choice always wins over either fallback. */
+let routeFallback: PaletteId = FLEET_DEFAULT_PALETTE;
+
+function fallbackFor(pathname: string | null): PaletteId {
+  return pathname?.startsWith("/store") ? DEFAULT_PALETTE : FLEET_DEFAULT_PALETTE;
+}
+
+function serverStateFor(fallback: PaletteId): ThemeState {
+  return fallback === DEFAULT_PALETTE ? SERVER_VANTA : SERVER_NEON;
+}
+
 function readState(): ThemeState {
-  if (typeof window === "undefined") return SERVER_STATE;
+  if (typeof window === "undefined") return serverStateFor(routeFallback);
   const mode: ThemeMode = window.localStorage.getItem(MODE_KEY) === "paper" ? "paper" : "night";
   const storedPalette = window.localStorage.getItem(PALETTE_KEY);
-  const palette = isPaletteId(storedPalette) ? storedPalette : DEFAULT_PALETTE;
+  const palette = isPaletteId(storedPalette) ? storedPalette : routeFallback;
   if (!cached || cached.mode !== mode || cached.palette !== palette) {
     cached = { mode, palette };
   }
@@ -49,7 +71,11 @@ function write(next: ThemeState) {
 }
 
 export function useTheme() {
-  const state = useSyncExternalStore(subscribe, readState, () => SERVER_STATE);
+  const pathname = usePathname();
+  const fallback = fallbackFor(pathname);
+  if (routeFallback !== fallback) routeFallback = fallback;
+
+  const state = useSyncExternalStore(subscribe, readState, () => serverStateFor(fallback));
 
   useEffect(() => {
     apply(state);

@@ -17,6 +17,7 @@ import { csvToRecords, escapeCsvValue, normalizeImportRow } from "./csv.ts";
 import { decryptSecret, encryptSecret } from "./crypto.ts";
 import { scryptHash, scryptCompare } from "./auth.ts";
 import { getTursoDb, type AccountRow, type EventRow, type UserRow } from "./db-turso.ts";
+import { deleteFleetUpload } from "./fleet-uploads.ts";
 import { computeFleetStats } from "./stats.ts";
 import type {
   AccountSummary,
@@ -1237,15 +1238,23 @@ export async function removeAccountImage(
     args: [imageId, accountId],
   });
 
-  // Try to delete the physical file from public/uploads/fleet/
-  try {
-    const filename = imageUrl.split("/").pop();
-    if (filename) {
-      await unlink(join(process.cwd(), "public", "uploads", "fleet", filename));
+  // Delete the stored bytes (DB-backed storage) plus the local disk cache.
+    try {
+      const filename = imageUrl.split("/").pop();
+      if (filename) {
+        await deleteFleetUpload(filename);
+      }
+    } catch {
+      // Row may already be gone — ignore
     }
-  } catch {
-    // File may already be gone — ignore
-  }
+    try {
+      const filename = imageUrl.split("/").pop();
+      if (filename) {
+        await unlink(join(process.cwd(), "public", "uploads", "fleet", filename));
+      }
+    } catch {
+      // File may already be gone — ignore
+    }
 
   await logEvent(accountId, account.email, "image_removed", `Removed image from account`, {
     imageId: { from: imageId, to: null },

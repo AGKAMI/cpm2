@@ -11,8 +11,7 @@ import {
   getAccount,
   listAccountImages,
 } from "@/lib/service-turso";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
+import { saveFleetUpload } from "@/lib/fleet-uploads";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -57,9 +56,6 @@ export async function POST(
       });
     }
 
-    const uploadsDir = join(process.cwd(), "public", "uploads", "fleet");
-    await mkdir(uploadsDir, { recursive: true });
-
     const imageUrls: string[] = [];
     for (const file of files) {
       if (!file.type.startsWith("image/")) {
@@ -76,11 +72,12 @@ export async function POST(
 
       const ext = file.name.split(".").pop() ?? "jpg";
       const filename = `${crypto.randomUUID()}.${ext}`;
-      const filepath = join(uploadsDir, filename);
 
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
-      await writeFile(filepath, buffer);
+      // DB-backed (see lib/fleet-uploads.ts) — the old disk write crashed with
+      // EROFS on serverless (read-only FS) and every upload 500'd.
+      await saveFleetUpload(filename, buffer);
 
       imageUrls.push(`/api/accounts/${accountId}/images/${filename}`);
     }

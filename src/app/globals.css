@@ -1651,6 +1651,7 @@ html {
 }
 .vanta-card-subtitle {
   font-size: 10px;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--muted-foreground);

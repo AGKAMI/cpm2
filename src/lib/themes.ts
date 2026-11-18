@@ -32,6 +32,10 @@ export type Palette = {
 
 export const DEFAULT_PALETTE: PaletteId = "vanta";
 
+/** Fleet Ledger (everything outside /store) opens in Neon 2 TONE — see
+ *  src/app/layout.tsx themeScript and useTheme's per-route fallback. */
+export const FLEET_DEFAULT_PALETTE: PaletteId = "neon";
+
 /** Neutral surfaces shared by every palette. Keep in sync with globals.css. */
 export const PALETTE_BASE: Record<ThemeMode, { bg: string; surface: string; ink: string }> = {
   night: { bg: "#070707", surface: "#09090a", ink: "#f4efe4" },

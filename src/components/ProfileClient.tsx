@@ -622,7 +622,8 @@ export function ProfileClient({
       <section className="mb-5 px-4">
         <div className="flex items-center gap-4">
           <div className="relative shrink-0">
-            <div className="h-20 w-20 rounded-full overflow-hidden border-4 border-gold bg-secondary">
+            <div className="h-20 w-20 rounded-full p-[3px] metallic-silver">
+              <div className="h-full w-full rounded-full overflow-hidden bg-secondary">
               {photoUrl ? (
                 <Image
                   src={photoUrl}
@@ -642,6 +643,7 @@ export function ProfileClient({
                   {displayName.charAt(0).toUpperCase()}
                 </div>
               )}
+            </div>
             </div>
             {customer && (
               <span
@@ -784,9 +786,11 @@ export function ProfileClient({
             >
               {createBusy ? "Working…" : "Create account"}
             </Button>
-            <p className="text-[10px] text-ink-faint text-center">
-              Inside Telegram? Open the store in the app to link automatically — or log in here and link your Telegram ID after.
-            </p>
+            {isTelegramWebApp && (
+              <p className="text-[10px] text-ink-faint text-center">
+                Inside Telegram? Open the store in the app to link automatically — or log in here and link your Telegram ID after.
+              </p>
+            )}
           </div>
         </section>
       )}
@@ -1069,7 +1073,7 @@ export function ProfileClient({
 
             {!showCredentials ? (
               <Button
-                variant="outline"
+                variant="primary"
                 onClick={() => setShowCredentials(true)}
                 className="w-full"
                 disabled={saving}
@@ -1117,6 +1121,16 @@ export function ProfileClient({
               </form>
             )}
           </div>
+          <div className="mt-5 pt-4 border-t border-border">
+            <Button
+              variant="outline"
+              onClick={logout}
+              disabled={saving}
+              className="w-full border-destructive/60 text-destructive hover:bg-destructive/10"
+            >
+              {saving ? "Logging out…" : "Log out"}
+            </Button>
+          </div>
         </section>
       )}
 
@@ -1155,7 +1169,7 @@ export function ProfileClient({
         </section>
       )}
 
-      {/* Log out lives in the profile header (all tabs) */}
+      {/* Log out sits at the bottom of the account tab */}
     </StoreShell>
   );
 }

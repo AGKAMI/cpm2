@@ -8,9 +8,10 @@
 import { fail, ok } from "@/lib/route";
 import { currentUserId } from "@/lib/auth";
 import { parseId } from "@/lib/http";
-import { readFile, unlink } from "fs/promises";
+import { readFile } from "fs/promises";
 import { existsSync } from "fs";
 import { join } from "path";
+import { getFleetUpload } from "@/lib/fleet-uploads";
 import {
   listAccountImages,
   removeAccountImage,
@@ -62,6 +63,20 @@ export async function GET(
         });
       }
 
+      // DB-backed copy first — serverless deploys have a read-only FS and
+      // never wrote the file to disk in the first place.
+      const stored = await getFleetUpload(filename);
+      if (stored) {
+        return new Response(new Uint8Array(stored.buffer), {
+          status: 200,
+          headers: {
+            "Content-Type": stored.contentType,
+            "Cache-Control": "public, max-age=31536000, immutable",
+          },
+        });
+      }
+
+      // Fallback: files committed to git (public/uploads/fleet) and local dev writes.
       const filepath = join(process.cwd(), "public", "uploads", "fleet", filename);
       if (!existsSync(filepath)) {
         return fail({

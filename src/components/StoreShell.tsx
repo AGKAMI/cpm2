@@ -11,6 +11,7 @@ import { Home, Grid, List, ShoppingCart } from "lucide-react";
 
 import { NotificationBell } from "@/components/NotificationBell";
 import { vantaApi } from "@/lib/store/client";
+import { useTheme } from "@/hooks/useTheme";
 import { cartCountLocal, loadServerCart, subscribeCart } from "@/lib/store/cart-client";
 import { AdminIcon } from "@/components/ui/admin-icon";
 import { OwnerIcon } from "@/components/ui/owner-icon";
@@ -63,6 +64,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
   const [customerLoggedIn, setCustomerLoggedIn] = useState<boolean>(false);
   const [loaded, setLoaded] = useState<boolean>(true);
   const [cartCount, setCartCount] = useState<number>(0);
+  const { mode: themeMode, setMode: setThemeMode } = useTheme();
 
   // localStorage must NEVER be read during render: the server can't see it,
   // so an admin's first client render computed a different dock than the SSR
@@ -254,7 +256,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
               <Image
                 src={VANTA_LOCKUP}
                 alt="Vanta Garage"
-                className="h-auto w-full max-w-[512px] sm:h-24 sm:w-auto"
+                className="h-auto w-full max-w-[190px] sm:h-10 sm:max-w-[240px] sm:w-auto"
                 width={512}
                 height={272}
                 style={{ objectFit: "contain" }}
@@ -277,6 +279,22 @@ export function StoreShell({ children, dock }: StoreShellProps) {
                   <path d="M19 12H5M12 19l-7-7 7-7" />
                 </svg>
               </Button>
+              {/* Quick dark/light switch — animated, persists via useTheme */}
+              <button
+                type="button"
+                onClick={() => setThemeMode(themeMode === "night" ? "paper" : "night")}
+                aria-pressed={themeMode === "paper"}
+                aria-label={themeMode === "night" ? "Switch to daylight" : "Switch to midnight"}
+                className="relative h-9 w-16 rounded-full border border-border bg-secondary p-1 cursor-pointer transition-colors duration-200 hover:border-gold"
+              >
+                <span
+                  className={`absolute top-1 h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-bold shadow-md transition-all duration-300 ease-out ${
+                    themeMode === "night" ? "left-1 metallic-indigo text-white" : "left-8 metallic-gold text-black"
+                  }`}
+                >
+                  {themeMode === "night" ? "☽" : "☀"}
+                </span>
+              </button>
               <NotificationBell />
             </div>
           </div>

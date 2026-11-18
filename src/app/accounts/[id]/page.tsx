@@ -96,30 +96,64 @@ export default function AccountPage() {
     if (account) fetchImages();
   }, [account, id]);
 
-  const handleUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      for (let i = 0; i < files.length; i += 1) {
-        formData.append("files", files[i]);
-      }
-      const res = await fetch(`/api/accounts/${id}/images`, {
-        method: "POST",
-        body: formData,
+  // Phone-camera photos are 5-10MB each: raw, one request blew past the
+    // serverless body cap (and died on the read-only FS). Downscale to a
+    // max-1600px JPEG (~200-400KB) and upload in small batches.
+    const compressFile = (file: File): Promise<File> => {
+      return new Promise((resolve) => {
+        if (typeof createImageBitmap !== "function") return resolve(file);
+        createImageBitmap(file)
+          .then(async (bitmap) => {
+            const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+            const canvas = document.createElement("canvas");
+            canvas.width = Math.round(bitmap.width * scale);
+            canvas.height = Math.round(bitmap.height * scale);
+            const ctx = canvas.getContext("2d");
+            if (!ctx) return resolve(file);
+            ctx.drawImage(bitmap, 0, 0);
+            bitmap.close();
+            canvas.toBlob(
+              (blob) => {
+                if (!blob || blob.size >= file.size) return resolve(file);
+                resolve(new File([blob], file.name.replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" }));
+              },
+              "image/jpeg",
+              0.85,
+            );
+          })
+          .catch(() => resolve(file));
       });
-      if (res.ok) {
+    };
+
+    const handleUpload = async (files: FileList | null) => {
+      if (!files || files.length === 0) return;
+      setUploading(true);
+      const BATCH = 8;
+      try {
+        const compressed: File[] = [];
+        for (let i = 0; i < files.length; i += 1) {
+          compressed.push(await compressFile(files[i]));
+        }
+        for (let start = 0; start < compressed.length; start += BATCH) {
+          const chunk = compressed.slice(start, start + BATCH);
+          const formData = new FormData();
+          for (const file of chunk) formData.append("files", file);
+          const res = await fetch(`/api/accounts/${id}/images`, {
+            method: "POST",
+            body: formData,
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            toast.error("Upload failed", err.error?.message || `Could not upload images (batch ${start / BATCH + 1}).`);
+          }
+        }
         await fetchImages();
-      } else {
-        const err = await res.json();
-        toast.error("Upload failed", err.error?.message || "Could not upload images.");
+      } catch {
+        toast.error("Upload failed", "Something went wrong uploading images.");
+      } finally {
+        setUploading(false);
       }
-    } catch {
-      toast.error("Upload failed", "Something went wrong uploading images.");
-    } finally {
-      setUploading(false);
-    }
-  };
+    };
 
   const handleDelete = async (imageId: number) => {
     try {

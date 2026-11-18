@@ -37,12 +37,12 @@ export async function saveUpload(filename: string, buffer: Buffer): Promise<void
   }
   const db = await getStoreDb();
   await db.execute({
-    sql: `INSERT INTO vanta_uploads (filename, data_base64, content_type, bytes, created_at)
+    sql: `INSERT INTO vanta_uploads (filename, data_base64, content_type, size_bytes, created_at)
           VALUES (?, ?, ?, ?, ?)
           ON CONFLICT(filename) DO UPDATE SET
             data_base64 = excluded.data_base64,
             content_type = excluded.content_type,
-            bytes = excluded.bytes,
+            size_bytes = excluded.size_bytes,
             created_at = excluded.created_at`,
     args: [
       filename,

@@ -331,7 +331,7 @@ CREATE TABLE IF NOT EXISTS vanta_uploads (
   filename     TEXT    PRIMARY KEY,
   data_base64  TEXT    NOT NULL,
   content_type TEXT    NOT NULL DEFAULT 'image/jpeg',
-  bytes        INTEGER NOT NULL DEFAULT 0,
+  size_bytes   INTEGER NOT NULL DEFAULT 0,
   created_at   TEXT    NOT NULL
 );
 `;

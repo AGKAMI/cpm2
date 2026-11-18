@@ -667,7 +667,7 @@ export function ProfileClient({
                 <h1 className="text-xl font-bold text-foreground tracking-tight truncate">
                   {displayName}
                 </h1>
-                <p className="text-xs text-ink-soft font-mono mt-0.5">ID {tgId ?? "—"}</p>
+                <p className="text-xs text-ink-soft font-mono mt-0.5">Telegram ID {tgId ?? "—"}</p>
               </>
             ) : (
               <h1 className="text-xl font-bold text-foreground tracking-tight">Signed out</h1>
@@ -682,18 +682,6 @@ export function ProfileClient({
               year: "numeric",
             })}
           </p>
-        )}
-        {customer && (
-          <p className="mt-2 inline-flex items-center gap-1 px-2 py-1 rounded-full border border-border bg-secondary text-[10px] text-ink-soft">
-            Logged in on {detectPlatform()}
-          </p>
-        )}
-        {customer && (
-          <div className="mt-4">
-            <Button variant="outline" size="sm" onClick={logout} disabled={saving}>
-              {saving ? "Logging out…" : "Log out"}
-            </Button>
-          </div>
         )}
       </section>
 
@@ -745,9 +733,6 @@ export function ProfileClient({
       {/* ============ LOGGED-OUT LOGIN CARD ============ */}
       {!customer && (
         <section className="mb-8 px-4">
-          <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-4">
-            Account
-          </h3>
           <div className="space-y-3">
             <p className="text-xs text-muted-foreground">
               Log in to see your orders and delivery history.

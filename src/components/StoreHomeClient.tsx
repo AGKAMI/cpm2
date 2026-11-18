@@ -11,7 +11,7 @@
 import Image from "next/image";
 import { coverImageFromName } from "@/lib/image-fallback";
 import Link from "next/link";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   formatPrice,
   type VantaCategory,
@@ -25,12 +25,12 @@ import { Button } from "@/components/ui/Button";
 import { CartPlusIcon } from "@/components/ui/icons";
 
 export function StoreHomeClient({
-  featured,
-  allProducts,
+  featured: featuredRaw,
+  allProducts: allProductsRaw,
   categories,
   promotions,
-  newArrivals,
-  onSale,
+  newArrivals: newArrivalsRaw,
+  onSale: onSaleRaw,
 }: {
   featured: VantaProduct[];
   allProducts: VantaProduct[];
@@ -46,12 +46,30 @@ export function StoreHomeClient({
   // (featured / allProducts / new arrivals / on sale) so every card gets covers.
   const coverMap: Record<number, string> = useMemo(() => {
       const map: Record<number, string> = {};
-      for (const p of [...featured, ...allProducts, ...newArrivals, ...onSale]) {
+      for (const p of [...featuredRaw, ...allProductsRaw, ...newArrivalsRaw, ...onSaleRaw]) {
         const cover = (p as { coverImage?: string }).coverImage;
         if (cover) map[p.id] = cover;
       }
       return map;
-    }, [featured, allProducts, newArrivals, onSale]);
+    }, [featuredRaw, allProductsRaw, newArrivalsRaw, onSaleRaw]);
+
+  // Covers that 404 at load land here — a broken image hides the product too.
+  const [brokenCovers, setBrokenCovers] = useState<Set<number>>(new Set());
+  const markCoverBroken = useCallback((id: number) => {
+    setBrokenCovers((prev) => new Set(prev).add(id));
+  }, []);
+
+  // User rule: a product with no renderable image is never shown. Filter
+  // every section once here so hero counts, carousel dots and grids all
+  // agree on the same list.
+  const hasCover = useCallback(
+    (p: VantaProduct) => Boolean(coverMap[p.id] ?? p.imageUrl) && !brokenCovers.has(p.id),
+    [coverMap, brokenCovers],
+  );
+  const featured = useMemo(() => featuredRaw.filter(hasCover), [featuredRaw, hasCover]);
+  const allProducts = useMemo(() => allProductsRaw.filter(hasCover), [allProductsRaw, hasCover]);
+  const newArrivals = useMemo(() => newArrivalsRaw.filter(hasCover), [newArrivalsRaw, hasCover]);
+  const onSale = useMemo(() => onSaleRaw.filter(hasCover), [onSaleRaw, hasCover]);
 
   // Track which carousel item is currently visible via scroll position.
   // scroll-snap carousels align items to the start, so scrollLeft / step
@@ -509,20 +527,7 @@ const ProductCard = React.memo(
                   <span className="vanta-card-price">
                     {formatPrice(product.basePriceCents, product.currency)}
                   </span>
-                  {variant === "standard" && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        void addToCartLocal(product.id, 1);
-                      }}
-                      className="cart-add-btn flex h-8 w-8 items-center justify-center rounded-lg border border-input bg-background text-foreground hover:bg-secondary transition-colors cursor-pointer active:scale-95"
-                      aria-label={`Add ${product.name} to cart`}
-                    >
-                      <CartPlusIcon className="w-5 h-5" />
-                    </button>
-                  )}
+                  {variant === "standard" && <CartAddButton product={product} />}
                 </div>
                 {product.stockQuantity > 0 && (
                   <AddToCartMini productId={product.id} />
@@ -672,5 +677,55 @@ function AddToCartMini({ productId }: { productId: number }) {
         <CartPlusIcon className="w-4 h-4" />
       )}
     </Button>
+  );
+}
+
+/**
+ * Card cart button — pressing it expands into an "ADDED TO CART" pill,
+ * then collapses back to the cart icon after a beat (user's entry-38 spec).
+ * Sits inside the card's <Link>, so stop the click from navigating.
+ */
+function CartAddButton({ product }: { product: VantaProduct }) {
+  const [added, setAdded] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  const handleAdd = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (timerRef.current) clearTimeout(timerRef.current);
+    addToCartLocal(product.id, 1);
+    setAdded(true);
+    timerRef.current = setTimeout(() => {
+      setAdded(false);
+      timerRef.current = null;
+    }, 1800);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleAdd}
+      className={`cart-add-btn flex h-8 items-center justify-center overflow-hidden rounded-lg border border-input bg-background text-foreground transition-[width] duration-300 ease-out hover:bg-secondary cursor-pointer active:scale-95 ${
+        added ? "is-added w-[136px]" : "w-8"
+      }`}
+      aria-label={added ? "Added to cart" : `Add ${product.name} to cart`}
+      aria-live="polite"
+    >
+      <span className={`cart-add-icon flex shrink-0 items-center justify-center ${added ? "opacity-0" : "opacity-100"}`}>
+        <CartPlusIcon className="w-5 h-5" />
+      </span>
+      <span
+        className={`cart-add-label ${added ? "opacity-100 scale-100" : "opacity-0 scale-90"}`}
+        aria-hidden={!added}
+      >
+        Added to cart
+      </span>
+    </button>
   );
 }

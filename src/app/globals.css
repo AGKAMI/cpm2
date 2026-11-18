@@ -178,21 +178,15 @@
     inset 0 -1px 0 rgba(0, 0, 0, 0.28);
 }
 
-/* Metallic indigo fill — admin counterpart to .metallic-gold */
+/* Theme toggle knob — simple solid, not metallic */
 .metallic-indigo {
-  background: linear-gradient(
-    105deg,
-    #c7d2fe 0%,
-    #6366f1 20%,
-    #312e81 38%,
-    #a5b4fc 50%,
-    #6366f1 66%,
-    #312e81 84%,
-    #c7d2fe 100%
-  );
+  background: var(--brand-gold);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.45),
     inset 0 -1px 0 rgba(0, 0, 0, 0.35);
+}
+[data-theme="paper"] .metallic-indigo {
+  background: var(--brand-gold-deep);
 }
 
 /* Metallic silver fill — customer counterpart, brushed steel (dark-friendly) */
@@ -2240,16 +2234,19 @@ html {
   animation: app-card-shine 3.5s linear infinite;
 }
 
-/* Dock active pill — brushed metallic gold with moving glare (VANTA store only) */
-[data-palette="vanta"] .dock-active {
-  background: linear-gradient(135deg, #f6e3a0 0%, #d4af4f 45%, #9b7a2a 100%) !important;
+/* Dock active pill — brushed metallic with moving glare. Uncscoped on
+   purpose: every palette resolves the gradient through its own
+   --brand-gold-light/-/-deep, so the active tab is metallic everywhere. */
+.dock-active {
+  background: linear-gradient(135deg, var(--brand-gold-light) 0%, var(--brand-gold) 45%, var(--brand-gold-deep) 100%) !important;
+  color: #14100a !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.55),
     inset 0 -1px 0 rgba(0, 0, 0, 0.28);
   position: relative;
   overflow: hidden;
 }
-[data-palette="vanta"] .dock-active::after {
+.dock-active::after {
   content: "";
   position: absolute;
   top: 0;

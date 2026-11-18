@@ -2582,8 +2582,8 @@ html {
   inset: 0;
   border-radius: 9999px;
   background: var(--background);
-  border: 1.5px solid #d4af4f;
-  color: #d4af4f;
+  border: 1.5px solid var(--brand-gold);
+  color: var(--brand-gold);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -2596,7 +2596,7 @@ html {
   position: absolute;
   inset: 0;
   border-radius: 9999px;
-  background: #d4af4f;
+  background: var(--brand-gold);
   opacity: 0;
   transition: opacity 0.5s;
 }
@@ -2608,7 +2608,7 @@ html {
   width: 100%;
   height: 100%;
   border-radius: 9999px;
-  background: #d4af4f;
+  background: var(--brand-gold);
   filter: blur(15px);
   z-index: -1;
   opacity: 0;
@@ -2619,7 +2619,7 @@ html {
 .heart-fav:hover,
 .heart-fav:focus-visible {
   width: 150px;
-  box-shadow: 0 10px 25px rgba(212, 175, 79, 0.35);
+  box-shadow: 0 10px 25px color-mix(in srgb, var(--brand-gold) 35%, transparent);
   border-color: #ff69b4;
   background: #ff69b4;
   color: #fff;
@@ -2644,7 +2644,7 @@ html {
   transition-delay: 0.25s;
 }
 .heart-fav .heart-outline {
-  color: #d4af4f;
+  color: var(--brand-gold);
 }
 .heart-fav .heart-filled {
   color: #ff69b4;
@@ -2671,6 +2671,197 @@ html {
 .heart-fav:focus-visible .heart-title {
   transform: scale(1);
   transition-delay: 0.25s;
+}
+
+/* ============ VANTA auth form (profile — logged out) ============
+   Port of the user's styled-components reference; this project has no
+   styled-components, so the styles live here under a vanta-auth-* prefix.
+   The card paints its own black background, so the design holds on every
+   page theme. z-index: 0 makes the card a stacking context — without it
+   the negative-z frames escape to the root context and get painted over
+   by section backgrounds. max-width keeps the hover-grow (105%) inside
+   the card padding so it can never cause horizontal overflow. */
+.vanta-auth {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+.vanta-auth-card {
+  position: relative;
+  z-index: 0;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  display: grid;
+  place-items: center;
+  gap: 1.75rem;
+  border: 1px solid transparent;
+  border-image: linear-gradient(transparent, #ffe0a6, transparent) 1;
+  border-width: 0 2px 0 2px;
+  background-color: #000;
+  background-image:
+    radial-gradient(100% 61.73% at 100% 50%, rgba(255, 224, 166, 0.05) 0%, transparent 100%),
+    radial-gradient(91.09% 56.23% at 0% 50%, rgba(255, 224, 166, 0.05) 0%, transparent 100%);
+}
+.vanta-auth-card::before,
+.vanta-auth-card::after {
+  content: "";
+  position: absolute;
+  border: 1px solid transparent;
+  border-image: linear-gradient(transparent, #ffe0a6, transparent) 1;
+  border-width: 0 2px 0 2px;
+  z-index: -1;
+  pointer-events: none;
+}
+.vanta-auth-card::before {
+  inset: -0.75rem;
+  opacity: 0.15;
+}
+.vanta-auth-card::after {
+  inset: -1rem;
+  opacity: 0.05;
+}
+.vanta-auth-title {
+  font-size: clamp(1.4rem, 6vw, 2rem);
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 1rem;
+  text-transform: uppercase;
+  background: linear-gradient(rgb(170, 170, 170), rgb(78, 78, 78));
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.vanta-auth-field {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background: radial-gradient(
+    47.3% 73.08% at 50% 94.23%,
+    rgba(255, 255, 255, 0.1) 5%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  border: 1px solid transparent;
+  border-image: radial-gradient(circle, rgba(255, 255, 255, 0.445) 0%, rgba(0, 0, 0, 0) 100%) 1;
+  border-width: 0 0 1px 0;
+}
+.vanta-auth-field svg {
+  stroke: grey;
+  flex: 0 0 auto;
+}
+.vanta-auth-field svg g {
+  transition: all 0.2s ease-in-out;
+}
+.vanta-auth-input {
+  background: none;
+  border: none;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  color: #fff;
+  font-size: 0.95rem;
+}
+.vanta-auth-input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+.vanta-auth-input:focus {
+  outline: none;
+  color: #ffe0a6;
+}
+.vanta-auth-field:focus-within {
+  background: radial-gradient(
+    47.3% 73.08% at 50% 94.23%,
+    rgba(255, 224, 166, 0.1) 5%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  border-image: radial-gradient(circle, #ffe0a6 0%, transparent 100%) 1;
+}
+.vanta-auth-field:focus-within svg g {
+  stroke: #ffe0a6;
+}
+.vanta-auth-submit {
+  width: 100%;
+  position: relative;
+  transition: all 0.2s ease-in-out;
+}
+.vanta-auth-submit-input {
+  cursor: pointer;
+  padding: 1rem;
+  width: 100%;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-align: center;
+  color: #ffe0a6;
+  background:
+    radial-gradient(100% 45% at 100% 50%, rgba(255, 224, 166, 0.084) 0%, rgba(115, 115, 115, 0) 100%),
+    radial-gradient(100% 45% at 0% 50%, rgba(255, 224, 166, 0.084) 0%, rgba(115, 115, 115, 0) 100%);
+  border: 1px solid transparent;
+  border-image: linear-gradient(transparent, #ffe0a6, transparent) 1;
+  border-width: 0 1px 0 1px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.vanta-auth-submit-input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.vanta-auth-submit::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(0deg, rgba(255, 255, 255, 0.376) 0.5px, transparent 0.5px);
+  background-size: 0.1px 3px;
+  mix-blend-mode: soft-light;
+  -webkit-mask-image: radial-gradient(40% 45% at 100% 50%, white 0%, transparent 100%),
+    radial-gradient(40% 45% at 0% 50%, white 0%, transparent 100%);
+  mask-image: radial-gradient(40% 45% at 100% 50%, white 0%, transparent 100%),
+    radial-gradient(40% 45% at 0% 50%, white 0%, transparent 100%);
+}
+.vanta-auth-submit:has(input:not(:disabled)):hover {
+  animation: vanta-auth-flicker 0.5s infinite;
+  width: 105%;
+}
+.vanta-auth-submit:has(input:not(:disabled)):active {
+  width: 95%;
+}
+.vanta-auth-texture {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(0deg, #ffffff 1px, transparent 1px);
+  background-size: 1px 5px;
+  mix-blend-mode: soft-light;
+  -webkit-mask-image: radial-gradient(30% 45% at 100% 50%, white 0%, transparent 100%),
+    radial-gradient(30% 45% at 0% 50%, white 0%, transparent 100%);
+  mask-image: radial-gradient(30% 45% at 100% 50%, white 0%, transparent 100%),
+    radial-gradient(30% 45% at 0% 50%, white 0%, transparent 100%);
+  animation: vanta-auth-moving-lines 1s linear infinite;
+}
+@keyframes vanta-auth-flicker {
+  0% { filter: brightness(100%); }
+  10% { filter: brightness(80%); }
+  20% { filter: brightness(120%); }
+  30% { filter: brightness(90%); }
+  40% { filter: brightness(110%); }
+  50% { filter: brightness(100%); }
+  60% { filter: brightness(85%); }
+  70% { filter: brightness(95%); }
+  80% { filter: brightness(105%); }
+  90% { filter: brightness(115%); }
+  100% { filter: brightness(100%); }
+}
+@keyframes vanta-auth-moving-lines {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 5px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vanta-auth-texture,
+  .vanta-auth-submit:has(input:not(:disabled)):hover {
+    animation: none;
+  }
 }
 
 /* Hide native number-input spinners — steppers use custom +/- buttons */

@@ -546,6 +546,8 @@ export function ProfileClient({
   );
   const [authPassword, setAuthPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  // null = the two entry buttons; the styled form renders once either is pressed.
+  const [authView, setAuthView] = useState<null | "login" | "create">(null);
   const [loginBusy, setLoginBusy] = useState(false);
   const [createBusy, setCreateBusy] = useState(false);
 
@@ -583,6 +585,7 @@ export function ProfileClient({
       }
       rememberEmail(emailVal);
       setAuthPassword("");
+      setAuthView(null);
       setSuccess(
         mode === "login"
           ? `Logged in on ${detectPlatform()}.`
@@ -749,68 +752,106 @@ export function ProfileClient({
           ))}
         </div>
       </div>
-      {/* ============ LOGGED-OUT LOGIN CARD ============
-          Account tab only — the other tabs are appearance/security and
-          shouldn't carry the auth form (user request). */}
+      {/* ============ LOGGED-OUT ENTRY ============
+          Account tab only. Two buttons — Log in / Create account — both open
+          the styled auth form (user request: the inline field card goes away). */}
       {!customer && profileTab === "account" && (
         <section className="mb-8 px-4">
-          <div className="space-y-3">
-            <p className="text-xs text-muted-foreground">
-              Log in to see your orders and delivery history.
-            </p>
-            <Field label="Email">
-              <TextInput
-                type="email"
-                name="email"
-                value={authEmail}
-                onChange={(e) => setAuthEmail(e.target.value)}
-                placeholder="you@example.com"
-                autoComplete="email"
-              />
-            </Field>
-            <Field label="Password">
-              <div className="relative">
-                <TextInput
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  value={authPassword}
-                  onChange={(e) => setAuthPassword(e.target.value)}
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-ink-soft hover:text-foreground"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? <HideIcon /> : <ShowIcon />}
-                </button>
-              </div>
-            </Field>
-            <Button
-              variant="primary"
-              className="w-full"
-              onClick={() => submitAuth("login")}
-              disabled={loginBusy || !authEmail.trim() || !authPassword}
-            >
-              {loginBusy ? "Working…" : "Log in"}
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => submitAuth("create")}
-              disabled={createBusy || !authEmail.trim() || !authPassword}
-            >
-              {createBusy ? "Working…" : "Create account"}
-            </Button>
-            {isTelegramWebApp && (
-              <p className="text-[10px] text-ink-faint text-center">
-                Inside Telegram? Open the store in the app to link automatically — or log in here and link your Telegram ID after.
-              </p>
-            )}
-          </div>
+          {!authView ? (
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button variant="primary" className="sm:flex-1" onClick={() => setAuthView("login")}>
+                Log in
+              </Button>
+              <Button variant="outline" className="sm:flex-1" onClick={() => setAuthView("create")}>
+                Create account
+              </Button>
+            </div>
+          ) : (
+            <div className="vanta-auth">
+              <form
+                className="vanta-auth-card"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void submitAuth(authView);
+                }}
+              >
+                <span className="vanta-auth-title">{authView === "login" ? "Login" : "Sign up"}</span>
+                <div className="vanta-auth-field">
+                  <svg width={24} height={24} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <defs>
+                      <linearGradient id="vanta-auth-grad-mail" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stopColor="black" />
+                        <stop offset="100%" stopColor="white" />
+                      </linearGradient>
+                    </defs>
+                    <g stroke="url(#vanta-auth-grad-mail)" fill="none" strokeWidth={1}>
+                      <path d="M21.6365 5H3L12.2275 12.3636L21.6365 5Z" />
+                      <path d="M16.5 11.5L22.5 6.5V17L16.5 11.5Z" />
+                      <path d="M8 11.5L2 6.5V17L8 11.5Z" />
+                      <path d="M9.5 12.5L2.81805 18.5002H21.6362L15 12.5L12 15L9.5 12.5Z" />
+                    </g>
+                  </svg>
+                  <input
+                    className="vanta-auth-input"
+                    type="email"
+                    name="email"
+                    value={authEmail}
+                    onChange={(e) => setAuthEmail(e.target.value)}
+                    placeholder="Email"
+                    autoComplete="email"
+                    aria-label="Email"
+                  />
+                </div>
+                <div className="vanta-auth-field">
+                  <svg width={24} height={24} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <defs>
+                      <linearGradient id="vanta-auth-grad-key" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stopColor="black" />
+                        <stop offset="100%" stopColor="white" />
+                      </linearGradient>
+                    </defs>
+                    <g stroke="url(#vanta-auth-grad-key)" fill="none" strokeWidth={1}>
+                      <path d="M3.5 15.5503L9.20029 9.85L12.3503 13L11.6 13.7503H10.25L9.8 15.1003L8 16.0003L7.55 18.2503L5.5 19.6003H3.5V15.5503Z" />
+                      <path d="M16 3.5H11L8.5 6L16 13.5L21 8.5L16 3.5Z" />
+                      <path d="M16 10.5L18 8.5L15 5.5H13L12 6.5L16 10.5Z" />
+                    </g>
+                  </svg>
+                  <input
+                    className="vanta-auth-input"
+                    type="password"
+                    name="password"
+                    value={authPassword}
+                    onChange={(e) => setAuthPassword(e.target.value)}
+                    placeholder="Password"
+                    autoComplete={authView === "login" ? "current-password" : "new-password"}
+                    aria-label="Password"
+                  />
+                </div>
+                <div className="vanta-auth-submit">
+                  <input
+                    className="vanta-auth-submit-input"
+                    type="submit"
+                    value={
+                      loginBusy || createBusy
+                        ? "Working…"
+                        : authView === "login"
+                          ? "Login"
+                          : "Create account"
+                    }
+                    disabled={loginBusy || createBusy || !authEmail.trim() || !authPassword}
+                  />
+                </div>
+                <div className="vanta-auth-texture" aria-hidden="true" />
+              </form>
+              <button
+                type="button"
+                onClick={() => setAuthView(null)}
+                className="mt-4 self-center cursor-pointer text-[11px] font-bold uppercase tracking-[0.18em] text-ink-soft transition-colors hover:text-foreground"
+              >
+                ← Back
+              </button>
+            </div>
+          )}
         </section>
       )}
 

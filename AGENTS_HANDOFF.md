@@ -797,4 +797,4 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 
 **Open (carried):** categories API garbled-binary response unexplained; `/accounts/[id]` 401/Turso errors; test rows 242/243 deletion pending user answer; prod cold-start 20-38s; PayFast keys pending approval email.
 
-**Gate:** tsc clean → tests 66/66 → build clean → 3001 restarted (prod build) → logo corners alpha=0 verified via canvas probe on /fleet header. Deploy hook pending.
+**Gate:** tsc clean → tests 66/66 → build clean → 3001 restarted (prod build) → logo corners alpha=0 verified via canvas probe on /fleet header. Committed `e3e16d0` (only cpm-logo.svg, client.ts, trade.ts, skills-lock.json, AGENTS_HANDOFF.md) → pushed → deploy job `IMAUkqohN9ynwqkigdGT` → PROD VERIFIED by content (served cpm-logo.svg has the circle, no white rect).

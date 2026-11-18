@@ -324,4 +324,14 @@ CREATE TABLE IF NOT EXISTS vanta_notifications (
 );
 CREATE INDEX IF NOT EXISTS idx_vanta_notifications_customer ON vanta_notifications (customer_id);
 CREATE INDEX IF NOT EXISTS idx_vanta_notifications_unread ON vanta_notifications (customer_id, is_read, created_at DESC);
+
+-- Uploaded admin images, stored in the DB so serverless deploys (read-only FS)
+-- can still serve them. Filename is the public URL key; bytes are base64.
+CREATE TABLE IF NOT EXISTS vanta_uploads (
+  filename     TEXT    PRIMARY KEY,
+  data_base64  TEXT    NOT NULL,
+  content_type TEXT    NOT NULL DEFAULT 'image/jpeg',
+  bytes        INTEGER NOT NULL DEFAULT 0,
+  created_at   TEXT    NOT NULL
+);
 `;

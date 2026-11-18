@@ -7,8 +7,7 @@
  */
 
 import { fail, ok, readJson } from "@/lib/route";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
+import { saveUpload } from "@/lib/store/uploads";
 import { requireStoreAdmin } from "@/lib/store/auth";
 import { getStoreDb } from "@/lib/store-db";
 import {
@@ -83,10 +82,10 @@ async function persistDataUrlImage(dataUrl: string): Promise<string> {
   if (!match) return dataUrl;
   const [, mime, base64] = match;
   const ext = mime.split("/")[1] === "jpeg" ? "jpg" : mime.split("/")[1];
-  const uploadsDir = join(process.cwd(), "public", "uploads");
-  await mkdir(uploadsDir, { recursive: true });
   const filename = `${crypto.randomUUID()}.${ext}`;
-  await writeFile(join(uploadsDir, filename), Buffer.from(base64, "base64"));
+  // DB-backed (see lib/store/uploads.ts) — the old disk write crashed with
+  // EROFS on serverless (read-only FS) and 500'd every create-with-image.
+  await saveUpload(filename, Buffer.from(base64, "base64"));
   return `/api/store/admin/uploads/${filename}`;
 }
 

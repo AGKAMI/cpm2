@@ -3,7 +3,8 @@
  * GET /api/store/admin/uploads/[filename] — serve an uploaded image file.
  */
 
-import { fail, ok } from "@/lib/route";
+import { fail } from "@/lib/route";
+import { getUpload } from "@/lib/store/uploads";
 import { readFile } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
@@ -16,6 +17,21 @@ export async function GET(
 ) {
   try {
     const { filename } = await params;
+
+    // DB-backed copy first — serverless deploys have a read-only FS and never
+    // wrote the file to disk in the first place.
+    const stored = await getUpload(filename);
+    if (stored) {
+      return new Response(new Uint8Array(stored.buffer), {
+        status: 200,
+        headers: {
+          "Content-Type": stored.contentType,
+          "Cache-Control": "public, max-age=31536000, immutable",
+        },
+      });
+    }
+
+    // Fallback: files committed to git (public/uploads) and local dev writes.
     const filepath = join(
       process.cwd(),
       "public",

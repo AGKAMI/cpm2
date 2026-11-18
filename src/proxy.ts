@@ -64,6 +64,11 @@ export async function proxy(request: NextRequest) {
   if (pathname.startsWith("/api/trade/rates") && request.method === "GET") {
     return NextResponse.next();
   }
+  // Screenshot identification — the trade desk's own rateLimited + Gemini
+  // abort cover it, and guests use it before any session exists.
+  if (pathname.startsWith("/api/trade/identify")) {
+    return NextResponse.next();
+  }
   // Public guest page
   if (pathname === "/trade/guest") {
     return NextResponse.next();

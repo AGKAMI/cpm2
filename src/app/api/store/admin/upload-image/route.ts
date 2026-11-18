@@ -4,8 +4,7 @@
  */
 
 import { fail, ok } from "@/lib/route";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
+import { saveUpload } from "@/lib/store/uploads";
 
 export const dynamic = "force-dynamic";
 
@@ -27,16 +26,14 @@ export async function POST(request: Request) {
       });
     }
 
-    const uploadsDir = join(process.cwd(), "public", "uploads");
-    await mkdir(uploadsDir, { recursive: true });
-
-    const ext = file.name.split(".").pop() ?? "jpg";
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
     const filename = `${crypto.randomUUID()}.${ext}`;
-    const filepath = join(uploadsDir, filename);
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    await writeFile(filepath, buffer);
+    // DB-backed (see lib/store/uploads.ts) — survives read-only serverless FS;
+    // disk cache is best-effort, so this never EROFS on Vercel.
+    await saveUpload(filename, buffer);
 
     const url = `/api/store/admin/uploads/${filename}`;
     return ok({ url });

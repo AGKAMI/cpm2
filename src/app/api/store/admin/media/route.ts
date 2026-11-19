@@ -6,12 +6,14 @@
  */
 
 import { fail, ok, readJson } from "@/lib/route";
+import { requireStoreAdmin } from "@/lib/store/auth";
 import { createMedia, deleteMedia, listMedia } from "@/lib/store/media-service";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
+    await requireStoreAdmin(request);
     const url = new URL(request.url);
     const productId = url.searchParams.get("productId");
     if (!productId) {
@@ -26,6 +28,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    await requireStoreAdmin(request);
     const body = (await readJson(request)) as Record<string, unknown>;
     const productId = Number(body.productId as string);
     const provider = String(body.provider ?? "");

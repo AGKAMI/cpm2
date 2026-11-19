@@ -1197,3 +1197,54 @@ The batch-7 audit subagent died on a provider 429, so I audited the surface myse
 **Also live-probed clean:** path traversal on `images/[imageId]` (`..%2F..%2F.env`, `%2e%2e`, `....//`), SQLi-shaped ids (`%27 OR 1=1--`, `-1`, 20-digit overflow) — all 401, nothing leaks. Static scan found no interpolated SQL in `src/app/api/accounts/`.
 
 **Conclusion for the next agent:** the critical cookie hole was specific to the store admin gate, NOT systemic. The console session gate at `src/proxy.ts:88-100` still covers `/api/accounts/*`, `/api/trade/*` writes, settings and fleet. Only `/api/store/*` is deliberately open (guests must be able to browse and check out), which is why the store admin gate had to be airtight — and is now.
+
+### 2026-11-19 (debug batch 9 — FOUR MORE SECURITY HOLES) — Agent "Kermes" — unauth admin writes + a path traversal
+
+Continuing the API sweep found four more holes in routes the security sweep had missed. **All four were proven live before and after the fix.**
+
+**Hole 1 & 2 — `api/store/admin/upload-image/route.ts` and `api/store/admin/media/route.ts` had NO auth check at all.**
+```
+PROVEN BEFORE:  POST /api/store/admin/upload-image (no session, no Telegram header)
+                -> 200 {"url":"/api/store/admin/uploads/<uuid>.png"}
+```
+An unauthenticated caller could write a file into the app's upload store (DB + `public/uploads`) and get a public URL — free file hosting and a storage-fill vector. `media` did list/create/delete media rows with no auth either.
+
+**Hole 3 — `api/store/admin/config/[key]/route.ts` had NO auth check, for GET, POST and DELETE.**
+```
+PROVEN BEFORE:  POST /api/store/admin/config/probe_test_key  {"value":"kermes-probe"} -> 200
+                GET  /api/store/admin/config/probe_test_key  -> 200 (read back, with isSensitive flag)
+                the file's own header says: "get a config value (sensitive included)"
+```
+Unauthenticated read/write/delete of `vanta_system_config` — the table that holds store settings. Any sensitive config keys placed there would have been readable with no auth.
+
+**Hole 4 — `api/store/admin/uploads/[filename]/route.ts` was a path traversal.**
+```ts
+const filepath = join(process.cwd(), "public", "uploads", filename);   // filename straight off the URL
+```
+`path.join()` does NOT neutralise `..`.
+```
+PROVEN BEFORE:  GET /api/store/admin/uploads/..%2F..%2Fpackage.json -> 200 with the app's package.json contents
+```
+
+**Fixes:** `requireStoreAdmin(request)` added to all handlers of the first three (upload-image POST; media GET+POST; config GET+POST+DELETE). For uploads, a strict allow-list — the filename must match `^[0-9a-f-]{36}\.(png|jpe?g|gif|webp)$` with no `/`, `\`, `..` — which is exactly the shape `saveUpload()` writes.
+
+**Retested after rebuild, no auth:**
+```
+POST /api/store/admin/upload-image                      -> 403   CLOSED
+GET  /api/store/admin/media?productId=1                 -> 403   CLOSED
+POST /api/store/admin/media                             -> 403   CLOSED
+GET  /api/store/admin/config/anything                   -> 403   CLOSED
+POST /api/store/admin/config/anything                   -> 403   CLOSED
+DEL  /api/store/admin/config/anything                   -> 403   CLOSED
+GET  .../uploads/..%2F..%2Fpackage.json                 -> 400   CLOSED
+GET  .../uploads/..%2F..%2F.env                         -> 400   CLOSED
+GET  .../uploads/%2e%2e%2f%2e%2e%2fpackage.json         -> 400   CLOSED
+GET  .../uploads/<valid uuid>.png (absent)              -> 404   correct (guard passed, file really absent)
+```
+I removed the probe key from `vanta_system_config` and the probe file from `public/uploads`; both verified gone.
+
+**Method note worth keeping:** the audit subagent's raw grep for "missing requireStoreAdmin" produced exactly these 4 real gaps out of 28 admin routes, but a naive scan of `/api/store/**` also flags ~23 legitimately-public routes (products, categories, media, health, auth, appointments). **The discriminator is the `/api/store/admin/` prefix plus a DB write, not "no import of the auth helper".**
+
+**Two self-inflicted breaks, repaired in-run:** (1) a line-ending collapse flattened the guard into an 810-char line — same failure as the cart.ts fix; repaired by re-splitting and splicing the block as a LIST. (2) My first "still open" verdict on the traversal was taken against the build BEFORE the fix had compiled; re-testing against the fresh build closed it. **Never conclude a hole is still open without rebuilding first.**
+
+**Gate:** `tsc --noEmit` exit 0 → tests 66/66 → `rm -rf .next && npm run build` exit 0 → all four re-probed closed → deploy hook fired.

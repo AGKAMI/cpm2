@@ -4,12 +4,18 @@
  */
 
 import { fail, ok } from "@/lib/route";
+import { requireStoreAdmin } from "@/lib/store/auth";
 import { saveUpload } from "@/lib/store/uploads";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
+    // Admin-only. This endpoint had no auth at all: an unauthenticated POST
+    // wrote a file into /public/uploads and returned its URL (proven live:
+    // 200 {"url":"/api/store/admin/uploads/<uuid>.png"} with no session and no
+    // Telegram header), giving any caller free write access to app storage.
+    await requireStoreAdmin(request);
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     if (!file) {

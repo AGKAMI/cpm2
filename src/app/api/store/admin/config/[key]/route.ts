@@ -6,12 +6,14 @@
  */
 
 import { fail, ok, readJson } from "@/lib/route";
+import { requireStoreAdmin } from "@/lib/store/auth";
 import { getConfigRaw, setConfig, deleteConfig } from "@/lib/store/config-service";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
+    await requireStoreAdmin(request);
     const key = request.url.split("/config/")[1];
     if (!key) {
       return fail({ status: 400, body: { error: { code: "missing_key", message: "Config key required." } } });
@@ -28,6 +30,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    await requireStoreAdmin(request);
     const body = (await readJson(request)) as Record<string, unknown>;
     const key = request.url.split("/config/")[1];
     if (!key) {
@@ -46,6 +49,7 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    await requireStoreAdmin(request);
     const key = request.url.split("/config/")[1];
     if (!key) {
       return fail({ status: 400, body: { error: { code: "missing_key", message: "Config key required." } } });

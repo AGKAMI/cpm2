@@ -222,6 +222,7 @@ CREATE TABLE IF NOT EXISTS vanta_orders (
   in_game_name       TEXT    NOT NULL DEFAULT '',
   idempotency_key    TEXT    NOT NULL UNIQUE,
   appointment_id     TEXT,
+  eft_proof_url      TEXT,
   created_at         TEXT    NOT NULL,
   updated_at         TEXT    NOT NULL
 );

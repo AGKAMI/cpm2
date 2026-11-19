@@ -18,6 +18,7 @@ import {
   type VantaProduct,
   type VantaPromotion,
 } from "@/lib/store/client";
+import { hasDiscount, discountedPriceCents } from "@/lib/store/pricing";
 import { StoreShell } from "@/components/StoreShell";
 import { HeartToggle } from "@/components/HeartToggle";
 import { addToCartLocal } from "@/lib/store/cart-client";
@@ -524,9 +525,21 @@ const ProductCard = React.memo(
                   {product.name}</h3>
                 <div className="flex items-end gap-2">
                   <HeartToggle productId={product.id} />
-                  <span className="vanta-card-price">
-                    {formatPrice(product.basePriceCents, product.currency)}
-                  </span>
+                  {hasDiscount(product) ? (
+                    <>
+                      <span className="vanta-card-price">
+                        {formatPrice(discountedPriceCents(product.basePriceCents, product.discountPercent), product.currency)}
+                      </span>
+                      <span className="text-[11px] text-ink-faint line-through tabular-nums">
+                        {formatPrice(product.basePriceCents, product.currency)}
+                      </span>
+                      <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-ok">-{product.discountPercent}%</span>
+                    </>
+                  ) : (
+                    <span className="vanta-card-price">
+                      {formatPrice(product.basePriceCents, product.currency)}
+                    </span>
+                  )}
                   {variant === "standard" && <CartAddButton product={product} />}
                 </div>
               </div>

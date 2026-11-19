@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { vantaApi, formatPrice, type VantaProduct } from "@/lib/store/client";
+import { discountSavingsCents, approxStarsForCents } from "@/lib/store/pricing";
 import { StoreShell } from "@/components/StoreShell";
 import { Button } from "@/components/ui/Button";
 import { CheckoutSkeleton } from "@/components/skeleton";
@@ -64,9 +65,11 @@ export function CheckoutClient({ productId }: { productId: number }) {
   }, [playerId]);
 
   const subtotal = product?.basePriceCents ?? 0;
-  const discountCents = 2500;
+  // The product's own discount (0 when none) — no more fake R25 line.
+  const discountCents = product ? discountSavingsCents(product.basePriceCents, product.discountPercent) : 0;
   const deliveryFeeCents = 0;
   const totalCents = Math.max(0, subtotal - discountCents + deliveryFeeCents);
+  const onSale = discountCents > 0;
 
   // Validation helpers
   const validatePlayerId = (pid: string): string | null => {
@@ -220,8 +223,14 @@ export function CheckoutClient({ productId }: { productId: number }) {
         </div>
         <h2 className="text-sm font-medium text-foreground mb-1">{product.name}</h2>
         <p className="text-[11px] text-muted-foreground mb-3">Custom · Purple · Coupe</p>
-        <div className="flex items-baseline gap-2">
-          <span className="num text-xl font-semibold text-primary">{formatPrice(product.basePriceCents, product.currency)}</span>
+        <div className="flex items-baseline gap-2 flex-wrap">
+          {onSale && (
+            <span className="num text-sm text-muted-foreground line-through">{formatPrice(product.basePriceCents, product.currency)}</span>
+          )}
+          <span className="num text-xl font-semibold text-primary">{formatPrice(totalCents, product.currency)}</span>
+          {onSale && (
+            <span className="num text-[10px] font-bold uppercase tracking-[0.14em] text-ok">Save {formatPrice(discountCents, product.currency)} · {product.discountPercent}% off</span>
+          )}
         </div>
       </section>
 
@@ -295,7 +304,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
               <input type="radio" name="paymentMethod" value="stars" checked={paymentMethod === "stars"} onChange={() => setPaymentMethod("stars")} className="accent-primary" />
               <div className="flex-1">
                 <div className="text-xs font-medium text-foreground">Telegram Stars ⭐</div>
-                <div className="text-[10px] text-muted-foreground">Pay in-app with your Stars balance — instant, no card.</div>
+                <div className="text-[10px] text-muted-foreground">Pay in-app with your Stars balance — instant, no card. {product ? `≈ ${approxStarsForCents(totalCents)} ⭐` : ""}</div>
               </div>
             </label>
 </div>
@@ -428,10 +437,12 @@ export function CheckoutClient({ productId }: { productId: number }) {
               <span className="text-muted-foreground">Subtotal</span>
               <span className="text-foreground">{formatPrice(subtotal, product.currency)}</span>
             </div>
-            <div className="flex justify-between text-[11px]">
-              <span className="text-muted-foreground">Discount</span>
-              <span className="text-destructive">-{formatPrice(discountCents, product.currency)}</span>
-            </div>
+            {onSale && (
+              <div className="flex justify-between text-[11px]">
+                <span className="text-muted-foreground">Discount ({product.discountPercent}%)</span>
+                <span className="text-ok">-{formatPrice(discountCents, product.currency)}</span>
+              </div>
+            )}
   <div className="pt-3 border-t border-border flex justify-between text-sm font-semibold text-foreground">
               <span>Total</span>
               <span className="text-primary">{formatPrice(totalCents, product.currency)}</span>

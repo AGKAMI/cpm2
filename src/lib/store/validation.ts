@@ -73,6 +73,12 @@ export const productFormSchema = z.object({
     .trim()
     .optional()
     .refine((v) => !v || /^\d+$/.test(v), { error: "Category must be a valid ID." }),
+  discountPercent: z
+    .string()
+    .trim()
+    .regex(/^\d{1,2}$/, { error: "Discount must be a whole number 0-90." })
+    .refine((v) => Number(v) <= 90, { error: "Discount cannot exceed 90%." })
+    .default("0"),
 });
 
 export type ProductFormInput = z.infer<typeof productFormSchema>;

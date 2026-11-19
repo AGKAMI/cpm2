@@ -27,6 +27,7 @@ const productSchema = z.object({
   // Cents. The cap is R100 000, not R200 (20000 cents) — rands are converted to
   // cents client-side (price * 100), so the cap has to be read in cents.
   basePriceCents: z.coerce.number().int().nonnegative().max(10_000_000),
+  discountPercent: z.coerce.number().int().min(0).max(90).default(0),
   categoryId: z.coerce.number().int().positive().optional(),
   currency: z.string().default("ZAR"),
   stockQuantity: z.coerce.number().int().nonnegative().default(1),
@@ -97,6 +98,7 @@ export async function POST(request: Request) {
     if (badCode) return badCode;
     const input: ProductInput = {
           cpm2CarCode: body.cpm2CarCode,
+          discountPercent: body.discountPercent,
           categoryId: body.categoryId,
           name: body.name,
           description: body.description,
@@ -106,7 +108,8 @@ export async function POST(request: Request) {
           availabilityState: body.availabilityState,
           exclusivity: body.exclusivity,
           isFeatured: body.isFeatured,
-          isNew: body.isNew,
+          // New products are ALWAYS tagged New — a 3-day expiry removes it.
+          isNew: true,
           isSale: body.isSale,
           isPublished: body.isPublished,
           airSuspension: body.airSuspension,
@@ -163,6 +166,7 @@ export async function PUT(request: Request) {
     }
     const updated = await updateProduct(Number(id), {
           cpm2CarCode: body.cpm2CarCode,
+          discountPercent: body.discountPercent,
           categoryId: body.categoryId,
           name: body.name,
           description: body.description,
@@ -171,8 +175,6 @@ export async function PUT(request: Request) {
           stockQuantity: body.stockQuantity,
           availabilityState: body.availabilityState,
           exclusivity: body.exclusivity,
-          isFeatured: body.isFeatured,
-          isNew: body.isNew,
           isSale: body.isSale,
           isPublished: body.isPublished,
           airSuspension: body.airSuspension,

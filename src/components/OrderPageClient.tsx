@@ -7,22 +7,35 @@ import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
+import { OrderProgress } from "@/components/OrderProgress";
 
 export function OrderPageClient({ orderId }: { orderId: string }) {
   const [order, setOrder] = useState<VantaOrder | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    (async () => {
+    let alive = true;
+    const load = async (showError = false) => {
       try {
         const { order: o } = await vantaApi.order(orderId);
-        setOrder(o);
+        if (alive) setOrder(o);
       } catch {
-        notFound();
+        if (showError) notFound();
       } finally {
-        setLoading(false);
+        if (alive) setLoading(false);
       }
-    })();
+    };
+    load(true);
+    // Live progression: re-poll while the order is still moving so the bar
+    // advances in real time (stop once it reaches a terminal state).
+    const t = setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      void load(false);
+    }, 15000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
   }, [orderId]);
 
   if (loading)
@@ -54,6 +67,7 @@ export function OrderPageClient({ orderId }: { orderId: string }) {
         </div>
         <div className="panel rounded-xl border border-border p-6 bg-background">
           <h3 className="text-sm font-semibold text-foreground mb-4">Status</h3>
+          <OrderProgress orderState={order.orderState} paymentState={order.paymentState} />
           <div className="flex flex-col gap-2">
             <div className="flex items-baseline gap-2">
               <span className="text-xs text-muted-foreground">Order</span>

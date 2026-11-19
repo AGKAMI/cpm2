@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { vantaApi, formatPrice, type VantaProduct } from "@/lib/store/client";
+import { hasDiscount, discountedPriceCents, discountSavingsCents } from "@/lib/store/pricing";
 
 export function ProductGallery({ productId }: { productId: number }) {
   const [product, setProduct] = useState<VantaProduct | null>(null);
@@ -100,9 +101,20 @@ export function ProductGallery({ productId }: { productId: number }) {
             {product.exclusivity.replace("_", " ")}
           </span>
         </div>
-        <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-bold text-primary">{formatPrice(product.basePriceCents, product.currency)}</span>
-          <span className="text-lg font-medium text-ink-faint">{formatPrice(Math.floor(product.basePriceCents * 1.15), product.currency)}</span>
+        <div className="flex items-baseline flex-wrap gap-2">
+          {hasDiscount(product) && (
+            <span className="text-lg font-medium text-ink-faint line-through tabular-nums">
+              {formatPrice(product.basePriceCents, product.currency)}
+            </span>
+          )}
+          <span className="text-3xl font-bold text-primary">
+            {formatPrice(discountedPriceCents(product.basePriceCents, product.discountPercent), product.currency)}
+          </span>
+          {hasDiscount(product) && (
+            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-ok">
+              Save {formatPrice(discountSavingsCents(product.basePriceCents, product.discountPercent), product.currency)} · {product.discountPercent}% off
+            </span>
+          )}
         </div>
         <p className="text-muted-foreground line-clamp-3">{product.description}</p>
 

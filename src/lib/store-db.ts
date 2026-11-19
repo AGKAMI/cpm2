@@ -116,6 +116,16 @@ export async function runStoreMigrations(storeArg?: TursoHttpClient): Promise<vo
     }
   }
 
+  // Migration: per-product discount percentage (0-90)
+  try {
+    await store.execute({
+      sql: `ALTER TABLE vanta_products ADD COLUMN discount_percent INTEGER NOT NULL DEFAULT 0`,
+      args: [],
+    });
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
   // Migration: add quantity column to vanta_orders (if missing)
   try {
     await store.execute({

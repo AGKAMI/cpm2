@@ -269,6 +269,7 @@ export type VantaProduct = {
   name: string;
   description: string;
   basePriceCents: number;
+  discountPercent: number;             // 0-90; sale price = base * (100 - discount) / 100
   currency: string;
   stockQuantity: number;
   availabilityState: string;

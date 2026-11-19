@@ -8,6 +8,7 @@ import { StoreShell } from "@/components/StoreShell";
 import { CategoriesSkeleton } from "@/components/skeleton";
 import { PageHeading } from "@/components/PageHeading";
 import { formatPrice } from "@/lib/store/client";
+import { hasDiscount, discountedPriceCents } from "@/lib/store/pricing";
 import { HeartToggle } from "@/components/HeartToggle";
 
 /**
@@ -310,9 +311,21 @@ export function CategoriesClient({
                     <h4 className="font-bold text-sm text-ink leading-snug">{c.name}</h4>
                     <div className="flex items-baseline flex-wrap gap-2 mt-2">
                       <HeartToggle productId={c.id} />
-                      <span className="price-primary text-base font-bold tabular-nums">
-                        {formatPrice(c.basePriceCents, c.currency)}
-                      </span>
+                      {hasDiscount(c) ? (
+                        <>
+                          <span className="price-primary text-base font-bold tabular-nums">
+                            {formatPrice(discountedPriceCents(c.basePriceCents, c.discountPercent), c.currency)}
+                          </span>
+                          <span className="text-[11px] text-ink-faint line-through tabular-nums">
+                            {formatPrice(c.basePriceCents, c.currency)}
+                          </span>
+                          <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-ok">-{c.discountPercent}%</span>
+                        </>
+                      ) : (
+                        <span className="price-primary text-base font-bold tabular-nums">
+                          {formatPrice(c.basePriceCents, c.currency)}
+                        </span>
+                      )}
                       <span
                         className={`stock-indicator ${stockTier(c.stockQuantity, c.stockInitial ?? 0)}`}>
                         {stockLabel(c.stockQuantity, stockTier(c.stockQuantity, c.stockInitial ?? 0))}

@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS vanta_products (
   name               TEXT    NOT NULL,
   description        TEXT    NOT NULL DEFAULT '',
   base_price_cents   INTEGER NOT NULL DEFAULT 0,
+  discount_percent   INTEGER NOT NULL DEFAULT 0,  -- 0-90; sale price = base * (100 - discount) / 100
   currency           TEXT    NOT NULL DEFAULT 'ZAR',
   stock_quantity     INTEGER NOT NULL DEFAULT 0,
   initial_stock      INTEGER NOT NULL DEFAULT 0,  -- stock at creation / last restock — drives ratio-based color tiers

@@ -18,6 +18,7 @@ import { createOrder } from "@/lib/store/checkout";
 import { getProduct } from "@/lib/store/products";
 import { buildPayFastCheckoutUrl } from "@/lib/store/payfast";
 import { createStarsInvoiceLink, starsForCents } from "@/lib/store/stars";
+import { discountedPriceCents } from "@/lib/store/pricing";
 import type { Customer } from "@/lib/store-types";
 
 const checkoutSchema = z.object({
@@ -68,7 +69,9 @@ export async function POST(request: Request) {
       throw new ApiError(400, "product_unpublished", "That vehicle isn't available for purchase.");
     }
 
-    const amountCents = product.basePriceCents * body.quantity;
+    // Charge the sale price when the product carries a discount
+    const unitCents = discountedPriceCents(product.basePriceCents, product.discountPercent);
+    const amountCents = unitCents * body.quantity;
 
     const result = await createOrder({
       customerId: customer.id,

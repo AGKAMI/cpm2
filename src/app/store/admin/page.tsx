@@ -41,6 +41,7 @@ type ProductForm = {
   name: string;
   description: string;
   basePriceCents: string;
+  discountPercent: string;
   currency: string;
   stockQuantity: string;
   airSuspension: boolean;
@@ -59,6 +60,7 @@ const EMPTY_FORM: ProductForm = {
   name: "",
   description: "",
   basePriceCents: "",
+  discountPercent: "0",
   currency: "ZAR",
   stockQuantity: "1",
   airSuspension: false,
@@ -323,6 +325,7 @@ export default function AdminPage() {
         name: p.name,
         description: p.description,
         basePriceCents: String(p.basePriceCents / 100),
+        discountPercent: String(p.discountPercent ?? 0),
         currency: p.currency,
         stockQuantity: String(p.stockQuantity),
         airSuspension: p.airSuspension,
@@ -392,7 +395,7 @@ export default function AdminPage() {
           unlockedBodykits: form.unlockedBodykits,
           hdLogo: form.hdLogo,
           isFeatured: form.isFeatured,
-          isNew: form.isNew,
+          discountPercent: v.discountPercent ? parseInt(v.discountPercent, 10) : 0,
           isSale: form.isSale,
           isPublished: form.isPublished,
           categoryId: v.categoryId ? Number(v.categoryId) : undefined,
@@ -1375,6 +1378,17 @@ export default function AdminPage() {
               className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
             />
           </Field>
+<Field label="Discount (%)" htmlFor="discount" error={productErrors.discountPercent} hint="0 = no discount. 0-90 — the storefront shows the sale price against the original.">
+            <input
+              id="discount"
+              type="number"
+              min="0"
+              max="90"
+              value={form.discountPercent}
+              onChange={(e) => handleChange("discountPercent", e.target.value)}
+              className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
+            />
+          </Field>
           <Field
             label="Stock"
             htmlFor="stock"
@@ -1497,17 +1511,6 @@ export default function AdminPage() {
               />
               <div className="checkmark"></div>
               <span className="text-base font-bold text-foreground">Featured on home page</span>
-            </label>
-          </Field>
-          <Field label="New Arrival">
-            <label className="custom-checkbox">
-              <input
-                type="checkbox"
-                checked={form.isNew}
-                onChange={(e) => handleChange("isNew", e.target.checked)}
-              />
-              <div className="checkmark"></div>
-              <span className="text-base font-bold text-foreground">New badge</span>
             </label>
           </Field>
           <Field label="Sale">

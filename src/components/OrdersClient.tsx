@@ -6,24 +6,11 @@ import { vantaApi, formatPrice, type VantaOrder } from "@/lib/store/client";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { OrdersSkeleton } from "@/components/skeleton";
-
-const ORDER_STAGES: Array<{
-  key: VantaOrder["orderState"];
-  label: string;
-  hint: string;
-}> = [
-  { key: "pending_payment", label: "Payment pending", hint: "Awaiting your EFT proof or PayFast confirmation" },
-  { key: "paid", label: "Payment confirmed", hint: "Payment received — build is being prepared" },
-  { key: "preparing", label: "Preparing vehicle", hint: "Custom build in the garage" },
-  { key: "ready_for_delivery", label: "Ready for delivery", hint: "Vehicle ready — delivery appointment pending" },
-  { key: "delivered", label: "Delivered", hint: "Vehicle delivered to your garage" },
-  { key: "completed", label: "Completed", hint: "Order fulfilled" },
-  { key: "cancelled", label: "Cancelled", hint: "Order was cancelled" },
-];
+import { OrderProgressSlim, ORDER_LIFECYCLE, orderStepIndex, orderTerminal } from "@/components/OrderProgress";
 
 function stageOrder(a: VantaOrder["orderState"], b: VantaOrder["orderState"]): number {
-  const order = ORDER_STAGES.map((s) => s.key);
-  return order.indexOf(a) - order.indexOf(b);
+  // Sort by position on the real lifecycle (terminal states sink last).
+  return orderStepIndex(b, "") - orderStepIndex(a, "");
 }
 
 export function OrdersClient() {
@@ -81,9 +68,10 @@ export function OrdersClient() {
 }
 
 function OrderCard({ order, index }: { order: VantaOrder; index: number }) {
-  const stage = ORDER_STAGES.find((s) => s.key === order.orderState);
+  const terminal = orderTerminal(order.orderState);
   const active = !["completed", "cancelled"].includes(order.orderState);
-  const stageIndex = ORDER_STAGES.findIndex((s) => s.key === order.orderState);
+  const step = orderStepIndex(order.orderState, order.paymentState);
+  const label = terminal?.label ?? ORDER_LIFECYCLE[Math.max(step, 0)].label;
 
   return (
     <article className="group relative rounded-xl border border-border p-4 hover:border-primary stagger-item" style={{ animationDelay: `${index * 40}ms` }}>
@@ -103,7 +91,7 @@ function OrderCard({ order, index }: { order: VantaOrder; index: number }) {
                 : "border-border text-muted-foreground"
           }`}
         >
-          {stage?.label ?? order.orderState.replace("_", " ")}
+          {label}
         </span>
       </div>
       <div className="flex items-baseline gap-2 mb-3">
@@ -119,31 +107,9 @@ function OrderCard({ order, index }: { order: VantaOrder; index: number }) {
         <span className="text-foreground">{order.inGameName}</span>
       </div>
 
-      {/* Progress timeline */}
-      <div className="relative mb-3">
-        <div className="absolute left-2 top-2 bottom-2 w-px bg-border" />
-        {ORDER_STAGES.map((s, i) => (
-          <div key={s.key} className="relative flex items-center gap-2 pl-10">
-            {i < ORDER_STAGES.length - 1 && (
-              <div className={`absolute left-2 top-3 bottom-3 w-px ${i < stageIndex ? "bg-gold" : "bg-border"}`} />
-            )}
-            <div
-              className={`w-3 h-3 rounded-full border-2 flex-shrink-0 ${
-                i <= stageIndex
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-background text-muted-foreground border-border"
-              }`}
-            >
-              {i <= stageIndex ? "✓" : ""}
-            </div>
-            <span className={`text-[10px] ${i <= stageIndex ? "text-foreground font-medium" : "text-ink-soft"}`}>
-              {s.label}
-            </span>
-            {i < ORDER_STAGES.length - 1 && s.hint && (
-              <span className="text-[9px] text-ink-faint">{s.hint}</span>
-            )}
-          </div>
-        ))}
+      {/* Live progress — slim animated bar against the real lifecycle */}
+      <div className="mb-3">
+        <OrderProgressSlim orderState={order.orderState} paymentState={order.paymentState} />
       </div>
 
       {order.paymentState === "pending" && order.paymentMethod === "eft" && (

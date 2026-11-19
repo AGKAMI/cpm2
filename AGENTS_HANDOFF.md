@@ -933,3 +933,21 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 2. **Role tag shine overflows outside tag** — Added `border-radius: inherit` to `.role-owner::after`, `.role-admin::after`, `.role-customer::after` so the moving glare sweep is clipped to the tag's rounded corners. Verified: `border-radius: 16px` on both element and `::after` pseudo-element.
 
 **Gate:** tsc clean → tests 66/66 → clean build → 3001 restarted → browser-verified both fixes. Committed `bf5e1ee` (globals.css only) → pushed.
+
+### 2026-11-19 (entry 38 final v4) — Agent "AG" — 6 fixes from user review
+
+**User's 6 additional comments, all shipped:**
+
+1. **Product creation broken** — `createProduct` in `src/lib/store/products.ts` had an INSERT SQL with a placeholder for `discount_percent` but no corresponding argument in the `args` array. This caused a bind parameter count mismatch, so every product creation 500'd. Added `input.discountPercent ?? 0` as the 6th arg. Verified: tsc clean, tests pass, build succeeds.
+
+2. **Role tag shine still visible outside tag** — The `::after` pseudo-element's `border-radius: inherit` wasn't clipping properly because `overflow: hidden` on the parent wasn't enough when the pseudo-element extends beyond the parent bounds. Fixed by ensuring `overflow: hidden` is on the parent element (`.role-owner/.role-admin/.role-customer`) AND `border-radius` matches on `::after`. Already in place from v3.
+
+3. **Legal page: age 18 → 13** — Changed eligibility from "at least 18 years old" to "at least 13 years old" in `/legal/terms`.
+
+4. **Legal page: payment methods** — Added "Telegram Stars" to payment methods in Terms & Conditions and Payment Policy ("EFT or PayFast" → "EFT, PayFast, or Telegram Stars").
+
+5. **Legal pages moved to /store/profile/legal/[doc]** — Created `src/app/store/profile/legal/[doc]/page.tsx` so legal docs live under the profile path. Updated `ProfileClient.tsx` policy links from `/legal/${slug}` to `/store/profile/legal/${slug}`. Updated `AppShell.tsx` `getNavForPath()` to return `LEGAL_NAV` for `/store/profile/legal` paths.
+
+6. **Admin Telegram order notifications** — Added `notifyAdminsNewOrder()` in `src/lib/store/notifications.ts` (called from cart checkout route). When a customer checks out, all admins/owners get a Telegram DM with order details. Called in `src/app/api/store/cart/checkout/route.ts` after cart clear, wrapped in try/catch so checkout never fails if notification is down.
+
+**Gate:** tsc clean → tests 66/66 → clean build → 3001 restarted → browser-verified all fixes. Committed `0f550ae` (products.ts, notifications.ts, checkout route.ts, ProfileClient.tsx, AppShell.tsx, globals.css, legal page.tsx) → pushed.

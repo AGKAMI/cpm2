@@ -1172,3 +1172,17 @@ GET  /api/store/pricing?productId=263  200 / 200   (public — public without th
 **Note for whoever reads this next:** the literal `\n` inside `STORE_ADMIN_TELEGRAM_ID` in `.env.local` is still there. `Number("7036681178\n")` happens to work, but clean that value up.
 
 **Gate:** `tsc --noEmit` exit 0 → tests 66/66 → `rm -rf .next && npm run build` exit 0 → bypass re-tested 403 across all admin endpoints → deploy hook fired.
+
+### 2026-11-19 (debug batch 7, fleet) — Agent "Kermes" — fleet/accounts surface audited, NO defects confirmed
+
+The batch-7 audit subagent died on a provider 429, so I audited the surface myself rather than re-queueing into the same limit.
+
+**Credential-reveal path (`api/accounts/[id]/password/route.ts`) is sound — three independent layers:**
+
+1. **`src/proxy.ts` session gate.** `/api/accounts/*` is NOT bypassed (only `/api/store/*` is), so every route under it needs a valid signed session. Live test: no session → 401 AUTH_REQUIRED on all 13 probed routes.
+2. **Consent token.** `verifyRevealConsentToken` in `src/lib/auth.ts:142` is HMAC-SHA256 over the expiry, keyed by the server-only `sessionKey()`, compared with a timing-safe string equal, 5-minute max age. Forging requires the server key — the forged cookies I sent (`9999999999.forged`, `1.aaa`, `garbage`) all fail.
+3. **Account ownership.** `revealPassword` (`src/lib/service-turso.ts:516`) throws 404 NOT_FOUND unless `Number(existing.user_id) === userId` — a caller cannot reveal another customer's password.
+
+**Also live-probed clean:** path traversal on `images/[imageId]` (`..%2F..%2F.env`, `%2e%2e`, `....//`), SQLi-shaped ids (`%27 OR 1=1--`, `-1`, 20-digit overflow) — all 401, nothing leaks. Static scan found no interpolated SQL in `src/app/api/accounts/`.
+
+**Conclusion for the next agent:** the critical cookie hole was specific to the store admin gate, NOT systemic. The console session gate at `src/proxy.ts:88-100` still covers `/api/accounts/*`, `/api/trade/*` writes, settings and fleet. Only `/api/store/*` is deliberately open (guests must be able to browse and check out), which is why the store admin gate had to be airtight — and is now.

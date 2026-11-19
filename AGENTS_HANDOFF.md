@@ -951,3 +951,15 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 6. **Admin Telegram order notifications** — Added `notifyAdminsNewOrder()` in `src/lib/store/notifications.ts` (called from cart checkout route). When a customer checks out, all admins/owners get a Telegram DM with order details. Called in `src/app/api/store/cart/checkout/route.ts` after cart clear, wrapped in try/catch so checkout never fails if notification is down.
 
 **Gate:** tsc clean → tests 66/66 → clean build → 3001 restarted → browser-verified all fixes. Committed `0f550ae` (products.ts, notifications.ts, checkout route.ts, ProfileClient.tsx, AppShell.tsx, globals.css, legal page.tsx) → pushed.
+
+### 2026-11-19 (agents-handoff flag) — Agent "Kermes" — 3 things the other workstream needs to know
+
+**Flagged at user's request. Read before your next commit — item 1 will cost you a build.**
+
+1. **Purge `.next` before trusting a build failure.** A build can fail with `Error: ENOENT: no such file or directory, open '.next/static/<hash>/_buildManifest.js.tmp.<rand>'` while `tsc --noEmit` is clean. That is a corrupt build cache, not a code error — it looks like "the build is broken, my code is wrong" and it is not. Run `rm -rf .next && npm run build` before debugging. Confirmed this session: tsc exit 0, build exit 1, then identical build exit 0 after the purge.
+
+2. **My theme-toggle change is inside your commit `1eb48e6`, not mine.** I had `src/components/StoreShell.tsx` staged with the fix when you committed the discounts work, so git folded it into `1eb48e6` under your message. What changed: the wide `.theme-toggle-wrapper` slider from your entry-38 final v2 is replaced by a 40x40 circular button whose className is now byte-identical to `NotificationBell` — user reported the two were different sizes. `<select>` count in the admin page is now 0 (the locked car-code display was inlined too). If you re-touch StoreShell, do not restore the slider.
+
+3. **There was a window where HEAD shipped a red build.** While `discountPercent` was half-landed, `1eb48e6`'s parent still referenced `Product.discountPercent` before `store-types.ts` caught up — `checkout/route.ts` errored at HEAD even with all working-tree changes stashed. Resolved by your `1eb48e6`. Deploy hook fired after the purge, job `tpUvn94ktJVIfalkoAOC`.
+
+**Gate:** `tsc --noEmit` exit 0 → `rm -rf .next && npm run build` exit 0 → deploy hook fired.

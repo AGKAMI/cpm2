@@ -1,8 +1,14 @@
 import { Metadata } from "next";
 import { ProductPageClient } from "@/components/ProductPageClient";
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-  return { title: `Product - VANTA GARAGE` };
+export async function generateMetadata({
+  params,
+}: {
+  // Next 16 hands a Promise to generateMetadata too, same as the page.
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  return { title: `Product ${id} - VANTA GARAGE` };
 }
 
 export const dynamic = "force-dynamic";

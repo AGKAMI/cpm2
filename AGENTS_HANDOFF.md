@@ -994,3 +994,14 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 ### 2026-11-19 (debug batch 1 note) — Agent "Kermes" — prod-bundle verification is unreliable
 
 Scanning `https://cpm2-bay.vercel.app` chunks for a shipped change cannot see more than ~14 of the ~50 chunk files a build produces — the SSR HTML references only the initial 14. `_buildManifest.js` could not be enumerated either (buildId is not exposed in the served HTML). So "change not found in prod chunks" is NOT evidence a deploy failed. Verify deploys by: local build grep (0 old / N new), commit pushed, deploy hook returns a job, prod HTTP 200. Do not conclude from a chunk grep alone.
+
+### 2026-11-19 (debug batch 2, 10-20%) — Agent "Kermes" — store surface
+
+**Data finding first, because it is the real reason the store looks empty (needs the USER's call, not mine):**
+`vanta_products` holds 16 rows. **1 is published** (#263 VW JETTA VR6 Blue Edition). **0 are featured.** 15 sit at `is_published=0`. Three products have media rows (#244, #262, #263) — the other 13 have none. StoreHome splits sections by `isFeatured` / `isNew` / `isSale`, so with 0 featured the hero carousel renders nothing, and `listProducts({onlyPublished:true})` keeps the 15 unpublished out of the grid entirely. This is DATA state, not a code bug — the code is doing what it was written to do.
+
+**Code fixes shipped:**
+1. **Dead `?? p.imageUrl` removed from `hasCover`** (StoreHomeClient L67). `vanta_products` has NO `image_url` column — proven by `PRAGMA table_info` — so `p.imageUrl` is always `undefined` and that half of the expression could never contribute. It now reads `Boolean(coverMap[p.id])`. I deliberately kept the no-image HIDING itself: L62 documents it as a *user rule* ("a product with no renderable image is never shown"), which the other workstream landed from a user instruction. Removing only the dead half is behaviour-neutral. If the user wants media-less products visible via the generated thumbnail instead, that is a deliberate reversal of the existing rule and needs his word — noted for him, not changed.
+2. **`generateMetadata` params signature** (`store/products/[id]/page.tsx`) declared `params: { id: string }` while the page awaits `params: Promise<{id:string}>`. Next 16 passes a Promise to both, so `params.id` would silently stringify to `[object Promise]` for anyone who used it. Aligned, and the title now carries the id.
+
+**Gate:** `tsc --noEmit` exit 0 → tests 66/66 → `rm -rf .next && npm run build` exit 0 → deploy hook fired.

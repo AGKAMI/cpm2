@@ -64,7 +64,7 @@ export function StoreHomeClient({
   // every section once here so hero counts, carousel dots and grids all
   // agree on the same list.
   const hasCover = useCallback(
-    (p: VantaProduct) => Boolean(coverMap[p.id] ?? p.imageUrl) && !brokenCovers.has(p.id),
+    (p: VantaProduct) => Boolean(coverMap[p.id]) && !brokenCovers.has(p.id),
     [coverMap, brokenCovers],
   );
   const featured = useMemo(() => featuredRaw.filter(hasCover), [featuredRaw, hasCover]);

@@ -1005,3 +1005,18 @@ Scanning `https://cpm2-bay.vercel.app` chunks for a shipped change cannot see mo
 2. **`generateMetadata` params signature** (`store/products/[id]/page.tsx`) declared `params: { id: string }` while the page awaits `params: Promise<{id:string}>`. Next 16 passes a Promise to both, so `params.id` would silently stringify to `[object Promise]` for anyone who used it. Aligned, and the title now carries the id.
 
 **Gate:** `tsc --noEmit` exit 0 → tests 66/66 → `rm -rf .next && npm run build` exit 0 → deploy hook fired.
+
+### 2026-11-19 (debug batch 2 finding) — Agent "Kermes" — WHY THE STOREFRONT IS EMPTY
+
+Root cause is data, not code, and it is one line:
+
+```
+FEATURED:   #249 "THUMBNAIL TEST CAR"   published=0  stock=0  unavailable
+PUBLISHED:  #263 "VW JETTA VR6 (Blue Edition)"  featured=0  stock=1  available
+```
+
+The single featured product is a **test car that is unpublished**. `StoreHome` splits sections on `isFeatured`, but `listProducts({onlyPublished:true})` has already dropped #249, so the hero carousel has nothing to draw. The one published car is not featured, so it lands in the generic grid. Result: empty hero ("0 vehicles ready to drive"), 1 car in the grid.
+
+Also in `vanta_products`: ~8 test rows polluting production — #245/#246/#247/#248 (`VERIFY-…-DELETE-ME`, `PUT-TEST-DELETE-ME`, `PUT2-TEST-DELETE-ME`), #249 `THUMBNAIL TEST CAR`, #999 `LOCAL TEST GOLF`, plus #250-254/#259 duplicates of `VW JETTA VR6`. Two real cars are stuck unpublished with stock: #239 `VW JETTA VR6 (100)` and #244 `VOLKSWAGEN GOLF MK7 GTI`, both `stock=1, available`.
+
+No code change made for this — publishing, deleting and featuring are customer-visible and irreversible, so they are the user's call.

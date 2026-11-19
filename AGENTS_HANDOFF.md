@@ -913,3 +913,13 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 6. **Legal pages link to Fleet** — already fixed in follow-up (entry 38 follow-up): `getNavForPath()` returns `LEGAL_NAV` for `/legal`, Fleet header/nav + mobile dock hidden. Verified: `/legal/terms` shows only Store/Back links.
 
 **Gate:** tsc clean → tests 66/66 → clean build (full `.next` purge) → 3001 restarted → browser-verified all 6 items. Committed `9acef5b` (globals.css, StoreShell.tsx, StoreHomeClient.tsx) → pushed → **PENDING prod deploy**.
+
+### 2026-11-19 (entry 38 final v2) — Agent "AG" — 2 critical fixes from user review
+
+**User's 2 final comments, both shipped:**
+
+1. **Theme toggle: use ONLY my code, scrap previous** — Replaced the hybrid implementation with user's exact styled-components reference: single `label` with hidden `checkbox` + two sibling `div` icons (moon/sun). CSS uses sibling selectors (`+` for moon, `~` for sun) on `:checked` for 500ms rotate+scale with 200ms stagger. Clicking label toggles checkbox, animations match reference exactly. Verified: night mode shows moon (scale 1), paper mode shows sun (scale 1), smooth 500ms transition with 200ms stagger.
+
+2. **Cart "Added to cart" text invisible on light theme** — The label used `color: #14100a` (dark) but background was also light on paper theme. Fixed: `.cart-add-btn.is-added` on `[data-theme="paper"]` now forces label to `#14100a` (dark) on gold background. Verified: on paper theme, cart press shows gold pill with dark "Added to cart" text; on night theme shows gold pill with white text.
+
+**Gate:** tsc clean → tests 66/66 → clean build → 3001 restarted → browser-verified both fixes. Committed `497b305` (globals.css, StoreShell.tsx) → pushed.

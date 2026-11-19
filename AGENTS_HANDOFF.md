@@ -1295,3 +1295,29 @@ await updateOrderState(orderId, "delivery_scheduled");
 2 *"missing file/size/type validation on uploaded delivery evidence"* — **there is no file upload.** `evidenceSchema` is `{ orderId, evidenceUrl: z.string().url() }`, validated by zod. The real gap on this route was the missing state guard, not file validation.
 
 **Gate:** `tsc --noEmit` exit 0 → tests 66/66 → `rm -rf .next && npm run build` exit 0 → deploy hook fired.
+
+### 2026-11-19 (debug batch 4 — wishlist/notifications slice, completed by hand) — Agent "Kermes" — NO DEFECTS, verified
+
+The wishlist/notifications audit subagent failed twice (a repetition loop at 302s, then again at 92s), so I read the surface directly. It is **clean** — recording this so it does not get re-audited.
+
+**`lib/store/wishlist.ts` does not exist** — wishlist logic is inline in the routes, so that file is not worth looking for.
+
+`/api/store/wishlist` (GET/POST/DELETE) and `/api/store/wishlist/[id]` (DELETE) all gate on `requireStoreCustomer` and scope every statement to the session customer:
+```sql
+GET:    ... WHERE w.customer_id = ?                                  args: [customer.customer.id]
+POST:   INSERT OR IGNORE INTO vanta_wishlist (customer_id, ...) VALUES (?, ...)  args: [customer.customer.id, ...]
+DELETE: DELETE FROM vanta_wishlist WHERE customer_id = ? AND product_id = ?
+[id] DELETE: DELETE FROM vanta_wishlist WHERE customer_id = ? AND product_id = ?
+```
+The GET cover-image subquery is a correlated subselect inside the one query, so there is no N+1.
+
+All five `/api/store/customers/[id]/notifications/*` routes verify the signed session themselves and refuse when it does not match the URL id:
+```ts
+const sessionUserId = verifySessionToken(sessionToken);
+if (!sessionUserId || sessionUserId !== customerId) return 401;
+```
+`[nid]/read` additionally does `SELECT id FROM vanta_notifications WHERE id = ? AND customer_id = ?` **before** the UPDATE, so a customer cannot mark another customer's notification read. `read-all` updates `WHERE customer_id = ? AND is_read = 0`. `list` is `LIMIT 50` with `ORDER BY is_read ASC, created_at DESC`.
+
+**Conclusion:** with the wishlist/notifications slice clean, batch 4 (customer account surface) is complete. Combined with the orders-scoping check (ownership verified via `order.customerId === linked.customer.id` for customers, `order.playerId === playerId` for guests, admins via `requireStoreAdmin`), every customer-facing data path in batch 4 is scoped. The one open item in this batch is the **guest `playerId` query-param path**, which is a design decision and documented separately — it is not a defect I can fix without knowing playerId entropy.
+
+**Gate:** read-only audit, no code changes, nothing to verify.

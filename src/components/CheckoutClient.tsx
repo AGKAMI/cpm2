@@ -303,8 +303,8 @@ export function CheckoutClient({ productId }: { productId: number }) {
             <label className="flex items-center gap-3 cursor-pointer select-none p-3 rounded-md border border-border hover:border-primary hover:text-primary-foreground hover:border-primary transition-colors">
               <input type="radio" name="paymentMethod" value="stars" checked={paymentMethod === "stars"} onChange={() => setPaymentMethod("stars")} className="accent-primary" />
               <div className="flex-1">
-                <div className="text-xs font-medium text-foreground">Telegram Stars ⭐</div>
-                <div className="text-[10px] text-muted-foreground">Pay in-app with your Stars balance — instant, no card. {product ? `≈ ${approxStarsForCents(totalCents)} ⭐` : ""}</div>
+                <div className="text-xs font-medium text-foreground">Telegram Stars</div>
+                <div className="text-[10px] text-muted-foreground">Pay in-app with your Stars balance — instant, no card.{product ? ` About ${approxStarsForCents(totalCents)} Stars.` : ""}</div>
               </div>
             </label>
 </div>

@@ -75,6 +75,12 @@ export function loadServerCart(): Promise<
   return serverCartPromise;
 }
 
+/** Raw local cart (guest / offline state). Exported so pages that fall back
+ *  to localStorage can read it without a server round-trip. */
+export function localCartItems(): { productId: number; quantity: number }[] {
+  return readLocalCart();
+}
+
 export function subscribeCart(listener: Listener): () => void {
   listeners.add(listener);
   return () => listeners.delete(listener);

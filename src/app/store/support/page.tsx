@@ -52,7 +52,16 @@ export default function SupportPage() {
   async function loadTickets() {
     try {
       setLoading(true);
-      const res = await fetch("/api/store/support/tickets");
+      const res = await fetch("/api/store/support/tickets", {
+        credentials: "include",
+      });
+      // A guest (no linked customer) has no tickets yet — that is an empty
+      // list, not a failure. Only surface real errors.
+      if (res.status === 401) {
+        setTickets([]);
+        setError(null);
+        return;
+      }
       if (!res.ok) throw new Error("Failed to load tickets");
       const data = await res.json();
       setTickets(data.tickets ?? []);
@@ -75,9 +84,13 @@ export default function SupportPage() {
     try {
       const res = await fetch("/api/store/support/tickets", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ category, description }),
       });
+      if (res.status === 401) {
+        throw new Error("Log in with Telegram to open a support ticket.");
+      }
       if (!res.ok) throw new Error("Failed to create ticket");
       const data = await res.json();
       setMsg(`Ticket ${data.ticket?.ticketNumber} opened.`);

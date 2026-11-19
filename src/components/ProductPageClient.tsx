@@ -12,7 +12,7 @@ import { ProductSkeleton } from "@/components/skeleton";
 import { CartPlusIcon } from "@/components/ui/icons";
 
 const EXCLUSIVITY_LABELS: Record<string, string> = {
-  limited: "Limited Edition",
+  limited_edition: "Limited Edition",
   one_of_one: "One of One",
   standard: "Standard Build",
 };
@@ -248,7 +248,7 @@ export function ProductPageClient({ productId }: { productId: string }) {
                 void addToCartLocal(product.id, 1);
               }}
               disabled={product.stockQuantity === 0 || checkoutBusy}
-              className={`w-full h-10 text-xs font-bold mt-2 border border-input rounded-lg ${product.stockQuantity === 0 ? "bg-background text-foreground cursor-not-allowed" : "bg-gold text-primary-foreground hover:opacity-90 transition-all cursor-pointer"}`}
+              className={`w-full h-10 text-xs font-bold mt-2 border rounded-lg ${product.stockQuantity === 0 ? "border-input bg-background text-foreground cursor-not-allowed" : "border-gold/70 bg-transparent text-ink hover:bg-gold/10 transition-all cursor-pointer"}`}
               aria-label={`Add ${product.name} to cart`}
             >
               {product.stockQuantity === 0 ? (
@@ -261,7 +261,7 @@ export function ProductPageClient({ productId }: { productId: string }) {
               )}
             </button>
             <p className="mt-4 text-[10px] text-muted-foreground text-center">
-              Secured checkout · EFT or card via PayFast
+              Secured checkout · EFT, PayFast or Telegram Stars
             </p>
           </section>
         </div>

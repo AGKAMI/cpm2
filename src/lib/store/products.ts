@@ -36,13 +36,25 @@ function rowToProduct(row: Record<string, unknown>): Product {
   };
 }
 
+/**
+ * Category art can be stored inline as a base64 data URL, which is 120-200 KB
+ * per row and used to blow the categories JSON up to ~830 KB (and every page
+ * that inlines categories with it). Hand the browser a stable URL instead and
+ * let /api/store/categories/[id]/image stream the bytes with cache headers.
+ */
+function categoryImage(row: Record<string, unknown>): string {
+  const raw = String(row.image_url ?? "");
+  if (raw.startsWith("data:")) return `/api/store/categories/${Number(row.id)}/image`;
+  return raw;
+}
+
 function rowToCategory(row: Record<string, unknown>): Category {
   return {
     id: Number(row.id),
     name: String(row.name ?? ""),
     slug: String(row.slug ?? ""),
     description: String(row.description ?? ""),
-    imageUrl: String(row.image_url ?? ""),
+    imageUrl: categoryImage(row),
     sortOrder: Number(row.sort_order ?? 0),
     isActive: Number(row.is_active ?? 1) === 1,
     createdAt: String(row.created_at ?? ""),
@@ -89,13 +101,20 @@ export async function updateCategory(id: number, input: { name?: string; slug?: 
   if (input.slug !== undefined) { sets.push("slug = ?"); args.push(input.slug.trim()); }
   if (input.description !== undefined) { sets.push("description = ?"); args.push(input.description); }
   if (input.sortOrder !== undefined) { sets.push("sort_order = ?"); args.push(input.sortOrder); }
-  if (input.imageUrl !== undefined) { sets.push("image_url = ?"); args.push(input.imageUrl); }
-  if (sets.length === 0) throw new Error("No fields to update");
-  args.push(id);
-  await db.execute({
-    sql: `UPDATE vanta_categories SET ${sets.join(", ")} WHERE id = ?`,
-    args,
-  });
+  // The storefront exposes stored base64 art as /api/store/categories/<id>/image.
+  // An admin form that round-trips that URL must not overwrite the original
+  // artwork with the proxy path (which would 404 and lose the image).
+  if (input.imageUrl !== undefined && !input.imageUrl.startsWith("/api/store/categories/")) {
+    sets.push("image_url = ?");
+    args.push(input.imageUrl);
+  }
+  if (sets.length > 0) {
+    args.push(id);
+    await db.execute({
+      sql: `UPDATE vanta_categories SET ${sets.join(", ")} WHERE id = ?`,
+      args,
+    });
+  }
   // Return the updated row.
   const result = await db.execute({
     sql: `SELECT * FROM vanta_categories WHERE id = ?`,

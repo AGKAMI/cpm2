@@ -12,6 +12,7 @@ import { StoreShell } from "@/components/StoreShell";
 import { WishlistSkeleton } from "@/components/skeleton";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
+import { formatPrice } from "@/lib/store/client";
 
 type WishlistItem = {
   id: number;
@@ -39,6 +40,13 @@ export default function WishlistPage() {
       const res = await fetch("/api/store/wishlist", {
         credentials: "include",
       });
+      // Guests (no linked customer) keep hearts in localStorage only — an
+      // empty server wishlist is the correct answer, not an error screen.
+      if (res.status === 401) {
+        setItems([]);
+        setError(null);
+        return;
+      }
       if (!res.ok) throw new Error("Failed to load wishlist");
       const data = await res.json();
       setItems(data.items ?? data.wishlist ?? data.products ?? []);
@@ -147,7 +155,7 @@ function WishlistCard({
       </p>
       <div className="flex items-baseline justify-between gap-2 mt-auto">
         <span className="text-lg font-bold text-foreground">
-          {item.basePriceCents / 100} {item.currency}
+          {formatPrice(item.basePriceCents, item.currency)}
         </span>
         <span
           className={`text-[10px] font-bold rounded px-2 py-0.5 ${

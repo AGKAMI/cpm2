@@ -116,10 +116,10 @@ export function StoreHomeClient({
           Custom builds on the floor.
         </h1>
         <p className="text-ink-mid max-w-[30ch]">
-          {featured.length} vehicles ready to drive.{" "}
-          {(featured as VantaProduct[]).filter(
-            (c: VantaProduct) => c.exclusivity !== "standard"
-          ).length} limited editions.
+          {allProducts.length} vehicles ready to drive.{" "}
+          {allProducts.filter((c: VantaProduct) => c.exclusivity !== "standard")
+            .length}{" "}
+          limited editions.
         </p>
       </section>
 
@@ -325,10 +325,15 @@ export function StoreHomeClient({
                   <div className="vanta-card-media">
                     {cat.imageUrl ? (
                       <img
-                        src={cat.imageUrl}
+                        src={
+                          cat.imageUrl.startsWith("/")
+                            ? `${cat.imageUrl}?w=400`
+                            : cat.imageUrl
+                        }
                         alt={cat.name}
                         className="w-full h-full object-cover"
                         loading="lazy"
+                        decoding="async"
                         width={200}
                         height={250}
                         style={{ objectFit: "cover" }}

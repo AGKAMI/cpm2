@@ -9,7 +9,7 @@ import { CartSkeleton } from "@/components/skeleton";
 import {
   addToCartLocal,
   cartCountLocal,
-  loadServerCart,
+  localCartItems,
   removeFromCartLocal,
   subscribeCart,
   updateCartQuantityLocal,
@@ -46,25 +46,78 @@ export function CartClient() {
     try {
       const res = await fetch("/api/store/cart", { credentials: "include" });
       if (!res.ok) {
-        // Not linked (guest outside Telegram) — fall back to local cart.
-        const local = await loadServerCart();
+        // Not linked (guest outside Telegram) — the local cart is
+        // authoritative, and we hydrate names/prices for it so the page is
+        // still usable instead of showing a list of blanks.
+        const local = localCartItems();
+        if (local.length === 0) {
+          setItems([]);
+          setError(null);
+          return;
+        }
+        const ids = local.map((i) => i.productId);
+        const metaById = new Map<
+          number,
+          {
+            name: string;
+            coverImage: string | null;
+            basePriceCents: number;
+            discountPercent: number;
+            currency: string;
+            stockQuantity: number;
+            exclusivity: string;
+          }
+        >();
+        try {
+          const [productsRes, coversRes] = await Promise.all([
+            fetch("/api/store/products", { cache: "no-store" }),
+            vantaApi.mediaCovers(ids).catch(() => ({ covers: {} as Record<string, string> })),
+          ]);
+          if (productsRes.ok) {
+            const data = (await productsRes.json()) as {
+              products?: Array<{
+                id: number;
+                name: string;
+                basePriceCents: number;
+                discountPercent: number;
+                currency: string;
+                stockQuantity: number;
+                exclusivity: string;
+              }>;
+            };
+            for (const p of data.products ?? []) {
+              metaById.set(p.id, {
+                name: p.name,
+                coverImage: coversRes.covers[String(p.id)] ?? null,
+                basePriceCents: p.basePriceCents,
+                discountPercent: p.discountPercent ?? 0,
+                currency: p.currency ?? "ZAR",
+                stockQuantity: p.stockQuantity,
+                exclusivity: p.exclusivity ?? "standard",
+              });
+            }
+          }
+        } catch {
+          // Metadata is best-effort; ids still render.
+        }
         setItems(
-          (local?.items ?? []).map((it) => ({
-            productId: it.productId,
-            name: "",
-            coverImage: null,
-            basePriceCents: 0,
-        // LocalStorage fallback cart carries only productId + quantity — no price
-        // data at all, so no discount is knowable there.
-        discountPercent: 0,
-            currency: "ZAR",
-            stockQuantity: 0,
-            quantity: it.quantity,
-            exclusivity: "standard",
-          })),
+          local.map((it) => {
+            const meta = metaById.get(it.productId);
+            return {
+              productId: it.productId,
+              name: meta?.name ?? "",
+              coverImage: meta?.coverImage ?? null,
+              basePriceCents: meta?.basePriceCents ?? 0,
+              discountPercent: meta?.discountPercent ?? 0,
+              currency: meta?.currency ?? "ZAR",
+              stockQuantity: meta?.stockQuantity ?? 0,
+              quantity: it.quantity,
+              exclusivity: meta?.exclusivity ?? "standard",
+            };
+          }),
         );
         setError(
-          "Open the store from Telegram to link your account and sync your cart.",
+          "Saved on this device. Open the store from Telegram to sync your cart.",
         );
         return;
       }

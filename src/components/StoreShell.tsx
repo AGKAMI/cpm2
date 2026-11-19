@@ -10,6 +10,7 @@ import { LucideIcon } from "lucide-react";
 import { Home, Grid, List, ShoppingCart } from "lucide-react";
 
 import { NotificationBell } from "@/components/NotificationBell";
+import { FleetProvider } from "@/components/FleetProvider";
 import { vantaApi } from "@/lib/store/client";
 import { useTheme } from "@/hooks/useTheme";
 import { cartCountLocal, loadServerCart, subscribeCart } from "@/lib/store/cart-client";
@@ -214,8 +215,9 @@ export function StoreShell({ children, dock }: StoreShellProps) {
 
   return (
     <div className="relative min-h-screen bg-background">
-      <>
-        <header
+      <FleetProvider>
+        <>
+          <header
           className="sticky top-0 z-30 border-b border-border shadow-sm px-4 pt-8 pb-8 sm:px-6"
           style={{ backgroundColor: "var(--background)" }}
         >
@@ -334,7 +336,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
           {children}
         </main>
       </>
-
+        </FleetProvider>
       <Dock
         mode={mode}
         items={visibleNav.map((item) => ({

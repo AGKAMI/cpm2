@@ -33,7 +33,16 @@ export default function AppointmentsPage() {
       const res = await fetch("/api/store/appointments", {
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Failed to load appointments");
+      if (!res.ok) {
+        // Guest/unauthorized, not found, or method not allowed → no
+        // appointments to show, not an error screen.
+        if ([401, 404, 405].includes(res.status)) {
+          setAppointments([]);
+          setError(null);
+          return;
+        }
+        throw new Error("Failed to load appointments.");
+      }
       const data = await res.json();
       setAppointments(data.appointments ?? data ?? []);
       setError(null);

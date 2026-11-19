@@ -44,22 +44,6 @@ const ICONS: Record<string, string> = {
   tag: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.3"/></svg>`,
 };
 
-/** Placeholder image built from a product name (SVG data URL).
- *  Always renders a photo, even when the product has no uploaded cover image. */
-function coverImageFromName(name: string, w = 200, h = 260): string {
-  const esc = (s: string): string =>
-    s.replace(/[&<>"']/g, (c) => (
-      { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string
-    ));
-  const grad = "#1f2937 0%, #374151 50%, #1f2937 100%";
-  return `data:image/svg+xml,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">` +
-    `<rect width="${w}" height="${h}" fill="${grad}"/>` +
-    `<text x="${w / 2}" y="${h / 2 + 10}" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" letter-spacing="1">${esc(name.length > 20 ? name.slice(0, 20) + "…" : name)}</text>` +
-    `</svg>`
-  )}`;
-}
-
 export function CategoriesClient({
   categories,
   products,
@@ -77,7 +61,6 @@ export function CategoriesClient({
   const [fopen, setFopen] = useState(false);
   const [sort, setSort] = useState("feat");
   const [debouncedQ, setDebouncedQ] = useState("");
-  const [clientCoverMap, setClientCoverMap] = useState<Record<number, string>>(coverMap);
 
   // covers are resolved server-side (CategoriesPage) — phones paint the
   // image on first load, no async race.
@@ -91,6 +74,12 @@ export function CategoriesClient({
   }, []);
 
   const nf = Number(excl !== "all") + Number(avail !== "all") + (promo ? 1 : 0) + (max < 200 ? 1 : 0);
+
+  // User rule: a vehicle with no renderable cover is never listed. Same
+  // filter as the home page, so the counts here agree with the floor.
+  const [brokenCovers, setBrokenCovers] = useState<Set<number>>(new Set());
+  const hasCover = (c: Product) =>
+    Boolean(coverMap[c.id]) && !brokenCovers.has(c.id);
 
   const filtered = products.filter((c) => {
     const priceOk = c.basePriceCents / 100 <= max;
@@ -107,7 +96,7 @@ export function CategoriesClient({
     const qOk =
       !debouncedQ ||
       (c.name + " " + c.description).toLowerCase().includes(debouncedQ.toLowerCase());
-    return priceOk && exclOk && availOk && promoOk && qOk;
+    return hasCover(c) && priceOk && exclOk && availOk && promoOk && qOk;
   });
 
   const sorted = [...filtered].sort((a, b) => {
@@ -194,8 +183,8 @@ export function CategoriesClient({
                     id="mx"
                     type="range"
                     min="0"
-                    max="2000"
-                    step="25"
+                    max="200"
+                    step="10"
                     value={max}
                     onChange={(e) => setMax(parseInt(e.target.value, 10))}
                     className="range-slider w-full h-[4px] rounded-[2px] bg-border appearance-none cursor-pointer"
@@ -249,7 +238,7 @@ export function CategoriesClient({
                       setExcl("all");
                       setAvail("all");
                       setPromo(false);
-                      setMax(2000);
+                      setMax(200);
                       setQ("");
                     }}
                     className="btn btn-line sm flex-1 h-[38px] text-[11.5px] font-bold uppercase tracking-[0.18em] text-muted-foreground rounded-[12px] px-[14px] w-auto"
@@ -267,10 +256,12 @@ export function CategoriesClient({
             </div>
           )}
 
-          <div className="rh flex justify-between items-center mb-2 px-4">
-            <span><b>{sorted.length}</b> vehicle{sorted.length === 1 ? "" : "s"}</span>
+          <div className="rh flex justify-between items-center gap-3 mb-2 px-4">
+            <span className="shrink-0 whitespace-nowrap">
+              <b>{sorted.length}</b> vehicle{sorted.length === 1 ? "" : "s"}
+            </span>
             <select
-              className="admin-input bg-transparent border border-border text-foreground font-bold text-[11px] px-2 py-1 rounded-[10px] outline-0 w-auto"
+              className="admin-input bg-transparent border border-border text-foreground font-bold text-[11px] px-2 py-1 rounded-[10px] outline-0 w-auto max-w-[60%]"
               value={sort}
               onChange={(e) => setSort(e.target.value)}
             >
@@ -292,8 +283,11 @@ export function CategoriesClient({
                 >
                   <div className="relative overflow-hidden rounded-[24px] border border-border mb-4 aspect-[4/5]">
                     <img
-                      src={coverImageFromName(c.name, 200, 260)}
+                      src={coverMap[c.id]}
                       alt={c.name}
+                      onError={() =>
+                        setBrokenCovers((prev) => new Set(prev).add(c.id))
+                      }
                       className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${c.stockQuantity === 0 ? "out-of-stock-media" : ""}`}
                       loading="lazy"
                       decoding="async"

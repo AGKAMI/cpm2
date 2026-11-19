@@ -1074,3 +1074,49 @@ Three separate `CartItem` declarations had to be patched — worth remembering i
 ### 2026-11-19 (debug batch 3 addendum) — Agent "Kermes" — checkout response total disagreed with the charge
 
 The first pass missed a second site: `api/store/cart/checkout/route.ts` built the response `subtotalCents` with `i.basePriceCents * i.quantity` while the orders themselves were created at `discountedPriceCents(...)`. The customer's checkout response therefore reported the full price against discounted orders. Fixed; `grep` over `src/` for the old formula now returns 0 sites. **Lesson: a pricing bug is rarely one line — grep the whole repo for the arithmetic pattern, not just the first hit.**
+
+### 2026-11-19 (vision audit batch, all remaining pages) — Agent "Nemotron"
+
+**Local prod on 3001: `npx next start -H 127.0.0.1 --port 3001` (never touch 3000). Verified each page with `tools.browser.screenshot` + `browser.wait` text checks.**
+
+**Fixes shipped:**
+
+1. **`CategoriesClient.tsx` — cover images wired + no-cover products hidden.** `coverMap[c.id]` now sources the grid `` (real cover photo instead of placeholder SVG), price slider capped at R200 with step 10, "N vehicles" row `shrink-0 whitespace-nowrap` + `max-w-[60%]`, `onError` marks a cover broken so that product never lists. Verified browser: categories shows **2 vehicles** with real photos (previously SVG blanks), then **3 vehicles** before the no-image filter.
+
+2. **`src/lib/store/products.ts` — base64 category art proxied through a server route.** Category art was stored inline as 120–210 KB base64 data URLs, inflating `GET /api/store/categories` to ~836 KB and every page that lists categories. New `src/app/api/store/categories/[id]/image/route.ts` streams the stored bytes (sharp-resized to requested `w`, cached `max-age=31536000 immutable`). Category JSON fell from ~836 KB to ~870 bytes; category thumbnails now paint at ~5–8 KB each. `rowToCategory` maps data URLs → `/api/store/categories/<id>/image`, and `updateCategory`/`createCategory` no longer overwrite a stored base64 URL with the proxy path.
+
+3. **`ProductPageClient.tsx` — exclusivity label key + gold outline button.** `EXCLUSIVITY_LABELS` key fixed `limited` → `limited_edition` to match DB enum (`standard | limited_edition | one_of_one`), so exclusive products show their real label instead of the raw key. "Add to cart" changed from gold fill to gold outline (hierarchy per spec). Copy updated to "EFT, PayFast or Telegram Stars".
+
+4. **`CheckoutClient.tsx` — emoji removed.** `Telegram Stars ⭐` → `Telegram Stars`, and `≈ 125 ⭐` → `About 125 Stars.` No emojis anywhere in app UI now.
+
+5. **`src/app/api/store/support/tickets/route.ts` — full rewrite.** Added `GET` (lists caller's tickets, maps `ticketNumber`/`category`/`description`/`status`/`createdAt`/`resolvedAt`) and accepts both `{category, description}` (storefront) and `{subject, message}` (admin) bodies with validation. Previously POST-only with a schema requiring both subject+message; 405'd on GET.
+
+6. **`src/app/store/support/page.tsx` + `src/app/store/wishlist/page.tsx` + `src/app/store/appointments/page.tsx` — guest 401 → empty state.** All three now treat `401` as empty data (not an error screen): tickets/appointments wishlists render empty with friendly copy; added `credentials: "include"` to all fetches; support POST throws `Log in with Telegram…` on 401. Wishlist prices now use `formatPrice`.
+
+7. **`src/components/CartClient.tsx` + `src/lib/store/cart-client.ts` — guest cart hydrates from localStorage.** Guest branch no longer calls `loadServerCart()` (returns `null` → cart always looked empty). New exported `localCartItems()` reads localStorage; names/prices/covers hydrated from `/api/store/products` + `vantaApi.mediaCovers`. Cart now shows item name/price/qty/subtotal for guests. Verified browser: cart shows 1 item, `R 30,00`, qty controls, subtotal.
+
+8. **`src/components/StoreHomeClient.tsx` — hero counts + category image loading.** Hero counts now use `allProducts` (was `featured.length` → "0 vehicles ready to drive"). Category cards use plain `` with `?w=400` resize param (next/image config can't optimize this path; the image route does its own sharp resize).
+
+9. **`StoreShell.tsx` + `AppShell.tsx` — `FleetProvider` wrap.** Both shells now wrap content in `FleetProvider` (was crashing render → empty body). Compiles and renders cleanly.
+
+**Pages audited & green (browser-verified at 3001):**
+- `/store` — hero "2 vehicles ready to drive", category grid with photos, cart button expands → "ADDED TO CART" → collapses.
+- `/store/categories` — 2 vehicle cards with real cover photos, price slider capped R200, row no longer squeezed.
+- `/store/products/[id]` — loads in ~1s now (single product fetch instead of full catalogue).
+- `/store/cart` — guest cart hydrates from localStorage with name/price/qty/subtotal.
+- `/store/orders` — "No orders yet" empty state.
+- `/store/checkout/[id]` — EFT + Telegram Stars payment, copy correct, no emoji.
+- `/store/support` — "No tickets yet", friendly login prompt on 401.
+- `/store/wishlist` — empty state, `formatPrice` used.
+- `/store/appointments` — empty state (was "Failed to load appointments" on 405).
+- `/store/notifications`, `/store/dashboard`, `/store/checkout/thank-you`, `/store/cart/checkout` — all 200, no overflowX.
+- `/store/profile/legal/terms` + `/privacy` — minimum age 13, no Fleet Ledger links, payment methods = EFT, PayFast, Telegram Stars.
+- `/store/profile` — signed-out entry (Log in / Create account), appearance palette + theme toggle work.
+- `/store/admin-login` — not-authorised page renders correctly.
+- `/fleet` + `/trade` — Fleet Ledger trade desk loads, syncs, no regressions.
+
+**Still blocked (not browser-verifiable, no Telegram session in desktop):** `/store/admin`, `/store/owner` require Telegram initData; role-tag shine clipping verified visually only while logged out.
+
+**Gates:** `npx tsc --noEmit` exit 0, `npm test` 66/66 pass, `npx next build` exit 0 (`.next` purged first), local prod verified by content screenshots.
+
+**Next moves:** commit only my files (`git add` explicit paths), push, fire Vercel deploy hook with `curl.exe -X POST`, verify prod by content not PENDING status. Then browser-verify role-tag shine clipping while logged in, and implement the two pending backgrounds (Vanta hue-rotating tiled pattern; Fleet Ledger animated rain).

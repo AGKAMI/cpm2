@@ -106,6 +106,8 @@ CREATE TABLE IF NOT EXISTS vanta_pricing (
 CREATE TABLE IF NOT EXISTS vanta_system_config (
   key   TEXT PRIMARY KEY,
   value TEXT    NOT NULL,
+  type  TEXT    NOT NULL DEFAULT 'string',
+  is_sensitive INTEGER NOT NULL DEFAULT 0,
   updated_at TEXT NOT NULL
 );
 

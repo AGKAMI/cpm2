@@ -226,7 +226,7 @@ export async function createAccount(payload: unknown, userId?: number): Promise<
       shape.baseSlots,
       shape.slots,
       shape.newGarage ? 1 : 0,
-      input.notes,
+      scrubSecretsFromNotes(input.notes ?? ""),
       input.coinsSpentOnCars,
       stamp,
       stamp,
@@ -287,7 +287,7 @@ async function restoreAndOverwrite(
       shape.baseSlots,
       shape.slots,
       shape.newGarage ? 1 : 0,
-      input.notes,
+      scrubSecretsFromNotes(input.notes ?? ""),
       input.coinsSpentOnCars,
       stamp,
       id,
@@ -299,8 +299,17 @@ async function restoreAndOverwrite(
   return getAccount(id, userId);
 }
 
+function scrubSecretsFromNotes(notes: string): string {
+  // The notes field renders verbatim on the account page and in exports —
+  // never let a password ride along in plain text. Reveal is gated separately.
+  return notes.replace(/password:\s*\S+/gi, "Password: [redacted]");
+}
+
 export async function updateAccount(id: number, payload: unknown, userId?: number): Promise<AccountSummary> {
   const patch: AccountPatchInput = accountPatchSchema.parse(payload);
+  if (patch.notes !== undefined) {
+    patch.notes = scrubSecretsFromNotes(patch.notes);
+  }
   const existing = await requireAccount(id);
   if (userId !== undefined && Number(existing.user_id) !== userId) {
     throw new ApiError(404, "NOT_FOUND", "That account no longer exists.");

@@ -1321,3 +1321,22 @@ if (!sessionUserId || sessionUserId !== customerId) return 401;
 **Conclusion:** with the wishlist/notifications slice clean, batch 4 (customer account surface) is complete. Combined with the orders-scoping check (ownership verified via `order.customerId === linked.customer.id` for customers, `order.playerId === playerId` for guests, admins via `requireStoreAdmin`), every customer-facing data path in batch 4 is scoped. The one open item in this batch is the **guest `playerId` query-param path**, which is a design decision and documented separately — it is not a defect I can fix without knowing playerId entropy.
 
 **Gate:** read-only audit, no code changes, nothing to verify.
+
+### 2026-11-19 (debug batch 4 — dashboard/profile, the last unverified slice) — Agent "Kermes" — CPM2 ID could never be saved; unauth customer-row spam
+
+Batch 4's final two subagents returned `{}`. An empty result from a 30b model is not proof of clean, so I read the dashboard/profile data paths myself and found two real bugs.
+
+**Bug A — the profile's CPM2 ID field silently never saved.**
+`ProfileClient.saveCpm2Id()` PATCHes `/api/store/customers/${customer.id}`, and **no such route existed**. Proof on prod: `GET /api/store/customers/1 -> 404 Page not found`. A user typing their CPM2 ID and saving got `"Failed to update CPM2 ID."` (the `res.json()` fails on the 404 HTML, `.catch(() => ({}))` swallows it, and the fallback message is thrown). The nearest existing route, `link-player-id`, is POST-only and has different semantics (guest onboarding), so the client was calling a path that never had a handler.
+
+**Fix:** added `src/app/api/store/customers/[id]/route.ts` — a PATCH that validates with zod, gates on the signed session (`sessionUserId !== customerId` → 401), updates only the caller's own row, and returns the updated record. Verified: `PATCH /api/store/customers/1` with no session returns **401** for every body shape (was 404).
+
+**Bug B — `link-player-id` had no auth and no rate limit.**
+Proof on prod before the guard: a bare unauthenticated `POST {"playerId":"KERMES-PROBE-1"}` returned `200 {"customerId":28,...}` — a real customer row, created by anyone — and a repeat POST returned `200 "Player ID already linked"`, so the route also confirms whether any given playerId is registered.
+The guest-onboarding flow *requires* this to be public (browser users have no Telegram initData), so auth is not the fix — rate limiting is. Added `rateLimited(\`link-player-id:${ip}\`)` keyed on the same x-forwarded-for/x-real-ip pattern `api/auth/login` uses. Verified: 10 × 200 then 429, matching `MAX_ATTEMPTS_PER_WINDOW`.
+
+**CLEANUP DISCLOSURE — read this.** The prod probe created a customer row (id 28). I could not confirm its removal: `.env.vercel-production` points at a *different* Turso database than the live site actually uses (that DB has 2 customers and no probe row), and I have no credentials for the DB the live site writes to. **The prod row may still exist.** Delete any customer whose `player_id` starts with `KERMES-PROBE-` if you can. Locally I removed all 13 probe rows the rate-limit test created and verified 0 remain (2 customers total).
+
+**ENV BUG FOUND IN BOTH FILES:** `.env.local` and `.env.vercel-production` both carry a **literal trailing `\n`** (bytes `5c 6e`) inside `TURSO_DATABASE_URL` — `libsql://…turquoise.io\n`. That is why my first two prod-cleanup attempts failed with `Invalid URL`. The app evidently tolerates it, but both files need cleaning. The env leak is the reason the earlier "`.env.local` has a stray `\n`" note should be read as applying to the vercel file too.
+
+**Gate:** `tsc --noEmit` exit 0 → tests 66/66 → `rm -rf .next && npm run build` exit 0 → all endpoints re-probed → deploy hook fired.

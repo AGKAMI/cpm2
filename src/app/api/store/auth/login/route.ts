@@ -14,7 +14,12 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      body = {}; // empty or malformed body -> validation below, not a 500
+    }
     const { email, password } = body as { email?: string; password?: string };
 
     if (!email || !password) {

@@ -2,7 +2,7 @@
  * VANTA GARAGE — Multi-currency pricing service.
  *
  * Products carry a base price in ZAR (basePriceCents). Additional currency
- * pricing is stored in vanta_product_pricing with exchange rates that are
+ * pricing is stored in vanta_pricing with exchange rates that are
  * preserved at order time so historical prices never drift when rates change.
  *
  * All amounts are stored/returned in cents (minor currency unit).
@@ -37,7 +37,7 @@ function rowToPricing(row: Record<string, unknown>): ProductPrice {
 export async function getProductPrices(productId: number): Promise<ProductPrice[]> {
   const db = await getStoreDb();
   const result = await db.execute({
-    sql: `SELECT * FROM vanta_product_pricing WHERE product_id = ? ORDER BY currency ASC`,
+    sql: `SELECT * FROM vanta_pricing WHERE product_id = ? ORDER BY currency ASC`,
     args: [productId],
   });
   return result.rows.map(rowToPricing);
@@ -54,7 +54,7 @@ export async function createPrice(input: {
   const db = await getStoreDb();
   const now = new Date().toISOString();
   const result = await db.execute({
-    sql: `INSERT INTO vanta_product_pricing (product_id, currency, price_cents, exchange_rate, effective_from, effective_to, created_at)
+    sql: `INSERT INTO vanta_pricing (product_id, currency, price_cents, exchange_rate, effective_from, effective_to, created_at)
           VALUES (?, ?, ?, ?, ?, ?, ?)`,
     args: [input.productId, input.currency, input.priceCents, input.exchangeRate ?? null, input.effectiveFrom, input.effectiveTo ?? null, now],
   });
@@ -68,7 +68,7 @@ export async function getPriceForProduct(productId: number, currency: string, at
   const now = new Date().toISOString();
   const atOrNow = at ?? now;
   const result = await db.execute({
-    sql: `SELECT * FROM vanta_product_pricing
+    sql: `SELECT * FROM vanta_pricing
           WHERE product_id = ? AND currency = ?
             AND effective_from <= ?
             AND (effective_to IS NULL OR effective_to >= ?)
@@ -90,10 +90,21 @@ export async function convertPrice(amountCents: number, fromCurrency: string, to
 
 export async function getPriceInCurrency(productId: number, currency: string, at?: string): Promise<{ priceCents: number; exchangeRate: number | null; currency: string } | null> {
   const productPrice = await getPriceForProduct(productId, currency, at);
-  if (!productPrice) return null;
+  if (productPrice) {
+    return {
+      priceCents: productPrice.priceCents,
+      exchangeRate: productPrice.exchangeRate,
+      currency: productPrice.currency,
+    };
+  }
+  // No currency-specific row — fall back to the product's base price so the
+  // API answers usefully instead of 404ing for every unpriced currency.
+  const { getProduct } = await import("./products.ts");
+  const product = await getProduct(productId);
+  if (!product) return null;
   return {
-    priceCents: productPrice.priceCents,
-    exchangeRate: productPrice.exchangeRate,
-    currency: productPrice.currency,
+    priceCents: product.basePriceCents,
+    exchangeRate: null,
+    currency: product.currency,
   };
 }

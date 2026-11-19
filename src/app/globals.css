@@ -325,7 +325,7 @@
   background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.45) 50%, transparent 100%);
   animation: promotionShine 3s infinite linear;
   pointer-events: none;
-  border-radius: inherit;
+  border-radius: 1rem;
 }
 [data-theme="paper"] .role-owner {
   background: linear-gradient(

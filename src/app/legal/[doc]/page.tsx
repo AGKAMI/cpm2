@@ -22,7 +22,7 @@ const LEGAL_DOCS: Record<string, { title: string; version: string; body: ReactNo
           1. Eligibility
         </h2>
         <p>
-          You must be at least 18 years old and have a valid CPM2 Player ID to
+          You must be at least 13 years old and have a valid CPM2 Player ID to
           purchase a vehicle. Orders are linked to your Telegram or WhatsApp
           identity.
         </p>
@@ -38,8 +38,9 @@ const LEGAL_DOCS: Record<string, { title: string; version: string; body: ReactNo
           3. Payment
         </h2>
         <p>
-          Payment is made by EFT or PayFast. Your order is confirmed only after
-          payment is verified. We do not store full card details.
+          Payment is made by EFT, PayFast, or Telegram Stars. Your order is
+          confirmed only after payment is verified. We do not store full card
+          details.
         </p>
         <h2 className="text-lg font-semibold text-foreground mt-6 mb-2">
           4. Delivery

@@ -56,6 +56,7 @@ const LEGAL_NAV = [
 ];
 
 function getNavForPath(pathname: string) {
+  if (pathname.startsWith("/store/profile/legal")) return LEGAL_NAV;
   if (pathname.startsWith("/store")) return STORE_NAV;
   if (pathname.startsWith("/legal")) return LEGAL_NAV;
   return NAV;

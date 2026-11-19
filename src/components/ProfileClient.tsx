@@ -637,7 +637,7 @@ export function ProfileClient({
 
       {/* ============ PROFILE HEADER ============ */}
       <section className="mb-5 px-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 relative">
           <div className="relative shrink-0">
             <div className="h-20 w-20 rounded-full p-[3px] metallic-silver">
               <div className="h-full w-full rounded-full overflow-hidden bg-secondary">
@@ -1239,7 +1239,7 @@ export function ProfileClient({
               {POLICY_DOCS.map((p) => (
                 <li key={p.slug}>
                   <a
-                    href={`/legal/${p.slug}`}
+                    href={`/store/profile/legal/${p.slug}`}
                     className="flex items-center justify-between gap-2 border-b border-border py-2.5 text-sm font-medium text-foreground hover:text-gold transition-colors"
                   >
                     <span>{p.title}</span>

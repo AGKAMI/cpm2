@@ -20,9 +20,12 @@ import {
   linkPlatformIdentity,
 } from "@/lib/store/customers";
 import { createOrder } from "@/lib/store/checkout";
+import { getProduct } from "@/lib/store/products";
 import { getCart, clearCart } from "@/lib/store/cart";
 import { getStoreCustomer } from "@/lib/store/auth";
 import type { Customer } from "@/lib/store-types";
+import { listAdmins } from "@/lib/store/admin-service";
+import { sendNotification } from "@/lib/store/notifications";
 
 const cartCheckoutSchema = z.object({
   playerId: z.string().min(1, "Player ID is required"),
@@ -94,6 +97,28 @@ export async function POST(request: Request) {
 
     // Orders created (or all already existed via idempotency) — empty the cart.
     await clearCart(customer.id);
+
+    // Notify admins/owners via Telegram about the new order.
+    const firstProduct = await getProduct(orders[0].productId);
+    const admins = await listAdmins();
+    if (admins.length > 0) {
+      const line = "═".repeat("NEW ORDER".length);
+      const formatPrice = (cents: number, currency = "ZAR") =>
+        new Intl.NumberFormat("en-ZA", { style: "currency", currency }).format(cents / 100);
+      const message =
+        `${line}\nNEW ORDER\n${line}\n\n` +
+        `🔔 New order submitted\n` +
+        `▸ ${firstProduct?.name ?? "Unknown product"}\n` +
+        `▸ Order: ${orders[0].id}\n` +
+        `▸ ${formatPrice(orders[0].amountCents, orders[0].currency)}\n` +
+        `▸ Player: ${inGameName} (${playerId})\n\n` +
+        `⚠ Verify payment and arrange delivery.`;
+      await Promise.all(
+        admins.map((a) =>
+          sendNotification(Number(a.telegramUserId), message),
+        ),
+      ).catch(() => {}); // Don't fail checkout if notification fails
+    }
 
     const subtotalCents = cart.items.reduce(
       (sum, i) => sum + i.basePriceCents * i.quantity,

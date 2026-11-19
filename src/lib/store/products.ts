@@ -134,6 +134,7 @@ export async function createProduct(input: ProductInput): Promise<Product> {
       input.name.trim(),
       input.description ?? "",
       input.basePriceCents ?? 0,
+      input.discountPercent ?? 0,
       input.currency ?? "ZAR",
       input.stockQuantity ?? 0,
       // Baseline = the stock first put on the card (ratio color tiers)

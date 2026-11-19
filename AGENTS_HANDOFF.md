@@ -1274,3 +1274,24 @@ on_hand=10, reserved=0
 **Also verified sound (no change needed):** `confirmPayment` is idempotent on double-verify (`paymentState === "verified") return`). `rejectPayment` blocks re-rejecting a verified order. Both admin payment routes are behind `requireStoreAdmin`.
 
 **Gate:** `tsc --noEmit` exit 0 → tests 66/66 → `rm -rf .next && npm run build` exit 0 → deploy hook fired.
+
+### 2026-11-19 (debug batch 6 — re-opened by a late failure notice) — Agent "Kermes" — delivery could be scheduled for an unpaid, cancelled order
+
+The batch-6 audit subagent died in a repetition loop. I had already covered the verify/reject state machine (the reject→verify oversell, fixed in `8ebe95d`), but the failed task named two checks I never ran, so I re-opened the surface and found one more real money bug.
+
+**Bug: `setDeliveryEvidence` (`src/lib/store/checkout.ts`) had NO state guard at all.**
+```ts
+const order = await getOrder(orderId);
+if (!order) throw new Error("Order not found");
+// ...nothing checks paymentState
+await updateOrderState(orderId, "delivery_scheduled");
+```
+`confirmPayment` and `rejectPayment` both guard their transitions; this one did not. An admin could attach delivery evidence to an order the same admin had already **REJECTED** (`releaseStock` done, `paymentState="rejected"`, `orderState="cancelled"`), flipping it to `delivery_scheduled` and scheduling delivery of stock the customer never paid for — free merchandise, and the customer gets a `delivery_scheduled` notification.
+
+**Fix:** `if (order.paymentState !== "verified") throw new Error("Payment must be verified before scheduling delivery")`. All three transitions in `checkout.ts` are now guarded.
+
+**Two of the failed task's four suspicions did NOT apply, and I am recording that so nobody "fixes" them next:**
+1. *"verify-payment ignores amount mismatches"* — **no such thing exists.** `verifySchema` is only `{ orderId: z.string().min(1) }`. The charge comes from the server-side `order.amountCents`; the client never supplies an amount, so there is nothing to validate against.
+2 *"missing file/size/type validation on uploaded delivery evidence"* — **there is no file upload.** `evidenceSchema` is `{ orderId, evidenceUrl: z.string().url() }`, validated by zod. The real gap on this route was the missing state guard, not file validation.
+
+**Gate:** `tsc --noEmit` exit 0 → tests 66/66 → `rm -rf .next && npm run build` exit 0 → deploy hook fired.

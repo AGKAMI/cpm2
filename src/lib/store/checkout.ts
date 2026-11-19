@@ -270,6 +270,14 @@ export async function setDeliveryEvidence(orderId: string, evidenceUrl: string):
   const db = await getStoreDb();
   const order = await getOrder(orderId);
   if (!order) throw new Error("Order not found");
+  // Same class of guard as confirmPayment and rejectPayment: delivery is only
+  // ever scheduled for a PAID order. Without this, evidence could be attached
+  // to an order the admin already REJECTED (stock released, orderState
+  // cancelled), flipping it to delivery_scheduled and handing over stock that
+  // was never paid for.
+  if (order.paymentState !== "verified") {
+    throw new Error("Payment must be verified before scheduling delivery");
+  }
 
   const now = nowIso();
   const appointmentId = order.appointmentId ?? `APT_${Date.now().toString(36)}`;

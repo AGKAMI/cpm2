@@ -327,7 +327,7 @@ export function StoreHomeClient({
                       <img
                         src={
                           cat.imageUrl.startsWith("/")
-                            ? `${cat.imageUrl}?w=400`
+                            ? `${cat.imageUrl}?w=400&v=2`
                             : cat.imageUrl
                         }
                         alt={cat.name}

@@ -49,13 +49,20 @@ export async function GET(
           .resize({ width: requested, withoutEnlargement: true })
           .webp({ quality: 78 })
           .toBuffer();
-        return new Response(new Uint8Array(resized), {
-          headers: {
-            "Content-Type": "image/webp",
-            "Content-Length": String(resized.byteLength),
-            "Cache-Control": "public, max-age=31536000, immutable",
-          },
-        });
+        // Never answer with bytes the browser could still fail to decode:
+        // the response is cached `immutable` for a year, so a single
+        // truncated conversion would poison the card forever. Verify the
+        // buffer is real webp before committing it.
+        const meta = await sharp(resized).metadata();
+        if (meta.format === "webp" && (meta.width ?? 0) > 0) {
+          return new Response(new Uint8Array(resized), {
+            headers: {
+              "Content-Type": "image/webp",
+              "Content-Length": String(resized.byteLength),
+              "Cache-Control": "public, max-age=31536000, immutable",
+            },
+          });
+        }
       } catch {
         // Fall through to the original bytes if sharp cannot decode it.
       }

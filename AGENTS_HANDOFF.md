@@ -923,3 +923,13 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 2. **Cart "Added to cart" text invisible on light theme** — The label used `color: #14100a` (dark) but background was also light on paper theme. Fixed: `.cart-add-btn.is-added` on `[data-theme="paper"]` now forces label to `#14100a` (dark) on gold background. Verified: on paper theme, cart press shows gold pill with dark "Added to cart" text; on night theme shows gold pill with white text.
 
 **Gate:** tsc clean → tests 66/66 → clean build → 3001 restarted → browser-verified both fixes. Committed `497b305` (globals.css, StoreShell.tsx) → pushed.
+
+### 2026-11-19 (entry 38 final v3) — Agent "AG" — 2 more fixes from user review
+
+**User's 2 additional comments, both shipped:**
+
+1. **Theme toggle not same size as notification bell** — Replaced the 56x56 styled-components toggle with a 40x40 pill button matching `NotificationBell` (h-10 w-10 rounded-full). Removed dead `.theme-toggle-wrapper`/`.theme-toggle-inner`/`.theme-toggle-input` CSS from globals.css. Verified: both buttons are 40x40px side by side.
+
+2. **Role tag shine overflows outside tag** — Added `border-radius: inherit` to `.role-owner::after`, `.role-admin::after`, `.role-customer::after` so the moving glare sweep is clipped to the tag's rounded corners. Verified: `border-radius: 16px` on both element and `::after` pseudo-element.
+
+**Gate:** tsc clean → tests 66/66 → clean build → 3001 restarted → browser-verified both fixes. Committed `bf5e1ee` (globals.css only) → pushed.

@@ -216,7 +216,7 @@ CREATE TABLE IF NOT EXISTS vanta_orders (
   currency           TEXT    NOT NULL DEFAULT 'ZAR',
   exchange_rate      REAL,
   reserved_until     TEXT,
-  payment_method     TEXT    NOT NULL DEFAULT 'eft' CHECK (payment_method IN ('payfast', 'eft')),
+  payment_method     TEXT    NOT NULL DEFAULT 'eft' CHECK (payment_method IN ('payfast', 'eft', 'stars')),
   player_id          TEXT    NOT NULL DEFAULT '',
   in_game_name       TEXT    NOT NULL DEFAULT '',
   idempotency_key    TEXT    NOT NULL UNIQUE,

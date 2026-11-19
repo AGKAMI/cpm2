@@ -279,20 +279,25 @@ export function StoreShell({ children, dock }: StoreShellProps) {
                               <path d="M19 12H5M12 19l-7-7 7-7" />
                             </svg>
                           </Button>
-                          {/* Quick dark/light switch — animated, persists via useTheme */}
+                          {/* Quick dark/light switch — animated moon/sun toggle */}
               <button
                 type="button"
                 onClick={() => setThemeMode(themeMode === "night" ? "paper" : "night")}
                 aria-pressed={themeMode === "paper"}
                 aria-label={themeMode === "night" ? "Switch to daylight" : "Switch to midnight"}
-                className="relative h-9 w-16 rounded-full border border-border bg-secondary p-1 cursor-pointer transition-colors duration-200 hover:border-gold"
+                className="theme-toggle relative h-9 w-16 rounded-full border border-border bg-secondary p-1 cursor-pointer transition-colors duration-200 hover:border-gold"
               >
-                <span
-                  className={`absolute top-1 h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-bold shadow-md transition-all duration-300 ease-out ${
-                    themeMode === "night" ? "left-1 metallic-indigo text-white" : "left-8 metallic-gold text-black"
-                  }`}
-                >
-                  {themeMode === "night" ? "☽" : "☀"}
+                <span className="theme-toggle-knob">
+                  <span className="theme-toggle-icon theme-toggle-moon">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24" aria-hidden="true">
+                      <path fillRule="evenodd" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 01.818.162z" clipRule="evenodd" />
+                    </svg>
+                  </span>
+                  <span className="theme-toggle-icon theme-toggle-sun">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24" aria-hidden="true">
+                      <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
+                    </svg>
+                  </span>
                 </span>
               </button>
               <NotificationBell />

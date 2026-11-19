@@ -529,9 +529,6 @@ const ProductCard = React.memo(
                   </span>
                   {variant === "standard" && <CartAddButton product={product} />}
                 </div>
-                {product.stockQuantity > 0 && (
-                  <AddToCartMini productId={product.id} />
-                )}
               </div>
               {hasArrow && (
                 <div className="w-10 h-10 rounded-full bg-gold flex items-center justify-center text-primary-foreground">
@@ -641,44 +638,7 @@ function SkeletonSectionHeader({ seeAll = true }: { seeAll?: boolean }) {
   );
 }
 
-/**
- * Tiny add-to-cart chip for product cards — optimistic add with a
- * momentary "Added!" state, server sync via cart-client.
- */
-function AddToCartMini({ productId }: { productId: number }) {
-  const [added, setAdded] = useState(false);
-  const [busy, setBusy] = useState(false);
 
-  const handleAdd = () => {
-    if (busy) return;
-    setBusy(true);
-    addToCartLocal(productId, 1);
-    setAdded(true);
-    setTimeout(() => {
-      setBusy(false);
-      setTimeout(() => setAdded(false), 900);
-    }, 600);
-  };
-
-  return (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={handleAdd}
-      disabled={busy || added}
-      className="h-7 w-7 p-0"
-      aria-label={added ? "Added to cart" : "Add to cart"}
-    >
-      {added ? (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 3" />
-        </svg>
-      ) : (
-        <CartPlusIcon className="w-4 h-4" />
-      )}
-    </Button>
-  );
-}
 
 /**
  * Card cart button — pressing it expands into an "ADDED TO CART" pill,

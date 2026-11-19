@@ -183,6 +183,102 @@
   background: var(--brand-gold-deep);
 }
 
+/* Animated theme toggle — moon/sun with rotate+scale transition */
+.theme-toggle {
+  position: relative;
+}
+.theme-toggle-knob {
+  position: absolute;
+  display: grid;
+  place-items: center;
+}
+.theme-toggle-knob {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  left: 4px;
+  transition: left 300ms ease-out;
+}
+.theme-toggle[aria-pressed="true"] .theme-toggle-knob {
+  left: calc(100% - 32px - 4px);
+}
+.theme-toggle-icon {
+  grid-area: 1 / 1;
+  transition: transform 500ms ease-out, opacity 300ms ease-out;
+  line-height: 0;
+}
+.theme-toggle-moon {
+  transform: scale(1) rotate(0deg);
+  opacity: 1;
+  transition-delay: 200ms;
+}
+.theme-toggle-sun {
+  transform: scale(0) rotate(-90deg);
+  opacity: 0;
+  transition-delay: 0ms;
+}
+.theme-toggle[aria-pressed="true"] .theme-toggle-moon {
+  transform: scale(0) rotate(360deg);
+  opacity: 0;
+  transition-delay: 0ms;
+}
+.theme-toggle[aria-pressed="true"] .theme-toggle-sun {
+  transform: scale(1) rotate(0deg);
+  opacity: 1;
+  transition-delay: 200ms;
+}
+
+/* Card cart button — expands into an "ADDED TO CART" pill, then collapses
+   back to the cart icon (entry 38). Label sits over the icon side while
+   the button grows to its width. */
+.cart-add-btn {
+  position: relative;
+  overflow: hidden;
+}
+.cart-add-icon {
+  transition: opacity 0.18s ease, transform 0.25s ease;
+}
+.cart-add-label {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%) scale(0.9);
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #14100a;
+  opacity: 0;
+  transition: opacity 0.2s ease 0.08s, transform 0.25s ease 0.08s;
+  pointer-events: none;
+}
+.cart-add-btn.is-added {
+  background: var(--brand-gold);
+  border-color: var(--brand-gold-deep);
+}
+.cart-add-btn.is-added .cart-add-icon {
+  opacity: 0;
+  transform: scale(0.6);
+}
+.cart-add-btn.is-added .cart-add-label {
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
+}
+[data-theme="paper"] .cart-add-btn.is-added {
+  border-color: var(--brand-gold-deep);
+}
+[data-theme="paper"] .cart-add-label {
+  color: #fff;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cart-add-btn,
+  .cart-add-icon,
+  .cart-add-label {
+    transition: none;
+  }
+}
+
 /* Metallic silver fill — customer counterpart, brushed steel (dark-friendly) */
 .metallic-silver {
   background: linear-gradient(
@@ -200,37 +296,113 @@
     inset 0 -1px 0 rgba(0, 0, 0, 0.4);
 }
 
-/* Absolute role tags — fixed colors that NEVER change with theme/palette.
-   Owner = brand gold, Admin = indigo, Customer = silver. */
+/* Role tags — metallic with shine, matching their tier:
+   Owner = metallic gold, Admin = metallic purple, Customer = metallic silver.
+   These use the same shine-sweep animation as other metallic elements. */
 .role-owner {
-  background: #d4af4f;
+  background: linear-gradient(
+    105deg,
+    #f6e3a0 0%,
+    #d4af4f 20%,
+    #8f6f26 38%,
+    #f6e3a0 50%,
+    #d4af4f 66%,
+    #8f6f26 84%,
+    #f6e3a0 100%
+  );
   color: #14100a;
   border-color: #d4af4f;
 }
 .role-admin {
-  background: #312e81;
+  background: linear-gradient(
+    105deg,
+    #c7d2fe 0%,
+    #6366f1 20%,
+    #312e81 38%,
+    #a5b4fc 50%,
+    #6366f1 66%,
+    #312e81 84%,
+    #c7d2fe 100%
+  );
   color: #fff;
-  border-color: #312e81;
+  border-color: #6366f1;
 }
 .role-customer {
-  background: #7a7466;
+  background: linear-gradient(
+    105deg,
+    #a8a292 0%,
+    #7a7466 20%,
+    #4a4436 38%,
+    #a8a292 50%,
+    #7a7466 66%,
+    #4a4436 84%,
+    #a8a292 100%
+  );
   color: #fff;
   border-color: #7a7466;
 }
+
+/* Add shine-sweep to role tags */
+.role-owner,
+.role-admin,
+.role-customer {
+  position: relative;
+  overflow: hidden;
+}
+.role-owner::after,
+.role-admin::after,
+.role-customer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.45) 50%, transparent 100%);
+  animation: promotionShine 3s infinite linear;
+  pointer-events: none;
+}
 [data-theme="paper"] .role-owner {
-  background: #8f6f26;
+  background: linear-gradient(
+    105deg,
+    #faf3e2 0%,
+    #a89468 20%,
+    #8f6f26 38%,
+    #faf3e2 50%,
+    #a89468 66%,
+    #8f6f26 84%,
+    #faf3e2 100%
+  );
   color: #fff;
-  border-color: #8f6f26;
+  border-color: #a89468;
 }
 [data-theme="paper"] .role-admin {
-  background: #1e1b4b;
+  background: linear-gradient(
+    105deg,
+    #e0e7ff 0%,
+    #818cf8 20%,
+    #312e81 38%,
+    #c7d2fe 50%,
+    #818cf8 66%,
+    #312e81 84%,
+    #e0e7ff 100%
+  );
   color: #fff;
-  border-color: #1e1b4b;
+  border-color: #818cf8;
 }
 [data-theme="paper"] .role-customer {
-  background: #4a4436;
+  background: linear-gradient(
+    105deg,
+    #d6d3d1 0%,
+    #a8a292 20%,
+    #7a7466 38%,
+    #d6d3d1 50%,
+    #a8a292 66%,
+    #7a7466 84%,
+    #d6d3d1 100%
+  );
   color: #fff;
-  border-color: #4a4436;
+  border-color: #a8a292;
 }
 
 /* Daylight variant — not used, night is the only theme */

@@ -13,7 +13,7 @@ const ASSETS = [
   "/store/support",
   "/store/checkout/thank-you",
   "/og-image.svg",
-  "/vanta-logo.svg",
+  "/vanta-logo.png",
   "/kami-lockup-gold.png",
 ];
 

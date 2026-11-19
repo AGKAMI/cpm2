@@ -20,7 +20,7 @@ export function AppSelection() {
           description="Track every account, every balance, every car. Two games, two registers."
           label="Open register"
           href="/fleet/cpm2"
-          iconSrc="/cpm-logo.svg"
+          iconSrc="/cpm-logo.png"
         />
 
         {/* VANTA Garage card - gold */}
@@ -31,7 +31,7 @@ export function AppSelection() {
           description="Premium vehicle storefront. Buy cars in-game, pay ZAR via EFT or PayFast."
           label="Open store"
           href="/store"
-          iconSrc="/kami-vanta-logo-no-wings.svg"
+          iconSrc="/kami-vanta-logo-no-wings.png"
         />
       </div>
 

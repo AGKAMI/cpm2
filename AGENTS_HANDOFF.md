@@ -795,7 +795,18 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 
 **Skills:** installed `full-stack-skills/mobile-native-skills` via `npx skills add` → 6 skills in `cpm2/.agents/skills/` (android-kotlin, ios-swift + 4 openspec helpers). Untracked — commit decision pending.
 
-**Open (carried):** categories API garbled-binary response unexplained; `/accounts/[id]` 401/Turso errors; test rows 242/243 deletion pending user answer; prod cold-start 20-38s; PayFast keys pending approval email.
+**Open (carried) — updated 2026-11-19 full-app audit (Zion, 10 batches):** PayFast keys pending owner (ZAR checkout stays hidden until set). Storefront has ONE published product (263, VW Jetta VR6 Blue, R30) — rest are drafts. Everything else below was CLOSED by the audit:
+- `/accounts/[id]` 401 was the proxy gate by design (works with a session); test rows 242/243 + strays deleted; prod cold-start re-verified healthy (0.9-2.4s first load); `cpm-logo.svg` 13.5MB replaced with a 42KB raster render; the categories "garbled-binary" report was a misread of large JSON.
+
+**Bugs found and fixed in the audit (all live on prod):**
+1. `/api/store/pricing` 500'd on EVERY call — service queried `vanta_product_pricing` (real table: `vanta_pricing`); renamed + base-price fallback (`ee16f69`, `8d17a22`).
+2. Store login/register 500'd on empty JSON body → 400 (`ee16f69`).
+3. Admin appointments page 500'd FOREVER — SQL used non-existent `a.customer_id` (it's on the order); now 200 (`519e390`).
+4. Admin notification routes 500'd on empty body → 400 (`519e390`).
+5. `/api/store/admin/config` writes 500'd FOREVER — `vanta_system_config` lacked `type`/`is_sensitive` columns; schema + live DB migrated; SET/GET/DELETE verified (`fc84a63`).
+6. **Perf:** 18MB of traced-SVG logos → ~300KB total. cpm-logo 13.5MB→42KB (loaded on EVERY fleet page), vanta-logo 4.8MB→removed from SW precache (nothing renders it), kami-vanta 845KB→251KB. cpm-logo was re-rendered from the ORIGINAL SVG composition (white circle + luminance mask) — first rasterization dropped the mask and baked black corners; fixed `2bfa158`, verified on prod by canvas probe (corners alpha=0, badge opaque).
+
+**Audit coverage:** all 95 API routes + all 40 pages verified; fleet account lifecycle (create/update/slots/car/trophy/archive/restore/import/export/reveal); product lifecycle (create/update/publish/bulk/delete); Stars + EFT + cart checkout; wishlist; orders/progress; trade desk; identity linking; media serving; config CRUD; schema-parity check across every vanta_* table. tsc clean, tests 66/66, build clean. Test data (8 products, all test orders, 12 guest customers + dependents, 2 orphan uploads) cleaned.
 
 **Gate:** tsc clean → tests 66/66 → build clean → 3001 restarted (prod build) → logo corners alpha=0 verified via canvas probe on /fleet header. Committed `e3e16d0` (only cpm-logo.svg, client.ts, trade.ts, skills-lock.json, AGENTS_HANDOFF.md) → pushed → deploy job `IMAUkqohN9ynwqkigdGT` → PROD VERIFIED by content (served cpm-logo.svg has the circle, no white rect).
 

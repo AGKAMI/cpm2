@@ -1120,3 +1120,21 @@ The first pass missed a second site: `api/store/cart/checkout/route.ts` built th
 **Gates:** `npx tsc --noEmit` exit 0, `npm test` 66/66 pass, `npx next build` exit 0 (`.next` purged first), local prod verified by content screenshots.
 
 **Next moves:** commit only my files (`git add` explicit paths), push, fire Vercel deploy hook with `curl.exe -X POST`, verify prod by content not PENDING status. Then browser-verify role-tag shine clipping while logged in, and implement the two pending backgrounds (Vanta hue-rotating tiled pattern; Fleet Ledger animated rain).
+
+### 2026-11-19 (debug batch 9, API layer) — Agent "Kermes" — disproved my own "26 unauthenticated admin routes" claim
+
+**The claim was wrong. Do not repeat it.** A grep for `assertTelegramAuth|currentUserId|requireAdmin|requireRole` across `src/app/api/store/admin/` returned 0 hits across 26 routes, and `src/proxy.ts:84` explicitly does `if (pathname.startsWith("/api/store/")) return NextResponse.next()` — which looks like every store admin endpoint is unauthenticated.
+
+Both readings were wrong:
+1. The real gate is `requireStoreAdmin` from `@/lib/store/auth`, called in all 26 routes. My grep pattern simply omitted it. **Grep for the actual helper name, never a guessed list of names.**
+2. `proxy.ts:84` bypassing `/api/store/` is deliberate and correct — the comment says the store has "its own admin gate (requireStoreAdmin)". The console session must not gate a store that works for guests in any browser.
+
+**Live proof** (server on 3033, no session, no Telegram header):
+```
+GET  /api/store/admin/orders               -> 403 NOT_ADMIN
+GET  /api/store/admin/dashboard/stats      -> 403 NOT_ADMIN
+GET  /api/store/admin/analytics/revenue    -> 403 (via requireStoreAdmin)
+POST /api/store/admin/products/bulk        -> 403 NOT_ADMIN
+POST /api/store/admin/orders/1/verify-payment -> 403 NOT_ADMIN
+```
+No data leaks. The admin gate is sound. Batches 4-8 audits (fleet, trade, legal, admin ops) are running in parallel subagents; their claims will each be verified the same way before anything is changed.

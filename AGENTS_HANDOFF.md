@@ -1138,3 +1138,37 @@ POST /api/store/admin/products/bulk        -> 403 NOT_ADMIN
 POST /api/store/admin/orders/1/verify-payment -> 403 NOT_ADMIN
 ```
 No data leaks. The admin gate is sound. Batches 4-8 audits (fleet, trade, legal, admin ops) are running in parallel subagents; their claims will each be verified the same way before anything is changed.
+
+### 2026-11-19 (debug batch 9 — CRITICAL SECURITY FIX) — Agent "Kermes" — owner takeover via an unsigned cookie
+
+**`resolveAdminStatus` in `src/lib/store/admin-service.ts` granted full OWNER access from a plain, unsigned, client-settable cookie.**
+
+The fallback read `vanta_telegram_id` out of the raw `Cookie` header and, if `Number(cookie) === Number(STORE_ADMIN_TELEGRAM_ID)`, returned `{isAdmin: true, isOwner: true, role: "owner"}`. No HMAC, no HttpOnly, nothing tying it to a verified identity. The cookie is set unsigned by `api/store/customers/link-telegram-id/route.ts` (`SameSite=Lax`), and in any case a caller can just send the header.
+
+**Proven live, before the fix** (server, no Telegram initData, no signed session):
+```
+GET  /api/store/admin/orders           403 -> 200   {"orders":[]}
+GET  /api/store/admin/admins           403 -> 200
+GET  /api/store/pricing                403 -> 200
+POST /api/store/admin/products/bulk    403 -> reached the handler
+```
+Reach: all 26 admin routes — create/edit/delete products, bulk publish/unpublish, **verify payment** (marks orders paid), reject payment, change prices, add admins. Anyone who learns the owner Telegram id owns the console.
+
+**Fix:** the unsigned-cookie branch is removed. Admin authority now comes ONLY from the two signed paths — signature-verified Telegram initData, or the HMAC `cpm2_session` cookie. The `vanta_telegram_id` cookie itself is untouched because `getStoreCustomer()` legitimately uses it to attach a Telegram id to a web customer; it simply may never authorise an admin action. The `x-owner-email` fallback stays (server-only env value).
+
+**Proven closed, after the fix:**
+```
+GET  /api/store/admin/orders           403 / 403   (no cookie / forged cookie)
+GET  /api/store/admin/admins           403 / 403
+GET  /api/store/admin/dashboard/stats  403 / 403
+POST /api/store/admin/products/bulk    403 / 403
+GET  /api/store/pricing?productId=263  200 / 200   (public — public without the cookie too)
+```
+
+**Two self-inflicted breaks during the fix, both repaired in-run and both worth remembering:**
+1. First attempt cut at the first `}` it found, which was the INNER `if`'s close, not the block's — left orphaned SQL code and a TS1128 syntax error. Restored from git and re-cut to the true block boundary (L202-225).
+2. The bypass test initially "failed" because `.env.local` holds `STORE_ADMIN_TELEGRAM_ID="7036681178\n"` with a **literal backslash-n**, so my first forged cookie value was malformed. A failing exploit test is not a closed hole — re-test with the clean value an attacker would send.
+
+**Note for whoever reads this next:** the literal `\n` inside `STORE_ADMIN_TELEGRAM_ID` in `.env.local` is still there. `Number("7036681178\n")` happens to work, but clean that value up.
+
+**Gate:** `tsc --noEmit` exit 0 → tests 66/66 → `rm -rf .next && npm run build` exit 0 → bypass re-tested 403 across all admin endpoints → deploy hook fired.

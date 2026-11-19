@@ -199,30 +199,20 @@ export async function resolveAdminStatus(
     return { isAdmin: true, isOwner: true, telegramUserId: null, role: "owner" };
   }
 
-  // Web fallback: check vanta_telegram_id cookie against STORE_ADMIN_TELEGRAM_ID env var
-  const cookieHeader = request.headers.get("cookie") ?? "";
-  const cookieMatch = cookieHeader.match(/(?:^|;\s*)vanta_telegram_id=([^;]+)/);
-  const cookieTelegramId = cookieMatch ? cookieMatch[1] : null;
-  if (cookieTelegramId) {
-    const ownerIdRaw = process.env.STORE_ADMIN_TELEGRAM_ID ?? "";
-    const ownerId = ownerIdRaw ? Number(ownerIdRaw) : null;
-    if (ownerId !== null && Number(cookieTelegramId) === ownerId) {
-      return { isAdmin: true, isOwner: true, telegramUserId: cookieTelegramId, role: "owner" };
-    }
-    const db = await getStoreDb();
-    const result = await db.execute({
-      sql: `SELECT role FROM vanta_admins WHERE telegram_user_id = ? AND is_active = 1 LIMIT 1`,
-      args: [cookieTelegramId],
-    });
-    if (result.rows.length > 0) {
-      return {
-        isAdmin: true,
-        isOwner: false,
-        telegramUserId: cookieTelegramId,
-        role: String(result.rows[0].role ?? "admin") as "admin",
-      };
-    }
-  }
+  // REMOVED — the unsigned-cookie admin fallback that used to live here.
+  // It granted OWNER (isAdmin AND isOwner) from a plain, client-settable
+  // `vanta_telegram_id` cookie. Proven live before removal:
+  //   Cookie: vanta_telegram_id=<owner id>  ->  200 on /api/store/admin/orders,
+  //   /api/store/pricing and /api/store/admin/admins
+  // with no Telegram initData and no signed session — a full owner takeover
+  // for anyone who knows the id.
+  //
+  // The cookie itself still exists: link-telegram-id uses it to attach a
+  // Telegram id to a WEB CUSTOMER, and getStoreCustomer() is what reads it.
+  // Admin authority now comes only from the two SIGNED paths above —
+  // signature-verified Telegram initData, or an HMAC session cookie. The
+  // x-owner-email fallback stays because its value is server-only and
+  // cannot be learned by a caller.
 
   return { isAdmin: false, isOwner: false, telegramUserId: null, role: null };
 }

@@ -313,7 +313,7 @@ export function StoreHomeClient({
             </Link>
           </div>
           <div className="vanta-card-list">
-            {categories.slice(0, 8).map((cat: VantaCategory) => (
+            {categories.slice(0, 8).map((cat: VantaCategory, catIndex: number) => (
               <div
                 key={cat.id}
                 className="vanta-card group"
@@ -332,8 +332,9 @@ export function StoreHomeClient({
                         }
                         alt={cat.name}
                         className="w-full h-full object-cover"
-                        loading="lazy"
+                        loading={catIndex < 4 ? "eager" : "lazy"}
                         decoding="async"
+                        fetchPriority={catIndex < 4 ? "high" : "auto"}
                         width={200}
                         height={250}
                         style={{ objectFit: "cover" }}

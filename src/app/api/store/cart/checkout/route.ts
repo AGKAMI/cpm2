@@ -125,7 +125,7 @@ export async function POST(request: Request) {
     }
 
     const subtotalCents = cart.items.reduce(
-      (sum, i) => sum + i.basePriceCents * i.quantity,
+      (sum, i) => sum + discountedPriceCents(i.basePriceCents, i.discountPercent) * i.quantity,
       0,
     );
 

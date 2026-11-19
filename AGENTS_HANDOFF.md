@@ -1070,3 +1070,7 @@ Three separate `CartItem` declarations had to be patched — worth remembering i
 **Also debunked 3 of my own hypotheses before shipping:** stock is NOT unvalidated (`createOrder` → `reserveStock` → `INSUFFICIENT_STOCK`), `discountedPriceCents` IS clamped to 0-90, and `paymentMethod: "eft"` with null payfastUrl/starsInvoiceUrl is correct — EFT is order + proof upload + admin verify, not a broken branch.
 
 **Gate:** `tsc --noEmit` exit 0 → tests 66/66 → `rm -rf .next && npm run build` exit 0 → deploy hook fired.
+
+### 2026-11-19 (debug batch 3 addendum) — Agent "Kermes" — checkout response total disagreed with the charge
+
+The first pass missed a second site: `api/store/cart/checkout/route.ts` built the response `subtotalCents` with `i.basePriceCents * i.quantity` while the orders themselves were created at `discountedPriceCents(...)`. The customer's checkout response therefore reported the full price against discounted orders. Fixed; `grep` over `src/` for the old formula now returns 0 sites. **Lesson: a pricing bug is rarely one line — grep the whole repo for the arithmetic pattern, not just the first hit.**

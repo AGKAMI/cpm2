@@ -10,7 +10,7 @@
 
 import { fail, ok, readJson } from "@/lib/route";
 import { requireStoreAdmin } from "@/lib/store/auth";
-import { getPriceForProduct, createPrice, convertPrice } from "@/lib/store/pricing-service";
+import { getPriceInCurrency, createPrice, convertPrice } from "@/lib/store/pricing-service";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +24,9 @@ export async function GET(request: Request) {
       return fail({ status: 400, body: { error: { code: "missing_product_id", message: "productId required." } } });
     }
 
-    const price = await getPriceForProduct(Number(productId), currency);
+    // getPriceInCurrency falls back to the product base price — no 404s for
+    // currencies without a specific pricing row.
+    const price = await getPriceInCurrency(Number(productId), currency);
     if (!price) {
       return fail({ status: 404, body: { error: { code: "price_not_found", message: "No price found for this product and currency." } } });
     }

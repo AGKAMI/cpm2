@@ -35,6 +35,38 @@ export default function AccountPage() {
     [fleet.events, id],
   );
 
+  // ---------------------------------------------------------------- account images
+  const [images, setImages] = useState<Array<{
+    id: number;
+    accountId: number;
+    imageUrl: string;
+    sortOrder: number;
+    isCover: boolean;
+    uploadedAt: string;
+  }>>([]);
+  const [uploading, setUploading] = useState(false);
+  // Direct ref to this section's file input — the button used to find it with
+  // a document-wide querySelector, which silently breaks if any other file
+  // input is ever added higher in the DOM.
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (account) fetchImages();
+  }, [account, id]);
+
+  const fetchImages = async () => {
+    try {
+      const res = await fetch(`/api/accounts/${id}/images`);
+      if (res.ok) {
+        const data = await res.json();
+        setImages(data.images || []);
+      }
+    } catch {
+      // ignore — gallery fails silently
+    }
+  };
+
+
   if (!account) {
     // FleetProvider loads accounts asynchronously — while it's still
     // fetching, show a loading plate instead of "Account not found".
@@ -65,36 +97,6 @@ export default function AccountPage() {
   const slotValue = account.slotsValue;
   const spendable = Math.max(0, freeCoins - slotValue);
 
-  // ---------------------------------------------------------------- account images
-  const [images, setImages] = useState<Array<{
-    id: number;
-    accountId: number;
-    imageUrl: string;
-    sortOrder: number;
-    isCover: boolean;
-    uploadedAt: string;
-  }>>([]);
-  const [uploading, setUploading] = useState(false);
-  // Direct ref to this section's file input — the button used to find it with
-  // a document-wide querySelector, which silently breaks if any other file
-  // input is ever added higher in the DOM.
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const fetchImages = async () => {
-    try {
-      const res = await fetch(`/api/accounts/${id}/images`);
-      if (res.ok) {
-        const data = await res.json();
-        setImages(data.images || []);
-      }
-    } catch {
-      // ignore — gallery fails silently
-    }
-  };
-
-  useEffect(() => {
-    if (account) fetchImages();
-  }, [account, id]);
 
   // Phone-camera photos are 5-10MB each: raw, one request blew past the
     // serverless body cap (and died on the read-only FS). Downscale to a

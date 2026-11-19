@@ -37,6 +37,8 @@ export function ProductPageClient({ productId }: { productId: string }) {
   const [activeImage, setActiveImage] = useState(0);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [carouselWidth, setCarouselWidth] = useState(0);
+  const [cartAdded, setCartAdded] = useState(false);
+  const cartAddTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -249,19 +251,38 @@ export function ProductPageClient({ productId }: { productId: string }) {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                if (product.stockQuantity === 0 || checkoutBusy) return;
+                if (cartAddTimer.current) clearTimeout(cartAddTimer.current);
                 void addToCartLocal(product.id, 1);
+                setCartAdded(true);
+                cartAddTimer.current = setTimeout(() => {
+                  setCartAdded(false);
+                  cartAddTimer.current = null;
+                }, 1800);
               }}
               disabled={product.stockQuantity === 0 || checkoutBusy}
-              className={`w-full h-10 text-xs font-bold mt-2 border rounded-lg ${product.stockQuantity === 0 ? "border-input bg-background text-foreground cursor-not-allowed" : "border-gold/70 bg-transparent text-ink hover:bg-gold/10 transition-all cursor-pointer"}`}
-              aria-label={`Add ${product.name} to cart`}
+              className={`cart-add-btn relative w-full h-10 text-xs font-bold mt-2 border rounded-lg overflow-hidden ${product.stockQuantity === 0 ? "border-input bg-background text-foreground cursor-not-allowed" : cartAdded ? "is-added border-gold bg-gold text-[#14100a]" : "border-gold/70 bg-transparent text-ink hover:bg-gold/10 transition-all cursor-pointer"}`}
+              aria-label={cartAdded ? "Added to cart" : `Add ${product.name} to cart`}
+              aria-live="polite"
             >
               {product.stockQuantity === 0 ? (
                 "Sold out"
               ) : (
-                <span className="inline-flex items-center justify-center gap-2">
-                  <CartPlusIcon className="w-4 h-4" />
-                  Add to cart
-                </span>
+                <>
+                  <span
+                    className={`cart-add-icon absolute inset-0 flex items-center justify-center gap-2 transition-[opacity,transform] duration-200 ${cartAdded ? "opacity-0 scale-90" : "opacity-100"}`}
+                  >
+                    <CartPlusIcon className="w-4 h-4" />
+                    Add to cart
+                  </span>
+                  <span
+                    className={`cart-add-label transition-[opacity,transform] duration-200 ${cartAdded ? "opacity-100 scale-100" : "opacity-0 scale-90"}`}
+                    style={{ inset: 0, display: "flex", alignItems: "center", justifyContent: "center", right: "auto", top: "auto", transform: cartAdded ? "scale(1)" : "scale(0.9)" }}
+                    aria-hidden={!cartAdded}
+                  >
+                    Added to cart
+                  </span>
+                </>
               )}
             </button>
             <p className="mt-4 text-[10px] text-muted-foreground text-center">

@@ -983,3 +983,10 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 - Final v5 (70ed802): theme toggle size matches notification bell, role tag shine overflow clipped, product creation fixed (missing discount_percent arg), legal pages at /store/profile/legal/[doc], admin Telegram order notifications, dead CardCodesList import fixed
 
 **Total: 5 commits across entry 38, all tsc clean, 66/66 tests pass, clean builds, locally browser-verified.**
+### 2026-11-19 (debug batch 1, 0-10%) — Agent "Kermes" — auth layer, 3 defects fixed
+
+1. **Telegram initData capture dropped everything after the first `&` (HIGH).** The regex `/(?:^|[?&#])tgWebAppData=([^&]+)/` existed in TWO places — the `<head>` script in `layout.tsx` and `captureInitDataFromUrl()` in `client-initdata.ts`. Telegram's initData is a raw query string with literal `&` separators, so `[^&]+` captured only `query_id` and discarded `user`, `auth_date`, `hash`, `signature` — every hash-URL login on desktop 401'd. Fixed both copies to slice from the marker to end-of-hash. Also removed an unnecessary `decodeURIComponent`: `verifyTelegramInitData` runs `URLSearchParams` itself, and pre-decoding turned a `%26` inside the user JSON into a literal `&`, splitting the params.
+2. **Session cookie marked `Secure` from the host (MEDIUM).** `secure = proto === "https" || host.endsWith(".ts.net")` meant a plain-HTTP request to a `*.ts.net` host got a Secure cookie the browser silently refuses — login loops forever. Secure now comes from the request URL protocol OR `x-forwarded-proto`; the host no longer participates. Dead `const host` removed.
+3. **Rate limiter never pruned (MEDIUM).** The `attempts` Map only shed a key when that same key was read after its window closed, so distinct keys accumulated without bound on a long-running process. Added a 60s sweep. Noted in-code that this is per-process, so on Vercel it is best-effort — a durable limiter needs shared state.
+
+**Gate:** `tsc --noEmit` exit 0 → tests 66/66 → `rm -rf .next && npm run build` exit 0 → deploy hook fired.

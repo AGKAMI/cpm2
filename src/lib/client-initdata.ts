@@ -21,9 +21,17 @@ const INIT_DATA_KEY = "cpm2_tg_initdata";
 export function captureInitDataFromUrl(): void {
   if (typeof window === "undefined") return;
   try {
-    const match = /(?:^|[?&#])tgWebAppData=([^&]+)/.exec(window.location.hash);
-    if (!match) return;
-    const raw = decodeURIComponent(match[1]);
+    // Telegram puts a raw query string after `tgWebAppData=` — its fields are
+    // separated by literal `&`, so `[^&]+` used to stop at the first one and
+    // throw away user/auth_date/hash, breaking every hash-URL login. Take
+    // everything from the marker to the end of the hash instead.
+    const marker = /[?&#]tgWebAppData=/.exec(window.location.hash);
+    if (!marker) return;
+    // No decodeURIComponent here: this is the exact string Telegram signed.
+    // verifyTelegramInitData runs URLSearchParams over it, which decodes each
+    // field itself — decoding first would turn a `%26` inside the user JSON
+    // into a literal `&` and split the params apart.
+    const raw = window.location.hash.slice(marker.index + marker[0].length);
     if (!raw) return;
     (window as unknown as { __CPM2_INITDATA?: string }).__CPM2_INITDATA = raw;
     try {

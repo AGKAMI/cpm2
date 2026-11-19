@@ -163,9 +163,16 @@ function timingSafeEqualStrings(a: string, b: string): boolean {
  * HTTPS (the Tailscale URL always does); plain local HTTP keeps Lax.
  */
 export function sessionCookieOptions(request: Request) {
-  const host = request.headers.get("host") ?? "";
   const proto = request.headers.get("x-forwarded-proto") ?? "";
-  const secure = proto.split(",")[0].trim() === "https" || host.endsWith(".ts.net");
+  // Secure follows the actual protocol, from either source:
+  //   - the request URL itself (https://...)
+  //   - the proxy hop (x-forwarded-proto), which is how a TLS terminator in
+  //     front of a local node server reports it
+  // The host used to participate, which made a PLAIN-HTTP request to a
+  // *.ts.net host produce a Secure cookie the browser silently refused — so
+  // login looped forever. Host has nothing to do with transport security.
+  const forwarded = proto.split(",")[0].trim().toLowerCase();
+  const secure = forwarded === "https" || new URL(request.url).protocol === "https:";
   return {
     httpOnly: true,
     path: "/",
@@ -196,9 +203,24 @@ export function readRequestCookie(request: Request, name: string): string | unde
 const WINDOW_MS = 60_000;
 const MAX_ATTEMPTS_PER_WINDOW = 10;
 const attempts = new Map<string, { count: number; resetAt: number }>();
+let lastSweep = 0;
+const SWEEP_INTERVAL_MS = 60_000;
 
+/**
+ * In-memory, per-process. On Vercel every invocation is a fresh module
+ * instance, so this is best-effort there — a durable limiter needs shared
+ * state (Turso/Redis). It bounds memory here and self-heals on restart.
+ */
 export function rateLimited(key: string): boolean {
   const now = Date.now();
+  // Drop expired keys at most once a minute instead of only when the same
+  // key is read again — otherwise distinct keys accumulate without bound.
+  if (now - lastSweep > SWEEP_INTERVAL_MS) {
+    lastSweep = now;
+    for (const [k, v] of attempts) {
+      if (v.resetAt <= now) attempts.delete(k);
+    }
+  }
   const entry = attempts.get(key);
   if (!entry || entry.resetAt <= now) {
     attempts.set(key, { count: 1, resetAt: now + WINDOW_MS });

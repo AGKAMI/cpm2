@@ -1020,3 +1020,27 @@ The single featured product is a **test car that is unpublished**. `StoreHome` s
 Also in `vanta_products`: ~8 test rows polluting production — #245/#246/#247/#248 (`VERIFY-…-DELETE-ME`, `PUT-TEST-DELETE-ME`, `PUT2-TEST-DELETE-ME`), #249 `THUMBNAIL TEST CAR`, #999 `LOCAL TEST GOLF`, plus #250-254/#259 duplicates of `VW JETTA VR6`. Two real cars are stuck unpublished with stock: #239 `VW JETTA VR6 (100)` and #244 `VOLKSWAGEN GOLF MK7 GTI`, both `stock=1, available`.
 
 No code change made for this — publishing, deleting and featuring are customer-visible and irreversible, so they are the user's call.
+
+### 2026-11-19 (debug batch 2 data fix) — Agent "Kermes" — executed at user's explicit instruction
+
+User answered all three questions: **delete the junk, publish #239 + #244, leave featured empty.**
+
+Backup first: `cache/scratch/backup-debug-junk-products.json` — 12 products + 2 cart rows, 9.4KB.
+
+Mutations applied, in FK-safe order:
+```
+vanta_cart_items      -2   (cart items 19 and 29, both referencing #259)
+vanta_product_media    0
+vanta_products       -12   (#245-254, #259, #999 — 6 test/del-me rows + 5 Jetta dupes + LOCAL TEST GOLF)
+vanta_products   publish +2   (#239 VW JETTA VR6 100, #244 VOLKSWAGEN GOLF MK7 GTI — both stock=1, available)
+```
+Note: I said "~8 test rows" to the user; it was actually 12. Corrected on the record here.
+
+Result — 4 products remain, 3 published, 0 featured (user chose to leave the hero empty):
+```
+#239 VW JETTA VR6 (100)          published=1 stock=1 available
+#244 VOLKSWAGEN GOLF MK7 GTI     published=1 stock=1 available
+#262 TOYOTA HILUX REVO PICKUP    published=0 stock=0 unavailable
+#263 VW JETTA VR6 (Blue Edition) published=1 stock=1 available
+```
+Browser-verified at 3032: headings "Featured categories / All available builds / vw jetta vr6 (blue edition) / volkswagen golf mk7 gti", test junk gone from the DOM, hero still empty as instructed.

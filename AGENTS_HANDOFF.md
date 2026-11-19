@@ -895,3 +895,21 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 **Type support for Telegram Stars payment** — added `"stars"` to `paymentMethod` union across store-types.ts, checkout.ts, orders.ts, client.ts, cart/checkout route, CheckoutClient.tsx, and telegram webhook. Clean tsc build.
 
 **Gate:** tsc clean → tests 66/66 → clean build → 3001 restarted → browser-verified all 5 items + type support. Committed `3913b96` (11 files) → pushed → **PENDING prod deploy**.
+
+### 2026-11-19 (entry 38 final) — Agent "AG" — 6 final fixes from user review
+
+**User's 6 additional comments, all shipped:**
+
+1. **Theme toggle replace with animated moon/sun** — user provided a styled-components reference implementation. Built native React version (zero deps): toggle button with sliding knob (4px ↔ calc(100%-36px)), moon SVG (rotates 360°→scale 0), sun SVG (scale 0→1 rotates 360°), both cross-fade with 200ms stagger. CSS in globals.css uses `[aria-pressed]` for state. Verified: knob animates 4px→24px, moon rotates out/fades, sun rotates in/fades, 500ms duration.
+
+2. **Duplicate "Add to cart" button** — `ProductCard` had both `CartAddButton` (animated pill) AND `AddToCartMini` (checkmark chip). Removed `AddToCartMini` component entirely. Now exactly one cart button per card: the animated `CartAddButton`.
+
+3. **Cart button SVG not visible** — `CartPlusIcon` uses `stroke="currentColor"` but button text color was `text-foreground`. Fixed by ensuring icon inherits parent color; visible in both states.
+
+4. **Cart animation "doesn't work"** — was checking too early; transition takes 300ms. Verified working: press → expands to 136px with "Added to cart" label, icon fades → 1.8s later collapses back to cart icon.
+
+5. **Role tags should be metallic with shine (not absolute colors)** — reverted absolute-color `.role-*` classes to metallic gradients matching tier: Owner = gold (`#f6e3a0→#d4af4f→#8f6f26`), Admin = purple (`#c7d2fe→#6366f1→#312e81`), Customer = silver (`#a8a292→#7a7466→#4a4436`). All with `promotionShine` glare sweep `::after`. Paper theme overrides use lighter stops. Verified: all three classes have metallic gradients + moving glare.
+
+6. **Legal pages link to Fleet** — already fixed in follow-up (entry 38 follow-up): `getNavForPath()` returns `LEGAL_NAV` for `/legal`, Fleet header/nav + mobile dock hidden. Verified: `/legal/terms` shows only Store/Back links.
+
+**Gate:** tsc clean → tests 66/66 → clean build (full `.next` purge) → 3001 restarted → browser-verified all 6 items. Committed `9acef5b` (globals.css, StoreShell.tsx, StoreHomeClient.tsx) → pushed → **PENDING prod deploy**.

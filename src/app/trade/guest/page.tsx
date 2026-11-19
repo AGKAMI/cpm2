@@ -34,6 +34,12 @@ function formatRands(value: number): string {
   return `R${rounded.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
 }
 
+/** A real trade never needs more than a few dozen of one car; the cap
+ * stops a runaway loop from building an absurd quantity in a calculator
+ * that has no server-side write path anyway.
+ */
+const MAX_CARS_PER_SIDE = 99;
+
 export default function GuestTradeDesk() {
   const toast = useToast();
   const [loading, setLoading] = useState(true);
@@ -75,7 +81,7 @@ export default function GuestTradeDesk() {
       const cars = [...current[side].cars];
       const existing = cars.find((entry) => entry.code === code);
       if (existing) {
-        existing.qty += 1;
+        existing.qty = Math.min(existing.qty + 1, MAX_CARS_PER_SIDE);
       } else {
         cars.push({ code, qty: 1 });
       }
@@ -232,7 +238,8 @@ export default function GuestTradeDesk() {
               id={`${key}-cash`}
               type="number"
               min={0}
-              step="any"
+              max={999_999_999}
+              step={1}
               value={side.cash === 0 ? "" : side.cash}
               onChange={(event) => {
                 const amount = Math.max(0, Math.floor(Number(event.target.value) || 0));

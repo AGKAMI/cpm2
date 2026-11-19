@@ -1248,3 +1248,29 @@ I removed the probe key from `vanta_system_config` and the probe file from `publ
 **Two self-inflicted breaks, repaired in-run:** (1) a line-ending collapse flattened the guard into an 810-char line — same failure as the cart.ts fix; repaired by re-splitting and splicing the block as a LIST. (2) My first "still open" verdict on the traversal was taken against the build BEFORE the fix had compiled; re-testing against the fresh build closed it. **Never conclude a hole is still open without rebuilding first.**
 
 **Gate:** `tsc --noEmit` exit 0 → tests 66/66 → `rm -rf .next && npm run build` exit 0 → all four re-probed closed → deploy hook fired.
+
+### 2026-11-19 (debug batch 6) — Agent "Kermes" — reject-then-verify corrupted reservations and allowed an oversell
+
+**Bug:** `confirmPayment` (`src/lib/store/checkout.ts`) guarded only against re-verifying an already-verified order. `rejectPayment` had the mirror guard (`if (paymentState === "verified") throw`), so the state machine was one-way in one direction and open in the other: **verify → reject was blocked, reject → verify was allowed.**
+
+**The damage is NOT a double on_hand deduction (I disproved that first). It is reservation corruption:**
+```
+on_hand=10, reserved=0
+  order A reserveStock(2)              reserved=2
+  order B (live, unrelated) reserve(3) reserved=5
+  admin REJECTS A -> releaseStock(2)   reserved=3     <- correct, back in the pool
+  admin then VERIFIES A                reserved=1, on_hand=8   <- WRONG, B's 3 stolen down to 1
+  new order C for 6 units              COMMITTED against 5 real units -> OVERSELL
+```
+`confirmStockDeduction` does `reserved_quantity = MAX(0, reserved_quantity - ?)` with no notion of *which* order's reservation it is consuming. Because A's reservation was already released, the deduction eats B's. Available stock reads 7 when it is really 5, so the oversell guard `(stock_quantity - reserved_quantity) >= qty` passes for an order it should have refused. The order state also flips `cancelled → payment_confirmed` and the customer is re-notified `payment_verified` for an order they were told was cancelled.
+
+**Fix:** `confirmPayment` now throws `"Payment was rejected; reinstate the order before verifying"` when `paymentState === "rejected"` or `orderState === "cancelled"`, mirroring rejectPayment's own guard.
+
+**Verification honesty notes:**
+- My first test used a product starting at `on_hand=2, reserved=2`, where `reserveStock` was already blocked by its own `(stock - reserved) >= qty` check — so it proved nothing. The working test uses `on_hand=10` with two concurrent orders.
+- My first "not reproduced" verdict was wrong because I compared `available` (7) to 7. The corruption shows in `reserved=1` vs the 3 order B is owed, which then lets the oversell through.
+- `result.affectedRowCount` is unreliable under libsql for the reserve probe (reported 0 while the UPDATE plainly ran). **Detect the change by reading the row back, not by the row count.**
+
+**Also verified sound (no change needed):** `confirmPayment` is idempotent on double-verify (`paymentState === "verified") return`). `rejectPayment` blocks re-rejecting a verified order. Both admin payment routes are behind `requireStoreAdmin`.
+
+**Gate:** `tsc --noEmit` exit 0 → tests 66/66 → `rm -rf .next && npm run build` exit 0 → deploy hook fired.

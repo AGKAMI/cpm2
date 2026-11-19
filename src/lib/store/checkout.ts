@@ -176,6 +176,20 @@ export async function confirmPayment(orderId: string): Promise<void> {
   const order = await getOrder(orderId);
   if (!order) throw new Error("Order not found");
   if (order.paymentState === "verified") return; // idempotent
+  // Mirror rejectPayment's guard. Without this, an order the admin already
+  // REJECTED could be verified again. rejectPayment calls releaseStock(), so
+  // reserved_quantity is already back in the pool — then confirmStockDeduction
+  // subtracts from reserved_quantity AGAIN, stealing units from UNRELATED live
+  // orders and inflating available stock.
+  //
+  // Proven live: on_hand 10 -> A reserves 2, B reserves 3 -> reject A (reserved 3)
+  // -> verify A (reserved 1, on_hand 8). B is still owed 3, so a following order
+  // for 6 units was committed against only 5 real ones: an oversell. The order
+  // state also flips cancelled -> payment_confirmed and the customer is re-notified
+  // with payment_verified for an order they were told was cancelled.
+  if (order.paymentState === "rejected" || order.orderState === "cancelled") {
+    throw new Error("Payment was rejected; reinstate the order before verifying");
+  }
 
   const inventory = await getInventory(order.productId);
   if (inventory) {

@@ -877,3 +877,21 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 **Ops note:** stale `.next` cache hit again — first rebuild produced exit 0 but the built CSS still contained the OLD hardcoded `[data-palette="vanta"] .dock-active` rule. Required full `.next` purge + clean rebuild. **Always verify built CSS contains new markers before restarting server.**
 
 **Gate:** tsc clean → tests 66/66 → clean build (full `.next` purge; built CSS confirmed containing `.dock-active{background:linear-gradient(135deg,var(--brand-gold-light)` + `.cart-add-label`) → 3001 restarted → browser-verified all 3 items + bonus (theme toggle solid gold). Committed `8902c12` (globals.css, StoreHomeClient.tsx) + `03a434d` (AGENTS_HANDOFF.md) → pushed → deploy hook triggered (jobs `5Q6YJ8aX6wOr7lQpbamk`, `D8SYo8Z9Jbx9SmInhZmu`, `YsIhxqY6YFmyJHnxHvgt`) → **PROD DEPLOY STALLED** (still serving old chunks `2kar1mzldpdcg.css`/`36m-18z_m-zia.css` without new markers). Local verification complete: dock PROFILE metallic on all palettes (azure gradient verified), cart button animates "Added to cart" → collapses to cart icon, no-image products hidden from grids (JETTA VR6 id 259 absent), theme toggle solid brand gold.
+
+### 2026-11-19 (entry 38 follow-up) — Agent "AG" — 5 additional fixes from user review
+
+**User's 5 additional comments, all shipped:**
+
+1. **Theme toggle still metallic** — `.metallic-gold` had a full 7-stop gradient. Replaced with solid `var(--brand-gold)` / `var(--brand-gold-deep)` for `[data-theme="paper"]`. Verified: on titanium/paper shows solid `rgb(40,52,56)` (titanium's brand-gold), on night shows solid brand-gold of active palette. No more metallic shine-sweep.
+
+2. **Avatar role tags should have absolute colors** — created `.role-owner` (`#d4af4f` / paper `#8f6f26`), `.role-admin` (`#312e81` / paper `#1e1b4b`), `.role-customer` (`#7a7466` / paper `#4a4436`) in globals.css with fixed hex colors that NEVER change with theme/palette. Replaced `.metallic-gold`/`.metallic-indigo`/`.metallic-silver` in ProfileClient.tsx. Verified: classes exist and resolve to absolute colors.
+
+3. **Dock active button always metallic regardless of theme** — already fixed in entry 38 (unscoped `.dock-active` using `var(--brand-gold-light/-/-deep)`). Re-verified on `/store` (HOME active) and `/store/profile` (PROFILE active) — both show metallic gradient matching active palette (titanium: `rgb(107,120,128) → rgb(62,75,82) → rgb(40,52,56)`).
+
+4. **Legal pages link to Fleet Ledger** — `/legal/[doc]` pages shared the Fleet header/nav because AppShell didn't exclude `/legal`. Fixed `getNavForPath()` to return `LEGAL_NAV` (store-only) for `/legal` paths, and hid Fleet header/nav + mobile dock on `/legal` pages. Verified: `/legal/terms` now shows only "Store" and "← Back to store" links, zero fleet/ledger links.
+
+5. **Notifications dock should be solid, no transparency** — removed `backdrop-blur-xl` and `bg-background/[0.95]` from Dock component. Now solid `bg-background` with `border-border`. Verified: `/store/notifications` dock has no backdrop filter, opaque background.
+
+**Type support for Telegram Stars payment** — added `"stars"` to `paymentMethod` union across store-types.ts, checkout.ts, orders.ts, client.ts, cart/checkout route, CheckoutClient.tsx, and telegram webhook. Clean tsc build.
+
+**Gate:** tsc clean → tests 66/66 → clean build → 3001 restarted → browser-verified all 5 items + type support. Committed `3913b96` (11 files) → pushed → **PENDING prod deploy**.

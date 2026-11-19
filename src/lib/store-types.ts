@@ -166,7 +166,7 @@ export type DeliveryState = "unscheduled" | "scheduled" | "in_progress" | "compl
 export type CheckoutSession = {
   step: "awaiting_details" | "awaiting_confirm" | "done";
   productId: number;
-  paymentMethod: "payfast" | "eft";
+  paymentMethod: "payfast" | "eft" | "stars";
   playerId?: string;
   inGameName?: string;
 };
@@ -183,7 +183,7 @@ export type Order = {
   currency: string;
   exchangeRate: number | null;
   reservedUntil: string | null;
-  paymentMethod: "payfast" | "eft";
+  paymentMethod: "payfast" | "eft" | "stars";
   playerId: string;
   inGameName: string;
   appointmentId: string | null;

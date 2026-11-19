@@ -51,8 +51,14 @@ const STORE_NAV = [
   { href: "/store", label: "Store", hint: "V" },
 ];
 
+const LEGAL_NAV = [
+  { href: "/store", label: "Store", hint: "V" },
+];
+
 function getNavForPath(pathname: string) {
-  return pathname.startsWith("/store") ? STORE_NAV : NAV;
+  if (pathname.startsWith("/store")) return STORE_NAV;
+  if (pathname.startsWith("/legal")) return LEGAL_NAV;
+  return NAV;
 }
 
 /** Shaped pill nav item with hover lift + active glow — used by both desktop header and mobile dock. */
@@ -306,7 +312,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           Skip to content
         </a>
-        {pathname === "/" || pathname.startsWith("/store") ? null : (
+        {pathname === "/" || pathname.startsWith("/store") || pathname.startsWith("/legal") ? null : (
                 <header
           className="sticky top-0 z-30 border-b border-border shadow-lg pt-[env(safe-area-inset-top)]"
           style={{ backgroundColor: "var(--color-paper-raised)" }}
@@ -372,7 +378,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="border-t border-border mb-4" />
         </footer>
 
-        {pathname === "/" || pathname.startsWith("/store") ? null : (
+        {pathname === "/" || pathname.startsWith("/store") || pathname.startsWith("/legal") ? null : (
                 <nav
                   aria-label="Primary"
                   className="mobile-dock fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-md px-4 pb-4 sm:pb-3 sm:px-6 sm:hidden"
@@ -518,3 +524,4 @@ export function AppShell({ children }: { children: ReactNode }) {
     </ShellContext.Provider>
   );
 }
+

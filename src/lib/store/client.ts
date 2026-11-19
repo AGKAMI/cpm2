@@ -198,7 +198,7 @@ export const vantaApi = {
     request<{ cart: CartSummary; removed: boolean }>(`/cart?productId=${productId}`, {
       method: "DELETE",
     }),
-  cartCheckout: (body: { playerId: string; inGameName: string; paymentMethod?: "payfast" | "eft" }) =>
+  cartCheckout: (body: { playerId: string; inGameName: string; paymentMethod?: "payfast" | "eft" | "stars" }) =>
     request<{ orders: VantaOrder[]; orderIds: string[]; subtotalCents: number; currency: string; itemCount: number }>("/cart/checkout", {
       method: "POST",
       body: JSON.stringify(body),

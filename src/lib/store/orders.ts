@@ -44,7 +44,7 @@ export type OrderRecord = {
   currency: string;
   exchangeRate: number | null;
   reservedUntil: string | null;
-  paymentMethod: "payfast" | "eft";
+  paymentMethod: "payfast" | "eft" | "stars";
   playerId: string;
   inGameName: string;
   appointmentId: string | null;
@@ -65,7 +65,7 @@ function rowToOrder(row: Record<string, unknown>): OrderRecord {
     currency: String(row.currency ?? "ZAR"),
     exchangeRate: row.exchange_rate === null || row.exchange_rate === undefined ? null : Number(row.exchange_rate),
     reservedUntil: row.reserved_until === null || row.reserved_until === undefined ? null : String(row.reserved_until),
-    paymentMethod: (row.payment_method ?? "eft") as "payfast" | "eft",
+    paymentMethod: (row.payment_method ?? "eft") as "payfast" | "eft" | "stars",
     playerId: String(row.player_id ?? ""),
     inGameName: String(row.in_game_name ?? ""),
     appointmentId: row.appointment_id === null || row.appointment_id === undefined ? null : String(row.appointment_id),
@@ -103,7 +103,7 @@ export async function createOrder(input: {
   currency: string;
   exchangeRate: number | null;
   reservedUntil: string | null;
-  paymentMethod: "payfast" | "eft";
+  paymentMethod: "payfast" | "eft" | "stars";
   playerId: string;
   inGameName: string;
 }): Promise<OrderRecord> {

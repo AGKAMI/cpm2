@@ -81,7 +81,7 @@ const Dock = React.forwardRef<HTMLDivElement, DockProps>(
     return (
       <div ref={ref} className={cn("fixed bottom-3 left-1/2 -translate-x-1/2 z-50 w-full flex items-center justify-center p-2 pointer-events-none", className)}>
         <div className="w-full max-w-4xl flex items-center justify-center relative pointer-events-none">
-          <div className="pointer-events-auto flex items-center gap-1 p-2 rounded-2xl backdrop-blur-xl border shadow-lg bg-background/[0.95] border-border hover:shadow-xl transition-shadow duration-300">
+          <div className="pointer-events-auto flex items-center gap-1 p-2 rounded-2xl border shadow-lg bg-background border-border hover:shadow-xl transition-shadow duration-300">
             {items.map((item) => {
               const Icon = item.icon;
               return (

@@ -12,6 +12,11 @@ import { readJson } from "@/lib/route";
 import { telegramBotToken } from "@/lib/telegram";
 import { getStoreDb } from "@/lib/store-db";
 import { linkPlatformIdentity } from "@/lib/store/customers";
+import { getOrder, updatePaymentState, updateOrderState } from "@/lib/store/checkout";
+import { recordPayment } from "@/lib/store/payments";
+import { ledgerEntry } from "@/lib/store/ledger";
+import { notifyCustomer } from "@/lib/store/notifications";
+import { answerPreCheckoutQuery, starsForCents } from "@/lib/store/stars";
 
 export const dynamic = "force-dynamic";
 
@@ -107,6 +112,88 @@ export async function POST(request: NextRequest) {
         await sendFollowup(token, chatId, "❌ <b>Rejected.</b> The link request was cancelled. No Telegram ID was linked to any account.");
         return NextResponse.json({ ok: true });
       }
+    }
+
+    // --- Telegram Stars payments (digital goods, currency XTR) ---
+    // 1) Pre-checkout gate: Telegram demands an answer within 10 seconds.
+    //    Re-validate the order server-side; only Stars invoices we created.
+    if (body.pre_checkout_query) {
+      const pq = body.pre_checkout_query as {
+        id: string;
+        from: { id: number };
+        currency: string;
+        total_amount: number;
+        invoice_payload: string;
+      };
+      try {
+        const order = pq.invoice_payload ? await getOrder(String(pq.invoice_payload)) : null;
+        const expected = order ? starsForCents(order.amountCents) : null;
+        const ok = Boolean(
+          order &&
+            order.paymentMethod === "stars" &&
+            order.paymentState !== "verified" &&
+            pq.currency === "XTR" &&
+            expected !== null &&
+            Number(pq.total_amount) === expected,
+        );
+        await answerPreCheckoutQuery(
+          pq.id,
+          ok,
+          ok ? undefined : "This order is no longer available — start a new checkout.",
+        );
+      } catch (err) {
+        console.error("pre_checkout_query handling failed:", err);
+        // Answer with an error so the user's Stars are never charged on a
+        // server-side failure.
+        await answerPreCheckoutQuery(pq.id, false, "Checkout is temporarily unavailable. Try again.");
+      }
+      return NextResponse.json({ ok: true });
+    }
+
+    // 2) Settlement: message.successful_payment is the ONLY proof of payment.
+    //    Never trust the client; mark the order paid only from this update.
+    const message = body.message as {
+      from?: { id: number };
+      successful_payment?: {
+        invoice_payload: string;
+        telegram_payment_charge_id: string;
+        total_amount: number;
+        currency: string;
+      };
+    } | undefined;
+    if (message?.successful_payment) {
+      const sp = message.successful_payment;
+      const orderId = String(sp.invoice_payload ?? "");
+      const order = orderId ? await getOrder(orderId) : null;
+      if (order && order.paymentState !== "verified") {
+        const amountCents = order.amountCents;
+        await recordPayment({
+          orderId,
+          provider: "telegram_stars",
+          providerRef: String(sp.telegram_payment_charge_id ?? ""),
+          amountCents,
+          currency: order.currency,
+          status: "verified",
+        });
+        await updatePaymentState(orderId, "verified");
+        await updateOrderState(orderId, "payment_confirmed");
+        await ledgerEntry({
+          orderId,
+          type: "payment",
+          amountCents,
+          currency: order.currency,
+          relatedPaymentId: String(sp.telegram_payment_charge_id ?? ""),
+        });
+        notifyCustomer(order.customerId, "payment_confirmed_payfast", {
+          id: order.id,
+          productId: order.productId,
+          amountCents,
+          currency: order.currency,
+          inGameName: order.inGameName,
+          playerId: order.playerId,
+        }).catch((err) => console.error("Stars notification failed:", err));
+      }
+      return NextResponse.json({ ok: true });
     }
 
     return NextResponse.json({ ok: true });

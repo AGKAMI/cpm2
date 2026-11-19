@@ -27,7 +27,7 @@ import type { Customer } from "@/lib/store-types";
 const cartCheckoutSchema = z.object({
   playerId: z.string().min(1, "Player ID is required"),
   inGameName: z.string().min(1, "In-game name is required"),
-  paymentMethod: z.enum(["payfast", "eft"]).default("eft"),
+  paymentMethod: z.enum(["payfast", "eft", "stars"]).default("eft"),
 });
 
 export const dynamic = "force-dynamic";

@@ -17,7 +17,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
 
   const [playerId, setPlayerId] = useState("");
   const [inGameName, setInGameName] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"eft" | "payfast">("eft");
+  const [paymentMethod, setPaymentMethod] = useState<"eft" | "payfast" | "stars">("eft");
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofFileName, setProofFileName] = useState("");
   const [checkoutBusy, setCheckoutBusy] = useState(false);

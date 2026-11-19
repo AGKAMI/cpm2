@@ -664,19 +664,15 @@ export function ProfileClient({
             </div>
             {customer && (
               <span
-                className={`absolute -bottom-2 left-1/2 -translate-x-1/2 z-10 overflow-hidden rounded-2xl px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] border-2 border-background ${
+                className={`absolute -bottom-2 left-1/2 -translate-x-1/2 z-10 overflow-hidden rounded-2xl px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] border-2 ${
                   (customer.role ?? "customer") === "owner"
-                    ? "metallic-gold text-black"
+                    ? "role-owner border-background"
                     : (customer.role ?? "customer") === "admin"
-                      ? "metallic-indigo text-white"
-                      : "metallic-silver text-white"
+                    ? "role-admin border-background"
+                    : "role-customer border-background"
                 }`}
               >
                 {customer.role ?? "customer"}
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute top-0 h-full w-[60%] -skew-x-[22deg] bg-gradient-to-r from-transparent via-white/45 to-transparent shine-sweep"
-                />
               </span>
             )}
           </div>

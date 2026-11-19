@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     const db = await getStoreDb();
 
     const result = await db.execute({
-      sql: `SELECT a.id, a.order_id, a.customer_id, a.scheduled_at, a.status,
+      sql: `SELECT a.id, a.order_id, o.customer_id, a.scheduled_at, a.status,
                  a.delivery_evidence, a.customer_confirmed,
                  c.in_game_name, p.name as product_name
           FROM vanta_appointments a

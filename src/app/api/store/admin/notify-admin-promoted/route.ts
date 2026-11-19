@@ -7,6 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { fail } from "@/lib/route";
 import { requireStoreAdmin } from "@/lib/store/auth";
 import { notifyAdminPromoted } from "@/lib/store/notifications";
 
@@ -16,7 +17,12 @@ export async function POST(request: NextRequest) {
   try {
     await requireStoreAdmin(request);
 
-    const body = await request.json();
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return fail({ status: 400, body: { error: { code: "INVALID_JSON", message: "Request body must be valid JSON." } } });
+    }
     const { telegramUserId, promotedBy } = body as {
       telegramUserId?: string;
       promotedBy?: string;

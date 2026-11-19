@@ -7,6 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { fail, ok } from "@/lib/route";
 import { getStoreDb } from "@/lib/store-db";
 import { requireStoreAdmin } from "@/lib/store/auth";
 import { sendNotification, broadcastToWhatsAppBot } from "@/lib/store/notifications";
@@ -51,7 +52,13 @@ export async function POST(request: NextRequest) {
     await requireStoreAdmin(request);
 
     const db = await getStoreDb();
-    const body = notificationSchema.parse(await request.json());
+    let parsed: unknown;
+    try {
+      parsed = await request.json();
+    } catch {
+      return fail({ status: 400, body: { error: { code: "INVALID_JSON", message: "Request body must be valid JSON." } } });
+    }
+    const body = notificationSchema.parse(parsed);
 
     let targetCustomerIds: number[] = [];
 

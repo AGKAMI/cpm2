@@ -306,7 +306,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
         </header>
         <main
           id="store-main"
-          className="relative mx-auto max-w-[1440px] scroll-mt-16 px-4 py-6 sm:px-6 sm:py-8 bg-background pb-28 sm:pb-10"
+          className="relative mx-auto max-w-[1440px] scroll-mt-16 px-4 py-6 sm:px-6 sm:py-8 bg-background pb-28 sm:pb-24"
         >
           {children}
         </main>

@@ -122,6 +122,9 @@ export default function AdminPage() {
   const [products, setProducts] = useState<VantaProduct[]>([]);
   const [categories, setCategories] = useState<VantaCategory[]>([]);
   const [promotions, setPromotions] = useState<VantaPromotion[]>([]);
+  // Admin works one card at a time instead of a long scroll: a section menu
+  // opens a single card full-width. null = menu.
+  const [adminView, setAdminView] = useState<"categories" | "promotions" | "catalogue" | null>(null);
 
   // Force kick: non-admin/owner users are redirected to the store home
   useEffect(() => {
@@ -672,7 +675,45 @@ export default function AdminPage() {
                       </Link>
                     </div>
 
+                    {/* One card at a time — replaces the stacked scroll */}
+                    {adminView ? (
+                      <button
+                        type="button"
+                        onClick={() => setAdminView(null)}
+                        className="mb-4 inline-flex items-center gap-2 px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] cursor-pointer rounded-lg border-2 border-border bg-secondary text-foreground hover:border-gold transition-colors"
+                      >
+                        <span aria-hidden="true">&#8592;</span> All sections
+                      </button>
+                    ) : (
+                      <div className="grid gap-3 sm:grid-cols-3 mb-6">
+                        {([
+                          { key: "categories", label: "Categories", hint: "Create, rename and organise store categories.", count: categories.length, unit: categories.length === 1 ? "category" : "categories" },
+                          { key: "promotions", label: "Promotions", hint: "Percentage, fixed-amount and flash drop campaigns.", count: promotions.length, unit: promotions.length === 1 ? "promotion" : "promotions" },
+                          { key: "catalogue", label: "Catalogue", hint: "Hide, edit, price and stock.", count: products.length, unit: products.length === 1 ? "product" : "products" },
+                        ] as const).map((card) => (
+                          <button
+                            key={card.key}
+                            type="button"
+                            onClick={() => setAdminView(card.key)}
+                            className="group cursor-pointer rounded-2xl border-2 border-border bg-background p-5 text-left transition-[border-color,transform] duration-150 hover:border-gold active:scale-[0.99]"
+                          >
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <h3 className="admin-section-title">{card.label}</h3>
+                              <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                                {card.count} {card.unit}
+                              </span>
+                            </div>
+                            <p className="text-xs text-ink-soft leading-relaxed">{card.hint}</p>
+                            <span className="mt-3 inline-block text-[10px] font-bold uppercase tracking-[0.16em] text-gold opacity-0 transition-opacity group-hover:opacity-100">
+                              Open &#8594;
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
                     {/* Category Management */}
+                    {adminView === "categories" && (
                     <section className="admin-section panel rounded-xl border border-border p-4 mb-6">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="admin-section-title">Categories</h3>
@@ -831,8 +872,10 @@ export default function AdminPage() {
             </div>
           )}
                     </section>
+                    )}
 
                 {/* Promotions Management */}
+                    {adminView === "promotions" && (
                 <section className="admin-section panel rounded-xl border border-border p-4 mb-6">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="admin-section-title">Promotions</h3>
@@ -1138,6 +1181,7 @@ export default function AdminPage() {
                 )}
               </div>
             </section>
+                    )}
 
       {/* Create / Edit form - always shown when toggled */}
                         {showProductForm && (
@@ -1379,19 +1423,34 @@ export default function AdminPage() {
             </div>
           </Field>
           <Field label="Category" htmlFor="category" hint={categories.length === 0 ? "No categories yet" : undefined}>
-            <select
-              id="category"
-              value={form.categoryId}
-              onChange={(e) => handleChange("categoryId", e.target.value)}
-              className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
-            >
-              <option value="">Select a category</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={String(cat.id)}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
+            {categories.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                No categories yet — create one in the Categories section.
+              </p>
+            ) : (
+              /* Cards, not a dropdown: you see every category and tap the one
+                 you want. Tapping the active card clears the selection. */
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {categories.map((cat) => {
+                  const active = String(form.categoryId) === String(cat.id);
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => handleChange("categoryId", active ? "" : String(cat.id))}
+                      aria-pressed={active}
+                      className={`cursor-pointer rounded-lg border-2 px-3 py-2 text-left text-sm transition-colors ${
+                        active
+                          ? "border-gold bg-secondary text-foreground font-bold"
+                          : "border-border bg-background text-ink-soft hover:border-gold/60"
+                      }`}
+                    >
+                      {cat.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </Field>
           <Field label="Air suspension install">
             <label className="custom-checkbox">
@@ -1491,6 +1550,7 @@ export default function AdminPage() {
                             )}
 
                             {/* Product list */}
+                    {adminView === "catalogue" && (
                             <section className="admin-section panel rounded-xl border border-border p-4">
                               <div className="flex items-baseline justify-between mb-4">
                                 <h3 className="admin-section-title">Catalogue</h3>
@@ -1558,6 +1618,7 @@ export default function AdminPage() {
                     </div>
                           )}
                         </section>
+                    )}
 
     </StoreShell>
   );

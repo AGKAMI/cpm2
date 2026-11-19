@@ -187,45 +187,51 @@
 .theme-toggle {
   position: relative;
 }
-.theme-toggle-knob {
-  position: absolute;
+/* User's exact theme toggle implementation (from styled-components reference) */
+.theme-toggle-wrapper {
+  display: inline-flex;
+}
+.theme-toggle-inner {
+  background-color: var(--color-paper-raised);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
   display: grid;
   place-items: center;
+  cursor: pointer;
+  box-shadow: 0 0 50px 20px rgba(0, 0, 0, 0.1);
+  line-height: 1;
+  border: 1px solid var(--border);
+  transition: background-color 200ms, border-color 200ms;
+  position: relative;
 }
-.theme-toggle-knob {
-  position: absolute;
-  display: grid;
-  place-items: center;
-  left: 4px;
-  transition: left 300ms ease-out;
-}
-.theme-toggle[aria-pressed="true"] .theme-toggle-knob {
-  left: calc(100% - 32px - 4px);
+.theme-toggle-input {
+  display: none;
 }
 .theme-toggle-icon {
   grid-area: 1 / 1;
-  transition: transform 500ms ease-out, opacity 300ms ease-out;
-  line-height: 0;
+  transition: transform 500ms ease-out;
+  line-height: 0.1;
 }
 .theme-toggle-moon {
-  transform: scale(1) rotate(0deg);
-  opacity: 1;
   transition-delay: 200ms;
+  transform: scale(1) rotate(0deg);
 }
 .theme-toggle-sun {
   transform: scale(0) rotate(-90deg);
-  opacity: 0;
   transition-delay: 0ms;
 }
-.theme-toggle[aria-pressed="true"] .theme-toggle-moon {
-  transform: scale(0) rotate(360deg);
-  opacity: 0;
+/* Input is first child, moon is second (+), sun is third (~) */
+.theme-toggle-input:checked + .theme-toggle-moon {
+  transform: rotate(360deg) scale(0);
   transition-delay: 0ms;
 }
-.theme-toggle[aria-pressed="true"] .theme-toggle-sun {
-  transform: scale(1) rotate(0deg);
-  opacity: 1;
+.theme-toggle-input:checked ~ .theme-toggle-sun {
   transition-delay: 200ms;
+  transform: scale(1) rotate(360deg);
+}
+[data-theme="paper"] .theme-toggle-inner {
+  background-color: var(--background);
 }
 
 /* Card cart button — expands into an "ADDED TO CART" pill, then collapses
@@ -267,6 +273,9 @@
 }
 [data-theme="paper"] .cart-add-btn.is-added {
   border-color: var(--brand-gold-deep);
+}
+[data-theme="paper"] .cart-add-btn.is-added .cart-add-label {
+  color: #14100a;
 }
 [data-theme="paper"] .cart-add-label {
   color: #fff;

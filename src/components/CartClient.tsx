@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { vantaApi, formatPrice } from "@/lib/store/client";
+import { discountedPriceCents } from "@/lib/store/pricing";
 import { CartSkeleton } from "@/components/skeleton";
 import {
   addToCartLocal,
@@ -21,6 +22,7 @@ type CartItem = {
   name: string;
   coverImage: string | null;
   basePriceCents: number;
+  discountPercent: number;
   currency: string;
   stockQuantity: number;
   quantity: number;
@@ -35,7 +37,7 @@ export function CartClient() {
   const [checkoutBusy, setCheckoutBusy] = useState(false);
 
   const subtotalCents = items.reduce(
-    (sum, i) => sum + i.basePriceCents * i.quantity,
+    (sum, i) => sum + discountedPriceCents(i.basePriceCents, i.discountPercent) * i.quantity,
     0,
   );
 
@@ -52,6 +54,9 @@ export function CartClient() {
             name: "",
             coverImage: null,
             basePriceCents: 0,
+        // LocalStorage fallback cart carries only productId + quantity — no price
+        // data at all, so no discount is knowable there.
+        discountPercent: 0,
             currency: "ZAR",
             stockQuantity: 0,
             quantity: it.quantity,
@@ -69,6 +74,7 @@ export function CartClient() {
         name?: string;
         coverImage?: string | null;
         basePriceCents?: number;
+        discountPercent?: number;
         currency?: string;
         stockQuantity?: number;
         quantity?: number;
@@ -80,6 +86,7 @@ export function CartClient() {
           name: i.name ?? "",
           coverImage: i.coverImage ?? null,
           basePriceCents: i.basePriceCents ?? 0,
+        discountPercent: Number(i.discountPercent ?? 0),
           currency: i.currency ?? "ZAR",
           stockQuantity: i.stockQuantity ?? 0,
           quantity: i.quantity ?? 1,
@@ -108,6 +115,7 @@ export function CartClient() {
                 name: "",
                 coverImage: null,
                 basePriceCents: 0,
+                discountPercent: 0,
                 currency: "ZAR",
                 stockQuantity: 0,
                 quantity: n.quantity,
@@ -239,7 +247,7 @@ export function CartClient() {
                     : `${item.stockQuantity} left`}
                 </span>
                 <span className="text-lg font-bold text-primary block">
-                  {formatPrice(item.basePriceCents * item.quantity, currency)}
+                  {formatPrice(discountedPriceCents(item.basePriceCents, item.discountPercent) * item.quantity, currency)}
                 </span>
               </div>
             </div>

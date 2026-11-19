@@ -20,6 +20,7 @@ import {
   linkPlatformIdentity,
 } from "@/lib/store/customers";
 import { createOrder } from "@/lib/store/checkout";
+import { discountedPriceCents } from "@/lib/store/pricing";
 import { getProduct } from "@/lib/store/products";
 import { getCart, clearCart } from "@/lib/store/cart";
 import { getStoreCustomer } from "@/lib/store/auth";
@@ -85,7 +86,10 @@ export async function POST(request: Request) {
         customerId: customer.id,
         productId: item.productId,
         quantity: item.quantity,
-        amountCents: item.basePriceCents * item.quantity,
+        // The cart must charge the sale price, same as the single-product
+        // checkout below. Charging basePriceCents here overcharged every
+        // discounted vehicle bought through the cart.
+        amountCents: discountedPriceCents(item.basePriceCents, item.discountPercent) * item.quantity,
         currency: item.currency,
         paymentMethod: body.paymentMethod,
         playerId,

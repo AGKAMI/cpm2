@@ -1044,3 +1044,29 @@ Result — 4 products remain, 3 published, 0 featured (user chose to leave the h
 #263 VW JETTA VR6 (Blue Edition) published=1 stock=1 available
 ```
 Browser-verified at 3032: headings "Featured categories / All available builds / vw jetta vr6 (blue edition) / volkswagen golf mk7 gti", test junk gone from the DOM, hero still empty as instructed.
+
+### 2026-11-19 (debug batch 3, 20-30%) — Agent "Kermes" — cart charged full price on discounted vehicles
+
+**Bug:** `getCart()` selected `p.base_price_cents` but never `p.discount_percent`, so `CartItem.discountPercent` was always undefined and the whole cart path charged `basePriceCents * quantity`. The single-product checkout (`api/store/checkout/route.ts`) charged `discountedPriceCents(...)`. Result: the same discounted vehicle cost **full price in the cart** and **sale price bought directly** — an overcharge on every discounted cart order, and the cart UI displayed the inflated number too.
+
+**Fix across 4 files (21 insertions, 5 deletions):**
+```
+src/lib/store/cart.ts         getCart selects discount_percent; CartItem declares it;
+                              subtotalCents uses discountedPriceCents
+src/lib/store/client.ts       2nd CartItem copy declares discountPercent
+src/components/CartClient.tsx 3rd (local) CartItem copy declares it; subtotal + line
+                              total use discountedPriceCents; 2 construction sites that
+                              read the minimal {productId,quantity} localStorage shape
+                              pass 0 (no price data exists there to discount)
+src/app/api/store/cart/checkout/route.ts
+                              amountCents: discountedPriceCents(...) * quantity
+```
+Three separate `CartItem` declarations had to be patched — worth remembering if a fourth appears.
+
+**Proof:** product #239 base 3000c, discount 20% → old cart charge 6000c for 2 units, new charge 4800c. Discount restored to 0 after the test.
+
+**Self-inflicted break, fixed in-run:** while inserting `p.discount_percent` into the SELECT I wrote a string containing an embedded `\r\n` into a single array slot, which produced a duplicate `p.is_published, p.exclusivity, p.discount_percent` line (a SQL "duplicate column" error) and flattened the file's line endings. Repaired by re-splitting on `\n`, normalising to CRLF, removing the duplicate line. Final diff verified minimal — not a file rewrite.
+
+**Also debunked 3 of my own hypotheses before shipping:** stock is NOT unvalidated (`createOrder` → `reserveStock` → `INSUFFICIENT_STOCK`), `discountedPriceCents` IS clamped to 0-90, and `paymentMethod: "eft"` with null payfastUrl/starsInvoiceUrl is correct — EFT is order + proof upload + admin verify, not a broken branch.
+
+**Gate:** `tsc --noEmit` exit 0 → tests 66/66 → `rm -rf .next && npm run build` exit 0 → deploy hook fired.

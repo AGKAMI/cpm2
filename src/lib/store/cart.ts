@@ -7,6 +7,7 @@
 
 import { getStoreDb } from "../store-db.ts";
 import { getProduct, listCoverImageMap } from "./products.ts";
+import { discountedPriceCents } from "./pricing.ts";
 import { ApiError } from "../api.ts";
 
 export type CartItem = {
@@ -14,6 +15,7 @@ export type CartItem = {
   name: string;
   coverImage: string | null;
   basePriceCents: number;
+  discountPercent: number;
   currency: string;
   stockQuantity: number;
   quantity: number;
@@ -36,7 +38,7 @@ export async function getCart(customerId: number): Promise<CartSummary> {
     sql: `
       SELECT c.product_id, c.quantity, c.created_at,
              p.name, p.base_price_cents, p.currency, p.stock_quantity,
-             p.is_published, p.exclusivity
+             p.is_published, p.exclusivity, p.discount_percent
       FROM vanta_cart_items c
       JOIN vanta_products p ON c.product_id = p.id
       WHERE c.customer_id = ?
@@ -51,6 +53,7 @@ export async function getCart(customerId: number): Promise<CartSummary> {
     name: String(row.name ?? ""),
     coverImage: null,
     basePriceCents: Number(row.base_price_cents ?? 0),
+    discountPercent: Number(row.discount_percent ?? 0),
     currency: String(row.currency ?? "ZAR"),
     stockQuantity: Number(row.stock_quantity ?? 0),
     quantity: Math.max(1, Number(row.quantity ?? 1)),
@@ -68,7 +71,7 @@ export async function getCart(customerId: number): Promise<CartSummary> {
   }
 
   const subtotalCents = items.reduce(
-    (sum, i) => sum + i.basePriceCents * i.quantity,
+    (sum, i) => sum + discountedPriceCents(i.basePriceCents, i.discountPercent) * i.quantity,
     0,
   );
 

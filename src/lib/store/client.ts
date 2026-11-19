@@ -364,6 +364,7 @@ export type CartItem = {
   name: string;
   coverImage: string | null;
   basePriceCents: number;
+  discountPercent: number;
   currency: string;
   stockQuantity: number;
   quantity: number;

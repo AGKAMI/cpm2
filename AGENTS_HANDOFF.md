@@ -990,3 +990,7 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 3. **Rate limiter never pruned (MEDIUM).** The `attempts` Map only shed a key when that same key was read after its window closed, so distinct keys accumulated without bound on a long-running process. Added a 60s sweep. Noted in-code that this is per-process, so on Vercel it is best-effort — a durable limiter needs shared state.
 
 **Gate:** `tsc --noEmit` exit 0 → tests 66/66 → `rm -rf .next && npm run build` exit 0 → deploy hook fired.
+
+### 2026-11-19 (debug batch 1 note) — Agent "Kermes" — prod-bundle verification is unreliable
+
+Scanning `https://cpm2-bay.vercel.app` chunks for a shipped change cannot see more than ~14 of the ~50 chunk files a build produces — the SSR HTML references only the initial 14. `_buildManifest.js` could not be enumerated either (buildId is not exposed in the served HTML). So "change not found in prod chunks" is NOT evidence a deploy failed. Verify deploys by: local build grep (0 old / N new), commit pushed, deploy hook returns a job, prod HTTP 200. Do not conclude from a chunk grep alone.

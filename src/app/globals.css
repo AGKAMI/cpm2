@@ -187,52 +187,7 @@
 .theme-toggle {
   position: relative;
 }
-/* User's exact theme toggle implementation (from styled-components reference) */
-.theme-toggle-wrapper {
-  display: inline-flex;
-}
-.theme-toggle-inner {
-  background-color: var(--color-paper-raised);
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  box-shadow: 0 0 50px 20px rgba(0, 0, 0, 0.1);
-  line-height: 1;
-  border: 1px solid var(--border);
-  transition: background-color 200ms, border-color 200ms;
-  position: relative;
-}
-.theme-toggle-input {
-  display: none;
-}
-.theme-toggle-icon {
-  grid-area: 1 / 1;
-  transition: transform 500ms ease-out;
-  line-height: 0.1;
-}
-.theme-toggle-moon {
-  transition-delay: 200ms;
-  transform: scale(1) rotate(0deg);
-}
-.theme-toggle-sun {
-  transform: scale(0) rotate(-90deg);
-  transition-delay: 0ms;
-}
-/* Input is first child, moon is second (+), sun is third (~) */
-.theme-toggle-input:checked + .theme-toggle-moon {
-  transform: rotate(360deg) scale(0);
-  transition-delay: 0ms;
-}
-.theme-toggle-input:checked ~ .theme-toggle-sun {
-  transition-delay: 200ms;
-  transform: scale(1) rotate(360deg);
-}
-[data-theme="paper"] .theme-toggle-inner {
-  background-color: var(--background);
-}
+
 
 /* Card cart button — expands into an "ADDED TO CART" pill, then collapses
    back to the cart icon (entry 38). Label sits over the icon side while
@@ -370,6 +325,7 @@
   background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.45) 50%, transparent 100%);
   animation: promotionShine 3s infinite linear;
   pointer-events: none;
+  border-radius: inherit;
 }
 [data-theme="paper"] .role-owner {
   background: linear-gradient(

@@ -17,12 +17,13 @@ import {
 import { createOrder } from "@/lib/store/checkout";
 import { getProduct } from "@/lib/store/products";
 import { buildPayFastCheckoutUrl } from "@/lib/store/payfast";
+import { createStarsInvoiceLink, starsForCents } from "@/lib/store/stars";
 import type { Customer } from "@/lib/store-types";
 
 const checkoutSchema = z.object({
   productId: z.coerce.number().int().positive(),
   quantity: z.coerce.number().int().min(1).default(1),
-  paymentMethod: z.enum(["payfast", "eft"]),
+  paymentMethod: z.enum(["payfast", "eft", "stars"]),
   playerId: z.string().min(1, "Player ID is required"),
   inGameName: z.string().min(1, "In-game name is required"),
   idempotencyKey: z.string().min(1),
@@ -82,6 +83,7 @@ export async function POST(request: Request) {
     });
 
     let payfastUrl: string | null = null;
+    let starsInvoiceUrl: string | null = null;
     if (body.paymentMethod === "payfast") {
       const pf = buildPayFastCheckoutUrl(
         { ...result.order, amountCents } as import("@/lib/store-types").Order,
@@ -95,10 +97,21 @@ export async function POST(request: Request) {
       }
     }
 
+    // Telegram Stars — native invoice the mini app opens with openInvoice().
+    if (body.paymentMethod === "stars") {
+      starsInvoiceUrl = await createStarsInvoiceLink({
+        title: `VANTA GARAGE — ${product.name}`.slice(0, 32),
+        description: `In-game delivery to ${body.inGameName.trim()} (${body.playerId.trim()})`.slice(0, 255),
+        payload: String(result.order.id),
+        starAmount: starsForCents(amountCents),
+      });
+    }
+
     return ok({
       order: result.order,
       reservedUntil: result.reservedUntil,
       payfastUrl,
+      starsInvoiceUrl,
     }, 201);
   } catch (err) {
     return fail(err);

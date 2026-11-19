@@ -131,7 +131,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
     setCheckoutBusy(true);
     try {
       const idempotencyKey = `checkout_${product.id}_${Date.now()}`;
-      const { order, reservedUntil, payfastUrl } = await vantaApi.checkout({
+      const { order, reservedUntil, payfastUrl, starsInvoiceUrl } = await vantaApi.checkout({
         productId: product.id,
         quantity: 1,
         paymentMethod,
@@ -143,6 +143,27 @@ export function CheckoutClient({ productId }: { productId: number }) {
       if (payfastUrl) {
         if (typeof window !== "undefined") {
           window.location.href = payfastUrl;
+        }
+        return;
+      }
+
+      // Telegram Stars — open the invoice natively inside the mini app.
+      // "paid" is reported by Telegram itself; only then is the order page
+      // safe to show (the webhook settles the order independently).
+      if (starsInvoiceUrl) {
+        const webApp = typeof window !== "undefined" ? window.Telegram?.WebApp : undefined;
+        if (webApp?.openInvoice) {
+          const status = await webApp.openInvoice(starsInvoiceUrl);
+          if (status === "paid" && typeof window !== "undefined") {
+            window.location.href = `/store/orders/${order.id}`;
+          } else if (status === "failed") {
+            setError("The Stars payment failed. Please try again.");
+          }
+          return;
+        }
+        // Outside Telegram, the invoice link opens the bot chat.
+        if (typeof window !== "undefined") {
+          window.open(starsInvoiceUrl, "_blank");
         }
         return;
       }
@@ -268,6 +289,13 @@ export function CheckoutClient({ productId }: { productId: number }) {
               <div className="flex-1">
                 <div className="text-xs font-medium text-foreground">EFT Bank Transfer</div>
                 <div className="text-[10px] text-muted-foreground">Pay via bank transfer. Upload proof after payment.</div>
+              </div>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer select-none p-3 rounded-md border border-border hover:border-primary hover:text-primary-foreground hover:border-primary transition-colors">
+              <input type="radio" name="paymentMethod" value="stars" checked={paymentMethod === "stars"} onChange={() => setPaymentMethod("stars")} className="accent-primary" />
+              <div className="flex-1">
+                <div className="text-xs font-medium text-foreground">Telegram Stars ⭐</div>
+                <div className="text-[10px] text-muted-foreground">Pay in-app with your Stars balance — instant, no card.</div>
               </div>
             </label>
 </div>

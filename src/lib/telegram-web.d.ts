@@ -28,6 +28,9 @@ declare global {
     isExpanded?: boolean;
     ready(): void;
     expand(): void;
+    /** Telegram Stars — open an invoice link natively. Resolves with the
+     *  payment status once the sheet closes. */
+    openInvoice?(url: string): Promise<"paid" | "cancelled" | "failed" | "pending">;
     /** Bot API 6.1+ — cosmetic only, so they stay optional. */
     setHeaderColor?(color: string): void;
     setBackgroundColor?(color: string): void;

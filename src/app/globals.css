@@ -560,6 +560,81 @@ body {
 html {
 }
 
+/* ----------------------------------------------------------------
+   App-wide page backgrounds — one decorative layer per app identity.
+   Panels sit on solid surfaces (var(--color-paper-raised) /
+   var(--background)) so the pattern only shows in the gaps between
+   them. Respects prefers-reduced-motion.
+---------------------------------------------------------------- */
+
+/* Registered so the Vanta tile can cycle through hue smoothly. */
+@property --vanta-hue {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 45deg;
+}
+
+/* VANTA GARAGE — hue-rotating tiled metallic dot grid (gold → copper → gold). */
+[data-palette="vanta"] body {
+  background-color: var(--background);
+  background-image: radial-gradient(
+    circle at 50% 50%,
+    hsl(var(--vanta-hue) 50% 40% / 0.05) 1px,
+    transparent 1px
+  );
+  background-size: 20px 20px;
+  animation: vanta-hue-cycle 28s linear infinite;
+}
+
+/* Fleet Ledger — animated rain, two parallax layers. */
+[data-palette]:not([data-palette="vanta"]) body {
+  background-color: var(--background);
+  background-image:
+    repeating-linear-gradient(
+      135deg,
+      #0000 0%,
+      #0000 88%,
+      rgba(255, 255, 255, 0.028) 88%,
+      rgba(255, 255, 255, 0.028) 92%,
+      #0000 92%,
+      #0000 100%
+    ),
+    repeating-linear-gradient(
+      135deg,
+      #0000 0%,
+      #0000 82%,
+      rgba(255, 255, 255, 0.016) 82%,
+      rgba(255, 255, 255, 0.016) 86%,
+      #0000 86%,
+      #0000 100%
+    );
+  background-size: 100% 220px, 100% 150px;
+  background-position: 0 0, 0 0;
+  animation: fleet-rain 5s linear infinite;
+}
+
+@keyframes vanta-hue-cycle {
+  to { --vanta-hue: 405deg; }
+}
+
+@keyframes fleet-rain {
+  to { background-position: 0 220px, 0 150px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-palette="vanta"] body,
+  [data-palette]:not([data-palette="vanta"]) body {
+    animation: none !important;
+  }
+  [data-palette="vanta"] body {
+    background-image: radial-gradient(
+      circle at 50% 50%,
+      hsl(45deg 50% 40% / 0.05) 1px,
+      transparent 1px
+    );
+  }
+}
+
 /* Panel — solid opaque surface that visibly contrasts with the page background.
    Uses --color-paper-raised (slightly lighter than --background) so panels pop
    off the page instead of blending into it — no transparency, no ghosting. */
@@ -1918,6 +1993,14 @@ html {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   text-decoration: none;
+  /* 11px text has an ~17px line box, far under the 44px touch minimum.
+     Widen the hit area with padding and pull it back with a negative
+     margin so the visual position does not move. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 8px;
+  margin: -13.5px -8px;
 }
 .vanta-card-list {
   display: grid;

@@ -1340,3 +1340,29 @@ The guest-onboarding flow *requires* this to be public (browser users have no Te
 **ENV BUG FOUND IN BOTH FILES:** `.env.local` and `.env.vercel-production` both carry a **literal trailing `\n`** (bytes `5c 6e`) inside `TURSO_DATABASE_URL` — `libsql://…turquoise.io\n`. That is why my first two prod-cleanup attempts failed with `Invalid URL`. The app evidently tolerates it, but both files need cleaning. The env leak is the reason the earlier "`.env.local` has a stray `\n`" note should be read as applying to the vercel file too.
 
 **Gate:** `tsc --noEmit` exit 0 → tests 66/66 → `rm -rf .next && npm run build` exit 0 → all endpoints re-probed → deploy hook fired.
+
+### 2026-11-19 (UI debug, vision + browser) — Agent "Kermes" — two real tap-target defects, plus a method lesson about vision hallucination
+
+**METHOD LESSON FIRST — read this before trusting any vision critique of this app.** I ran `vision_analyze` over six pages and it produced a vivid, confident, completely **false** finding four separate times: a red pill in the bottom-left reading `N 1 Issue X`. It does not exist. Proof: `document.querySelectorAll('*')` returns **zero** elements whose text contains "Issue" on any page; a pixel scan of the "red pill" bounding box returns a 340x332 region (a red product photo, not a pill); and the only `Issue` string in `.next/static` is a zod validation helper (`t.addIssue({code:"custom"...})`). The vision model was confabulating a small low-contrast element. Two other vision claims also failed against the DOM: "text hard-clipped mid-sentence" (the line wraps to two lines, `sw <= cw`, nothing overflows) and "cart empty state has no call-to-action" (`Continue shopping` -> `/store` is present).
+
+**Corollary for the next agent: DOM metrics beat vision at 762px.** I re-ran the audit as DOM measurement (getBoundingClientRect + computed styles) and it found what vision could not, and confirmed the rest was clean. Note also that `capture_screenshot()` and raw `cdp("Page.captureScreenshot")` both include the harness's own style-injection shadow roots — worth knowing if a "defect" looks like tool chrome.
+
+**Real defect 1 — the "Buy now" hit area did not match its visible button.**
+`src/components/ProductPageClient.tsx` wrapped a 48px `<Button className="w-full h-12">` in a **bare `<Link>`**. An `<a>` defaults to `display: inline`, so the wrapper collapsed to a 21px line box while the button overflowed it — the clickable box was 569x21 against a 569x48 button, vertically misaligned.
+```
+| Before | After | Why |
+| `<Link href={.../checkout/${id}}>` | `<Link ... className="block w-full">` | inline wrapper collapsed to 21px line-height; the block wrapper matches the button's box exactly |
+```
+Verified in the browser after the fix: the anchor and the button are both `569 x 48`.
+
+**Real defect 2 — the section "see all" links had no touch target.**
+`.vanta-section-see-all` was 11px text with no height, padding or min-height: "All" measured 21x17 and "See all" 45x17, far under the 44px minimum. Added `display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; margin: -13.5px -8px` — the padding enlarges the hit area and the negative margin pulls it back so the visual position does not move.
+```
+| Before | After | Why |
+| `.vanta-section-see-all { font-size: 11px; ... }` | + `min-height:44px; padding:0 8px; margin:-13.5px -8px` | 17px line box is far under the 44px touch minimum; negative margin keeps the visual position identical |
+```
+Verified in the browser: "All" 21x17 -> 37x44, "See all" 45x17 -> 61x44, same y position.
+
+**Clean, no change needed:** no text overflow on any measured page (only the sr-only `Skip to content` link, which is intentionally 1x1), no computed contrast failures, no other sub-24px interactive elements.
+
+**Gate:** `tsc --noEmit` exit 0 -> tests 66/66 -> both fixes re-measured in the live browser against the dev server on :3002 -> deploy hook fired.

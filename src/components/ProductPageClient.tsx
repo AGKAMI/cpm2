@@ -230,7 +230,11 @@ export function ProductPageClient({ productId }: { productId: string }) {
                 <span className="text-xl font-bold text-primary">{formatPrice(product.basePriceCents, product.currency)}</span>
               </div>
             </div>
-            <Link href={`/store/checkout/${product.id}`}>
+            {/* The wrapper must be a block that fills the width. A bare <a> is
+                inline and collapses to line-height (21px), so the 48px Button
+                overflows its own clickable box and the hit area misses the
+                visible button. */}
+            <Link href={`/store/checkout/${product.id}`} className="block w-full">
               <Button
                 variant="primary"
                 className="w-full h-12 text-lg font-bold"

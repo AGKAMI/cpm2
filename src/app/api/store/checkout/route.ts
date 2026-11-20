@@ -44,14 +44,23 @@ async function resolveBuyer(
   request: Request,
   playerId: string,
   inGameName: string,
+  paymentMethod: "eft" | "payfast" | "stars",
 ): Promise<Customer> {
-  const telegramUserId = await assertTelegramAuth(request);
-  if (telegramUserId !== null) {
-    const linked = await getCustomerByPlatformIdentity("telegram", String(telegramUserId));
-    if (linked) return linked.customer;
-    const created = await createCustomer({ inGameName, playerId });
-    await linkPlatformIdentity(created.id, "telegram", String(telegramUserId), "");
-    return created;
+  // Telegram auth is only required for Stars payments, which happen inside
+  // Telegram and need the user linked. EFT / PayFast are web flows identified
+  // by Player ID — no Telegram signature needed.
+  let telegramUserId: number | null = null;
+  if (paymentMethod === "stars") {
+    telegramUserId = await assertTelegramAuth(request);
+    if (telegramUserId !== null) {
+      const linked = await getCustomerByPlatformIdentity("telegram", String(telegramUserId));
+      if (linked) return linked.customer;
+      const created = await createCustomer({ inGameName, playerId });
+      await linkPlatformIdentity(created.id, "telegram", String(telegramUserId), "");
+      return created;
+    }
+    // Stars with no valid Telegram identity -> can't proceed.
+    throw new ApiError(401, "TELEGRAM_AUTH_INVALID", "Telegram signature did not verify — reopen the console from Telegram and try again.");
   }
   return (await getCustomerByPlayerId(playerId)) ?? await createCustomer({ inGameName, playerId });
 }
@@ -59,7 +68,7 @@ async function resolveBuyer(
 export async function POST(request: Request) {
   try {
     const body = checkoutSchema.parse(await readJson(request));
-    const customer = await resolveBuyer(request, body.playerId.trim(), body.inGameName.trim());
+    const customer = await resolveBuyer(request, body.playerId.trim(), body.inGameName.trim(), body.paymentMethod);
 
     const product = await getProduct(body.productId);
     if (!product) {

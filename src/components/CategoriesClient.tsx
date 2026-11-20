@@ -8,7 +8,7 @@ import { StoreShell } from "@/components/StoreShell";
 import { CategoriesSkeleton } from "@/components/skeleton";
 import { PageHeading } from "@/components/PageHeading";
 import { formatPrice } from "@/lib/store/client";
-import { hasDiscount, discountedPriceCents } from "@/lib/store/pricing";
+import { hasDiscount, discountedPriceCents, approxStarsForCents } from "@/lib/store/pricing";
 import { HeartToggle } from "@/components/HeartToggle";
 
 /**
@@ -328,6 +328,10 @@ export function CategoriesClient({
                           {formatPrice(c.basePriceCents, c.currency)}
                         </span>
                       )}
+                      <span className="basis-full flex items-center gap-1 text-[10px] text-ink-faint tabular-nums">
+                        <img src="/telegram-star.png" alt="" className="w-3 h-3" />
+                        ≈ {approxStarsForCents(hasDiscount(c) ? discountedPriceCents(c.basePriceCents, c.discountPercent) : c.basePriceCents)} Stars
+                      </span>
                       <span
                         className={`stock-indicator ${stockTier(c.stockQuantity, c.stockInitial ?? 0)}`}>
                         {stockLabel(c.stockQuantity, stockTier(c.stockQuantity, c.stockInitial ?? 0))}

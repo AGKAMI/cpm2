@@ -31,26 +31,22 @@ export const viewport: Viewport = {
   ],
 };
 
+// NESTED layout — must NOT render <html>/<body>: the root layout already
+// owns the document (and wraps every route in the fleet AppShell). Rendering a
+// second document here left the streamed Suspense boundary stranded at body
+// level and duplicated the whole storefront after hydration.
 export default function StoreLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${mono.variable}`} suppressHydrationWarning>
-      <head>
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
-        />
-        <script
-          dangerouslySetInnerHTML={{ __html: themeScript }}
-          suppressHydrationWarning
-        />
-      </head>
-      <body className={`min-h-screen antialiased bg-background ${mono.variable}`}>
-        <TelegramInit />
-        <ToastProvider>
-          {children}
-          <TelegramBridge />
-        </ToastProvider>
-      </body>
-    </html>
+    <>
+      <script
+        dangerouslySetInnerHTML={{ __html: themeScript }}
+        suppressHydrationWarning
+      />
+      <TelegramInit />
+      <ToastProvider>
+        {children}
+        <TelegramBridge />
+      </ToastProvider>
+    </>
   );
 }

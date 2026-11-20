@@ -26,7 +26,7 @@ export async function GET(request: Request) {
       sql: `
         SELECT w.product_id, w.created_at,
                p.name, p.description, p.base_price_cents, p.currency,
-               p.is_published, p.stock_quantity,
+               p.is_published, p.stock_quantity, p.exclusivity,
                (SELECT m.public_url FROM vanta_product_media m
                 WHERE m.product_id = p.id AND m.is_published = 1
                 ORDER BY m.sort_order LIMIT 1) AS cover_url
@@ -47,6 +47,7 @@ export async function GET(request: Request) {
       currency: String(row.currency ?? "ZAR"),
       isPublished: Number(row.is_published ?? 0) === 1,
       stockQuantity: Number(row.stock_quantity ?? 0),
+      exclusivity: String(row.exclusivity ?? "standard"),
       addedAt: String(row.created_at ?? ""),
     }));
 

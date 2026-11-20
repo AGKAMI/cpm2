@@ -166,7 +166,7 @@ function WishlistCard({
                 : "bg-ink-faint/10 text-ink-faint border border-ink-faint/20"
           }`}
         >
-          {item.exclusivity.replace(/_/g, " ").toUpperCase()}
+          {(item.exclusivity ?? "standard").replace(/_/g, " ").toUpperCase()}
         </span>
       </div>
       <a

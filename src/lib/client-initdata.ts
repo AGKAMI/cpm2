@@ -17,6 +17,15 @@
 
 const INIT_DATA_KEY = "cpm2_tg_initdata";
 
+/** Telegram appends unsigned tgWebApp* params (Version/Platform/ThemeParams/
+ * BotInline) AFTER the initData in the URL hash. If they ride along into the
+ * data-check-string the HMAC no longer matches and EVERY authenticated store
+ * call fails signature verification (Stars / bulk checkout). Strip them. */
+function stripTrailingWebAppParams(raw: string): string {
+  const boundary = raw.search(/&tgWebApp[A-Za-z]+=/);
+  return boundary >= 0 ? raw.slice(0, boundary) : raw;
+}
+
 /** Pull tgWebAppData out of the URL hash (if present) and stash it. */
 export function captureInitDataFromUrl(): void {
   if (typeof window === "undefined") return;
@@ -33,9 +42,11 @@ export function captureInitDataFromUrl(): void {
     // into a literal `&` and split the params apart.
     const raw = window.location.hash.slice(marker.index + marker[0].length);
     if (!raw) return;
-    (window as unknown as { __CPM2_INITDATA?: string }).__CPM2_INITDATA = raw;
+    const initData = stripTrailingWebAppParams(raw);
+    if (!initData) return;
+    (window as unknown as { __CPM2_INITDATA?: string }).__CPM2_INITDATA = initData;
     try {
-      window.sessionStorage.setItem(INIT_DATA_KEY, raw);
+      window.sessionStorage.setItem(INIT_DATA_KEY, initData);
     } catch {
       /* private mode — the global above is enough for this page */
     }
@@ -48,13 +59,13 @@ export function captureInitDataFromUrl(): void {
 export function clientInitData(): string {
   if (typeof window === "undefined") return "";
   const glob = (window as unknown as { __CPM2_INITDATA?: string }).__CPM2_INITDATA;
-  if (typeof glob === "string" && glob) return glob;
+  if (typeof glob === "string" && glob) return stripTrailingWebAppParams(glob);
   try {
     const stored = window.sessionStorage.getItem(INIT_DATA_KEY);
-    if (stored) return stored;
+    if (stored) return stripTrailingWebAppParams(stored);
   } catch {
     /* private mode — fall through */
   }
   const webApp = window.Telegram?.WebApp;
-  return typeof webApp?.initData === "string" ? webApp.initData : "";
+  return typeof webApp?.initData === "string" ? stripTrailingWebAppParams(webApp.initData) : "";
 }

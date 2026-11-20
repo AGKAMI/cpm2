@@ -73,7 +73,14 @@ export function GameRegister({ game }: { game: GameType }) {
     [params, router, game],
   );
 
-  const source = showArchived ? fleet.archived : fleet.accounts;
+  // Scope to THIS game. fleet.accounts/archived hold both CPM1 and CPM2; using
+  // them unscoped made the CPM2 header read "61 CPM2 accounts" when only 36 were
+  // CPM2 (the other 25 were CPM1), and vice-versa. The visible filter already
+  // scoped by game, so the header and the "X of Y" line disagreed with the rows.
+  const source = useMemo(
+    () => (showArchived ? fleet.archived : fleet.accounts).filter((a) => a.game === game),
+    [showArchived, fleet.archived, fleet.accounts, game],
+  );
 
   // The car filter follows the URL so a shared link reproduces the view.
   //
@@ -209,7 +216,7 @@ export function GameRegister({ game }: { game: GameType }) {
         onQuery={(value) => patchParams({ q: value })}
         filter={filter}
         onFilter={(value) => patchParams({ filter: value === "all" ? null : value })}
-        archivedCount={fleet.archived.length}
+        archivedCount={fleet.archived.filter((a) => a.game === game).length}
         showArchived={showArchived}
         onShowArchived={(value) => {
           patchParams({ view: value ? "archived" : null });

@@ -1,37 +1,55 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { CAR_CATALOG, searchCars, type CarEntry } from "@/lib/car-catalog";
-import { api } from "@/lib/client";
+import { api, ApiRequestError } from "@/lib/client";
 import type { GarageSummary } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 
 export function CarCodesList() {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [garages, setGarages] = useState<GarageSummary[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [authRequired, setAuthRequired] = useState(false);
+  const mounted = useRef(true);
 
   useEffect(() => {
-    let cancelled = false;
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  // Single loader shared by the initial fetch and the retry button. The old
+  // retry had no .catch(), so a failed retry left `loading` true forever (stuck
+  // spinner) and raised an unhandled promise rejection.
+  const load = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    setAuthRequired(false);
     api
       .garages()
       .then((result) => {
-        if (cancelled) return;
-        setGarages(result.garages);
-        setError(null);
+        if (mounted.current) setGarages(result.garages);
       })
       .catch((err) => {
-        if (cancelled) return;
+        if (!mounted.current) return;
+        if (err instanceof ApiRequestError && err.code === "AUTH_REQUIRED") {
+          setAuthRequired(true);
+        }
         setError(err instanceof Error ? err.message : "Could not load fleet garages.");
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (mounted.current) setLoading(false);
       });
-    return () => {
-      cancelled = true;
-    };
   }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   // Build a set of (game, carCode) pairs owned across the fleet.
   const owned = new Set<string>();
@@ -39,9 +57,7 @@ export function CarCodesList() {
     g.cars.forEach((c) => owned.add(`${g.game}:${c.carCode}`));
   });
 
-  const matches = searchCars(query, 200).filter(
-    (car) => car.game === "cpm2",
-  );
+  const trimmed = query.trim();
 
   if (loading) {
     return (
@@ -55,21 +71,20 @@ export function CarCodesList() {
     return (
       <div className="panel rounded-[20px] px-6 py-16 text-center">
         <p className="text-[12px] text-oxblood">{error}</p>
-        <Button
-          variant="outline"
-          size="sm"
-          type="button"
-          onClick={() => {
-            setLoading(true);
-            setError(null);
-            api.garages().then((r) => {
-              setGarages(r.garages);
-              setLoading(false);
-            });
-          }}
-        >
-          Try again
-        </Button>
+        {authRequired ? (
+          <Button
+            variant="outline"
+            size="sm"
+            type="button"
+            onClick={() => router.push("/login")}
+          >
+            Sign in
+          </Button>
+        ) : (
+          <Button variant="outline" size="sm" type="button" onClick={load}>
+            Try again
+          </Button>
+        )}
       </div>
     );
   }
@@ -77,7 +92,10 @@ export function CarCodesList() {
   const codesByGame = CAR_CATALOG.filter(
     (car: CarEntry) => car.game === "cpm2",
   );
-  const filtered = matches.length > 0 ? matches : codesByGame;
+  // Search the CPM2 pool only so CPM1 entries never consume the result limit
+  // (the two catalogs must not mix). An empty query shows the full CPM2 catalog
+  // rather than a 200-car cross-game slice that hid most CPM2 cars.
+  const filtered = trimmed ? searchCars(trimmed, 200, "cpm2") : codesByGame;
 
   return (
     <section className="panel rounded-[20px] p-6 mb-8">
@@ -152,7 +170,7 @@ export function CarCodesList() {
         </table>
       </div>
 
-      {filtered.length === 0 && query && (
+      {filtered.length === 0 && trimmed && (
         <p className="mt-3 text-[11px] text-ink-faint">
           No CPM2 catalog car matches “{query}”.
         </p>

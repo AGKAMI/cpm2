@@ -613,23 +613,72 @@ export async function trophySummary(accountId: number, userId?: number): Promise
 
 export async function fleetTrophySummary(userId?: number): Promise<TrophySummary[]> {
   const accounts = await listAccounts({ archived: "include", userId });
-  return Promise.all(
-    accounts.map(async (account) => {
-      const byClass = await listTrophies(account.id);
-      const gold = byClass.reduce((sum, item) => sum + Number(item.gold), 0);
-      const silver = byClass.reduce((sum, item) => sum + Number(item.silver), 0);
-      const bronze = byClass.reduce((sum, item) => sum + Number(item.bronze), 0);
-      return {
-        accountId: account.id,
-        email: account.email,
-        gold,
-        silver,
-        bronze,
-        total: gold + silver + bronze,
-        byClass,
-      };
-    }),
-  );
+  if (accounts.length === 0) return [];
+
+  // ONE batched query for the whole fleet. The old version called listTrophies
+  // per account, and each of those fired 2-3 Turso round-trips (requireAccount
+  // twice + the SELECT) — 120+ queries for a 61-account fleet. That was slow
+  // (2.5-4.8s) and let any single dropped Turso socket ("other side closed")
+  // reject the whole Promise.all and 500 the endpoint, which then latched the
+  // register's status indicator to OFFLINE.
+  const db = await getTursoDb();
+  const ids = accounts.map((account) => account.id);
+  const placeholders = ids.map(() => "?").join(", ");
+  const query = {
+    sql: `SELECT account_id, class, gold, silver, bronze, updated_at
+          FROM account_trophies WHERE account_id IN (${placeholders})`,
+    args: ids,
+  };
+  let rows: (TrophyRow & { account_id: number | string })[];
+  try {
+    rows = (await db.execute(query)).rows as unknown as (TrophyRow & { account_id: number | string })[];
+  } catch (err) {
+    // Turso HTTP sockets occasionally close while idle; a single retry clears
+    // the transient "fetch failed / other side closed" without masking real errors.
+    if (err instanceof TypeError && /fetch failed/i.test(err.message)) {
+      rows = (await db.execute(query)).rows as unknown as (TrophyRow & { account_id: number | string })[];
+    } else {
+      throw err;
+    }
+  }
+
+  const byAccount = new Map<number, Map<string, TrophyRecord>>();
+  for (const row of rows) {
+    const aid = Number(row.account_id);
+    let classes = byAccount.get(aid);
+    if (!classes) {
+      classes = new Map();
+      byAccount.set(aid, classes);
+    }
+    classes.set(row.class, toTrophyRecord(row));
+  }
+
+  return accounts.map((account) => {
+    const classes = byAccount.get(account.id) ?? new Map<string, TrophyRecord>();
+    const byClass = TROPHY_CLASSES.map(
+      (klass) =>
+        classes.get(klass) ?? {
+          class: klass,
+          gold: 0,
+          silver: 0,
+          bronze: 0,
+          total: 0,
+          updatedAt: "",
+        },
+    );
+    const gold = byClass.reduce((sum, item) => sum + Number(item.gold), 0);
+    const silver = byClass.reduce((sum, item) => sum + Number(item.silver), 0);
+    const bronze = byClass.reduce((sum, item) => sum + Number(item.bronze), 0);
+    return {
+      accountId: account.id,
+      email: account.email,
+      gold,
+      silver,
+      bronze,
+      total: gold + silver + bronze,
+      byClass,
+    };
+  });
 }
 
 export async function setTrophies(accountId: number, payload: unknown, userId?: number): Promise<TrophyRecord> {

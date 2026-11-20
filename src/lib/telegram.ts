@@ -79,7 +79,12 @@ export async function verifyTelegramInitData(
   // alphabetically — the rendered pairs, matching the canonical validator.
   const pairs: string[] = [];
   for (const [key, value] of params.entries()) {
-    if (key === "hash") continue;
+    // `hash` is the value we verify against; `signature` is Telegram's modern
+    // Ed25519 overlay (an alternative proof over the same data) and must NOT be
+    // folded into the HMAC data-check-string — including it makes every real
+    // mini-app request from an up-to-date client fail verification, which is
+    // exactly the "Telegram signature did not verify" error users see.
+    if (key === "hash" || key === "signature") continue;
     pairs.push(`${key}=${value}`);
   }
   pairs.sort();

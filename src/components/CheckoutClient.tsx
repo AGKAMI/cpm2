@@ -57,6 +57,27 @@ export function CheckoutClient({ productId }: { productId: number }) {
     return () => clearTimeout(t);
   }, [productId]);
 
+  // Prefill the buyer's CPM2 ID / in-game name from their profile so they
+  // never have to retype it on every checkout (Telegram buyers especially).
+  useEffect(() => {
+  let alive = true;
+  (async () => {
+    if (playerId.trim() && inGameName.trim()) return; // already set
+    try {
+      const { customer } = await vantaApi.profile();
+      if (alive && customer) {
+        if (!playerId.trim() && customer.playerId) setPlayerId(customer.playerId);
+        if (!inGameName.trim() && customer.inGameName) setInGameName(customer.inGameName);
+      }
+    } catch {
+      // profile unavailable — buyer types it manually
+    }
+  })();
+  return () => {
+    alive = false;
+  };
+  }, []);
+
   // Stash the guest player ID so Orders can scope by it.
   useEffect(() => {
     if (playerId.trim() && typeof window !== "undefined") {
@@ -443,10 +464,16 @@ export function CheckoutClient({ productId }: { productId: number }) {
                 <span className="text-ok">-{formatPrice(discountCents, product.currency)}</span>
               </div>
             )}
-  <div className="pt-3 border-t border-border flex justify-between text-sm font-semibold text-foreground">
+            <div className="pt-3 border-t border-border flex justify-between text-sm font-semibold text-foreground">
               <span>Total</span>
               <span className="text-primary">{formatPrice(totalCents, product.currency)}</span>
             </div>
+            {paymentMethod === "stars" && (
+              <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                <span>Telegram Stars (≈)</span>
+                <span className="text-primary">{approxStarsForCents(totalCents)} ⭐</span>
+              </div>
+            )}
           </div>
         </section>
 

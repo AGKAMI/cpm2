@@ -1505,7 +1505,9 @@ html {
   flex: 0 0 auto;
   scroll-snap-align: start;
   scroll-snap-stop: always;
-  width: calc(50% - 1rem);
+  /* Mobile: one full card + a peek of the next so it reads as a swipeable
+     carousel, not a single card per row. Desktop shows multiple cards. */
+  width: calc(65% - 0.5rem);
 }
 @media (min-width: 640px) {
   .featured-carousel {
@@ -2823,19 +2825,13 @@ html {
     transform 0.3s;
 }
 
-/* Wishlist heart — circle that expands into a metallic gold "Add to wishlist"
-   pill on hover. Expansion is overlay-only (absolute inside a fixed-size
-   wrapper) so sibling layout never shifts. Metallic gold (#d4af4f) per VANTA
-   Garage fixed theme — no gradient, no emoji. */
-.heart-fav-wrap {
-  position: relative;
+/* Wishlist heart — fixed-size 44px touch target, icon-only on mobile.
+   Metallic gold outline; filled pink when wishlisted. No hover pill that
+   breaks touch layouts — the aria-label carries the text for screen readers. */
+.heart-fav {
   width: 44px;
   height: 44px;
   flex: 0 0 auto;
-}
-.heart-fav {
-  position: absolute;
-  inset: 0;
   border-radius: 9999px;
   background: var(--background);
   border: 1.5px solid var(--brand-gold);
@@ -2844,52 +2840,15 @@ html {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
-  transition: width 0.5s, box-shadow 0.5s, border-color 0.5s, color 0.5s;
+  transition: border-color 0.2s, color 0.2s, transform 0.1s;
 }
-.heart-fav::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 9999px;
-  background: var(--brand-gold);
-  opacity: 0;
-  transition: opacity 0.5s;
-}
-.heart-fav::after {
-  content: "";
-  position: absolute;
-  top: 10%;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: 9999px;
-  background: var(--brand-gold);
-  filter: blur(15px);
-  z-index: -1;
-  opacity: 0;
-  transition: opacity 0.5s;
-}
-/* Expanded pill only while hovered/focused — a wishlisted heart simply stays
-   filled (pink) instead of staying stuck in the expanded state. */
-.heart-fav:hover,
-.heart-fav:focus-visible {
-  width: 150px;
-  box-shadow: 0 10px 25px color-mix(in srgb, var(--brand-gold) 35%, transparent);
-  border-color: #ff69b4;
-  background: #ff69b4;
-  color: #fff;
+.heart-fav:active {
+  transform: scale(0.92);
 }
 .heart-fav.is-active {
   border-color: #ff69b4;
-}
-.heart-fav:hover::before,
-.heart-fav:focus-visible::before {
-  opacity: 1;
-}
-.heart-fav:hover::after,
-.heart-fav:focus-visible::after {
-  opacity: 0.5;
+  color: #ff69b4;
+  background: color-mix(in srgb, #ff69b4 8%, transparent);
 }
 .heart-fav .heart-icon {
   position: absolute;

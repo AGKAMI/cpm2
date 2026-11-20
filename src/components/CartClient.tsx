@@ -215,8 +215,24 @@ export function CartClient() {
   const [attempted, setAttempted] = useState(false);
 
   useEffect(() => {
-    setPlayerId(window.localStorage.getItem("vanta_player_id") ?? "");
-    setInGameName(window.localStorage.getItem("vanta_ingame_name") ?? "");
+    const localPid = window.localStorage.getItem("vanta_player_id") ?? "";
+    const localName = window.localStorage.getItem("vanta_ingame_name") ?? "";
+    setPlayerId(localPid);
+    setInGameName(localName);
+    // Auto-fill from the profile's saved CPM2 ID when this device has not
+    // cached one yet, so returning buyers do not retype their identity.
+    if (!localPid || !localName) {
+      vantaApi
+        .profile()
+        .then(({ customer }) => {
+          if (!customer) return;
+          if (!localPid && customer.playerId) setPlayerId(customer.playerId);
+          if (!localName && customer.inGameName) setInGameName(customer.inGameName);
+        })
+        .catch(() => {
+          /* guest / offline — leave the manual fields */
+        });
+    }
   }, []);
   useEffect(() => {
     if (playerId.trim()) window.localStorage.setItem("vanta_player_id", playerId.trim());

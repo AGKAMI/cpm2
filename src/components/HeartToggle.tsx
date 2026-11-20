@@ -76,8 +76,7 @@ export function HeartToggle({ productId }: { productId: number }) {
   );
 
   return (
-    <span className="heart-fav-wrap">
-      <button
+    <button
         type="button"
         onClick={onToggle}
         className={`heart-fav ${mounted && isWishlisted ? "is-active" : ""}`}
@@ -98,8 +97,6 @@ export function HeartToggle({ productId }: { productId: number }) {
             strokeLinejoin="round"
           />
         </svg>
-        <span className="heart-title">Add to wishlist</span>
       </button>
-    </span>
   );
 }

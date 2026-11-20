@@ -810,6 +810,21 @@ Local port-3000 bridge is **not** KAMI-Bot's. KAMI-Bot runs on bot-hosting.net w
 
 **Gate:** tsc clean → tests 66/66 → build clean → 3001 restarted (prod build) → logo corners alpha=0 verified via canvas probe on /fleet header. Committed `e3e16d0` (only cpm-logo.svg, client.ts, trade.ts, skills-lock.json, AGENTS_HANDOFF.md) → pushed → deploy job `IMAUkqohN9ynwqkigdGT` → PROD VERIFIED by content (served cpm-logo.svg has the circle, no white rect).
 
+### 2026-11-19 (entry ~) — Agent "AG" — Telegram mini-app / storefront fixes (KAMI requests)
+
+**Bugs fixed this run (tsc clean, tests 66/66, build clean):**
+
+1. **Telegram Stars payments didn't work / "Telegram signature did not verify"** — `src/lib/telegram.ts` `verifyTelegramInitData()` was including Telegram's modern Ed25519 `signature` initData field in the HMAC data-check-string, which makes every real mini-app request from an up-to-date client fail. Now `signature` is excluded alongside `hash`, matching the canonical validation recipe. Login/session + Stars invoice creation now resolve inside Telegram.
+2. **Checkout only showed ZAR** — `CheckoutClient` now prefixes the customer's CPM2 ID / in-game name from `/profile` (no retyping), and the Order Summary shows the `Telegram Stars (≈ N ⭐)` equivalent when Stars is selected.
+3. **Wishlist heart looked horrible on mobile** — `HeartToggle` is now an icon-only 44px touch target (text lives in `aria-label` only); removed the desktop hover-pill expansion and `heart-title` span that cramped the circle on small screens. `globals.css` heart rules simplified to a fixed circle with a pink filled state.
+4. **Featured-carousel showed a single card per row on mobile** — `globals.css` mobile item width changed to `calc(65% - 0.5rem)` (one full card + peek of next) so it reads as a swipeable carousel; desktop keeps 3-5 cards.
+5. **Bulk checkout was EFT-only** — `store/cart/checkout/page.tsx` now offers an EFT / Telegram Stars selector and passes `paymentMethod` through to `cartCheckout` (route already accepted `stars`; PayFast still correctly rejected for multi-item carts).
+6. **Telegram notifications had no quick actions** — `notifyCustomer` now attaches an inline-keyboard "View Order" button linking to the order page on payment/delivery events.
+
+**Open (carried):** PayFast keys pending owner (ZAR checkout stays hidden until set). delete test rows `AUDIT-TEST-DELETE-ME` (242) / `PRICE-CAP-TEST` (243)? categories API garbled-binary response; `/accounts/[id]` 401/Turso; cpm-logo.svg 13.5MB downsizing (done in-tree, not yet deployed); prod cold-start 20-38s.
+
+**Gate:** tsc clean → tests 66/66 → build clean → commit + push + deploy.
+
 ### 2026-11-18 (entry 35) — Agent "AG" — 19-item UI batch (themes, admin dropdowns, notifications page, header)
 
 **User's 19-item list, all code-complete this run:**

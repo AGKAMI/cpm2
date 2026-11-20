@@ -23,6 +23,13 @@ interface TelegramMessage {
   text: string;
   parse_mode?: "HTML" | "Markdown";
   disable_web_page_preview?: boolean;
+  reply_markup?: {
+    inline_keyboard: Array<{
+      text: string;
+      url?: string;
+      web_app?: { url: string };
+    }[]>;
+  };
 }
 
 /** WhatsApp channel (newsletter) JID for broadcasting notifications. */
@@ -262,13 +269,31 @@ export async function notifyCustomer(
   // Get product name
   const productName = await getProductName(order.productId);
 
-  // Build and send Telegram DM to customer
+  // Build and send Telegram DM to customer, with a quick-action button so they
+  // can open their order straight from the notification.
   const message = formatMessage(event, { ...order, productName });
+  const replyMarkup =
+    order.id &&
+    event !== "new_product" &&
+    event !== "promotion" &&
+    event !== "admin_promoted"
+      ? {
+          inline_keyboard: [
+            [
+              {
+                text: "View Order",
+                url: `https://cpm2-bay.vercel.app/store/orders?id=${order.id}`,
+              },
+            ],
+          ],
+        }
+      : undefined;
   await sendTelegramMessage({
     chat_id: telegramId,
     text: message,
     parse_mode: "HTML",
     disable_web_page_preview: true,
+    ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
   });
   // Broadcast marketing events to WhatsApp channel (new vehicle, new promotion)
   // Order/payment/delivery updates stay as Telegram DMs only — channel is for marketing

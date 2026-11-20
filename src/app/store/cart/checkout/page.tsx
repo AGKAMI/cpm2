@@ -20,9 +20,10 @@ import { vantaApi } from "@/lib/store/client";
 
 export default function CartCheckoutPage() {
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>("");
   const [playerId, setPlayerId] = useState("");
   const [inGameName, setInGameName] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"eft" | "stars">("eft");
   const autoFired = useRef(false);
 
   useEffect(() => {
@@ -51,7 +52,7 @@ export default function CartCheckoutPage() {
       const res = await vantaApi.cartCheckout({
         playerId: pid,
         inGameName: name,
-        paymentMethod: "eft",
+        paymentMethod,
       });
       // Clear any lingering local cart marker and go to orders.
       if (typeof window !== "undefined") {
@@ -99,10 +100,37 @@ export default function CartCheckoutPage() {
         ) : (
           <div className="max-w-sm mx-auto text-center">
             <h2 className="text-xl font-bold text-foreground mb-2">Bulk checkout</h2>
-            <p className="text-muted-foreground mb-6">
+            <p className="text-muted-foreground mb-4">
               Submit every vehicle in your cart as one order. Each vehicle is
-              reserved and paid for separately (EFT).
+              reserved and paid for separately.
             </p>
+            <div className="flex items-center justify-between gap-3 mb-6">
+              <span className="text-xs font-medium text-muted-foreground">Pay with</span>
+              <div className="flex gap-2">
+                <label className="flex items-center gap-2 cursor-pointer p-2 rounded-md border border-border hover:border-primary">
+                  <input
+                    type="radio"
+                    name="bulkPayment"
+                    value="eft"
+                    checked={paymentMethod === "eft"}
+                    onChange={() => setPaymentMethod("eft")}
+                    className="accent-primary"
+                  />
+                  EFT
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer p-2 rounded-md border border-border hover:border-primary">
+                  <input
+                    type="radio"
+                    name="bulkPayment"
+                    value="stars"
+                    checked={paymentMethod === "stars"}
+                    onChange={() => setPaymentMethod("stars")}
+                    className="accent-primary"
+                  />
+                  Telegram Stars
+                </label>
+              </div>
+            </div>
             <Button
               variant="primary"
               onClick={submit}

@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
  * prerender on this page without a Suspense boundary).
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
@@ -23,6 +23,7 @@ export default function CartCheckoutPage() {
   const [error, setError] = useState<string | null>(null);
   const [playerId, setPlayerId] = useState("");
   const [inGameName, setInGameName] = useState("");
+  const autoFired = useRef(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -65,16 +66,21 @@ export default function CartCheckoutPage() {
   }, [playerId, inGameName]);
 
   useEffect(() => {
-    // Only auto-submit when landed here from the cart page (marker set).
+    // Only auto-submit when landed here from the cart page (marker set). Wait
+    // until playerId/inGameName are hydrated from the URL/localStorage — the
+    // old []-deps effect fired on mount with the initial EMPTY state (the
+    // hydration effect's setState had not re-rendered yet), so submit() saw an
+    // empty player id and showed "enter your Player ID first" despite valid
+    // query params. Fire once, after the identity is present.
     const marker =
       typeof window !== "undefined"
         ? window.localStorage.getItem("vanta_bulk_cart")
         : null;
-    if (marker === "1") {
+    if (marker === "1" && !autoFired.current && playerId.trim() && inGameName.trim()) {
+      autoFired.current = true;
       void submit();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [playerId, inGameName, submit]);
 
   return (
     <StoreShell>

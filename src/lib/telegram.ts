@@ -79,12 +79,12 @@ export async function verifyTelegramInitData(
   // alphabetically — the rendered pairs, matching the canonical validator.
   const pairs: string[] = [];
   for (const [key, value] of params.entries()) {
-    // `hash` is the value we verify against; `signature` is Telegram's modern
-    // Ed25519 overlay (an alternative proof over the same data) and must NOT be
-    // folded into the HMAC data-check-string — including it makes every real
-    // mini-app request from an up-to-date client fail verification, which is
-    // exactly the "Telegram signature did not verify" error users see.
-    if (key === "hash" || key === "signature") continue;
+    // `hash` is the value we verify against. Per the official Mini App HMAC
+    // recipe the data-check-string is ALL received fields except `hash` — the
+    // Ed25519 `signature` field STAYS in (only the third-party Ed25519 flow
+    // excludes hash+signature). Dropping it rejects every real up-to-date
+    // client (proven: signature-bearing initData fails when excluded).
+    if (key === "hash") continue;
     pairs.push(`${key}=${value}`);
   }
   pairs.sort();

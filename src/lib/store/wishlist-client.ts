@@ -17,6 +17,7 @@ const listeners: Set<Listener> =
   new Set<Listener>();
 (globalThis as Record<string, unknown>)[LISTENER_KEY] = listeners;
 
+let serverIds: Set<number> | null = null;
 let serverIdsPromise: Promise<Set<number>> | null =
   ((globalThis as Record<string, unknown>)[LISTENER_KEY + "Promise"] as
     | Promise<Set<number>>
@@ -53,6 +54,7 @@ export function loadServerWishlist(): Promise<Set<number>> {
         if (!res.ok) return readLocalSet();
         const data = (await res.json()) as { items?: Array<{ productId: number }> };
         const ids = new Set<number>((data.items ?? []).map((i) => i.productId));
+        serverIds = ids;
         // Mirror into localStorage so hearts are right even before React hydrates.
         for (const id of ids) localStorage.setItem(localKey(id), "true");
         return ids;
@@ -76,6 +78,14 @@ export function subscribeWishlist(listener: Listener): () => void {
  */
 export function toggleWishlist(productId: number, next: boolean): void {
   localStorage.setItem(localKey(productId), String(next));
+  // Invalidate the cached server promise so hearts mounted later (or the
+  // twin card of the same product) never read a pre-toggle snapshot, and
+  // keep the cached set in step with the optimistic write.
+  serverIdsPromise = null;
+  if (serverIds) {
+    if (next) serverIds.add(productId);
+    else serverIds.delete(productId);
+  }
   // Best-effort server sync (only works when a customer is linked).
   void (async () => {
     try {

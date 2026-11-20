@@ -30,6 +30,16 @@ export function HeartToggle({ productId }: { productId: number }) {
   useEffect(() => {
     setMounted(true);
     let alive = true;
+    // Show the stored state immediately — never leave a wishlisted product
+    // with an empty heart while the server fetch is in flight (that gap is
+    // what desynced hearts across duplicate cards).
+    try {
+      if (localStorage.getItem(`vanta_wishlist_${productId}`) === "true") {
+        setIsWishlisted(true);
+      }
+    } catch {
+      // storage unavailable — server fetch below is the fallback
+    }
     // Pull the page's shared server wishlist once, then subscribe to
     // cross-card toggles so every heart for the same product stays in sync.
     void loadServerWishlist().then((ids) => {

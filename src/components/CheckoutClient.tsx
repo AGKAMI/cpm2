@@ -471,7 +471,18 @@ export function CheckoutClient({ productId }: { productId: number }) {
             {paymentMethod === "stars" && (
               <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
                 <span>Telegram Stars (≈)</span>
-                <span className="text-primary">{approxStarsForCents(totalCents)} ⭐</span>
+                <span className="flex items-center gap-1 text-primary">
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="w-4 h-4 fill-current"
+                    fill="currentColor"
+                  >
+                    <path
+                      d="M12 2l-4.69 6.48L1 10.74l6.48 1.48L7.91 16.12l5 4.87L12 19.53l5-4.87L22.11 12.22l6.48-1.48L23 10.74l-4.69-6.48L12 2z"
+                    />
+                  </svg>
+                  {approxStarsForCents(totalCents)}
+                </span>
               </div>
             )}
           </div>

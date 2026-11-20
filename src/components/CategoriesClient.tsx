@@ -73,6 +73,14 @@ export function CategoriesClient({
     return () => clearTimeout(t);
   }, []);
 
+  // Debounce the search box into debouncedQ, which the filter below reads.
+  // This wiring was missing: setDebouncedQ was declared but never called, so
+  // debouncedQ stayed "" and typing in the search box filtered nothing.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(q), 300);
+    return () => clearTimeout(t);
+  }, [q]);
+
   const nf = Number(excl !== "all") + Number(avail !== "all") + (promo ? 1 : 0) + (max < 200 ? 1 : 0);
 
   // User rule: a vehicle with no renderable cover is never listed. Same

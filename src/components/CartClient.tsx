@@ -16,6 +16,7 @@ import {
 } from "@/lib/store/cart-client";
 import { StoreShell } from "@/components/StoreShell";
 import { Button } from "@/components/ui/Button";
+import { Field, TextInput } from "@/components/ui/Field";
 
 type CartItem = {
   productId: number;
@@ -121,8 +122,12 @@ export function CartClient() {
         );
         return;
       }
-      const data = (await res.json()) as { cart?: { items?: unknown[] } };
-      const serverItems = (data.cart?.items ?? []) as Array<{
+      const data = (await res.json()) as { items?: unknown[]; cart?: { items?: unknown[] } };
+      // GET /api/store/cart returns getCart() = top-level { items }; only
+      // POST/PATCH/DELETE wrap it as { cart }. Reading just data.cart.items
+      // left every synced server cart rendering as empty. Read the GET shape
+      // first, fall back to the wrapped shape for safety.
+      const serverItems = (data.items ?? data.cart?.items ?? []) as Array<{
         productId?: number;
         name?: string;
         coverImage?: string | null;
@@ -200,19 +205,60 @@ export function CartClient() {
     setBusy((s) => new Set([...s].filter((id) => id !== productId)));
   };
 
+  // Guest identity for bulk checkout. The checkout page reads these from the
+  // URL/localStorage; without inputs here the flow was a dead end ("enter your
+  // Player ID on the cart page first" — but the cart page had no such field).
+  const [playerId, setPlayerId] = useState("");
+  const [inGameName, setInGameName] = useState("");
+  const [playerIdError, setPlayerIdError] = useState<string | null>(null);
+  const [inGameNameError, setInGameNameError] = useState<string | null>(null);
+  const [attempted, setAttempted] = useState(false);
+
+  useEffect(() => {
+    setPlayerId(window.localStorage.getItem("vanta_player_id") ?? "");
+    setInGameName(window.localStorage.getItem("vanta_ingame_name") ?? "");
+  }, []);
+  useEffect(() => {
+    if (playerId.trim()) window.localStorage.setItem("vanta_player_id", playerId.trim());
+  }, [playerId]);
+  useEffect(() => {
+    if (inGameName.trim()) window.localStorage.setItem("vanta_ingame_name", inGameName.trim());
+  }, [inGameName]);
+
+  const validatePlayerId = (pid: string): string | null => {
+    const trimmed = pid.trim().toUpperCase();
+    if (!trimmed) return "Player ID is required";
+    if (!/^[A-Z]{2}\d{6}$/.test(trimmed)) return "Must be 2 letters + 6 digits (e.g. AB123456)";
+    return null;
+  };
+  const validateInGameName = (name: string): string | null => {
+    const trimmed = name.trim();
+    if (!trimmed) return "In-game name is required";
+    if (trimmed.length < 2) return "Name is too short";
+    return null;
+  };
+
   const currency = items[0]?.currency ?? "ZAR";
 
   const handleCheckoutAll = async () => {
     if (items.length === 0) return;
+    const pErr = validatePlayerId(playerId);
+    const nErr = validateInGameName(inGameName);
+    setPlayerIdError(pErr);
+    setInGameNameError(nErr);
+    setAttempted(true);
+    if (pErr || nErr) {
+      const first = document.getElementById(pErr ? "cart-player-id" : "cart-ingame-name");
+      first?.scrollIntoView({ behavior: "smooth", block: "center" });
+      first?.focus();
+      return;
+    }
     setCheckoutBusy(true);
     try {
-      const playerId = window.localStorage.getItem("vanta_player_id") ?? "";
-      const inGameName = window.localStorage.getItem("vanta_ingame_name") ?? "";
-      // Store details for the bulk checkout page to pick up.
+      window.localStorage.setItem("vanta_player_id", playerId.trim());
+      window.localStorage.setItem("vanta_ingame_name", inGameName.trim());
       window.localStorage.setItem("vanta_bulk_cart", "1");
-      if (typeof window !== "undefined") {
-        window.location.href = `/store/cart/checkout?playerId=${encodeURIComponent(playerId)}&inGameName=${encodeURIComponent(inGameName)}`;
-      }
+      window.location.href = `/store/cart/checkout?playerId=${encodeURIComponent(playerId.trim())}&inGameName=${encodeURIComponent(inGameName.trim())}`;
     } finally {
       setCheckoutBusy(false);
     }
@@ -363,6 +409,51 @@ export function CartClient() {
             </span>
           </div>
           <div className="space-y-3">
+            <Field label="Player ID" hint="2 letters + 6 digits (e.g. AB123456)" htmlFor="cart-player-id">
+              <TextInput
+                id="cart-player-id"
+                value={playerId}
+                onChange={(e) => {
+                  const raw = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+                  const validated = raw.replace(/^([A-Z]{2})(\d{0,6}).*$/, "$1$2");
+                  setPlayerId(validated);
+                }}
+                placeholder="e.g. AB123456"
+                maxLength={8}
+                className={
+                  playerIdError
+                    ? "border-destructive border-glow-red"
+                    : !validatePlayerId(playerId)
+                      ? "border-ok"
+                      : attempted
+                        ? "border-destructive border-glow-red"
+                        : ""
+                }
+              />
+              {playerIdError && (
+                <p className="text-[10px] text-destructive mt-1">{playerIdError}</p>
+              )}
+            </Field>
+            <Field label="In-game name" hint="Name shown in CPM2" htmlFor="cart-ingame-name">
+              <TextInput
+                id="cart-ingame-name"
+                value={inGameName}
+                onChange={(e) => setInGameName(e.target.value)}
+                placeholder="e.g. Thino M"
+                className={
+                  inGameNameError
+                    ? "border-destructive border-glow-red"
+                    : !validateInGameName(inGameName)
+                      ? "border-ok"
+                      : attempted
+                        ? "border-destructive border-glow-red"
+                        : ""
+                }
+              />
+              {inGameNameError && (
+                <p className="text-[10px] text-destructive mt-1">{inGameNameError}</p>
+              )}
+            </Field>
             <Button
               variant="primary"
               onClick={handleCheckoutAll}

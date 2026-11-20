@@ -6,6 +6,7 @@
 
 import { getStoreDb } from "@/lib/store-db";
 import { telegramBotToken } from "@/lib/telegram";
+import { getOrder } from "@/lib/store/checkout";
 
 export type OrderEvent =
   | "payment_verified"
@@ -214,7 +215,7 @@ function formatMessage(event: OrderEvent, order: {
   }
 }
 
-async function getCustomerTelegramId(customerId: number): Promise<number | null> {
+export async function getCustomerTelegramId(customerId: number): Promise<number | null> {
   const db = await getStoreDb();
   const result = await db.execute({
     sql: `SELECT platform_user_id FROM vanta_platform_identities WHERE customer_id = ? AND platform = 'telegram' LIMIT 1`,
@@ -254,6 +255,7 @@ export async function notifyCustomer(
     currency: string;
     inGameName: string;
     playerId: string;
+    deliveryState?: string;
     evidenceUrl?: string;
     reason?: string;
   }
@@ -269,22 +271,20 @@ export async function notifyCustomer(
   // Get product name
   const productName = await getProductName(order.productId);
 
-  // Build and send Telegram DM to customer, with a quick-action button so they
-  // can open their order straight from the notification.
+  // Fetch the live order so we know its delivery state (call sites may not pass it).
+  const liveOrder = await getOrder(order.id);
+  const deliveryState = liveOrder?.deliveryState ?? order.deliveryState;
+
+  // Build and send Telegram DM to customer, with quick-action buttons so they
+  // can open or confirm their order straight from the notification.
   const message = formatMessage(event, { ...order, productName });
+  const showConfirm = !!order.id && (deliveryState === "scheduled" || deliveryState === "in_progress");
   const replyMarkup =
-    order.id &&
-    event !== "new_product" &&
-    event !== "promotion" &&
-    event !== "admin_promoted"
+    order.id
       ? {
           inline_keyboard: [
-            [
-              {
-                text: "View Order",
-                url: `https://cpm2-bay.vercel.app/store/orders?id=${order.id}`,
-              },
-            ],
+            [{ text: "View Order", url: `https://cpm2-bay.vercel.app/store/orders?id=${order.id}` }],
+            ...(showConfirm ? [[{ text: "Confirm Delivery", callback_data: `tg_delivery_confirm_${order.id}` }]] : []),
           ],
         }
       : undefined;

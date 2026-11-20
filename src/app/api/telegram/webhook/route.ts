@@ -16,17 +16,46 @@ import { getOrder, updatePaymentState, updateOrderState } from "@/lib/store/chec
 import { recordPayment } from "@/lib/store/payments";
 import { ledgerEntry } from "@/lib/store/ledger";
 import { notifyCustomer } from "@/lib/store/notifications";
+import { getCustomerTelegramId } from "@/lib/store/notifications";
 import { answerPreCheckoutQuery, starsForCents } from "@/lib/store/stars";
 
 export const dynamic = "force-dynamic";
 
 /** Answer a callback_query to remove the "loading" state on the button. */
-async function answerCallbackQuery(token: string, callbackQueryId: string): Promise<void> {
+async function answerCallbackQuery(token: string, callbackQueryId: string, text?: string): Promise<void> {
   try {
     await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ callback_query_id: callbackQueryId }),
+      body: JSON.stringify({
+        callback_query_id: callbackQueryId,
+        ...(text ? { text, show_alert: false } : {}),
+      }),
+    });
+  } catch {
+    // Non-fatal
+  }
+}
+
+/** Replace a sent message's text + keyboard (retire a callback keyboard). */
+async function editMessageText(
+  token: string,
+  chatId: number | string,
+  messageId: number,
+  text: string,
+): Promise<void> {
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/editMessageText`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        message_id: messageId,
+        text,
+        parse_mode: "HTML",
+        disable_web_page_preview: true,
+        reply_markup: { inline_keyboard: [] },
+      }),
     });
   } catch {
     // Non-fatal
@@ -68,6 +97,7 @@ export async function POST(request: NextRequest) {
 
       const yesPrefix = "tg_verify_yes_";
       const noPrefix = "tg_verify_no_";
+      const deliveryConfirmPrefix = "tg_delivery_confirm_";
 
       if (data && data.startsWith(yesPrefix)) {
         const verificationId = Number(data.slice(yesPrefix.length));
@@ -110,6 +140,46 @@ export async function POST(request: NextRequest) {
         });
 
         await sendFollowup(token, chatId, "❌ <b>Rejected.</b> The link request was cancelled. No Telegram ID was linked to any account.");
+        return NextResponse.json({ ok: true });
+      } else if (data && data.startsWith(deliveryConfirmPrefix)) {
+        const orderId = data.slice(deliveryConfirmPrefix.length);
+        const db = await getStoreDb();
+        const order = await getOrder(orderId);
+        if (!order) {
+          await answerCallbackQuery(token, callbackQueryId, "Order not found.");
+          return NextResponse.json({ ok: true });
+        }
+        const telegramId = await getCustomerTelegramId(order.customerId);
+        if (!telegramId || String(telegramId) !== String(from.id)) {
+          await answerCallbackQuery(token, callbackQueryId, "This delivery isn't yours to confirm.");
+          return NextResponse.json({ ok: true });
+        }
+        if (order.paymentState !== "verified") {
+          await answerCallbackQuery(token, callbackQueryId, "Payment isn't verified yet.");
+          return NextResponse.json({ ok: true });
+        }
+        if (order.deliveryState !== "scheduled" && order.deliveryState !== "in_progress") {
+          await answerCallbackQuery(token, callbackQueryId, "No active delivery to confirm.");
+          return NextResponse.json({ ok: true });
+        }
+        await db.execute({
+          sql: `UPDATE vanta_orders SET delivery_state = 'completed', order_state = 'completed', updated_at = ? WHERE id = ?`,
+          args: [new Date().toISOString(), orderId],
+        });
+        await ledgerEntry({
+          orderId,
+          type: "adjustment",
+          amountCents: order.amountCents,
+          currency: order.currency,
+          relatedPaymentId: "",
+        });
+        await answerCallbackQuery(token, callbackQueryId, "Delivery confirmed ✓ — thanks!");
+        await editMessageText(
+          token,
+          chatId,
+          (message as unknown as { message_id: number }).message_id,
+          `✅ <b>Delivery confirmed</b>\n\nOrder ${order.id} — ${order.inGameName} — marked delivered.`,
+        );
         return NextResponse.json({ ok: true });
       }
     }

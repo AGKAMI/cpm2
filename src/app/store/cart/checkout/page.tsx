@@ -17,6 +17,7 @@ import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 import { vantaApi } from "@/lib/store/client";
+import { StarIcon } from "@/components/StarIcon";
 
 export default function CartCheckoutPage() {
   const [busy, setBusy] = useState(false);
@@ -127,7 +128,7 @@ export default function CartCheckoutPage() {
                     onChange={() => setPaymentMethod("stars")}
                     className="accent-primary"
                   />
-                  <span className="flex items-center gap-1.5"><img src="/telegram-star.png" alt="" className="w-3.5 h-3.5" />Telegram Stars</span>
+                  <span className="flex items-center gap-1.5"><StarIcon className="w-3.5 h-3.5" />Telegram Stars</span>
                 </label>
               </div>
             </div>

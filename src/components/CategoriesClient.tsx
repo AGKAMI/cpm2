@@ -10,6 +10,7 @@ import { PageHeading } from "@/components/PageHeading";
 import { formatPrice } from "@/lib/store/client";
 import { hasDiscount, discountedPriceCents, approxStarsForCents } from "@/lib/store/pricing";
 import { HeartToggle } from "@/components/HeartToggle";
+import { StarIcon } from "@/components/StarIcon";
 
 /**
  * Stock color tier, relative to the stock baseline (`stockInitial`) set when
@@ -329,7 +330,7 @@ export function CategoriesClient({
                         </span>
                       )}
                       <span className="basis-full flex items-center gap-1 text-[10px] text-ink-faint tabular-nums">
-                        <img src="/telegram-star.png" alt="" className="w-3 h-3" />
+                        <StarIcon className="w-3 h-3" />
                         ≈ {approxStarsForCents(hasDiscount(c) ? discountedPriceCents(c.basePriceCents, c.discountPercent) : c.basePriceCents)} Stars
                       </span>
                       <span

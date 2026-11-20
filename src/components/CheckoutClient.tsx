@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { CheckoutSkeleton } from "@/components/skeleton";
 import { Field, TextInput } from "@/components/ui/Field";
 import { Uploader } from "@/components/ui/Uploader";
+import { StarIcon } from "@/components/StarIcon";
 
 export function CheckoutClient({ productId }: { productId: number }) {
   const [product, setProduct] = useState<VantaProduct | null>(null);
@@ -324,7 +325,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
             <label className="flex items-center gap-3 cursor-pointer select-none p-3 rounded-md border border-border hover:border-primary hover:text-primary-foreground hover:border-primary transition-colors">
               <input type="radio" name="paymentMethod" value="stars" checked={paymentMethod === "stars"} onChange={() => setPaymentMethod("stars")} className="accent-primary" />
               <div className="flex-1">
-                <div className="flex items-center gap-1.5 text-xs font-medium text-foreground"><img src="/telegram-star.png" alt="" className="w-3.5 h-3.5" />Telegram Stars</div>
+                <div className="flex items-center gap-1.5 text-xs font-medium text-foreground"><StarIcon className="w-3.5 h-3.5" />Telegram Stars</div>
                 <div className="text-[10px] text-muted-foreground">Pay in-app with your Stars balance — instant, no card.{product ? ` About ${approxStarsForCents(totalCents)} Stars.` : ""}</div>
               </div>
             </label>
@@ -472,7 +473,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
               <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
                 <span>Telegram Stars (≈)</span>
                 <span className="flex items-center gap-1 text-primary">
-                  <img src="/telegram-star.png" alt="" className="w-4 h-4" />
+                  <StarIcon className="w-4 h-4" />
                   {approxStarsForCents(totalCents)}
                 </span>
               </div>

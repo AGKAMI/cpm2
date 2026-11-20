@@ -24,6 +24,7 @@ import { HeartToggle } from "@/components/HeartToggle";
 import { addToCartLocal } from "@/lib/store/cart-client";
 import { Button } from "@/components/ui/Button";
 import { CartPlusIcon } from "@/components/ui/icons";
+import { StarIcon } from "@/components/StarIcon";
 
 export function StoreHomeClient({
   featured: featuredRaw,
@@ -549,7 +550,7 @@ const ProductCard = React.memo(
                   {variant === "standard" && <CartAddButton product={product} />}
                 </div>
                 <div className="mt-1 flex items-center gap-1 text-[10px] text-ink-faint tabular-nums">
-                  <img src="/telegram-star.png" alt="" className="w-3 h-3" />
+                  <StarIcon className="w-3 h-3" />
                   <span>≈ {approxStarsForCents(hasDiscount(product) ? discountedPriceCents(product.basePriceCents, product.discountPercent) : product.basePriceCents)} Stars</span>
                 </div>
               </div>

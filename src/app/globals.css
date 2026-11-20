@@ -3180,3 +3180,10 @@ input[type="number"] {
 .hyphenate {
   hyphens: auto;
 }
+
+/* Telegram Stars icon (StarIcon.tsx) - theme-aware: black star on paper/light,
+   white star on night/dark (default when no data-theme). */
+.star-icon-light { display: none; }
+.star-icon-dark { display: inline-block; }
+[data-theme="paper"] .star-icon-light { display: inline-block; }
+[data-theme="paper"] .star-icon-dark { display: none; }

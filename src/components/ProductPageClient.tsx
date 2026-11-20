@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { addToCartLocal } from "@/lib/store/cart-client";
 import { ProductSkeleton } from "@/components/skeleton";
 import { CartPlusIcon } from "@/components/ui/icons";
+import { StarIcon } from "@/components/StarIcon";
 
 const EXCLUSIVITY_LABELS: Record<string, string> = {
   limited_edition: "Limited Edition",
@@ -184,7 +185,7 @@ export function ProductPageClient({ productId }: { productId: string }) {
             <div className="flex items-baseline justify-between gap-2 mb-5">
               <span className="flex flex-col">
                 <span className="text-2xl font-bold text-primary">{formatPrice(product.basePriceCents, product.currency)}</span>
-                <span className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground tabular-nums"><img src="/telegram-star.png" alt="" className="w-3 h-3" />≈ {approxStarsForCents(product.basePriceCents)} Stars</span>
+                <span className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground tabular-nums"><StarIcon className="w-3 h-3" />≈ {approxStarsForCents(product.basePriceCents)} Stars</span>
               </span>
               {isExclusive && (
                 <span className="text-[10px] uppercase tracking-[0.15em] text-[#17120a] bg-abs-gold px-2 py-0.5 rounded font-extrabold">

@@ -127,7 +127,7 @@ export default function CartCheckoutPage() {
                     onChange={() => setPaymentMethod("stars")}
                     className="accent-primary"
                   />
-                  Telegram Stars
+                  <span className="flex items-center gap-1.5"><img src="/telegram-star.png" alt="" className="w-3.5 h-3.5" />Telegram Stars</span>
                 </label>
               </div>
             </div>

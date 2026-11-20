@@ -324,7 +324,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
             <label className="flex items-center gap-3 cursor-pointer select-none p-3 rounded-md border border-border hover:border-primary hover:text-primary-foreground hover:border-primary transition-colors">
               <input type="radio" name="paymentMethod" value="stars" checked={paymentMethod === "stars"} onChange={() => setPaymentMethod("stars")} className="accent-primary" />
               <div className="flex-1">
-                <div className="text-xs font-medium text-foreground">Telegram Stars</div>
+                <div className="flex items-center gap-1.5 text-xs font-medium text-foreground"><img src="/telegram-star.png" alt="" className="w-3.5 h-3.5" />Telegram Stars</div>
                 <div className="text-[10px] text-muted-foreground">Pay in-app with your Stars balance — instant, no card.{product ? ` About ${approxStarsForCents(totalCents)} Stars.` : ""}</div>
               </div>
             </label>
@@ -472,15 +472,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
               <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
                 <span>Telegram Stars (≈)</span>
                 <span className="flex items-center gap-1 text-primary">
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="w-4 h-4 fill-current"
-                    fill="currentColor"
-                  >
-                    <path
-                      d="M12 2l-4.69 6.48L1 10.74l6.48 1.48L7.91 16.12l5 4.87L12 19.53l5-4.87L22.11 12.22l6.48-1.48L23 10.74l-4.69-6.48L12 2z"
-                    />
-                  </svg>
+                  <img src="/telegram-star.png" alt="" className="w-4 h-4" />
                   {approxStarsForCents(totalCents)}
                 </span>
               </div>

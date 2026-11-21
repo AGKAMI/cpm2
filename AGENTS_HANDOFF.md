@@ -1381,3 +1381,19 @@ Verified in the browser: "All" 21x17 -> 37x44, "See all" 45x17 -> 61x44, same y 
 **Clean, no change needed:** no text overflow on any measured page (only the sr-only `Skip to content` link, which is intentionally 1x1), no computed contrast failures, no other sub-24px interactive elements.
 
 **Gate:** `tsc --noEmit` exit 0 -> tests 66/66 -> both fixes re-measured in the live browser against the dev server on :3002 -> deploy hook fired.
+
+### 2026-11-21 (Stars payments ROOT CAUSE fixed + confirmed in the real Telegram client) — Agent "Kermes"
+
+**Symptom:** every Stars / bulk checkout inside Telegram failed "The Telegram signature did not verify", even though synthetic HMAC tests passed.
+
+**ROOT CAUSE (the one the synthetic tests missed):** Telegram percent-encodes the WHOLE initData as the `#tgWebAppData=` hash value (`auth_date%3D…%26user%3D…%26hash%3D…`). Both capture paths — the inline `<script>` in `src/app/layout.tsx` AND `src/lib/client-initdata.ts` — grabbed it raw with **no `decodeURIComponent`**, so `URLSearchParams` saw a single token with no `hash` field and verification always returned false. My earlier proofs built already-decoded strings, hence false-green.
+
+**FIX (`d8269cd`):** decode ONCE + strip trailing unsigned `tgWebApp*` params in BOTH capture paths; `normalizeInitData()` also recovers stale encoded sessionStorage so existing sessions heal without reopening. Proven three ways: encoded-no-decode=false, decode-once=true, and a real browser load stores the decoded initData. **KAMI confirmed the native Telegram Stars pay sheet (125 Stars) now opens in the real client.**
+
+**Signature field — LOCKED, do not flip:** keep `signature` IN the HMAC data-check-string (official Mini App recipe = all fields except `hash`; only the separate third-party Ed25519 validator excludes hash+signature). `fe0b1ff` restored it after a teammate re-excluded it (`2ee2916`), which broke the repo guard test "real initData carries a signature field — it must verify". `src/lib/telegram.ts` verification is settled; leave it alone.
+
+**Auth scoping (Zion, `e2380bb`):** `assertTelegramAuth` runs only for `paymentMethod === "stars"`; EFT/PayFast use Player ID and need no Telegram signature. Compatible with the above.
+
+**Also shipped:** theme-aware Telegram Star icon (black on `paper`/light, white on `night`/dark) on cards + checkout (`fe0b1ff`); Stars price shown alongside Rands. Then **scrapped the animated rain/aurora backdrop (`3ce3913`)** — frozen on mobile and the 36-layer animated gradient caused jank/lag; removed the Pattern mounts + CSS and restored clean theme backgrounds on VANTA and Fleet. Stars price + star icon unaffected.
+
+**Gate:** tsc 0 · tests 66/66 · build 0 · verified on prod (decode fix present, `pattern-bg` gone). Deploy hook fired for each.

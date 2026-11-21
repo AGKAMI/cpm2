@@ -36,13 +36,15 @@ export function captureInitDataFromUrl(): void {
     // everything from the marker to the end of the hash instead.
     const marker = /[?&#]tgWebAppData=/.exec(window.location.hash);
     if (!marker) return;
-    // No decodeURIComponent here: this is the exact string Telegram signed.
-    // verifyTelegramInitData runs URLSearchParams over it, which decodes each
-    // field itself — decoding first would turn a `%26` inside the user JSON
-    // into a literal `&` and split the params apart.
     const raw = window.location.hash.slice(marker.index + marker[0].length);
     if (!raw) return;
-    const initData = stripTrailingWebAppParams(raw);
+    // Telegram percent-encodes the WHOLE initData as the tgWebAppData value
+    // (auth_date%3D…%26user%3D…%26hash%3D…). Decode ONCE so URLSearchParams
+    // sees real fields incl. `hash`; without this every real-client call fails
+    // signature verification. (Decoding twice is what would split the user JSON.)
+    const sliced = stripTrailingWebAppParams(raw);
+    if (!sliced) return;
+    const initData = decodeURIComponent(sliced);
     if (!initData) return;
     (window as unknown as { __CPM2_INITDATA?: string }).__CPM2_INITDATA = initData;
     try {
@@ -55,17 +57,27 @@ export function captureInitDataFromUrl(): void {
   }
 }
 
+/** Recover values stored by the old (undecoded) capture: a decoded initData
+ *  always contains a literal `hash=`; an encoded one only `hash%3D`. */
+function normalizeInitData(v: string): string {
+  if (/hash=/.test(v)) return v;
+  if (/hash%3D/i.test(v)) {
+    try { return decodeURIComponent(v); } catch { return v; }
+  }
+  return v;
+}
+
 /** The raw initData for this session: captured > sessionStorage > live SDK. */
 export function clientInitData(): string {
   if (typeof window === "undefined") return "";
   const glob = (window as unknown as { __CPM2_INITDATA?: string }).__CPM2_INITDATA;
-  if (typeof glob === "string" && glob) return stripTrailingWebAppParams(glob);
+  if (typeof glob === "string" && glob) return stripTrailingWebAppParams(normalizeInitData(glob));
   try {
     const stored = window.sessionStorage.getItem(INIT_DATA_KEY);
-    if (stored) return stripTrailingWebAppParams(stored);
+    if (stored) return stripTrailingWebAppParams(normalizeInitData(stored));
   } catch {
     /* private mode — fall through */
   }
   const webApp = window.Telegram?.WebApp;
-  return typeof webApp?.initData === "string" ? stripTrailingWebAppParams(webApp.initData) : "";
+  return typeof webApp?.initData === "string" ? stripTrailingWebAppParams(normalizeInitData(webApp.initData)) : "";
 }

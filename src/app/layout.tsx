@@ -70,7 +70,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             (global + sessionStorage) and read it back via clientInitData(). */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var m=/[?&#]tgWebAppData=/.exec(location.hash);if(m){var r=location.hash.slice(m.index+m[0].length);if(r){window.__CPM2_INITDATA=r;try{sessionStorage.setItem(\"cpm2_tg_initdata\",r)}catch(e){}}}}catch(e){}})();`,
+            __html: `(function(){try{var m=/[?&#]tgWebAppData=/.exec(location.hash);if(m){var r=location.hash.slice(m.index+m[0].length);var b=r.search(/&tgWebApp[A-Za-z]+=/);if(b>=0)r=r.slice(0,b);try{r=decodeURIComponent(r)}catch(e){}if(r){window.__CPM2_INITDATA=r;try{sessionStorage.setItem(\"cpm2_tg_initdata\",r)}catch(e){}}}}catch(e){}})();`,
           }}
         />
       </head>

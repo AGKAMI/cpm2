@@ -333,7 +333,7 @@ export function TradeCarPickerModal({
                 </div>
 
                 {error ? (
-                  <p className="rounded-[14px] border border-oxblood bg-oxblood px-3 py-2 text-xs text-oxblood">
+                  <p className="rounded-[14px] border border-oxblood bg-oxblood px-3 py-2 text-xs text-white">
                     {error}
                   </p>
                 ) : null}

@@ -270,10 +270,10 @@ export function StoreShell({ children, dock }: StoreShellProps) {
                               window.location.href = "/";
                             }}
                             aria-label="Back to app selection"
-                            className="relative w-10 h-10 rounded-full border border-border bg-background flex items-center justify-center text-ink-soft hover:border-gold hover:text-gold transition-colors"
+                            className="relative w-8 h-8 rounded-full border border-border bg-background flex items-center justify-center text-ink-soft hover:border-gold hover:text-gold transition-colors"
                           >
                             <svg
-                              className="h-4 w-4"
+                              className="w-3 h-3"
                               viewBox="0 0 24 24"
                               fill="none"
                               stroke="currentColor"
@@ -289,7 +289,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
                 onClick={() => setThemeMode(themeMode === "night" ? "paper" : "night")}
                 aria-label={`Switch to ${themeMode === "night" ? "daylight" : "midnight"} theme`}
                 aria-pressed={themeMode === "paper"}
-                className="relative w-10 h-10 rounded-full border border-border bg-background flex items-center justify-center text-ink-soft hover:border-gold hover:text-gold transition-colors disabled:opacity-50"
+                className="relative w-8 h-8 rounded-full border border-border bg-background flex items-center justify-center text-ink-soft hover:border-gold hover:text-gold transition-colors disabled:opacity-50"
               >
                 <span
                   aria-hidden="true"

@@ -78,8 +78,8 @@ export function TradeCarPickerModal({
       setError("Use a PNG, JPEG or WebP screenshot.");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Screenshot is too large - keep it under 5MB.");
+    if (file.size > 3 * 1024 * 1024) {
+      setError("Screenshot is too large - keep it under 3MB (screenshots from your phone are often bigger than they look).");
       return;
     }
     try {

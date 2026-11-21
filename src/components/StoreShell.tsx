@@ -217,7 +217,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
       <FleetProvider>
         <>
           <header
-          className="sticky top-0 z-30 border-b border-border shadow-sm px-4 pt-8 pb-8 sm:px-6"
+          className="sticky top-0 z-30 border-b border-border shadow-sm px-4 pt-3 pb-3 sm:px-6"
           style={{ backgroundColor: "var(--background)" }}
         >
           <div className="relative flex items-center justify-between gap-2">
@@ -257,7 +257,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
               <Image
                 src={VANTA_LOCKUP}
                 alt="Vanta Garage"
-                className="h-auto w-full max-w-[190px] sm:h-10 sm:max-w-[240px] sm:w-auto"
+                className="h-10 w-auto max-w-[190px] sm:h-10 sm:max-w-[240px]"
                 width={512}
                 height={272}
                 style={{ objectFit: "contain" }}

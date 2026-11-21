@@ -17,7 +17,6 @@ import { cartCountLocal, loadServerCart, subscribeCart } from "@/lib/store/cart-
 import { AdminIcon } from "@/components/ui/admin-icon";
 import { OwnerIcon } from "@/components/ui/owner-icon";
 import { ProfileIcon } from "@/components/ui/profile-icon";
-import Pattern from "@/components/Pattern";
 
 type StoreTab =
   | "home"
@@ -214,8 +213,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
     })?.key;
 
   return (
-    <div className="relative isolate min-h-screen">
-      <Pattern />
+    <div className="relative min-h-screen bg-background">
       <FleetProvider>
         <>
           <header
@@ -334,7 +332,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
         </header>
         <main
           id="store-main"
-          className="relative mx-auto max-w-[1440px] scroll-mt-16 px-4 py-6 sm:px-6 sm:py-8 bg-transparent pb-28 sm:pb-24"
+          className="relative mx-auto max-w-[1440px] scroll-mt-16 px-4 py-6 sm:px-6 sm:py-8 bg-background pb-28 sm:pb-24"
         >
           {children}
         </main>

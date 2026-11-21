@@ -11,7 +11,6 @@ import { Modal } from "@/components/ui/Modal";
 import { AccountFormModal } from "@/components/AccountFormModal";
 import { SlotModal } from "@/components/SlotModal";
 import { ExportConfirmModal, SlotPurchaseConfirmModal } from "@/components/ConfirmDialogs";
-import { CarBackdrop } from "@/components/CarBackdrop";
 import { ImportModal } from "@/components/ImportModal";
 import { FleetProvider, useFleet } from "@/components/FleetProvider";
 import { ThemeMenu } from "@/components/ThemeMenu";
@@ -307,7 +306,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     <FleetProvider>
       <ShellContext.Provider value={shell}>
         <div className="relative min-h-screen">
-          <CarBackdrop />
         <a
           href="#main"
           className="sr-only left-4 top-4 z-50 rounded-md bg-secondary px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-secondary-foreground focus:not-sr-only focus:absolute"

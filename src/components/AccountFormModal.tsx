@@ -215,7 +215,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
                     : "border-border bg-background hover:border-primary hover:text-primary-foreground hover:border-primary"
                 }`}
               >
-                <span className="block font-sans text-[12px] font-semibold text-ink">
+                <span className={`block font-sans text-[12px] font-semibold ${game === option ? "text-foreground font-bold" : "text-ink"}`}>
                   {GAME_LABELS[option]}
                 </span>
               </button>
@@ -281,6 +281,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
             </>
           ) : null}
 
+          {!slotless ? (
           <div className="flex flex-col gap-1.5">
             <span className="label-caps flex items-baseline justify-between gap-3">
               <span>New garage</span>
@@ -304,15 +305,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
               </span>
             </button>
           </div>
-
-          <Field
-            label="Coins spent on cars"
-            htmlFor="account-coins-spent"
-            error={errors.coinsSpentOnCars}
-            hint="ledger only - keeps the fleet stats honest"
-          >
-            <NumericInput id="account-coins-spent" value={coinsSpentOnCars} onChange={setCoinsSpentOnCars} max={LIMITS.MAX_COINS} invalid={Boolean(errors.coinsSpentOnCars)} suffix="COINS" />
-          </Field>
+          ) : null}
 
           <Field label="Notes" htmlFor="account-notes" error={errors.notes} hint="optional">
             <TextArea id="account-notes" value={notes} onChange={(value) => setNotes(value)} placeholder="optional notes…" />

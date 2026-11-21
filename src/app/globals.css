@@ -124,7 +124,7 @@
    to the CSS variables defined above. Some Tailwind v4 builds don't
    generate these utilities reliably, so we enforce them explicitly. */
 .bg-primary { background-color: var(--primary) !important; }
-.bg-racing { background-color: var(--racing) !important; }
+.bg-racing { background-color: var(--color-racing) !important; }
 .text-primary-foreground { color: var(--primary-foreground) !important; }
 .text-primary { color: var(--primary) !important; }
 .border-primary { border-color: var(--primary) !important; }

@@ -475,9 +475,11 @@ export default function AccountPage() {
         onChanged={() => void fleet.refresh(true)}
       />
 
-      <section className="panel rounded-[20px] p-5">
-        <TrophyCabinet accountId={account.id} readOnly={archived} onChanged={() => void fleet.refresh(true)} />
-      </section>
+      {GARAGE_RULES[account.game].hasSlots ? (
+        <section className="panel rounded-[20px] p-5">
+          <TrophyCabinet accountId={account.id} readOnly={archived} onChanged={() => void fleet.refresh(true)} />
+        </section>
+      ) : null}
 
       <section>
         <div className="mb-3 flex items-baseline justify-between gap-3">

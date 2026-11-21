@@ -20,10 +20,19 @@ import type { Customer, PlatformIdentity } from "../store-types";
  };
 
  export async function getStoreCustomer(request: Request): Promise<StoreCustomer | null> {
-   const telegramUserId = await assertTelegramAuth(request);
-   if (telegramUserId !== null) {
-     return await getCustomerByPlatformIdentity("telegram", String(telegramUserId));
-   }
+  // Telegram auth is optional here — the caller (checkout) decides whether it's
+  // required based on payment method. Stars needs it; EFT/PayFast don't.
+  let telegramUserId: number | null = null;
+  try {
+    telegramUserId = await assertTelegramAuth(request);
+  } catch {
+    // Telegram signature failed — caller decides what to do based on payment
+    // method. Return null so resolveBuyer can fall back to player ID for EFT.
+    return null;
+  }
+  if (telegramUserId !== null) {
+    return await getCustomerByPlatformIdentity("telegram", String(telegramUserId));
+  }
 
    // Web session fallback — the customer logged in with email + password.
    const sessionUserId = verifySessionToken(readRequestCookie(request, SESSION_COOKIE));

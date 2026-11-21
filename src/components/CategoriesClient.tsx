@@ -329,9 +329,12 @@ export function CategoriesClient({
                           {formatPrice(c.basePriceCents, c.currency)}
                         </span>
                       )}
-                      <span className="basis-full flex items-center gap-1 text-[10px] text-ink-faint tabular-nums">
-                        <StarIcon className="w-3 h-3" />
-                        ≈ {approxStarsForCents(hasDiscount(c) ? discountedPriceCents(c.basePriceCents, c.discountPercent) : c.basePriceCents)} Stars
+                      <span
+                        className="flex items-center gap-1 rounded-md border border-border px-2 py-0.5 text-sm font-bold text-foreground tabular-nums"
+                        title="Telegram Stars"
+                      >
+                        <StarIcon className="w-4 h-4" />
+                        {approxStarsForCents(hasDiscount(c) ? discountedPriceCents(c.basePriceCents, c.discountPercent) : c.basePriceCents)}
                       </span>
                       <span
                         className={`stock-indicator ${stockTier(c.stockQuantity, c.stockInitial ?? 0)}`}>

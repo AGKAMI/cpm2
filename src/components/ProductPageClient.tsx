@@ -183,9 +183,9 @@ export function ProductPageClient({ productId }: { productId: string }) {
         <div className="flex flex-col gap-6">
           <section className="panel rounded-xl border border-border p-6">
             <div className="flex items-baseline justify-between gap-2 mb-5">
-              <span className="flex flex-col">
+              <span className="flex items-center gap-2 flex-wrap">
                 <span className="text-2xl font-bold text-primary">{formatPrice(product.basePriceCents, product.currency)}</span>
-                <span className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground tabular-nums"><StarIcon className="w-3 h-3" />≈ {approxStarsForCents(product.basePriceCents)} Stars</span>
+                <span className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-sm font-bold text-foreground tabular-nums" title="Telegram Stars"><StarIcon className="w-4 h-4" />{approxStarsForCents(product.basePriceCents)}</span>
               </span>
               {isExclusive && (
                 <span className="text-[10px] uppercase tracking-[0.15em] text-[#17120a] bg-abs-gold px-2 py-0.5 rounded font-extrabold">

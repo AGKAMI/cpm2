@@ -547,11 +547,14 @@ const ProductCard = React.memo(
                       {formatPrice(product.basePriceCents, product.currency)}
                     </span>
                   )}
+                  <span
+                    className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-sm font-bold text-foreground tabular-nums"
+                    title="Telegram Stars"
+                  >
+                    <StarIcon className="w-4 h-4" />
+                    {approxStarsForCents(hasDiscount(product) ? discountedPriceCents(product.basePriceCents, product.discountPercent) : product.basePriceCents)}
+                  </span>
                   {variant === "standard" && <CartAddButton product={product} />}
-                </div>
-                <div className="mt-1 flex items-center gap-1 text-[10px] text-ink-faint tabular-nums">
-                  <StarIcon className="w-3 h-3" />
-                  <span>≈ {approxStarsForCents(hasDiscount(product) ? discountedPriceCents(product.basePriceCents, product.discountPercent) : product.basePriceCents)} Stars</span>
                 </div>
               </div>
               {hasArrow && (

@@ -430,6 +430,11 @@ export type OwnerStats = {
   totalAdmins: number;
   totalProducts: number;
   verifiedOrders: number;
+  starsOrders: number;
+  starsEarned: number;
+  starsHeld: number;
+  starsAvailable: number;
+  starsRevenueCents: number;
 };
 
 export function formatPrice(cents: number, currency = "ZAR"): string {

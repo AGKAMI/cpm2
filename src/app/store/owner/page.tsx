@@ -18,6 +18,7 @@ import { vantaApi, type VantaAdminRecord } from "@/lib/store/client";
 import { notifyAdminPromoted } from "@/lib/store/notifications";
 import { useToast } from "@/components/ui/Toaster";
 import { Toast } from "@/components/ui/Toast";
+import { StarIcon } from "@/components/StarIcon";
 
 type AdminRow = VantaAdminRecord & { formattedId: string };
 
@@ -64,6 +65,11 @@ export default function OwnerPage() {
     totalAdmins: number;
     totalProducts: number;
     verifiedOrders: number;
+    starsOrders: number;
+    starsEarned: number;
+    starsHeld: number;
+    starsAvailable: number;
+    starsRevenueCents: number;
   } | null>(null);
 
   useEffect(() => {
@@ -152,6 +158,24 @@ export default function OwnerPage() {
               <OwnerStatCard label="Products Live" value={String(ownerStats.totalProducts)} />
               <OwnerStatCard label="Paid Orders" value={String(ownerStats.verifiedOrders)} />
             </div>
+          </section>
+        )}
+
+        {ownerStats && (
+          <section className="mb-6">
+            <h3 className="text-xs font-semibold text-foreground uppercase tracking-[0.15em] mb-3 flex items-center gap-1.5">
+              Telegram Stars <StarIcon className="w-3.5 h-3.5" />
+            </h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <OwnerStatCard label="Stars Earned" value={String(ownerStats.starsEarned)} />
+              <OwnerStatCard label="Withdrawable (21d+)" value={String(ownerStats.starsAvailable)} />
+              <OwnerStatCard label="Held (<21 days)" value={String(ownerStats.starsHeld)} />
+              <OwnerStatCard label="Stars Orders" value={String(ownerStats.starsOrders)} />
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-3">
+              Earned Stars sit in the bot balance. Withdraw via Fragment to TON once
+              1,000+ Stars are 21+ days old (~$0.013/Star), or spend them as Telegram Ads credit.
+            </p>
           </section>
         )}
 

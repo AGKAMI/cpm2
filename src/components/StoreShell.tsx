@@ -270,7 +270,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
                               window.location.href = "/";
                             }}
                             aria-label="Back to app selection"
-                            className="inline-flex items-center justify-center"
+                            className="relative w-10 h-10 rounded-full border border-border bg-background flex items-center justify-center text-ink-soft hover:border-gold hover:text-gold transition-colors"
                           >
                             <svg
                               className="h-4 w-4"

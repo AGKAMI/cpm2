@@ -1,9 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { type ReactNode, useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Dock } from "@/components/ui/dock";
@@ -60,7 +59,6 @@ interface StoreShellProps {
 
 export function StoreShell({ children, dock }: StoreShellProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isOwner, setIsOwner] = useState<boolean | null>(null);
   const [profile, setProfile] = useState<{ photoUrl?: string; displayName?: string; username?: string } | null>(null);
@@ -268,8 +266,11 @@ export function StoreShell({ children, dock }: StoreShellProps) {
               />
             </div>
             <div className="flex items-center gap-2 shrink-0">
-                          <Link
-                            href="/"
+                          <button
+                            type="button"
+                            onClick={() => {
+                              window.location.href = "/";
+                            }}
                             aria-label="Back to app selection"
                             className="inline-flex items-center justify-center"
                           >
@@ -282,8 +283,8 @@ export function StoreShell({ children, dock }: StoreShellProps) {
                             >
                               <path d="M19 12H5M12 19l-7-7 7-7" />
                             </svg>
-                          </Link>
-                          {/* Quick dark/light switch — user's exact implementation */}
+                          </button>
+                           {/* Quick dark/light switch — user's exact implementation */}
               {/* Quick dark/light switch — same 40x40 circle as NotificationBell */}
               <button
                 type="button"

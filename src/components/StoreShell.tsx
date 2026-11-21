@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { type ReactNode, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -17,6 +18,7 @@ import { cartCountLocal, loadServerCart, subscribeCart } from "@/lib/store/cart-
 import { AdminIcon } from "@/components/ui/admin-icon";
 import { OwnerIcon } from "@/components/ui/owner-icon";
 import { ProfileIcon } from "@/components/ui/profile-icon";
+import Pattern from "@/components/Pattern";
 
 type StoreTab =
   | "home"
@@ -214,7 +216,8 @@ export function StoreShell({ children, dock }: StoreShellProps) {
     })?.key;
 
   return (
-    <div className="relative min-h-screen bg-background">
+    <div className="relative isolate min-h-screen">
+      <Pattern />
       <FleetProvider>
         <>
           <header
@@ -265,11 +268,10 @@ export function StoreShell({ children, dock }: StoreShellProps) {
               />
             </div>
             <div className="flex items-center gap-2 shrink-0">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => router.push("/")}
+                          <Link
+                            href="/"
                             aria-label="Back to app selection"
+                            className="inline-flex items-center justify-center"
                           >
                             <svg
                               className="h-4 w-4"
@@ -280,7 +282,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
                             >
                               <path d="M19 12H5M12 19l-7-7 7-7" />
                             </svg>
-                          </Button>
+                          </Link>
                           {/* Quick dark/light switch — user's exact implementation */}
               {/* Quick dark/light switch — same 40x40 circle as NotificationBell */}
               <button
@@ -331,7 +333,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
         </header>
         <main
           id="store-main"
-          className="relative mx-auto max-w-[1440px] scroll-mt-16 px-4 py-6 sm:px-6 sm:py-8 bg-background pb-28 sm:pb-24"
+          className="relative mx-auto max-w-[1440px] scroll-mt-16 px-4 py-6 sm:px-6 sm:py-8 bg-transparent pb-28 sm:pb-24"
         >
           {children}
         </main>

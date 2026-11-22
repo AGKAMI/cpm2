@@ -290,7 +290,7 @@ export function CategoriesClient({
                   className="product-card group block col-span-1"
                   style={{ animationDelay: `${index * 40}ms` }}
                 >
-                  <div className="relative overflow-hidden rounded-[24px] border border-border mb-4 aspect-[4/5]">
+                  <div className="relative overflow-hidden rounded-[24px] border border-border mb-4 aspect-[16/10]">
                     <img
                       src={coverMap[c.id]}
                       alt={c.name}

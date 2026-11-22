@@ -317,96 +317,48 @@ export function AppShell({ children }: { children: ReactNode }) {
           className="sticky top-0 z-30 border-b border-border shadow-lg pt-[env(safe-area-inset-top)]"
           style={{ backgroundColor: "var(--color-paper-raised)" }}
         >
-          <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-4 py-2 sm:px-6 md:gap-4">
-            {/* LEFT — back out of the app, then the wordmark */}
-            <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-              <button
-                type="button"
-                onClick={() => router.push("/")}
-                aria-label="Back to app selection"
-                title="Back to app selection"
-                className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-border bg-background text-muted-foreground transition-colors duration-150 hover:border-primary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[var(--scale-medium)]"
-              >
-                <svg
-                  className="h-4 w-4"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M12 19l-7-7 7-7" />
-                </svg>
-              </button>
-
-              <Link
-                href="/fleet"
-                className="flex min-w-0 items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              >
-                <span
-                  aria-hidden="true"
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-border bg-secondary text-[12px] font-bold leading-none tracking-[0.02em] text-foreground"
-                >
-                  FL
-                </span>
-                <span className="hidden truncate text-[19px] leading-none text-foreground sm:block" translate="no">
+          <div className="relative mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-4 gap-y-2 px-4 pb-3 pt-3 sm:px-6">
+            <Link href="/fleet" className="flex items-center gap-3">
+              <img
+                src="/cpm-logo.png"
+                alt=""
+                aria-hidden="true"
+                width={40}
+                height={40}
+                className="h-10 w-10 shrink-0"
+              />
+              <span>
+                <span className="block text-[20px] leading-none text-foreground" translate="no">
                   Fleet <span className="text-primary">Ledger</span>
                 </span>
-              </Link>
-            </div>
+              </span>
+            </Link>
+            <Button variant="ghost" size="icon" onClick={() => router.push("/")} aria-label="Back to app selection">
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 19l-7-7 7-7"/></svg>
+            </Button>
 
-            {/* CENTER — section nav; the mobile dock takes over below md */}
-            <nav className="hidden shrink-0 items-center gap-2 md:flex">
-              {getNavForPath(pathname).map((item) => {
-                const active =
-                  item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-                return <NavItem key={item.href} item={item} active={active} />;
-              })}
-            </nav>
+            <nav className="ml-auto hidden items-center gap-2 sm:flex">
+                          {getNavForPath(pathname).map((item) => {
+                            const active =
+                              item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+                            return <NavItem key={item.href} item={item} active={active} />;
+                          })}
+                        </nav>
 
-            {/* RIGHT — quiet status, appearance, then the one primary action */}
-            <div className="flex flex-1 items-center justify-end gap-2 sm:gap-3">
-              <span
-                className="flex items-center gap-1.5"
-                title={fleet.error ? "Offline" : fleet.loading ? "Syncing" : "Live"}
-                aria-live="polite"
-              >
+            <div className="ml-auto flex flex-wrap items-center gap-2 sm:ml-0">
+              <span className="flex items-center gap-2 rounded-md bg-background px-3 py-1 border border-border">
                 <span
-                  aria-hidden="true"
-                  className="h-1.5 w-1.5 shrink-0 rounded-full animate-pulse motion-reduce:animate-none"
-                  style={{
-                    backgroundColor: fleet.error
-                      ? "var(--destructive)"
-                      : fleet.loading
-                        ? "var(--muted-foreground)"
-                        : "var(--color-racing)",
-                  }}
+                  className={`h-2 w-2 rounded-full animate-pulse ${fleet.error ? "bg-destructive" : fleet.loading ? "bg-secondary" : "bg-racing"}`}
                 />
-                <span className="hidden text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground sm:inline">
-                  {fleet.error ? "offline" : fleet.loading ? "syncing" : "live"}
-                </span>
-                <span className="sr-only sm:hidden">
+                <span className="text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
                   {fleet.error ? "offline" : fleet.loading ? "syncing" : "live"}
                 </span>
               </span>
 
-              <span
-                aria-hidden="true"
-                className="hidden h-5 w-px sm:block"
-                style={{ backgroundColor: "var(--border)" }}
-              />
-
               <ThemeMenu />
 
               {pathname.startsWith("/fleet") ? (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={openNewAccount}
-                  className="whitespace-nowrap font-semibold"
-                >
+                <Button size="sm" onClick={openNewAccount}>
                   + Add account
                 </Button>
               ) : null}
@@ -429,7 +381,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {pathname === "/" || pathname.startsWith("/store") || pathname.startsWith("/legal") ? null : (
                 <nav
                   aria-label="Primary"
-                  className="mobile-dock fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-md px-4 pb-4 sm:pb-3 sm:px-6 md:hidden"
+                  className="mobile-dock fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-md px-4 pb-4 sm:pb-3 sm:px-6 sm:hidden"
                 >
           <div
                       className="mx-auto flex max-w-[340px] items-center justify-center gap-2 overflow-x-auto whitespace-nowrap bg-background border-t border-border rounded-full px-3 py-2 shadow-xl"

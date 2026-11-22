@@ -17,7 +17,7 @@ const mono = JetBrains_Mono({
 // Theme is user-selectable everywhere now (profile → Appearance). The script
 // applies the saved theme before first paint; with nothing saved it falls
 // back to the house VANTA identity (gold metallic, black, dark steel).
-const themeScript = `(function(){try{var d=document.documentElement;var m=localStorage.getItem("cpm2:theme:v2");d.setAttribute("data-theme",m==="paper"?"paper":"night");var p=localStorage.getItem("cpm2:palette:v1");var ids=${JSON.stringify(PALETTE_IDS)};d.setAttribute("data-palette",ids.indexOf(p)>=0?p:"${DEFAULT_PALETTE}");}catch(e){}})();`;
+const themeScript = `(function(){try{var d=document.documentElement;var m=localStorage.getItem("cpm2:theme:v2:store");if(m===null)m=localStorage.getItem("cpm2:theme:v2");d.setAttribute("data-theme",m==="paper"?"paper":"night");var p=localStorage.getItem("cpm2:palette:v1:store");if(p===null)p=localStorage.getItem("cpm2:palette:v1");var ids=${JSON.stringify(PALETTE_IDS)};d.setAttribute("data-palette",ids.indexOf(p)>=0?p:"${DEFAULT_PALETTE}");}catch(e){}})();`;
 
 export const metadata: Metadata = {
   title: "VANTA GARAGE - CPM2 vehicles for sale",

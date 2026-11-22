@@ -36,7 +36,7 @@ export function CategoriesSkeleton() {
             aria-hidden="true"
             style={{ animationDelay: `${i * 40}ms` }}
           >
-            <div className="relative overflow-hidden rounded-[24px] border border-border mb-4 aspect-[4/5]">
+            <div className="relative overflow-hidden rounded-[24px] border border-border mb-4 aspect-[16/10]">
               <SkeletonBlock width="100%" height="100%" radius="24px" />
             </div>
             <div className="mt-3 px-1">

@@ -12,7 +12,7 @@ const mono = { variable: "" };
 // Nothing saved → Fleet Ledger opens in Neon 2 TONE; /store keeps the
 // house VANTA identity. Path-aware so the result is identical no matter
 // whether this script or the store layout's later script runs last.
-const themeScript = `(function(){try{var d=document.documentElement;var m=localStorage.getItem("cpm2:theme:v2");d.setAttribute("data-theme",m==="paper"?"paper":"night");var p=localStorage.getItem("cpm2:palette:v1");var ids=${JSON.stringify(PALETTE_IDS)};var def=location.pathname.indexOf("/store")===0?"${DEFAULT_PALETTE}":"${FLEET_DEFAULT_PALETTE}";d.setAttribute("data-palette",ids.indexOf(p)>=0?p:def);}catch(e){}})();`;
+const themeScript = `(function(){try{var d=document.documentElement;var s=location.pathname.indexOf("/store")===0?"store":"fleet";var m=localStorage.getItem("cpm2:theme:v2:"+s);if(m===null)m=localStorage.getItem("cpm2:theme:v2");d.setAttribute("data-theme",m==="paper"?"paper":"night");var p=localStorage.getItem("cpm2:palette:v1:"+s);if(p===null)p=localStorage.getItem("cpm2:palette:v1");var ids=${JSON.stringify(PALETTE_IDS)};var def=s==="store"?"${DEFAULT_PALETTE}":"${FLEET_DEFAULT_PALETTE}";d.setAttribute("data-palette",ids.indexOf(p)>=0?p:def);}catch(e){}})();`;
 
 export const metadata: Metadata = {
   title: "CPM // FLEET LEDGER",

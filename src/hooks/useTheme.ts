@@ -17,8 +17,31 @@ type ThemeState = {
   palette: PaletteId;
 };
 
-const MODE_KEY = "cpm2:theme:v2";
-const PALETTE_KEY = "cpm2:palette:v1";
+/** Each app owns its own theme. The old single global key (`cpm2:theme:v2`)
+ *  was shared by VANTA and Fleet, so toggling the theme in one silently
+ *  re-themed the other. Storage is now namespaced per app, with a one-time
+ *  migration from the legacy key so nobody loses the look they picked. */
+const LEGACY_MODE_KEY = "cpm2:theme:v2";
+const LEGACY_PALETTE_KEY = "cpm2:palette:v1";
+type AppScope = "store" | "fleet";
+
+function scopeFor(pathname: string | null | undefined): AppScope {
+  return pathname?.startsWith("/store") ? "store" : "fleet";
+}
+
+let currentScope: AppScope = "fleet";
+
+function liveScope(): AppScope {
+  return typeof window === "undefined" ? currentScope : scopeFor(window.location.pathname);
+}
+
+function modeKey(scope: AppScope): string {
+  return `${LEGACY_MODE_KEY}:${scope}`;
+}
+
+function paletteKey(scope: AppScope): string {
+  return `${LEGACY_PALETTE_KEY}:${scope}`;
+}
 const SERVER_VANTA: ThemeState = { mode: "night", palette: DEFAULT_PALETTE };
 const SERVER_NEON: ThemeState = { mode: "night", palette: FLEET_DEFAULT_PALETTE };
 const listeners = new Set<() => void>();
@@ -40,8 +63,12 @@ function serverStateFor(fallback: PaletteId): ThemeState {
 
 function readState(): ThemeState {
   if (typeof window === "undefined") return serverStateFor(routeFallback);
-  const mode: ThemeMode = window.localStorage.getItem(MODE_KEY) === "paper" ? "paper" : "night";
-  const storedPalette = window.localStorage.getItem(PALETTE_KEY);
+  const scope = liveScope();
+  const storedMode =
+    window.localStorage.getItem(modeKey(scope)) ?? window.localStorage.getItem(LEGACY_MODE_KEY);
+  const mode: ThemeMode = storedMode === "paper" ? "paper" : "night";
+  const storedPalette =
+    window.localStorage.getItem(paletteKey(scope)) ?? window.localStorage.getItem(LEGACY_PALETTE_KEY);
   const palette = isPaletteId(storedPalette) ? storedPalette : routeFallback;
   if (!cached || cached.mode !== mode || cached.palette !== palette) {
     cached = { mode, palette };
@@ -63,8 +90,9 @@ function apply(state: ThemeState) {
 }
 
 function write(next: ThemeState) {
-  window.localStorage.setItem(MODE_KEY, next.mode);
-  window.localStorage.setItem(PALETTE_KEY, next.palette);
+  const scope = liveScope();
+  window.localStorage.setItem(modeKey(scope), next.mode);
+  window.localStorage.setItem(paletteKey(scope), next.palette);
   cached = next;
   apply(next);
   for (const listener of listeners) listener();
@@ -74,12 +102,28 @@ export function useTheme() {
   const pathname = usePathname();
   const fallback = fallbackFor(pathname);
   if (routeFallback !== fallback) routeFallback = fallback;
+  currentScope = scopeFor(pathname);
 
   const state = useSyncExternalStore(subscribe, readState, () => serverStateFor(fallback));
 
   useEffect(() => {
     apply(state);
   }, [state]);
+
+  // One-time migration from the old shared key: copy the legacy value into
+  // this app's own slot so each app keeps its own preference from now on.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const scope = liveScope();
+    if (window.localStorage.getItem(modeKey(scope)) === null) {
+      const legacy = window.localStorage.getItem(LEGACY_MODE_KEY);
+      if (legacy) window.localStorage.setItem(modeKey(scope), legacy);
+    }
+    if (window.localStorage.getItem(paletteKey(scope)) === null) {
+      const legacy = window.localStorage.getItem(LEGACY_PALETTE_KEY);
+      if (legacy) window.localStorage.setItem(paletteKey(scope), legacy);
+    }
+  }, []);
 
   useEffect(() => {
     const onStorage = () => {

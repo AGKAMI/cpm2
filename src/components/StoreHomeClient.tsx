@@ -487,7 +487,7 @@ const ProductCard = React.memo(
         <Link href={`/store/products/${product.id}`} className="block h-full w-full">
           <div
             className={`vanta-card-media ${product.stockQuantity === 0 ? "out-of-stock-media" : ""}`}
-            style={{ aspectRatio: 4 / 5 }}
+                        style={{ aspectRatio: 16 / 10 }}
           >
             {coverImage ? (
               <Image
@@ -599,7 +599,7 @@ function SkeletonVantaCard({
     >
       <div
         className="vanta-card-media"
-        style={square ? { aspectRatio: "1" } : { aspectRatio: 4 / 5 }}
+        style={square ? { aspectRatio: "1" } : { aspectRatio: 16 / 10 }}
       >
         <div className="absolute inset-0 bg-paper-raised animate-pulse" />
       </div>

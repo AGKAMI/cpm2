@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { type ReactNode, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -48,8 +49,6 @@ const ICON_MAP: Record<StoreTab, StoreIcon> = {
   admin: AdminIcon,
   owner: OwnerIcon,
 };
-
-const VANTA_LOCKUP = "/kami-lockup-gold.png";
 
 interface StoreShellProps {
   children: ReactNode;
@@ -217,73 +216,56 @@ export function StoreShell({ children, dock }: StoreShellProps) {
       <FleetProvider>
         <>
           <header
-          className="sticky top-0 z-30 border-b border-border shadow-sm px-4 pt-3 pb-3 sm:px-6"
-          style={{ backgroundColor: "var(--background)" }}
-        >
-          <div className="relative flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 shrink-0">
-              {activeTab !== "profile" && (
-                <div className="relative h-8 w-8 shrink-0">
-                  <div
-                    className="h-8 w-8 rounded-full overflow-hidden border-2 border-gold"
+            className="sticky top-0 z-30 border-b border-border shadow-sm px-4 pt-3 pb-3 sm:px-6"
+            style={{ backgroundColor: "var(--background)" }}
+          >
+            <div className="relative flex items-center justify-between gap-2">
+              {/* LEFT — leave the store, then the brand */}
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.location.href = "/";
+                  }}
+                  aria-label="Back to app selection"
+                  title="Back to app selection"
+                  className="grid w-10 h-10 shrink-0 place-items-center rounded-full border border-border bg-background text-ink-soft transition-colors hover:border-gold hover:text-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[var(--scale-medium)]"
+                >
+                  <svg
+                    className="h-3.5 w-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
                   >
-                    {profile?.photoUrl ? (
-                      <Image
-                        src={profile.photoUrl}
-                        alt={profile.displayName || "Profile"}
-                        className="h-full w-full object-cover"
-                        loading="eager"
-                        width={80}
-                        height={80}
-                        unoptimized
-                        style={{ objectFit: "cover" }}
-                      />
-                    ) : (
-                      <div className="h-full w-full flex items-center justify-center text-ink-soft text-xs font-bold select-none">
-                        {(profile?.displayName || "U").charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                  </div>
-                  <div
-                    className={cn(
-                      "absolute inset-0 h-full w-full rounded-full border-2 border-gold animate-pulse-ring transition-opacity duration-700 ease-out",
-                      loaded ? "opacity-100" : "opacity-0",
-                    )}
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                  </svg>
+                </button>
+
+                <Link
+                  href="/store"
+                  className="flex min-w-0 items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <Image
+                    src="/kami-vanta-logo-no-wings.png"
+                    alt=""
+                    aria-hidden="true"
+                    width={32}
+                    height={32}
+                    className="h-8 w-8 shrink-0 rounded-lg object-contain"
                   />
-                </div>
-              )}
-            </div>
-            <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center">
-              <Image
-                src={VANTA_LOCKUP}
-                alt="Vanta Garage"
-                className="h-10 w-auto max-w-[190px] sm:h-10 sm:max-w-[240px]"
-                width={512}
-                height={272}
-                style={{ objectFit: "contain" }}
-              />
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              window.location.href = "/";
-                            }}
-                            aria-label="Back to app selection"
-                            className="relative w-8 h-8 rounded-full border border-border bg-background flex items-center justify-center text-ink-soft hover:border-gold hover:text-gold transition-colors"
-                          >
-                            <svg
-                              className="w-3 h-3"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            >
-                              <path d="M19 12H5M12 19l-7-7 7-7" />
-                            </svg>
-                          </button>
-                           {/* Quick dark/light switch — user's exact implementation */}
-              {/* Quick dark/light switch — same 40x40 circle as NotificationBell */}
+                  <span className="hidden truncate text-[15px] font-semibold uppercase leading-none tracking-[0.22em] text-foreground sm:block">
+                    Vanta <span className="text-gold">Garage</span>
+                  </span>
+                </Link>
+              </div>
+
+              {/* RIGHT — appearance, alerts, then the account chip */}
+              <div className="flex items-center gap-2 shrink-0">
+              {/* Quick dark/light switch — 32px circle, same as back and the bell */}
               <button
                 type="button"
                 onClick={() => setThemeMode(themeMode === "night" ? "paper" : "night")}
@@ -327,6 +309,37 @@ export function StoreShell({ children, dock }: StoreShellProps) {
                 </span>
               </button>
               <NotificationBell />
+
+              {activeTab !== "profile" && (
+                <div className="relative h-8 w-8 shrink-0">
+                  <div
+                    className="h-8 w-8 rounded-full overflow-hidden border-2 border-gold"
+                  >
+                    {profile?.photoUrl ? (
+                      <Image
+                        src={profile.photoUrl}
+                        alt={profile.displayName || "Profile"}
+                        className="h-full w-full object-cover"
+                        loading="eager"
+                        width={80}
+                        height={80}
+                        unoptimized
+                        style={{ objectFit: "cover" }}
+                      />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center text-ink-soft text-xs font-bold select-none">
+                        {(profile?.displayName || "U").charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div
+                    className={cn(
+                      "absolute inset-0 h-full w-full rounded-full border-2 border-gold animate-pulse-ring transition-opacity duration-700 ease-out",
+                      loaded ? "opacity-100" : "opacity-0",
+                    )}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </header>

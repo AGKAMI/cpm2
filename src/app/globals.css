@@ -1800,7 +1800,7 @@ html {
   transition: all 250ms ease-out;
   display: flex;
   flex-direction: column;
-  min-width: 300px;
+  min-width: 200px;
 }
 .vanta-card:hover {
   border-color: var(--brand-gold);
@@ -2004,6 +2004,68 @@ html {
   padding: 0 8px;
   margin: -13.5px -8px;
 }
+/* Consistent home page card system — all cards share spacing, radius, padding */
+.vanta-card {
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 250ms ease-out;
+  display: flex;
+  flex-direction: column;
+  min-width: 300px;
+}
+.vanta-card:hover {
+  border-color: var(--brand-gold);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(212, 175, 79, 0.25);
+}
+.vanta-card-media {
+  aspect-ratio: 16/10;
+  background: var(--background);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.vanta-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.vanta-card-media .no-photo {
+  width: 100%;
+  height: 100%;
+  background: var(--paper-raised);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted-foreground);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+/* No-photo placeholder replaced by a generated SVG name-thumbnail so
+   every product card always shows a photo. */
+.vanta-card-media .no-photo-svg {
+  width: 100%;
+  height: 100%;
+  background: var(--paper-raised);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.svg-fallback {
+  display: none;
+}
+.vanta-card-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 .vanta-card-list {
   display: grid;
   grid-template-columns: repeat(1, 1fr);
@@ -2011,6 +2073,13 @@ html {
   overflow-x: auto;
   scrollbar-width: none;
   padding-bottom: 8px;
+}
+.vanta-card-list::-webkit-scrollbar {
+  display: none;
+}
+.vanta-card-list > .vanta-card {
+  flex: 0 0 auto;
+  width: 100%;
 }
 @media (min-width: 640px) {
   .vanta-card-list {
@@ -2026,13 +2095,6 @@ html {
   .vanta-card-list {
     grid-template-columns: repeat(5, 1fr);
   }
-}
-.vanta-card-list::-webkit-scrollbar {
-  display: none;
-}
-.vanta-card-list > .vanta-card {
-  flex: 0 0 auto;
-  width: 100%;
 }
 
 /* Animated border shine on store card hover */
@@ -2840,6 +2902,7 @@ html {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative; /* anchor absolutely positioned heart-icon / heart-title to this button */
   transition: border-color 0.2s, color 0.2s, transform 0.1s;
 }
 .heart-fav:active {

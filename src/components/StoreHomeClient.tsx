@@ -11,7 +11,7 @@
 import Image from "next/image";
 import { coverImageFromName } from "@/lib/image-fallback";
 import Link from "next/link";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   formatPrice,
   type VantaCategory,
@@ -302,7 +302,7 @@ export function StoreHomeClient({
           </div>
         </section>
       )}
-
+  
       {categories.length > 0 && (
         <section className="vanta-section">
           <div className="vanta-section-header">
@@ -355,7 +355,7 @@ export function StoreHomeClient({
           </div>
         </section>
       )}
-
+  
       {/* More vehicles — everything published that isn't already in the featured carousel */}
       {(() => {
         const rest = allProducts.filter((p: VantaProduct) => !p.isFeatured).slice(0, 24);
@@ -400,16 +400,16 @@ export function StoreHomeClient({
               See all
             </Link>
           </div>
-          <div className="vanta-card-list">
-            {newArrivals.map((c: VantaProduct) => (
-              <ProductCard
-                key={c.id}
-                product={c}
-                coverImage={coverMap[c.id] ?? c.imageUrl ?? undefined}
-                variant="standard"
-              />
-            ))}
-          </div>
+            <div className="vanta-card-list">
+              {newArrivals.map((c: VantaProduct) => (
+                <ProductCard
+                  key={c.id}
+                  product={c}
+                  coverImage={coverMap[c.id] ?? c.imageUrl ?? undefined}
+                  variant="standard"
+                />
+              ))}
+            </div>
         </section>
       )}
 
@@ -426,19 +426,19 @@ export function StoreHomeClient({
               See all
             </Link>
           </div>
-          <div className="vanta-card-list">
-            {onSale.map((c: VantaProduct) => (
-              <ProductCard
-                key={c.id}
-                product={c}
-                coverImage={coverMap[c.id] ?? c.imageUrl ?? undefined}
-                variant="standard"
-              />
-            ))}
-          </div>
+            <div className="vanta-card-list">
+              {onSale.map((c: VantaProduct) => (
+                <ProductCard
+                  key={c.id}
+                  product={c}
+                  coverImage={coverMap[c.id] ?? c.imageUrl ?? undefined}
+                  variant="standard"
+                />
+              ))}
+            </div>
         </section>
       )}
-
+  
       <div className="foot mb-4 px-4 text-center text-[10px] text-ink-soft tracking-[0.08em]">
         KAMI&rsquo;S VANTA GARAGE · VERIFIED CPM2 BUILDS<br />
         <span className="opacity-70">Secured by VANTA Guard</span>

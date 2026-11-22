@@ -86,14 +86,14 @@ async function request<T>(
 
   const result = payload as T;
 
-  // Cache invalidation: mutations on product-related paths clear the products cache
-  // so the next GET returns fresh data (fixes "create product doesn't show up" bug)
-  if (
-    init?.method &&
-    init.method !== "GET" &&
-    (path.startsWith("/products") || path.startsWith("/admin/products"))
-  ) {
-    cache.delete(getCacheKey("/products"));
+  // Cache invalidation: mutations clear the relevant cache so the next GET returns fresh data
+  if (init?.method && init.method !== "GET") {
+    if (path.startsWith("/products") || path.startsWith("/admin/products")) {
+      cache.delete(getCacheKey("/products"));
+    }
+    if (path.startsWith("/categories") || path.startsWith("/admin/categories")) {
+      cache.delete(getCacheKey("/categories"));
+    }
   }
 
   // Cache GET responses

@@ -24,7 +24,10 @@ export function zarPerStar(): number {
 
 /** Whole Stars to charge for a ZAR amount (in cents), always ≥ 1. */
 export function starsForCents(cents: number): number {
-  return Math.max(1, Math.ceil((cents / 100) / zarPerStar()));
+  // Rounded to the nearest 5 Stars so the invoiced amount matches the
+  // displayed approximation exactly (approxStarsForCents uses the same rule).
+  const exact = Math.ceil((cents / 100) / zarPerStar());
+  return Math.max(5, Math.round(exact / 5) * 5);
 }
 
 /** Create a Stars invoice link for one order. `payload` carries the order id. */

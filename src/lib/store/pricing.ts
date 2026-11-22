@@ -18,7 +18,10 @@ export function discountSavingsCents(basePriceCents: number, discountPercent: nu
 /** Approximate Stars for a ZAR amount (whole Stars, ≥1). Client-side display
  *  only — the invoice is always created server-side with the same math. */
 export function approxStarsForCents(cents: number, zarPerStar = 0.24): number {
-  return Math.max(1, Math.ceil((cents / 100) / zarPerStar));
+  // Nearest 5 Stars — identical rule to starsForCents() so what the buyer
+  // sees on a card is exactly what the invoice charges.
+  const exact = Math.ceil((cents / 100) / zarPerStar);
+  return Math.max(5, Math.round(exact / 5) * 5);
 }
 
 /** True when a discount is actually in force for this product. */

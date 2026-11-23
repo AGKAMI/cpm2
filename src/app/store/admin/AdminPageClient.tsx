@@ -626,6 +626,23 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
                 {categories.map((cat) => <option key={cat.id} value={String(cat.id)}>{cat.name}</option>)}
               </select>
               <Button variant="primary" size="sm" onClick={() => { if (!editingCategoryId) return; const cat = categories.find((c) => c.id === editingCategoryId); if (!cat) return; setCategoryForm({ name: cat.name, slug: cat.slug, description: cat.description, sortOrder: String(cat.sortOrder) }); setShowCategoryForm(true); setShowCategoryEditSelect(false); setEditingCategoryId(null); }} disabled={!editingCategoryId}>Edit</Button>
+              <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" onClick={async () => {
+                if (!editingCategoryId) return;
+                const cat = categories.find((c) => c.id === editingCategoryId);
+                const catName = cat?.name ?? `#${editingCategoryId}`;
+                if (!window.confirm(`Delete "${catName}"? It will be hidden from the store.`)) return;
+                setError(null);
+                try {
+                  await vantaApi.deleteCategory(editingCategoryId);
+                  setMsg(`Category "${catName}" deleted.`);
+                  setShowCategoryEditSelect(false);
+                  setEditingCategoryId(null);
+                  setSelectedCategoryId(null);
+                  await load();
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : "Failed to delete category.");
+                }
+              }} disabled={!editingCategoryId}>Delete</Button>
               <Button variant="outline" size="sm" onClick={() => setShowCategoryEditSelect(false)}>Cancel</Button>
             </div>
           )}

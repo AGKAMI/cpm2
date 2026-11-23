@@ -183,9 +183,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [categoryForm, setCategoryForm] = useState<CategoryForm>(EMPTY_CATEGORY_FORM);
   const [categorySaving, setCategorySaving] = useState(false);
-  const [showCategoryEditSelect, setShowCategoryEditSelect] = useState(false);
-  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [inlineEditingCategoryId, setInlineEditingCategoryId] = useState<number | null>(null);
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
   const [showPromotionForm, setShowPromotionForm] = useState(false);
   const [editingPromotionId, setEditingPromotionId] = useState<number | null>(null);
@@ -297,6 +295,9 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
   const resetCategoryForm = () => {
     setCategoryForm(EMPTY_CATEGORY_FORM);
     setShowCategoryForm(false);
+    setInlineEditingCategoryId(null);
+    setError(null);
+    setMsg(null);
   };
 
   const selectProduct = async (p: VantaProduct) => {
@@ -396,7 +397,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
     }
   };
 
-  const handleCategorySubmit = async (e: React.FormEvent) => {
+  const handleCategorySubmit = async (e: React.FormEvent, editId?: number) => {
     e.preventDefault();
     setCategorySaving(true);
     setError(null);
@@ -410,19 +411,43 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
     }
     const v = validated.data;
     try {
-      await vantaApi.createCategory({
-        name: v.name,
-        slug: v.slug,
-        description: v.description,
-        sortOrder: parseInt(v.sortOrder, 10),
-      });
-      setMsg("Category created.");
-      resetCategoryForm();
+      if (editId) {
+        await vantaApi.updateCategory(editId, {
+          name: v.name,
+          slug: v.slug,
+          description: v.description,
+          sortOrder: parseInt(v.sortOrder, 10),
+        });
+        setMsg("Category updated.");
+        setInlineEditingCategoryId(null);
+      } else {
+        await vantaApi.createCategory({
+          name: v.name,
+          slug: v.slug,
+          description: v.description,
+          sortOrder: parseInt(v.sortOrder, 10),
+        });
+        setMsg("Category created.");
+        resetCategoryForm();
+      }
       await load();
     } catch (err) {
-      toast.error("Category failed", err instanceof Error ? err.message : "Failed to create category.");
+      toast.error(editId ? "Update failed" : "Category failed", err instanceof Error ? err.message : "Failed to save category.");
     } finally {
       setCategorySaving(false);
+    }
+  };
+
+  const handleCategoryDelete = async (id: number, name: string) => {
+    if (!window.confirm(`Delete "${name}"? It will be hidden from the store.`)) return;
+    setError(null);
+    try {
+      await vantaApi.deleteCategory(id);
+      setMsg(`Category "${name}" deleted.`);
+      setInlineEditingCategoryId(null);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete category.");
     }
   };
 
@@ -568,11 +593,11 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
       <section className="admin-section panel rounded-xl border border-border p-4 mb-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="admin-section-title">Categories</h3>
-          <Button variant="outline" size="sm" onClick={() => setShowCategoryForm(!showCategoryForm)}>
+          <Button variant="outline" size="sm" onClick={() => { setInlineEditingCategoryId(null); setShowCategoryForm(!showCategoryForm); }}>
             {showCategoryForm ? "Hide" : "Add Category"}
           </Button>
         </div>
-        {showCategoryForm && (
+        {showCategoryForm && !inlineEditingCategoryId && (
           <form onSubmit={handleCategorySubmit} className="flex flex-col gap-3 mb-4">
             <Field label="Name" error={categoryErrors.name}>
               <TextInput value={categoryForm.name} onChange={(e) => handleCategoryChange("name", e.target.value)} placeholder="e.g. Sports Cars" />
@@ -594,59 +619,65 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
             </div>
           </form>
         )}
-        <div className="flex items-center gap-3">
-          {categories.length === 0 ? (
-            <span className="text-xs text-muted-foreground">No categories yet. Click "Add Category" to create one.</span>
-          ) : (
-            <>
-              <label className="text-xs font-medium text-muted-foreground">Category</label>
-              <select
-                value={selectedCategoryId ?? ""}
-                onChange={(e) => setSelectedCategoryId(Number(e.target.value) || null)}
-                className="border border-input bg-background px-3 py-1.5 rounded-md text-sm"
-              >
-                <option value="">Select a category</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name} ({cat.slug})
-                  </option>
-                ))}
-              </select>
-              {selectedCategoryId && (
-                <Button variant="outline" size="sm" onClick={() => { setEditingCategoryId(selectedCategoryId); setShowCategoryEditSelect(true); }}>
-                  Edit Category
-                </Button>
-              )}
-            </>
-          )}
-          {showCategoryEditSelect && categories.length > 0 && (
-            <div className="mt-2 flex items-center gap-2">
-              <select value={editingCategoryId ?? ""} onChange={(e) => setEditingCategoryId(Number(e.target.value))} className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground">
-                <option value="">Pick a category to edit…</option>
-                {categories.map((cat) => <option key={cat.id} value={String(cat.id)}>{cat.name}</option>)}
-              </select>
-              <Button variant="primary" size="sm" onClick={() => { if (!editingCategoryId) return; const cat = categories.find((c) => c.id === editingCategoryId); if (!cat) return; setCategoryForm({ name: cat.name, slug: cat.slug, description: cat.description, sortOrder: String(cat.sortOrder) }); setShowCategoryForm(true); setShowCategoryEditSelect(false); setEditingCategoryId(null); }} disabled={!editingCategoryId}>Edit</Button>
-              <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" onClick={async () => {
-                if (!editingCategoryId) return;
-                const cat = categories.find((c) => c.id === editingCategoryId);
-                const catName = cat?.name ?? `#${editingCategoryId}`;
-                if (!window.confirm(`Delete "${catName}"? It will be hidden from the store.`)) return;
-                setError(null);
-                try {
-                  await vantaApi.deleteCategory(editingCategoryId);
-                  setMsg(`Category "${catName}" deleted.`);
-                  setShowCategoryEditSelect(false);
-                  setEditingCategoryId(null);
-                  setSelectedCategoryId(null);
-                  await load();
-                } catch (err) {
-                  setError(err instanceof Error ? err.message : "Failed to delete category.");
-                }
-              }} disabled={!editingCategoryId}>Delete</Button>
-              <Button variant="outline" size="sm" onClick={() => setShowCategoryEditSelect(false)}>Cancel</Button>
-            </div>
-          )}
-        </div>
+        {categories.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No categories yet. Click "Add Category" to create one.</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-3">
+            {categories.map((cat) => {
+              const isInline = inlineEditingCategoryId === cat.id;
+              if (isInline) {
+                return (
+                  <article key={cat.id} className="panel rounded-xl border border-border p-4 min-w-0">
+                    <div className="flex items-baseline justify-between mb-3">
+                      <span className="text-xs font-mono text-muted-foreground">#{cat.id}</span>
+                      <Button variant="ghost" size="sm" onClick={() => setInlineEditingCategoryId(null)}>Cancel</Button>
+                    </div>
+                    <form onSubmit={(e) => { e.preventDefault(); handleCategorySubmit(e, cat.id); }} className="flex flex-col gap-3">
+                      <Field label="Name" error={categoryErrors.name}>
+                        <TextInput value={categoryForm.name} onChange={(e) => handleCategoryChange("name", e.target.value)} placeholder="e.g. Sports Cars" />
+                      </Field>
+                      <Field label="URL slug" error={categoryErrors.slug} hint="Auto-generated from category name">
+                        <TextInput value={categoryForm.slug} onChange={(e) => handleCategoryChange("slug", e.target.value)} placeholder="sports-cars" />
+                      </Field>
+                      <Field label="Description" error={categoryErrors.description} hint="Optional description">
+                        <textarea value={categoryForm.description} onChange={(e) => handleCategoryChange("description", e.target.value)} placeholder="Optional description" className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground min-h-[60px] resize-y" />
+                      </Field>
+                      <Field label="Sort Order" error={categoryErrors.sortOrder} hint="Lower numbers appear first">
+                        <input type="number" value={categoryForm.sortOrder} onChange={(e) => handleCategoryChange("sortOrder", e.target.value)} className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground" />
+                      </Field>
+                      <div className="flex flex-col gap-2">
+                        <Button type="submit" variant="primary" disabled={categorySaving} className="w-full sm:w-auto">
+                          {categorySaving ? "Saving…" : "Update Category"}
+                        </Button>
+                        <Button variant="ghost" type="button" size="sm" className="text-destructive hover:bg-destructive/10 w-full sm:w-auto" onClick={() => handleCategoryDelete(cat.id, cat.name)}>
+                          Delete
+                        </Button>
+                      </div>
+                    </form>
+                  </article>
+                );
+              }
+              return (
+                <article key={cat.id} className="panel rounded-xl border border-border p-4 min-w-0">
+                  <div className="flex items-baseline justify-between mb-1 min-w-0">
+                    <h4 className="text-sm font-medium text-foreground truncate">{cat.name}</h4>
+                    <span className="text-xs font-mono text-muted-foreground shrink-0">#{cat.id}</span>
+                  </div>
+                  <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-2">
+                    {cat.slug} · sort {cat.sortOrder}
+                  </p>
+                  {cat.description && (
+                    <p className="text-xs text-ink-soft mb-3 break-words">{cat.description}</p>
+                  )}
+                  <div className="flex gap-2 flex-wrap">
+                    <Button variant="outline" size="sm" onClick={() => { setShowCategoryForm(false); setCategoryForm({ name: cat.name, slug: cat.slug, description: cat.description, sortOrder: String(cat.sortOrder) }); setInlineEditingCategoryId(cat.id); setError(null); setMsg(null); }}>Edit</Button>
+                    <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => handleCategoryDelete(cat.id, cat.name)}>Delete</Button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       <section className="admin-section panel rounded-xl border border-border p-4 mb-6">
@@ -655,7 +686,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
           <Button variant="outline" size="sm" onClick={() => { setShowPromotionForm(true); setEditingPromotionId(null); setPromotionForm(EMPTY_PROMOTION_FORM); setMsg(null); setError(null); }}>Add Promotion</Button>
         </div>
 
-        {showPromotionForm && (
+        {showPromotionForm && !editingPromotionId && (
           <form onSubmit={handlePromotionSubmit} className="flex flex-col gap-3 mb-4">
             <Field label="Title" error={promotionErrors.title}>
               <TextInput value={promotionForm.title} onChange={(e) => setPromotionForm((f) => ({ ...f, title: e.target.value }))} placeholder="e.g. Founders Weekend" />
@@ -752,32 +783,134 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
           {promotions.length === 0 ? (
             <span className="text-xs text-muted-foreground">No promotions yet. Click &quot;Add Promotion&quot; to create one.</span>
           ) : (
-            promotions.map((p) => (
-              <div key={p.id} className="promotion-card flex items-center justify-between gap-2 px-3 py-2 rounded-md border border-border">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs font-mono text-muted-foreground">#{p.id}</span>
-                    {p.isActive ? <span className="text-[10px] text-primary font-bold">ACTIVE</span> : <span className="text-[10px] text-muted-foreground">INACTIVE</span>}
+            promotions.map((p) => {
+              if (editingPromotionId === p.id) {
+                return (
+                  <article key={p.id} className="panel rounded-xl border border-border p-4 min-w-0">
+                    <div className="flex items-baseline justify-between mb-3">
+                      <span className="text-xs font-mono text-muted-foreground">#{p.id}</span>
+                      <Button variant="ghost" size="sm" onClick={resetPromotionForm}>Cancel</Button>
+                    </div>
+                    <form onSubmit={handlePromotionSubmit} className="flex flex-col gap-3">
+                      <Field label="Title" error={promotionErrors.title}>
+                        <TextInput value={promotionForm.title} onChange={(e) => setPromotionForm((f) => ({ ...f, title: e.target.value }))} placeholder="e.g. Founders Weekend" />
+                      </Field>
+                      <Field label="Subtitle (eyebrow text)">
+                        <TextInput value={promotionForm.subtitle} onChange={(e) => setPromotionForm((f) => ({ ...f, subtitle: e.target.value }))} placeholder="Special offer" />
+                      </Field>
+                      <Field label="Description" error={promotionErrors.description}>
+                        <TextInput value={promotionForm.description} onChange={(e) => setPromotionForm((f) => ({ ...f, description: e.target.value }))} placeholder="10% off every Limited Edition" />
+                      </Field>
+                      <Field label="Discount %">
+                        <input type="number" min="0" max="100" value={promotionForm.discountPercent} onChange={(e) => setPromotionForm((f) => ({ ...f, discountPercent: e.target.value }))} className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground" />
+                      </Field>
+                      <Field label="Discount Code">
+                        <TextInput value={promotionForm.discountCode} onChange={(e) => setPromotionForm((f) => ({ ...f, discountCode: e.target.value }))} placeholder="VANTA10" />
+                      </Field>
+                      <Field label="CTA Text">
+                        <TextInput value={promotionForm.ctaText} onChange={(e) => setPromotionForm((f) => ({ ...f, ctaText: e.target.value }))} placeholder="Shop now" />
+                      </Field>
+                      <Field label="CTA Link">
+                        <TextInput value={promotionForm.ctaLink} onChange={(e) => setPromotionForm((f) => ({ ...f, ctaLink: e.target.value }))} placeholder="/store/categories" />
+                      </Field>
+                      <Field label="Background Color">
+                        <input type="color" value={promotionForm.backgroundColor} onChange={(e) => setPromotionForm((f) => ({ ...f, backgroundColor: e.target.value }))} className="w-full h-10 border-none bg-transparent cursor-pointer" />
+                      </Field>
+                      <Field label="Accent Color">
+                        <input type="color" value={promotionForm.accentColor} onChange={(e) => setPromotionForm((f) => ({ ...f, accentColor: e.target.value }))} className="w-full h-10 border-none bg-transparent cursor-pointer" />
+                      </Field>
+                      <Field label="Image URL (optional background image)">
+                        <div className="relative group cursor-pointer">
+                          <input ref={promoFileInputRef} type="file" accept="image/*" className="sr-only" onChange={async (e) => {
+                            const file = e.target.files?.[0] ?? null;
+                            if (!file) return;
+                            setPromotionConverterFile(file);
+                            setPromotionConverterError(null);
+                            try {
+                              const dataUrl = await convertFileToDataUrl(await compressImageForUpload(file));
+                              setPromotionConverterResult(dataUrl);
+                              setPromotionForm((f) => ({ ...f, imageUrl: dataUrl }));
+                              setPromotionConverterFile(null);
+                              setPromotionConverterResult(null);
+                            } catch {
+                              setPromotionConverterError("Failed to read image file.");
+                            }
+                          }} />
+                          <div onClick={() => promoFileInputRef.current?.click()} className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${promotionConverterFile ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}>
+                            {promotionConverterFile ? (
+                              <>
+                                <span className="text-xs font-bold text-emerald-500">✓</span>
+                                {promotionConverterFile.name}
+                              </>
+                            ) : (
+                              "Choose image"
+                            )}
+                          </div>
+                        </div>
+                        {promotionConverterError && <p className="text-xs text-destructive mt-1">{promotionConverterError}</p>}
+                        {promotionConverterResult && (
+                          <div className="relative mt-3 overflow-hidden rounded-md border border-border h-32" style={{ backgroundColor: promotionForm.backgroundColor || "var(--color-paper-raised)" }}>
+                            {promotionForm.imageUrl && (
+                              <>
+                                <img src={promotionForm.imageUrl} alt="Banner preview" className="absolute inset-y-0 right-0 h-full w-[55%] object-cover" />
+                                <div className="absolute inset-y-0 right-0 w-[55%] pointer-events-none" style={{ background: `linear-gradient(90deg, ${promotionForm.backgroundColor || "var(--color-paper-raised)"} 0%, transparent 100%)` }} />
+                              </>
+                            )}
+                            <div className="relative z-10 p-3">
+                              <p className="text-[10px] uppercase tracking-[0.2em]" style={{ color: promotionForm.accentColor || "#d4af4f" }}>
+                                {promotionForm.subtitle || "Special offer"}
+                              </p>
+                              <p className="font-serif font-bold text-lg">{promotionForm.title || "Title"}</p>
+                            </div>
+                          </div>
+                        )}
+                      </Field>
+                      <Field label="Active">
+                        <div className="flex items-center gap-2">
+                          <input type="checkbox" checked={promotionForm.isActive} onChange={(e) => setPromotionForm((f) => ({ ...f, isActive: e.target.checked }))} className="accent-primary w-4 h-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring" />
+                          <span className="text-base font-bold text-foreground">Show on home page</span>
+                        </div>
+                      </Field>
+                      <Field label="Sort Order">
+                        <input type="number" value={promotionForm.sortOrder} onChange={(e) => setPromotionForm((f) => ({ ...f, sortOrder: e.target.value }))} className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground" />
+                      </Field>
+                      <div className="flex flex-col gap-2">
+                        <Button type="submit" variant="primary" disabled={promotionSaving} className="w-full sm:w-auto">
+                          {promotionSaving ? "Saving…" : "Update Promotion"}
+                        </Button>
+                        <Button variant="ghost" type="button" size="sm" className="text-destructive hover:bg-destructive/10 w-full sm:w-auto" onClick={() => handlePromotionDelete(p.id)}>Delete</Button>
+                      </div>
+                    </form>
+                  </article>
+                );
+              }
+              return (
+                <div key={p.id} className="promotion-card flex items-center justify-between gap-2 px-3 py-2 rounded-md border border-border">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs font-mono text-muted-foreground">#{p.id}</span>
+                      {p.isActive ? <span className="text-[10px] text-primary font-bold">ACTIVE</span> : <span className="text-[10px] text-muted-foreground">INACTIVE</span>}
+                    </div>
+                    <h4 className="text-sm font-medium text-foreground truncate">{p.title}</h4>
+                    <p className="text-[10px] text-ink-soft truncate">{p.description || p.subtitle || ""}</p>
+                    <div className="flex items-center gap-1 mt-1">
+                      {p.discountCode && <span className="text-[10px] font-bold text-gold">{p.discountCode}</span>}
+                      {p.discountPercent > 0 && <span className="text-[10px] text-muted-foreground">{p.discountPercent}% off</span>}
+                      <span className="text-[10px] text-muted-foreground">{p.ctaText}</span>
+                    </div>
+                    <div className="flex items-center gap-1 mt-1">
+                      <span className="text-[10px] text-ink-faint">bg: {p.backgroundColor}</span>
+                      <span className="text-[10px] text-ink-faint">accent: {p.accentColor}</span>
+                      {p.imageUrl && <span className="text-[10px] text-ink-faint">image</span>}
+                    </div>
                   </div>
-                  <h4 className="text-sm font-medium text-foreground truncate">{p.title}</h4>
-                  <p className="text-[10px] text-ink-soft truncate">{p.description || p.subtitle || ""}</p>
-                  <div className="flex items-center gap-1 mt-1">
-                    {p.discountCode && <span className="text-[10px] font-bold text-gold">{p.discountCode}</span>}
-                    {p.discountPercent > 0 && <span className="text-[10px] text-muted-foreground">{p.discountPercent}% off</span>}
-                    <span className="text-[10px] text-muted-foreground">{p.ctaText}</span>
-                  </div>
-                  <div className="flex items-center gap-1 mt-1">
-                    <span className="text-[10px] text-ink-faint">bg: {p.backgroundColor}</span>
-                    <span className="text-[10px] text-ink-faint">accent: {p.accentColor}</span>
-                    {p.imageUrl && <span className="text-[10px] text-ink-faint">image</span>}
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => { setShowPromotionForm(false); selectPromotion(p); setError(null); setMsg(null); }}>Edit</Button>
+                    <Button variant="ghost" size="sm" onClick={() => handlePromotionDelete(p.id)} className="text-destructive hover:bg-destructive/10">Delete</Button>
                   </div>
                 </div>
-                <div className="flex gap-1">
-                  <Button variant="ghost" size="sm" onClick={() => { setShowPromotionForm(true); selectPromotion(p); }}>Edit</Button>
-                  <Button variant="ghost" size="sm" onClick={() => handlePromotionDelete(p.id)} className="text-destructive hover:bg-destructive/10">Delete</Button>
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </section>

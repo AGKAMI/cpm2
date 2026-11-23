@@ -26,6 +26,42 @@ import { Button } from "@/components/ui/Button";
 import { CartPlusIcon } from "@/components/ui/icons";
 import { StarIcon } from "@/components/StarIcon";
 
+/** Overlay arrows for a swipe carousel. Zero-height strip pinned over the
+ *  list (`.featured-nav`) so the buttons float over the cards.
+ *  `itemCount` hides the arrows entirely when the row can't scroll
+ *  (1 item, or fewer than fill the row) — dead arrows are worse than none.
+ *  `perRow` = visible cards needed before scrolling is possible. */
+function CarouselNav({
+  label,
+  itemCount,
+  onPrev,
+  onNext,
+}: {
+  label: string;
+  itemCount: number;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  // A swipe row needs MORE than one screen of content to scroll.
+  // Without measurement we can't know the exact overflow, so treat
+  // <=2 items as "no scroll possible" — 1-2 cards always fit a row.
+  if (itemCount <= 2) return null;
+  return (
+    <div className="featured-nav">
+      <button onClick={onPrev} aria-label={`Previous ${label}`} className="featured-prev">
+        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+      <button onClick={onNext} aria-label={`Next ${label}`} className="featured-next">
+        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
 export function StoreHomeClient({
   featured: featuredRaw,
   allProducts: allProductsRaw,
@@ -42,6 +78,8 @@ export function StoreHomeClient({
   onSale: VantaProduct[];
 }) {
   const carouselRef = useRef<HTMLDivElement>(null);
+  const vehiclesRef = useRef<HTMLDivElement>(null);
+  const categoriesRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
   // Media already resolved on server — build lookup map from every section
@@ -108,6 +146,18 @@ export function StoreHomeClient({
       goTo(activeIndex + 1);
     }
   }, [activeIndex, featured.length, goTo]);
+
+  /** Shared paging for the plain swipe carousels (vehicles / categories):
+   *  move ~90% of the visible width so the next page of cards lands in view,
+   *  same feel as the featured carousel's arrows. */
+  const pageCarousel = useCallback(
+    (ref: React.RefObject<HTMLDivElement | null>, dir: 1 | -1) => {
+      const el = ref.current;
+      if (!el) return;
+      el.scrollBy({ left: dir * (el.clientWidth * 0.9), behavior: "smooth" });
+    },
+    [],
+  );
 
   const content = (
     <>
@@ -303,6 +353,47 @@ export function StoreHomeClient({
         </section>
       )}
   
+  
+      {/* More vehicles — everything published that isn't already in the featured carousel */}
+      {(() => {
+        const rest = allProducts.filter((p: VantaProduct) => !p.isFeatured).slice(0, 24);
+        if (rest.length === 0) return null;
+        return (
+          <section className="vanta-section">
+            <div className="vanta-section-header">
+              <div>
+                <span className="eyebrow">More vehicles</span>
+                <h3 className="font-serif font-bold text-[20px] leading-none mt-[6px]">
+                  All available builds
+                </h3>
+              </div>
+              <Link href="/store/categories" className="vanta-section-see-all">
+                See all
+              </Link>
+            </div>
+            <div className="featured-carousel-wrap relative">
+              <CarouselNav
+                label="vehicle"
+                itemCount={rest.length}
+                onPrev={() => pageCarousel(vehiclesRef, -1)}
+                onNext={() => pageCarousel(vehiclesRef, 1)}
+              />
+              <div ref={vehiclesRef} className="vanta-card-list">
+                {rest.map((c: VantaProduct) => (
+                  <ProductCard
+                    key={c.id}
+                    product={c}
+                    coverImage={coverMap[c.id] ?? c.imageUrl ?? undefined}
+                    variant="standard"
+                  />
+                ))}
+              </div>
+            </div>
+          </section>
+        );
+      })()}
+
+      {/* Categories — swipe carousel, sits below the vehicles carousel */}
       {categories.length > 0 && (
         <section className="vanta-section">
           <div className="vanta-section-header">
@@ -313,7 +404,14 @@ export function StoreHomeClient({
               All
             </Link>
           </div>
-          <div className="vanta-card-list">
+          <div className="featured-carousel-wrap relative">
+            <CarouselNav
+              label="category"
+              itemCount={categories.slice(0, 8).length}
+              onPrev={() => pageCarousel(categoriesRef, -1)}
+              onNext={() => pageCarousel(categoriesRef, 1)}
+            />
+            <div ref={categoriesRef} className="vanta-card-list">
             {categories.slice(0, 8).map((cat: VantaCategory, catIndex: number) => (
               <div
                 key={cat.id}
@@ -353,39 +451,9 @@ export function StoreHomeClient({
               </div>
             ))}
           </div>
+          </div>
         </section>
       )}
-  
-      {/* More vehicles — everything published that isn't already in the featured carousel */}
-      {(() => {
-        const rest = allProducts.filter((p: VantaProduct) => !p.isFeatured).slice(0, 24);
-        if (rest.length === 0) return null;
-        return (
-          <section className="vanta-section">
-            <div className="vanta-section-header">
-              <div>
-                <span className="eyebrow">More vehicles</span>
-                <h3 className="font-serif font-bold text-[20px] leading-none mt-[6px]">
-                  All available builds
-                </h3>
-              </div>
-              <Link href="/store/categories" className="vanta-section-see-all">
-                See all
-              </Link>
-            </div>
-            <div className="vanta-card-list">
-              {rest.map((c: VantaProduct) => (
-                <ProductCard
-                  key={c.id}
-                  product={c}
-                  coverImage={coverMap[c.id] ?? c.imageUrl ?? undefined}
-                  variant="standard"
-                />
-              ))}
-            </div>
-          </section>
-        );
-      })()}
 
       {newArrivals.length > 0 && (
         <section className="vanta-section">

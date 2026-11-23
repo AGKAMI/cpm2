@@ -35,10 +35,26 @@ export type Category = {
   createdAt: string;
 };
 
+export type ProductKind = "car" | "account";
+export type ProductGame = "cpm1" | "cpm2";
+
 export type Product = {
   id: number;
   categoryId: number | null;
+  /** 'car' = a vehicle, 'account' = a CPM credential unit. Never share a card layout. */
+  kind: ProductKind;
+  /** Which game the product belongs to. Car codes are NOT unique across games
+   *  (CPM1 #2 is a Perodua Myvi, CPM2 #2 is a Scirocco III), so this tag is
+   *  what makes a code, a price or a catalogue lookup unambiguous. */
+  game: ProductGame;
   cpm2CarCode: number | null;
+  /**
+   * Raw image path for a product cover, when one is stored on the product row.
+   * Null today: the live vanta_products table has no image column — covers come
+   * from the product media tables (see listCoverImageMap). Public payloads get
+   * the absolute URL as `coverUrl`; this stays null until a column exists.
+   */
+  imageUrl: string | null;
   name: string;
   description: string;
   basePriceCents: number;
@@ -139,6 +155,8 @@ export type CreateCustomerInput = {
 
 export type ProductInput = {
   categoryId?: number;
+  kind?: ProductKind;     // 'car' (default) | 'account'
+  game?: ProductGame;     // 'cpm2' (default) | 'cpm1'
   cpm2CarCode?: number;   // CPM2 catalog car code
   name: string;
   description?: string;

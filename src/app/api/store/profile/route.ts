@@ -81,16 +81,32 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Only a Telegram-authenticated request reaches a customer here, so the
+    // identity is known: capture it before the render so the flag can be set
+    // without a narrowing dance TypeScript cannot follow.
     let customer = null;
+    let resolvedTelegramId: string | null = null;
     if (telegramUser) {
       const result = await getCustomerByPlatformIdentity("telegram", String(telegramUser.id));
       if (result) {
         customer = result.customer;
+        resolvedTelegramId = String(telegramUser.id);
       }
     }
 
-    return NextResponse.json({ 
-      customer: customer ? { ...customer, role } : null, 
+    // The customer was resolved THROUGH the Telegram identity, so the link
+    // already exists by definition. Without this the flag arrived undefined,
+    // which is falsy, so every Mini App user was asked to link an identity the
+    // app had just authenticated them with (reported on the profile screen).
+    return NextResponse.json({
+      customer: customer
+        ? {
+            ...customer,
+            role,
+            telegramLinked: true,
+            telegramId: resolvedTelegramId,
+          }
+        : null, 
       telegramUser: telegramUser ? {
         id: telegramUser.id,
         username: telegramUser.username,

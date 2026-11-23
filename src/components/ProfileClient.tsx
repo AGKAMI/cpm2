@@ -615,8 +615,12 @@ export function ProfileClient({
     telegramUser?.username ||
     customer?.inGameName ||
     "user";
-  const tgId = telegramUser?.id ?? null;
+  const tgId = telegramUser?.id ?? customer?.telegramId ?? null;
   const username = telegramUser?.username ?? null;
+  // A live Telegram identity IS the link — the app authenticated this session
+  // with it. Prompting such a user to "link Telegram" is asking them to link
+  // the thing they are already signed in with, so it is never shown.
+  const telegramLinked = Boolean(customer?.telegramLinked || telegramUser);
   const photoUrl = telegramUser?.photoUrl ?? null;
   const isActive = ordersCount > 0;
 
@@ -915,7 +919,7 @@ export function ProfileClient({
             )}
 
             {/* Telegram link status / linking */}
-            {customer.telegramLinked ? (
+            {telegramLinked ? (
               <div className="mb-4 px-3 py-2 rounded-lg border border-border bg-background flex items-center justify-between">
                 <div>
                   <span className="text-xs font-medium text-muted-foreground">Telegram</span>

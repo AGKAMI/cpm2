@@ -6,11 +6,28 @@
 import { getStoreDb } from "../store-db.ts";
 import type { Product, Category, ProductMedia, Inventory, ProductInput, Exclusivity, AvailabilityState, Promotion, PromotionInput } from "../store-types.ts";
 
+export type ProductKind = "car" | "account";
+export type ProductGame = "cpm1" | "cpm2";
+
+/** Column values are trusted only as far as they parse; anything unexpected
+ *  falls back to the default instead of propagating garbage into the UI. */
+function safeKind(v: unknown): ProductKind {
+  return v === "account" ? "account" : "car";
+}
+function safeGame(v: unknown): ProductGame {
+  return v === "cpm1" ? "cpm1" : "cpm2";
+}
+
 function rowToProduct(row: Record<string, unknown>): Product {
   return {
     id: Number(row.id),
     categoryId: row.category_id === null ? null : Number(row.category_id),
+    kind: safeKind(row.kind),
+    game: safeGame(row.game),
     cpm2CarCode: row.cpm2_car_code === null ? null : Number(row.cpm2_car_code),
+    // vanta_products has no image column — covers resolve through the media
+    // tables (listCoverImageMap), so a product row's own image is always null.
+    imageUrl: row.image_url == null ? null : String(row.image_url),
     name: String(row.name ?? ""),
     description: String(row.description ?? ""),
     basePriceCents: Number(row.base_price_cents ?? 0),
@@ -175,7 +192,7 @@ export async function createProduct(input: ProductInput): Promise<Product> {
   });
   const id = result.lastInsertRowid;
   if (id === null) throw new Error("Product insert returned no id");
-  return rowToProduct({ id, category_id: input.categoryId ?? null, cpm2_car_code: input.cpm2CarCode ?? null, name: input.name.trim(), description: input.description ?? "", base_price_cents: input.basePriceCents ?? 0, discount_percent: input.discountPercent ?? 0, currency: input.currency ?? "ZAR", stock_quantity: input.stockQuantity ?? 0, initial_stock: input.stockInitial ?? input.stockQuantity ?? 0, availability_state: input.availabilityState ?? "available", exclusivity: input.exclusivity ?? "standard", is_featured: input.isFeatured ? 1 : 0, is_new: input.isNew ? 1 : 0, is_sale: input.isSale ? 1 : 0, is_published: input.isPublished ? 1 : 0, air_suspension: input.airSuspension ? 1 : 0, unlocked_bodykits: input.unlockedBodykits ? 1 : 0, version: 1, spec_hp: input.specHp ?? null, spec_top_speed: input.specTopSpeed ?? null, spec_zero_hundred: input.specZeroHundred ?? null, spec_drive: input.specDrive ?? null, created_at: now, updated_at: now });
+  return rowToProduct({ id, category_id: input.categoryId ?? null, cpm2_car_code: input.cpm2CarCode ?? null, name: input.name.trim(), description: input.description ?? "", base_price_cents: input.basePriceCents ?? 0, image_url: null, discount_percent: input.discountPercent ?? 0, currency: input.currency ?? "ZAR", stock_quantity: input.stockQuantity ?? 0, initial_stock: input.stockInitial ?? input.stockQuantity ?? 0, availability_state: input.availabilityState ?? "available", exclusivity: input.exclusivity ?? "standard", is_featured: input.isFeatured ? 1 : 0, is_new: input.isNew ? 1 : 0, is_sale: input.isSale ? 1 : 0, is_published: input.isPublished ? 1 : 0, air_suspension: input.airSuspension ? 1 : 0, unlocked_bodykits: input.unlockedBodykits ? 1 : 0, version: 1, spec_hp: input.specHp ?? null, spec_top_speed: input.specTopSpeed ?? null, spec_zero_hundred: input.specZeroHundred ?? null, spec_drive: input.specDrive ?? null, created_at: now, updated_at: now });
 }
 
 export async function getProduct(id: number): Promise<Product | null> {
@@ -380,6 +397,30 @@ export async function listCoverImageMap(productIds: number[]): Promise<Map<numbe
   for (const row of result.rows) {
     const pid = Number(row.product_id);
     if (!map.has(pid)) map.set(pid, String(row.public_url ?? ""));
+  }
+  return map;
+}
+
+/** Full ordered galleries for many products in ONE round-trip — the bot-facing
+ *  catalogue payload needs every image per car, not just the cover. */
+export async function listGalleryMap(productIds: number[]): Promise<Map<number, string[]>> {
+  const map = new Map<number, string[]>();
+  if (productIds.length === 0) return map;
+  const db = await getStoreDb();
+  const placeholders = productIds.map(() => "?").join(",");
+  const result = await db.execute({
+    sql: `SELECT product_id, public_url FROM vanta_product_media
+          WHERE product_id IN (${placeholders}) AND is_published = 1
+          ORDER BY product_id ASC, sort_order ASC, uploaded_at ASC`,
+    args: productIds,
+  });
+  for (const row of result.rows) {
+    const pid = Number(row.product_id);
+    const url = String(row.public_url ?? "");
+    if (!url) continue;
+    const list = map.get(pid);
+    if (list) list.push(url);
+    else map.set(pid, [url]);
   }
   return map;
 }

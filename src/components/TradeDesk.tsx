@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useToast } from "@/components/ui/Toaster";
 import { api, ApiRequestError } from "@/lib/client";
 import { carByCode } from "@/lib/car-catalog";
-import { formatNumber } from "@/lib/constants";
+import { formatNumber, type GameType } from "@/lib/constants";
 import { carValueRands, cashValueRands, tradeVerdict } from "@/lib/trade";
 import type { TradePrice, TradePriceKind, TradeRates } from "@/lib/types";
 import { TradeCarPickerModal } from "@/components/TradeCarPickerModal";
@@ -30,7 +30,7 @@ function priceLabel(entry: TradePrice): string {
   return `${formatNumber(entry.price)} cash`;
 }
 
-export function TradeDesk() {
+export function TradeDesk({ game = "cpm2" }: { game?: GameType }) {
   const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [rates, setRates] = useState<TradeRates>({ randPerCoin: 0, randPerCash: 0 });
@@ -43,13 +43,21 @@ export function TradeDesk() {
   const [pricingCode, setPricingCode] = useState<number | null>(null);
   const [showCash, setShowCash] = useState<Record<SideKey, boolean>>({ you: false, them: false });
 
+  // A car code means a DIFFERENT car in each game, so switching games voids
+  // any cars already added to either side of the deal.
+  useEffect(() => {
+    setSides({ you: { cars: [], cash: 0 }, them: { cars: [], cash: 0 } });
+    setPickerSide(null);
+    setPricingCode(null);
+  }, [game]);
+
   useEffect(() => {
     let cancelled = false;
     void (async () => {
       try {
         const [rateResult, priceResult] = await Promise.all([
           api.tradeRates(),
-          api.tradePrices("cpm2"),
+          api.tradePrices(game),
         ]);
         if (cancelled) return;
         setRates(rateResult.rates);
@@ -66,7 +74,7 @@ export function TradeDesk() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [game]);
 
   function addCar(side: SideKey, code: number) {
     setSides((current) => {
@@ -346,6 +354,7 @@ export function TradeDesk() {
           if (pickerSide) addCar(pickerSide, code);
         }}
         prices={prices}
+        game={game}
       />
     </div>
   );

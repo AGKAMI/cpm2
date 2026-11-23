@@ -80,7 +80,10 @@ export async function setTradePrice(
             kind = excluded.kind,
             price = excluded.price,
             updated_at = excluded.updated_at`,
-    args: [game, code, kind, price, updatedAt],
+    // The libsql HTTP client rejects a JS float ("invalid type: string,
+    // expected f64"); a STRING binds into the FLOAT column and coerces, so
+    // R19.99 saves instead of 400-ing the price editor.
+    args: [game, code, kind, String(price), updatedAt],
   });
   return { game, code, carName: car.name, kind, price, updatedAt };
 }

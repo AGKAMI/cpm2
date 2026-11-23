@@ -43,6 +43,13 @@ CREATE TABLE IF NOT EXISTS vanta_cpm2_cars (
 CREATE TABLE IF NOT EXISTS vanta_products (
   id                 INTEGER PRIMARY KEY AUTOINCREMENT,
   category_id        INTEGER REFERENCES vanta_categories(id),
+  -- What kind of thing is this? 'car' = a vehicle (the only kind until accounts).
+  -- 'account' = a CPM credential unit. The two never share a card layout.
+  kind               TEXT    NOT NULL DEFAULT 'car' CHECK (kind IN ('car', 'account')),
+  -- Which game the product belongs to. Car codes are NOT unique across games
+  -- (CPM1 #2 is a Perodua Myvi, CPM2 #2 is a Scirocco III), so the game tag
+  -- is what makes a code, a price or a catalogue lookup unambiguous.
+  game               TEXT    NOT NULL DEFAULT 'cpm2' CHECK (game IN ('cpm1', 'cpm2')),
   cpm2_car_code      INTEGER,                    -- links to CPM2 catalog car (from car-catalog.ts)
   name               TEXT    NOT NULL,
   description        TEXT    NOT NULL DEFAULT '',
@@ -338,4 +345,38 @@ CREATE TABLE IF NOT EXISTS vanta_uploads (
   size_bytes   INTEGER NOT NULL DEFAULT 0,
   created_at   TEXT    NOT NULL
 );
+
+-- One credential-unit of an account-kind product (CPM1/CPM2 account for resale).
+--
+-- Status flow: pending (forwarded by the clone bot, not yet trusted) ->
+-- available (owner assigned the unit to a listing) -> assigned (a buyer's
+-- checkout claimed it atomically) -> sold (delivered).
+--
+-- email and password are ENCRYPTED at rest — never log them, never return
+-- them in a public response, and mask them in admin once delivered. Losing the
+-- encryption key means the units are unusable, which is the intended trade for
+-- not storing plaintext buyer credentials.
+CREATE TABLE IF NOT EXISTS vanta_account_units (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  product_id     INTEGER REFERENCES vanta_products(id) ON DELETE SET NULL,
+  email          TEXT    NOT NULL,
+  password       TEXT    NOT NULL,
+  notes          TEXT    NOT NULL DEFAULT '',
+  status         TEXT    NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'available', 'assigned', 'sold')),
+  game           TEXT    NOT NULL DEFAULT 'cpm2' CHECK (game IN ('cpm1', 'cpm2')),
+  -- Set the moment a checkout claims the unit, so two buyers can never hold
+  -- the same credential and a refund knows exactly what to restore.
+  order_id       TEXT    REFERENCES vanta_orders(id) ON DELETE SET NULL,
+  customer_id    INTEGER REFERENCES vanta_customers(id) ON DELETE SET NULL,
+  created_at     TEXT    NOT NULL,
+  updated_at     TEXT    NOT NULL,
+  UNIQUE (email, product_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_vanta_account_units_product
+  ON vanta_account_units (product_id, status);
+CREATE INDEX IF NOT EXISTS idx_vanta_account_units_pending
+  ON vanta_account_units (status, created_at);
+CREATE INDEX IF NOT EXISTS idx_vanta_account_units_order
+  ON vanta_account_units (order_id);
 `;

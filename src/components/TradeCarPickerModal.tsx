@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Uploader } from "@/components/ui/Uploader";
 import { api, ApiRequestError } from "@/lib/client";
 import { carsForGame, searchCars } from "@/lib/car-catalog";
+import type { GameType } from "@/lib/constants";
 import type { CarMatch, TradePrice } from "@/lib/types";
 
 type Tab = "catalog" | "screenshot";
@@ -28,11 +29,15 @@ export function TradeCarPickerModal({
   onClose,
   onPick,
   prices,
+  game = "cpm2",
 }: {
   open: boolean;
   onClose: () => void;
   onPick: (code: number) => void;
   prices: Map<number, TradePrice>;
+  /** Car codes mean different cars per game, so the picker must know which
+   *  game's catalogue to search — never assume CPM2. */
+  game?: GameType;
 }) {
   const [tab, setTab] = useState<Tab>("catalog");
   const [query, setQuery] = useState("");
@@ -50,8 +55,8 @@ export function TradeCarPickerModal({
     return () => window.clearTimeout(timer);
   }, [query]);
 
-  const catalogSize = useMemo(() => carsForGame("cpm2").length, []);
-  const results = useMemo(() => searchCars(debounced, 40, "cpm2"), [debounced]);
+  const catalogSize = useMemo(() => carsForGame(game).length, [game]);
+  const results = useMemo(() => searchCars(debounced, 40, game), [debounced, game]);
 
   function resetScreenshot() {
     setPreview(null);
@@ -94,7 +99,7 @@ export function TradeCarPickerModal({
       setMatches(result.matches);
       if (result.matches.length === 0) {
         setError(
-          `Gemini read “${result.carName}” but no CPM2 catalog car matches it. Try the catalog search instead.`,
+          `Gemini read “${result.carName}” but no ${game.toUpperCase()} catalog car matches it. Try the catalog search instead.`,
         );
       }
     } catch (err) {
@@ -135,7 +140,7 @@ export function TradeCarPickerModal({
     let best = tokens.slice(0, 2).join(" ") || name.trim();
     for (let count = tokens.length; count >= 1; count -= 1) {
       const candidate = tokens.slice(0, count).join(" ");
-      if (searchCars(candidate, 1, "cpm2").length > 0) {
+      if (searchCars(candidate, 1, game).length > 0) {
         best = candidate;
         break;
       }

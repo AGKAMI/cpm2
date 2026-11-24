@@ -239,7 +239,11 @@ export function ProductPageClient({
                   product.stockQuantity === 0 ? "text-destructive" : "text-foreground"
                 }`}
               >
-                {product.stockQuantity === 0 ? "Sold out" : `${product.stockQuantity} left`}
+                {product.stockQuantity === 0
+                  ? "Sold out"
+                  : `${product.stockQuantity.toLocaleString("en-ZA")} unit${
+                      product.stockQuantity === 1 ? "" : "s"
+                    } in stock`}
               </span>
             </div>
 
@@ -264,7 +268,9 @@ export function ProductPageClient({
             </h3>
             <div className="space-y-3">
               <div className="flex items-baseline justify-between gap-2">
-                <span className="text-xs text-muted-foreground">Vehicle</span>
+                <span className="text-xs text-muted-foreground">
+                  {product.kind === "account" ? "Account" : "Vehicle"}
+                </span>
                 <span className="text-sm font-medium text-foreground">{product.name}</span>
               </div>
               <div className="flex items-baseline justify-between gap-2">

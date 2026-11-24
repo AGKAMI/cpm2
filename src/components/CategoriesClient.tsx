@@ -49,11 +49,16 @@ export function CategoriesClient({
   categories,
   products,
   coverMap = {},
+  game,
 }: {
   categories: VantaCategory[];
   products: Product[];
   coverMap?: Record<number, string>;
+  game?: string;
 }) {
+  // Category tiles carry the store so the product list stays in it.
+  const withGame = (path: string): string =>
+    game ? `${path}${path.includes("?") ? "&" : "?"}game=${game}` : path;
   const [q, setQ] = useState("");
   const [excl, setExcl] = useState("all");
   const [avail, setAvail] = useState("all");
@@ -286,7 +291,7 @@ export function CategoriesClient({
               sorted.map((c, index) => (
                 <Link
                   key={c.id}
-                  href={`/store/products/${c.id}`}
+                  href={withGame(`/store/products/${c.id}`)}
                   className="product-card group block col-span-1"
                   style={{ animationDelay: `${index * 40}ms` }}
                 >

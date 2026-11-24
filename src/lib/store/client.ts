@@ -117,12 +117,12 @@ export const vantaApi = {
     return request<{ products: VantaProduct[]; total: number }>(url);
   },
   categories: () => request<{ categories: VantaCategory[] }>("/categories"),
-  createCategory: (body: { name: string; slug: string; description?: string; sortOrder?: number; imageUrl?: string }) =>
+  createCategory: (body: { name: string; slug: string; description?: string; sortOrder?: number; imageUrl?: string; game?: "cpm1" | "cpm2" }) =>
     request<{ category: VantaCategory }>("/admin/categories", {
       method: "POST",
       body: JSON.stringify(body),
     }),
-  updateCategory: (id: number, body: { name?: string; slug?: string; description?: string; sortOrder?: number; imageUrl?: string }) =>
+  updateCategory: (id: number, body: { name?: string; slug?: string; description?: string; sortOrder?: number; imageUrl?: string; game?: "cpm1" | "cpm2" }) =>
     request<{ category: VantaCategory }>(`/admin/categories/${id}`, {
       method: "PUT",
       body: JSON.stringify(body),
@@ -266,6 +266,10 @@ export type VantaProduct = {
   id: number;
   categoryId: number | null;
   cpm2CarCode: number | null;
+  /** Catalogue the product belongs to. */
+  game?: "cpm1" | "cpm2";
+  /** What kind of thing is being sold — a car or a game account. */
+  kind?: "car" | "account";
   name: string;
   description: string;
   basePriceCents: number;
@@ -305,6 +309,8 @@ export type VantaCategory = {
   imageUrl: string;
   sortOrder: number;
   isActive: boolean;
+  /** Which catalogue this shelf belongs to — CPM1 (flags/mods/...) or CPM2 (cars). */
+  game?: "cpm1" | "cpm2";
   createdAt: string;
 };
 

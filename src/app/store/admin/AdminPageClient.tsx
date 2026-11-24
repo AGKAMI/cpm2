@@ -47,6 +47,7 @@ type ProductForm = {
   isSale: boolean;
   isPublished: boolean;
   categoryId: string;
+  game: "cpm2" | "cpm1";
 };
 
 const EMPTY_FORM: ProductForm = {
@@ -64,6 +65,7 @@ const EMPTY_FORM: ProductForm = {
   isSale: false,
   isPublished: true,
   categoryId: "",
+  game: "cpm2",
 };
 
 type CategoryForm = {
@@ -71,6 +73,7 @@ type CategoryForm = {
   slug: string;
   description: string;
   sortOrder: string;
+  game: "cpm2" | "cpm1";
 };
 
 const EMPTY_CATEGORY_FORM: CategoryForm = {
@@ -78,6 +81,7 @@ const EMPTY_CATEGORY_FORM: CategoryForm = {
   slug: "",
   description: "",
   sortOrder: "0",
+  game: "cpm2",
 };
 
 type PromotionForm = {
@@ -133,6 +137,12 @@ const ProductListItem = memo(({ p, categories, onEdit, onPublish, onDelete }: {
         <span className="text-primary font-semibold">{formatPrice(p.basePriceCents, p.currency)}</span>
         <span className={`text-xs ml-2 font-medium ${p.stockQuantity === 0 ? "text-oxblood" : "text-muted-foreground"}`}>
           {p.stockQuantity === 0 ? "Out of stock" : `${p.stockQuantity} left`}
+        </span>
+        <span
+          className={`text-[10px] px-1.5 py-0.5 rounded ${p.game === "cpm1" ? "bg-blue-500/15 text-blue-400" : "bg-emerald-500/15 text-emerald-400"}`}
+          title={p.game === "cpm1" ? "CPM1 Catalogue" : "CPM2 Garage"}
+        >
+          {p.game === "cpm1" ? "CPM1" : "CPM2"}
         </span>
         {p.categoryId && categories.length > 0 && (
           <span className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground border border-border px-2 py-0.5 rounded ml-2">
@@ -316,6 +326,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
       isSale: p.isSale,
       isPublished: p.isPublished,
       categoryId: String(p.categoryId ?? ""),
+      game: p.game === "cpm1" ? "cpm1" : "cpm2",
     });
     setEditingId(p.id);
     setInlineEditingId(p.id);
@@ -417,6 +428,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
           slug: v.slug,
           description: v.description,
           sortOrder: parseInt(v.sortOrder, 10),
+          game: v.game,
         });
         setMsg("Category updated.");
         setInlineEditingCategoryId(null);
@@ -426,6 +438,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
           slug: v.slug,
           description: v.description,
           sortOrder: parseInt(v.sortOrder, 10),
+          game: v.game,
         });
         setMsg("Category created.");
         resetCategoryForm();
@@ -582,6 +595,9 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
       <Toast />
 
       <div className="mb-6 flex items-center gap-2">
+        <Link href="/store/admin/accounts" className="inline-flex items-center gap-2 px-4 py-2 text-[9px] uppercase tracking-[0.15em] whitespace-nowrap cursor-pointer font-bold border-2 border-primary bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+          Accounts
+        </Link>
         <Link href="/store/admin/eft" className="inline-flex items-center gap-2 px-4 py-2 text-[9px] uppercase tracking-[0.15em] whitespace-nowrap cursor-pointer font-bold border-2 border-primary bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
           EFT Review
         </Link>
@@ -599,7 +615,27 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
         </div>
         {showCategoryForm && !inlineEditingCategoryId && (
           <form onSubmit={handleCategorySubmit} className="flex flex-col gap-3 mb-4">
-            <Field label="Name" error={categoryErrors.name}>
+<Field label="Store" hint="Which catalogue this shelf belongs to">
+              <select
+                value={categoryForm.game}
+                onChange={(e) => handleCategoryChange("game", e.target.value === "cpm1" ? "cpm1" : "cpm2")}
+                className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
+              >
+                <option value="cpm2">CPM2 Garage</option>
+                <option value="cpm1">CPM1 Catalogue</option>
+              </select>
+            </Field>
+  <Field label="Store" hint="Which catalogue this shelf belongs to">
+              <select
+                value={categoryForm.game}
+                onChange={(e) => handleCategoryChange("game", e.target.value === "cpm1" ? "cpm1" : "cpm2")}
+                className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
+              >
+                <option value="cpm2">CPM2 Garage</option>
+                <option value="cpm1">CPM1 Catalogue</option>
+              </select>
+            </Field>
+                                  <Field label="Name" error={categoryErrors.name}>
               <TextInput value={categoryForm.name} onChange={(e) => handleCategoryChange("name", e.target.value)} placeholder="e.g. Sports Cars" />
             </Field>
             <Field label="URL slug" error={categoryErrors.slug} hint="Auto-generated from category name">
@@ -670,7 +706,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
                     <p className="text-xs text-ink-soft mb-3 break-words">{cat.description}</p>
                   )}
                   <div className="flex gap-2 flex-wrap">
-                    <Button variant="outline" size="sm" onClick={() => { setShowCategoryForm(false); setCategoryForm({ name: cat.name, slug: cat.slug, description: cat.description, sortOrder: String(cat.sortOrder) }); setInlineEditingCategoryId(cat.id); setError(null); setMsg(null); }}>Edit</Button>
+                    <Button variant="outline" size="sm" onClick={() => { setShowCategoryForm(false); setCategoryForm({ name: cat.name, slug: cat.slug, description: cat.description, sortOrder: String(cat.sortOrder), game: cat.game ?? "cpm2" }); setInlineEditingCategoryId(cat.id); setError(null); setMsg(null); }}>Edit</Button>
                     <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => handleCategoryDelete(cat.id, cat.name)}>Delete</Button>
                   </div>
                 </article>
@@ -980,6 +1016,25 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
                 </div>
               )}
             </Field>
+            {form.game === "cpm2" && (
+              <>
+<Field label="Store" hint="Which catalogue this product belongs to - CPM1 (accounts, flags, mods...) or CPM2 (cars)">
+              <select
+                id="product-game"
+                value={form.game}
+                onChange={(e) => {
+                  const g = e.target.value === "cpm1" ? "cpm1" : "cpm2";
+                  handleChange("game", g);
+                  // a category from the other store must not ride along
+                  const cat = categories.find((c) => c.id === Number(form.categoryId));
+                  if (cat && (cat.game ?? "cpm2") !== g) handleChange("categoryId", "");
+                }}
+                className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
+              >
+                <option value="cpm2">CPM2 Garage</option>
+                <option value="cpm1">CPM1 Catalogue</option>
+              </select>
+            </Field>
             <Field label="Car (CPM2 catalog)" error={productErrors.cpm2CarCode} hint={carLocked ? "Locked - car codes are set once at creation and cannot be changed" : editingId !== null ? "No car linked yet - pick one; the code locks once set" : "Pick a car from the catalog - it auto-fills the name below, then you can edit it"}>
               {carLocked ? (
                 <select id="cpm2-car-code" disabled defaultValue={form.cpm2CarCode} aria-readonly="true" className="w-full border border-input bg-secondary px-3 py-2 rounded-md text-sm text-foreground cursor-not-allowed">
@@ -1015,6 +1070,9 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
                 </div>
               )}
             </Field>
+              </>
+            )}
+            
             <Field label="Name" error={productErrors.name} hint='Auto-filled from the catalog pick above - edit for custom design names (e.g. "GOLF GTI III - Midnight Chrome")'>
               <TextInput id="name" value={form.name} onChange={(e) => handleChange("name", e.target.value)} placeholder="Toyota Supra MK4" />
             </Field>
@@ -1027,7 +1085,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
             <Field label="Category" hint={categories.length === 0 ? "No categories yet - add some via the Categories tab" : "Select a category for filtering"}>
               <select id="category" value={form.categoryId} onChange={(e) => handleChange("categoryId", e.target.value)} className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground">
                 <option value="">Select a category</option>
-                {categories.map((cat) => <option key={cat.id} value={String(cat.id)}>{cat.name}</option>)}
+                {categories.filter((c) => (c.game ?? "cpm2") === form.game).map((cat) => <option key={cat.id} value={String(cat.id)}>{cat.name}</option>)}
               </select>
             </Field>
             <Field label="Air suspension install" hint="This design includes air suspension installation">

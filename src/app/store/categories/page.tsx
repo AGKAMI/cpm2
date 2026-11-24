@@ -4,6 +4,7 @@ import {
   listCategories,
   listProducts,
   listCoverImageMap,
+  type ProductGame,
 } from "@/lib/store/products";
 
 export const metadata: Metadata = {
@@ -21,14 +22,31 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function CategoriesPage() {
+export default async function CategoriesPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ game?: string }>;
+}) {
+  const params = (await searchParams) ?? {};
+  const gameParam = params.game;
+  // One garage: no game param shows every shelf (CPM1 + CPM2 together). An
+  // explicit ?game= still scopes, for direct/bot links.
+  const game: ProductGame | undefined =
+    gameParam === "cpm1" || gameParam === "cpm2" ? gameParam : undefined;
   const [categories, products] = await Promise.all([
-    listCategories(),
-    listProducts({ onlyPublished: true }),
+    listCategories(game),
+    listProducts({ onlyPublished: true, game }),
   ]);
   const initialProducts = products.slice(0, 24);
   const coverMap: Record<number, string> = Object.fromEntries(
     (await listCoverImageMap(initialProducts.map((p) => p.id))).entries()
   );
-  return <CategoriesClient categories={categories} products={initialProducts} coverMap={coverMap} />;
+  return (
+    <CategoriesClient
+      categories={categories}
+      products={initialProducts}
+      coverMap={coverMap}
+      game={game}
+    />
+  );
 }

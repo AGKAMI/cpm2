@@ -14,6 +14,36 @@ import {
 import { listCoverImageMap } from "@/lib/store/products";
 import { StoreHomeClient } from "@/components/StoreHomeClient";
 
+export type StoreHomeData = {
+  featured: VantaProduct[];
+  allProducts: VantaProduct[];
+  categories: VantaCategory[];
+  newArrivals: VantaProduct[];
+  onSale: VantaProduct[];
+};
+
+/**
+ * Build the home dataset: resolve covers on the server, then split products
+ * into mutually exclusive sections (featured / new / sale / rest).
+ */
+async function buildStore(products: VantaProduct[], categories: VantaCategory[]): Promise<StoreHomeData> {
+  const coverMap = await listCoverImageMap(products.map((p) => p.id));
+  const withMedia = products.map((p) => ({ ...p, coverImage: coverMap.get(p.id) ?? null }));
+  // A product with NO uploaded media must still appear — ProductCard renders a
+  // generated name thumbnail when coverImage is null.
+  const featured = withMedia.filter((p) => p.isFeatured);
+  const arrivals = withMedia
+    .filter((p: VantaProduct) => p.isNew && !p.isFeatured)
+    .slice(0, 8);
+  const saleItems = withMedia
+    .filter((p: VantaProduct) => p.isSale && !p.isFeatured && !p.isNew)
+    .slice(0, 8);
+  const rest = withMedia.filter(
+    (p: VantaProduct) => !p.isFeatured && !p.isNew && !p.isSale
+  );
+  return { featured, allProducts: rest, categories, newArrivals: arrivals, onSale: saleItems };
+}
+
 export async function StoreHome({
   products,
   categories,
@@ -23,44 +53,22 @@ export async function StoreHome({
   categories: unknown[];
   promotions: unknown[];
 }) {
-  const allProducts = products as VantaProduct[];
-  const allCategories = categories as VantaCategory[];
   const allPromotions = promotions as VantaPromotion[];
-
-  // Resolve media URLs on the server — one batched round-trip for ALL products,
-  // not just featured (featured-only left every other section on "No photo").
-  const coverMap = await listCoverImageMap(allProducts.map((p) => p.id));
-  const productsWithMedia = allProducts.map((p) => ({
-    ...p,
-    coverImage: coverMap.get(p.id) ?? null,
-  }));
-  // A product with NO uploaded media must still appear — ProductCard renders a
-  // generated name thumbnail when coverImage is null, so filtering on
-  // coverMap.has(id) hid every media-less product from the whole storefront.
-  const featuredWithMedia = productsWithMedia.filter((p) => p.isFeatured);
-
-  // Compute derived data on the server — sections are mutually exclusive so
-  // each product appears at most once on the home page.
-  const featuredIds = new Set(featuredWithMedia.map((p) => p.id));
-  const arrivals = productsWithMedia
-    .filter((p: VantaProduct) => p.isNew && !p.isFeatured)
-    .slice(0, 8);
-  const arrivalIds = new Set(arrivals.map((p) => p.id));
-  const saleItems = productsWithMedia
-    .filter((p: VantaProduct) => p.isSale && !p.isFeatured && !p.isNew)
-    .slice(0, 8);
-  const rest = productsWithMedia.filter(
-    (p: VantaProduct) => !p.isFeatured && !p.isNew && !p.isSale
-  );
-
+  const {
+    featured,
+    allProducts,
+    categories: cats,
+    newArrivals,
+    onSale,
+  } = await buildStore(products as VantaProduct[], categories as VantaCategory[]);
   return (
     <StoreHomeClient
-      featured={featuredWithMedia}
-      allProducts={rest}
-      categories={allCategories}
+      featured={featured}
+      allProducts={allProducts}
+      categories={cats}
       promotions={allPromotions}
-      newArrivals={arrivals as VantaProduct[]}
-      onSale={saleItems as VantaProduct[]}
+      newArrivals={newArrivals}
+      onSale={onSale}
     />
   );
 }

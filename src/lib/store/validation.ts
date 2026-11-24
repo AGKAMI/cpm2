@@ -105,6 +105,8 @@ export const categoryFormSchema = z.object({
     .min(1, { error: "Enter a sort order." })
     .refine((v) => /^\d+$/.test(v), { error: "Sort order must be a whole number." })
     .refine((v) => parseInt(v, 10) >= 0, { error: "Sort order cannot be negative." }),
+  // Which catalogue the shelf belongs to — drives the store it shows in.
+  game: z.enum(["cpm2", "cpm1"], { error: "Pick a store." }).default("cpm2"),
 });
 
 export type CategoryFormInput = z.infer<typeof categoryFormSchema>;

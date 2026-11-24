@@ -15,6 +15,8 @@ const categorySchema = z.object({
   description: z.string().optional(),
   sortOrder: z.coerce.number().int().nonnegative().default(0),
   imageUrl: z.string().optional(),
+  // Which catalogue the shelf belongs to; without it the server default (cpm2) applies.
+  game: z.enum(["cpm1", "cpm2"]).optional(),
 });
 
 export const dynamic = "force-dynamic";

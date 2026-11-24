@@ -41,6 +41,9 @@ const productSchema = z.object({
   isPublished: z.boolean().default(false),
   airSuspension: z.boolean().default(false),   // Air suspension installation included
   unlockedBodykits: z.boolean().default(false), // Design unlocks bodykits
+  // Which catalogue the product belongs to; without it the server default (cpm2) applies.
+  game: z.enum(["cpm1", "cpm2"]).optional(),
+  kind: z.enum(["car", "account"]).optional(),
 });
 
 export const dynamic = "force-dynamic";
@@ -114,6 +117,8 @@ export async function POST(request: Request) {
           isPublished: body.isPublished,
           airSuspension: body.airSuspension,
           unlockedBodykits: body.unlockedBodykits,
+          game: body.game,
+          kind: body.kind,
         };
     const product = await createProduct(input);
     if (body.imageUrl) {
@@ -179,6 +184,8 @@ export async function PUT(request: Request) {
           isPublished: body.isPublished,
           airSuspension: body.airSuspension,
           unlockedBodykits: body.unlockedBodykits,
+          game: body.game,
+          kind: body.kind,
         });
     if (!updated) {
       return fail({ status: 404, body: { error: { code: "not_found", message: "Product not found." } } });

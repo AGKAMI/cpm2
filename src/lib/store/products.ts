@@ -74,6 +74,7 @@ function rowToCategory(row: Record<string, unknown>): Category {
     imageUrl: categoryImage(row),
     sortOrder: Number(row.sort_order ?? 0),
     isActive: Number(row.is_active ?? 1) === 1,
+    game: safeGame(row.game),
     createdAt: String(row.created_at ?? ""),
   };
 }
@@ -97,20 +98,28 @@ function rowToMedia(row: Record<string, unknown>): ProductMedia {
   };
 }
 
-export async function createCategory(input: { name: string; slug: string; description?: string; sortOrder?: number; imageUrl?: string }): Promise<Category> {
+export async function createCategory(input: {
+  name: string;
+  slug: string;
+  description?: string;
+  sortOrder?: number;
+  imageUrl?: string;
+  game?: ProductGame;
+}): Promise<Category> {
   const db = await getStoreDb();
   const now = new Date().toISOString();
+  const game = input.game ?? "cpm2";
   const result = await db.execute({
-    sql: `INSERT INTO vanta_categories (name, slug, description, sort_order, image_url, is_active, created_at)
-          VALUES (?, ?, ?, ?, ?, 1, ?)`,
-    args: [input.name.trim(), input.slug.trim(), input.description ?? "", input.sortOrder ?? 0, input.imageUrl ?? "", now],
+    sql: `INSERT INTO vanta_categories (name, slug, description, sort_order, image_url, is_active, game, created_at)
+          VALUES (?, ?, ?, ?, ?, 1, ?, ?)`,
+    args: [input.name.trim(), input.slug.trim(), input.description ?? "", input.sortOrder ?? 0, input.imageUrl ?? "", game, now],
   });
   const id = result.lastInsertRowid;
   if (id === null) throw new Error("Category insert returned no id");
-  return rowToCategory({ id, name: input.name.trim(), slug: input.slug.trim(), description: input.description ?? "", image_url: input.imageUrl ?? "", sort_order: input.sortOrder ?? 0, is_active: true, created_at: now });
+  return rowToCategory({ id, name: input.name.trim(), slug: input.slug.trim(), description: input.description ?? "", image_url: input.imageUrl ?? "", sort_order: input.sortOrder ?? 0, is_active: true, game, created_at: now });
 }
 
-export async function updateCategory(id: number, input: { name?: string; slug?: string; description?: string; sortOrder?: number; imageUrl?: string }): Promise<Category> {
+export async function updateCategory(id: number, input: { name?: string; slug?: string; description?: string; sortOrder?: number; imageUrl?: string; game?: ProductGame }): Promise<Category> {
   const db = await getStoreDb();
   const sets: string[] = [];
   const args: unknown[] = [];
@@ -124,6 +133,10 @@ export async function updateCategory(id: number, input: { name?: string; slug?: 
   if (input.imageUrl !== undefined && !input.imageUrl.startsWith("/api/store/categories/")) {
     sets.push("image_url = ?");
     args.push(input.imageUrl);
+  }
+  if (input.game !== undefined) {
+    sets.push("game = ?");
+    args.push(input.game);
   }
   if (sets.length > 0) {
     args.push(id);
@@ -149,11 +162,18 @@ export async function deleteCategory(id: number): Promise<void> {
   });
 }
 
-export async function listCategories(): Promise<Category[]> {
+/**
+ * Active categories, optionally scoped to one game. Callers browsing CPM2
+ * should pass 'cpm2' so CPM1's tree (Flags/Security/Police/...) never shows
+ * up as six empty shelves.
+ */
+export async function listCategories(game?: ProductGame): Promise<Category[]> {
   const db = await getStoreDb();
   const result = await db.execute({
-    sql: `SELECT * FROM vanta_categories WHERE is_active = 1 ORDER BY sort_order ASC, name ASC`,
-    args: [],
+    sql: `SELECT * FROM vanta_categories
+          WHERE is_active = 1 AND (? IS NULL OR game = ?)
+          ORDER BY sort_order ASC, name ASC`,
+    args: [game ?? null, game ?? null],
   });
   return result.rows.map(rowToCategory);
 }
@@ -162,10 +182,12 @@ export async function createProduct(input: ProductInput): Promise<Product> {
   const db = await getStoreDb();
   const now = new Date().toISOString();
   const result = await db.execute({
-    sql: `INSERT INTO vanta_products (category_id, cpm2_car_code, name, description, base_price_cents, discount_percent, currency, stock_quantity, initial_stock, availability_state, exclusivity, is_featured, is_new, is_sale, is_published, air_suspension, unlocked_bodykits, created_at, updated_at, spec_hp, spec_top_speed, spec_zero_hundred, spec_drive)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '${now}', ?, ?, ?, ?, ?)`,
+    sql: `INSERT INTO vanta_products (category_id, kind, game, cpm2_car_code, name, description, base_price_cents, discount_percent, currency, stock_quantity, initial_stock, availability_state, exclusivity, is_featured, is_new, is_sale, is_published, air_suspension, unlocked_bodykits, created_at, updated_at, spec_hp, spec_top_speed, spec_zero_hundred, spec_drive)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       input.categoryId ?? null,
+      input.kind ?? "car",
+      input.game ?? "cpm2",
       input.cpm2CarCode ?? null,
       input.name.trim(),
       input.description ?? "",
@@ -184,6 +206,7 @@ export async function createProduct(input: ProductInput): Promise<Product> {
       input.airSuspension ? 1 : 0,
       input.unlockedBodykits ? 1 : 0,
       now,
+      now,
       input.specHp ?? null,
       input.specTopSpeed ?? null,
       input.specZeroHundred ?? null,
@@ -192,7 +215,7 @@ export async function createProduct(input: ProductInput): Promise<Product> {
   });
   const id = result.lastInsertRowid;
   if (id === null) throw new Error("Product insert returned no id");
-  return rowToProduct({ id, category_id: input.categoryId ?? null, cpm2_car_code: input.cpm2CarCode ?? null, name: input.name.trim(), description: input.description ?? "", base_price_cents: input.basePriceCents ?? 0, image_url: null, discount_percent: input.discountPercent ?? 0, currency: input.currency ?? "ZAR", stock_quantity: input.stockQuantity ?? 0, initial_stock: input.stockInitial ?? input.stockQuantity ?? 0, availability_state: input.availabilityState ?? "available", exclusivity: input.exclusivity ?? "standard", is_featured: input.isFeatured ? 1 : 0, is_new: input.isNew ? 1 : 0, is_sale: input.isSale ? 1 : 0, is_published: input.isPublished ? 1 : 0, air_suspension: input.airSuspension ? 1 : 0, unlocked_bodykits: input.unlockedBodykits ? 1 : 0, version: 1, spec_hp: input.specHp ?? null, spec_top_speed: input.specTopSpeed ?? null, spec_zero_hundred: input.specZeroHundred ?? null, spec_drive: input.specDrive ?? null, created_at: now, updated_at: now });
+  return rowToProduct({ id, category_id: input.categoryId ?? null, cpm2_car_code: input.cpm2CarCode ?? null, kind: input.kind ?? "car", game: input.game ?? "cpm2", name: input.name.trim(), description: input.description ?? "", base_price_cents: input.basePriceCents ?? 0, image_url: null, discount_percent: input.discountPercent ?? 0, currency: input.currency ?? "ZAR", stock_quantity: input.stockQuantity ?? 0, initial_stock: input.stockInitial ?? input.stockQuantity ?? 0, availability_state: input.availabilityState ?? "available", exclusivity: input.exclusivity ?? "standard", is_featured: input.isFeatured ? 1 : 0, is_new: input.isNew ? 1 : 0, is_sale: input.isSale ? 1 : 0, is_published: input.isPublished ? 1 : 0, air_suspension: input.airSuspension ? 1 : 0, unlocked_bodykits: input.unlockedBodykits ? 1 : 0, version: 1, spec_hp: input.specHp ?? null, spec_top_speed: input.specTopSpeed ?? null, spec_zero_hundred: input.specZeroHundred ?? null, spec_drive: input.specDrive ?? null, created_at: now, updated_at: now });
 }
 
 export async function getProduct(id: number): Promise<Product | null> {
@@ -207,13 +230,19 @@ export async function getProduct(id: number): Promise<Product | null> {
   return rowToProduct(result.rows[0]);
 }
 
-export async function listProducts({ onlyPublished = true, featuredOnly = false }: { onlyPublished?: boolean; featuredOnly?: boolean } = {}): Promise<Product[]> {
+export async function listProducts({ onlyPublished = true, featuredOnly = false, game }: { onlyPublished?: boolean; featuredOnly?: boolean; game?: ProductGame } = {}): Promise<Product[]> {
   // Expire "New" tags on products older than 3 days (auto-tag: new products
   // get the tag at creation, it is removed automatically after 3 days).
   await expireOldNewTags();
   const db = await getStoreDb();
   let sql = `SELECT * FROM vanta_products WHERE 1=1`;
   const args: unknown[] = [];
+  if (game) {
+    // Scope the storefront to one catalogue — CPM1's shelves (flags/mods/...)
+    // must never appear in the CPM2 garage browse, and vice versa.
+    sql += ` AND game = ?`;
+    args.push(game);
+  }
   if (onlyPublished) {
     sql += ` AND is_published = 1`;
   }
@@ -265,7 +294,11 @@ export async function updateProduct(
     args.push(val);
   };
   if (input.categoryId !== undefined) set("category_id", input.categoryId);
-  if (input.cpm2CarCode !== undefined) set("cpm2_car_code", input.cpm2CarCode);
+    // Without these, a product's game/kind was frozen at creation: an item seeded
+    // as the wrong game could never be corrected without a direct DB write.
+    if (input.kind !== undefined) set("kind", input.kind);
+    if (input.game !== undefined) set("game", input.game);
+    if (input.cpm2CarCode !== undefined) set("cpm2_car_code", input.cpm2CarCode);
   if (input.name !== undefined) set("name", input.name.trim());
   if (input.description !== undefined) set("description", input.description);
   if (input.basePriceCents !== undefined) set("base_price_cents", input.basePriceCents);

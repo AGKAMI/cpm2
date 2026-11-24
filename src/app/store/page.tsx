@@ -9,13 +9,17 @@ import {
 } from "@/lib/store/products";
 
 export const metadata: Metadata = {
-  title: "VANTA GARAGE - CPM2 vehicles for sale",
-  description: "Premium CPM2 vehicle storefront. Ready-to-purchase cars, limited editions, One of One builds.",
+  title: "VANTA GARAGE - vehicles for sale",
+  description:
+    "Premium vehicle storefront. Ready-to-purchase cars, limited editions, One of One builds.",
 };
 
 export const dynamic = "force-dynamic";
 
 async function StoreContent() {
+  // ONE garage: every published product from both catalogues sits in the same
+  // browse — no store chooser, no tabs. The game tag lives on the product for
+  // admin/bot filtering; customers just see the shop.
   const [products, categories, promotions] = await Promise.all([
     listProducts({ onlyPublished: true }),
     listCategories(),

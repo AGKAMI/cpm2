@@ -1,6 +1,15 @@
-// Greeting + quick access + Your games — mirrors the reference store's home.
-// The balance/wallet card is intentionally NOT faked: this app stores no USDT or
-// Stars balance, so it ships without one until a wallet feature exists.
+/**
+ * GarageLead — the home lead: greeting + quick access + your OWNED games.
+ *
+ * "Your games" lists games the customer has actually bought in (from their
+ * order history), NOT a second copy of the catalogue links — quick access is
+ * the browsing shorthand, Your games is ownership. A visitor with no orders
+ * (or no session) sees no Your games section at all rather than a fake one.
+ *
+ * The balance/wallet card is intentionally absent: this app stores no USDT or
+ * Stars balance, so none is rendered until a wallet feature exists.
+ */
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { vantaApi } from "@/lib/store/client";
@@ -12,12 +21,28 @@ function greeting(): string {
   return "Good evening";
 }
 
+type OwnedGame = { game: "cpm1" | "cpm2"; title: string; sub: string; href: string; glyph: string };
+
+const GAME_META: Record<string, { title: string; sub: string; glyph: string }> = {
+  cpm2: {
+    title: "Car Parking Multiplayer 2",
+    sub: "Ready-to-drive builds, limited editions, One of One",
+    glyph: "\u{1F3CE}",
+  },
+  cpm1: {
+    title: "Car Parking Multiplayer",
+    sub: "Accounts, flags, security, police, premium cars, mods",
+    glyph: "\u{1F6A5}",
+  },
+};
+
 export function GarageLead() {
   const [profile, setProfile] = useState<{
     displayName?: string;
     username?: string;
     photoUrl?: string;
   } | null>(null);
+  const [owned, setOwned] = useState<OwnedGame[] | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -40,26 +65,56 @@ export function GarageLead() {
     };
   }, []);
 
+  // Owned games — derived from the customer's real order history.
+  useEffect(() => {
+    let live = true;
+    (async () => {
+      try {
+        const [orders, products] = await Promise.all([
+          fetch("/api/store/orders").then((r) => (r.ok ? r.json() : null)),
+          vantaApi.products({}),
+        ]);
+        if (!live) return;
+        const list = orders?.orders ?? [];
+        if (!Array.isArray(list) || list.length === 0) {
+          setOwned([]); // no purchases — no owned games
+          return;
+        }
+        const gameOf = new Map<number, string>();
+        for (const p of products.products ?? []) {
+          if (p.game === "cpm1" || p.game === "cpm2") gameOf.set(p.id, p.game);
+        }
+        const games = new Set<string>();
+        for (const o of list) {
+          const g = gameOf.get(Number(o.productId));
+          if (g === "cpm1" || g === "cpm2") games.add(g);
+        }
+        setOwned(
+          [...games].map((g) => ({
+            game: g as "cpm1" | "cpm2",
+            title: GAME_META[g].title,
+            sub: GAME_META[g].sub,
+            href: `/store/categories?game=${g}`,
+            glyph: GAME_META[g].glyph,
+          })),
+        );
+      } catch {
+        if (live) setOwned([]);
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, []);
+
   const name = profile?.displayName || "there";
+  // Quick access = distinct browsing destinations only. No "Cars" tile — it
+  // pointed at the same CPM2 catalogue, which is exactly the redundancy this
+  // replaces.
   const quick = [
     { label: "CPM 2", href: "/store/categories?game=cpm2", glyph: "\u{1F3CE}" },
     { label: "CPM 1", href: "/store/categories?game=cpm1", glyph: "\u{1F6A5}" },
-    { label: "Cars", href: "/store/categories?game=cpm2", glyph: "\u{1F697}" },
     { label: "Support", href: "/store/support", glyph: "\u{1F3E7}" },
-  ];
-  const games = [
-    {
-      title: "Car Parking Multiplayer 2",
-      sub: "Ready-to-drive builds, limited editions, One of One",
-      href: "/store/categories?game=cpm2",
-      glyph: "\u{1F3CE}",
-    },
-    {
-      title: "Car Parking Multiplayer",
-      sub: "Accounts, flags, security, police, premium cars, mods",
-      href: "/store/categories?game=cpm1",
-      glyph: "\u{1F6A5}",
-    },
   ];
 
   return (
@@ -92,8 +147,8 @@ export function GarageLead() {
         </div>
       </div>
 
-      {/* Quick access */}
-      <div className="grid grid-cols-4 gap-2">
+      {/* Quick access — browsing shorthand */}
+      <div className="grid grid-cols-3 gap-2">
         {quick.map((q) => (
           <Link
             key={q.label}
@@ -106,27 +161,29 @@ export function GarageLead() {
         ))}
       </div>
 
-      {/* Your games */}
-      <div>
-        <h2 className="mb-2 text-sm font-semibold text-foreground">Your games</h2>
-        <div className="grid gap-2">
-          {games.map((g) => (
-            <Link
-              key={g.title}
-              href={g.href}
-              className="flex items-center gap-3 rounded-xl border border-border bg-background p-3 transition-colors hover:border-accent"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary text-xl">
-                {g.glyph}
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-foreground">{g.title}</p>
-                <p className="truncate text-xs text-ink-soft">{g.sub}</p>
-              </div>
-            </Link>
-          ))}
+      {/* Your games — OWNERSHIP only; hidden without purchases (no fake list) */}
+      {owned && owned.length > 0 ? (
+        <div>
+          <h2 className="mb-2 text-sm font-semibold text-foreground">Your games</h2>
+          <div className="grid gap-2">
+            {owned.map((g) => (
+              <Link
+                key={g.game}
+                href={g.href}
+                className="flex items-center gap-3 rounded-xl border border-border bg-background p-3 transition-colors hover:border-accent"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary text-xl">
+                  {g.glyph}
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-foreground">{g.title}</p>
+                  <p className="truncate text-xs text-ink-soft">{g.sub}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : null}
     </section>
   );
 }

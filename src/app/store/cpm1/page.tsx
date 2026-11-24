@@ -1,0 +1,36 @@
+import type { Metadata } from "next";
+import { GameHubShell } from "@/components/GameHubShell";
+
+export const metadata: Metadata = {
+  title: "CPM 1 — CPM STORE",
+  description: "CPM1 accounts, car catalogue and services.",
+};
+
+export const dynamic = "force-dynamic";
+
+export default function Cpm1HubPage() {
+  return (
+    <GameHubShell
+      game="cpm1"
+      title="CPM 1"
+      blurb="Pick what you're shopping for."
+      sections={[
+        {
+          slug: "accounts",
+          label: "Accounts",
+          hint: "HD accounts, anime accounts, full car accounts and coin accounts.",
+        },
+        {
+          slug: "cars",
+          label: "Cars",
+          hint: "The CPM1 car catalogue — every car available as its own listing.",
+        },
+        {
+          slug: "services",
+          label: "Services",
+          hint: "Callipers, headlights, money injection, coin injection and more.",
+        },
+      ]}
+    />
+  );
+}

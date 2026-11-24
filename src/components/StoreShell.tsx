@@ -310,36 +310,6 @@ export function StoreShell({ children, dock }: StoreShellProps) {
               </button>
               <NotificationBell />
 
-              {activeTab !== "profile" && (
-                <div className="relative h-8 w-8 shrink-0">
-                  <div
-                    className="h-8 w-8 rounded-full overflow-hidden border-2 border-gold"
-                  >
-                    {profile?.photoUrl ? (
-                      <Image
-                        src={profile.photoUrl}
-                        alt={profile.displayName || "Profile"}
-                        className="h-full w-full object-cover"
-                        loading="eager"
-                        width={80}
-                        height={80}
-                        unoptimized
-                        style={{ objectFit: "cover" }}
-                      />
-                    ) : (
-                      <div className="h-full w-full flex items-center justify-center text-ink-soft text-xs font-bold select-none">
-                        {(profile?.displayName || "U").charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                  </div>
-                  <div
-                    className={cn(
-                      "absolute inset-0 h-full w-full rounded-full border-2 border-gold animate-pulse-ring transition-opacity duration-700 ease-out",
-                      loaded ? "opacity-100" : "opacity-0",
-                    )}
-                  />
-                </div>
-              )}
             </div>
           </div>
         </header>

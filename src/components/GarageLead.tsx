@@ -138,12 +138,7 @@ export function GarageLead() {
         </Link>
         <div className="min-w-0">
           <p className="text-xs text-ink-soft">{greeting()},</p>
-          <p className="truncate text-sm font-semibold text-foreground">
-            {name}
-            {profile?.username ? (
-              <span className="ml-2 text-xs font-normal text-ink-faint">@{profile.username}</span>
-            ) : null}
-          </p>
+          <p className="truncate text-sm font-semibold text-foreground">{name}</p>
         </div>
       </div>
 

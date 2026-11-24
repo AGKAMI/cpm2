@@ -3,6 +3,37 @@
  * All tables prefixed with `vanta_`. Applied idempotently on boot.
  */
 
+/**
+ * Single source of truth for the account-units DDL. Named so the migration in
+ * store-db.ts can rebuild this table without duplicating the definition — a
+ * second copy would drift and silently reintroduce the dedupe bug below.
+ *
+ * UNIQUE is on (email_hash, product_id), NOT (email, product_id): email is
+ * AES-256-GCM encrypted with a random IV, so the same address never encrypts to
+ * the same string twice. The old constraint could therefore never match, and
+ * re-importing the same .txt block duplicated every unit (proved: one 3-unit
+ * block imported twice = 6 rows). email_hash is a stable sha256 of the
+ * plaintext and is what dedupe compares.
+ */
+export const VANTA_ACCOUNT_UNITS_DDL = `
+CREATE TABLE IF NOT EXISTS vanta_account_units (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  product_id     INTEGER REFERENCES vanta_products(id) ON DELETE SET NULL,
+  email          TEXT    NOT NULL,
+  email_hash     TEXT    NOT NULL DEFAULT '',
+  password       TEXT    NOT NULL,
+  notes          TEXT    NOT NULL DEFAULT '',
+  status         TEXT    NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'available', 'assigned', 'sold')),
+  game           TEXT    NOT NULL DEFAULT 'cpm2' CHECK (game IN ('cpm1', 'cpm2')),
+  -- Set the moment a checkout claims the unit, so two buyers can never hold
+  -- the same credential and a refund knows exactly what to restore.
+  order_id       TEXT    REFERENCES vanta_orders(id) ON DELETE SET NULL,
+  customer_id    INTEGER REFERENCES vanta_customers(id) ON DELETE SET NULL,
+  created_at     TEXT    NOT NULL,
+  updated_at     TEXT    NOT NULL,
+  UNIQUE (email_hash, product_id)
+)`;
+
 export const VANTA_SCHEMA = `
 CREATE TABLE IF NOT EXISTS vanta_customers (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -356,22 +387,9 @@ CREATE TABLE IF NOT EXISTS vanta_uploads (
 -- them in a public response, and mask them in admin once delivered. Losing the
 -- encryption key means the units are unusable, which is the intended trade for
 -- not storing plaintext buyer credentials.
-CREATE TABLE IF NOT EXISTS vanta_account_units (
-  id             INTEGER PRIMARY KEY AUTOINCREMENT,
-  product_id     INTEGER REFERENCES vanta_products(id) ON DELETE SET NULL,
-  email          TEXT    NOT NULL,
-  password       TEXT    NOT NULL,
-  notes          TEXT    NOT NULL DEFAULT '',
-  status         TEXT    NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'available', 'assigned', 'sold')),
-  game           TEXT    NOT NULL DEFAULT 'cpm2' CHECK (game IN ('cpm1', 'cpm2')),
-  -- Set the moment a checkout claims the unit, so two buyers can never hold
-  -- the same credential and a refund knows exactly what to restore.
-  order_id       TEXT    REFERENCES vanta_orders(id) ON DELETE SET NULL,
-  customer_id    INTEGER REFERENCES vanta_customers(id) ON DELETE SET NULL,
-  created_at     TEXT    NOT NULL,
-  updated_at     TEXT    NOT NULL,
-  UNIQUE (email, product_id)
-);
+
+
+${VANTA_ACCOUNT_UNITS_DDL}
 
 CREATE INDEX IF NOT EXISTS idx_vanta_account_units_product
   ON vanta_account_units (product_id, status);

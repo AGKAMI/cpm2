@@ -5,7 +5,7 @@
  */
 
 import type { TursoHttpClient } from "./db-turso.ts";
-import { VANTA_SCHEMA } from "./store-schema.ts";
+import { VANTA_SCHEMA, VANTA_ACCOUNT_UNITS_DDL } from "./store-schema.ts";
 
 // globalThis caches survive across route bundles within one server process
 // (module-level singletons do not in this Next version — each bundle re-ran
@@ -187,6 +187,107 @@ export async function runStoreMigrations(storeArg?: TursoHttpClient): Promise<vo
     // Column already exists — safe to ignore
   }
 
+
+  // Migration: product taxonomy — `kind` (car | account) and `game` (cpm1 | cpm2).
+  //
+  // `kind` separates vehicles from credential accounts so the two never share a
+  // card layout. `game` is what makes a CPM code unambiguous, because CPM1 #2 is
+  // a Perodua Myvi and CPM2 #2 is a Scirocco III — the same integer.
+  //
+  // SQLite cannot add a CHECK constraint via ALTER TABLE, so the CHECK lives
+  // only in store-schema.ts's CREATE TABLE (applied to a fresh database). The
+  // migrated column is constraint-free; app code validates the value instead.
+  // Existing rows are all CPM2 vehicles, so both defaults are correct and no
+  // backfill is needed.
+  try {
+    await store.execute({
+      sql: `ALTER TABLE vanta_products ADD COLUMN kind TEXT NOT NULL DEFAULT 'car'`,
+      args: [],
+    });
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  try {
+    await store.execute({
+      sql: `ALTER TABLE vanta_products ADD COLUMN game TEXT NOT NULL DEFAULT 'cpm2'`,
+      args: [],
+    });
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: vanta_account_units.email_hash. The email is AES-256-GCM
+  // encrypted with a random IV, so the same address never encrypts to the same
+  // string twice — dedupe cannot match on the ciphertext. This hash is what
+  // UNIQUE() and the import loop compare.
+  try {
+    await store.execute({
+      sql: `ALTER TABLE vanta_account_units ADD COLUMN email_hash TEXT NOT NULL DEFAULT ''`,
+      args: [],
+    });
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Migration: vanta_account_units dedupe constraint (email -> email_hash).
+  //
+  // The table shipped with UNIQUE(email, product_id). email is AES-256-GCM
+  // encrypted with a random IV, so the same address never encrypts to the same
+  // string twice — that constraint could never match, and re-importing the same
+  // .txt block duplicated every unit (proved: one 3-unit block imported twice =
+  // 6 rows). SQLite cannot ALTER a constraint, so the table is rebuilt from
+  // VANTA_ACCOUNT_UNITS_DDL, which is now the single source of truth.
+  //
+  // Rebuilds ONLY an empty table: a table with rows cannot be rebuilt, because
+  // email_hash cannot be recomputed from the ciphertext and rebuilding would
+  // orphan those units. That case is reported loudly for manual handling
+  // instead of silently leaving broken dedupe in place.
+  try {
+    const ddl = await store.execute({
+      sql: `SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'vanta_account_units'`,
+      args: [],
+    });
+    const createSql = String(ddl.rows[0]?.sql ?? "");
+    const cols = await store.execute({
+      sql: `SELECT name FROM pragma_table_info('vanta_account_units')`,
+      args: [],
+    });
+    const hasHash = (cols.rows as Array<{ name: string }>).some((c) => c.name === "email_hash");
+    const keyedOnEmail = /UNIQUE\s*\(\s*email\s*,/.test(createSql);
+
+    if (keyedOnEmail && hasHash) {
+      const count = await store.execute({
+        sql: `SELECT COUNT(*) n FROM vanta_account_units`,
+        args: [],
+      });
+      if (Number((count.rows[0] as { n: number }).n) === 0) {
+        // No units to lose: drop and let the DDL recreate it correctly.
+        await store.execute({ sql: `DROP TABLE vanta_account_units`, args: [] });
+        await store.execute({ sql: VANTA_ACCOUNT_UNITS_DDL, args: [] });
+      } else {
+        console.warn(
+          "[vanta] vanta_account_units still keys UNIQUE on the encrypted email — " +
+            "re-imports will duplicate. It holds rows whose email_hash cannot be " +
+            "recomputed from the ciphertext, so it was NOT rebuilt automatically."
+        );
+      }
+    }
+  } catch (err) {
+    console.warn("[vanta] account_units constraint migration skipped:", err);
+  }
+
+  // Drop the index that keyed on the encrypted email (rebuilt keyed on the hash
+  // by the DDL above); left in place it would let a duplicate ciphertext through.
+  try {
+    await store.execute({
+      sql: `DROP INDEX IF EXISTS idx_vanta_account_units_email`,
+      args: [],
+    });
+  } catch {
+    // Index never existed — safe to ignore
+  }
+
   // Migration: add image_url to vanta_categories (category images).
   try {
     await store.execute({
@@ -226,7 +327,8 @@ export async function runStoreMigrations(storeArg?: TursoHttpClient): Promise<vo
         (12, 'MITSUBISHI LANCER EVOLUTION X'),
         (13, 'HONDA CIVIC SEDAN (8TH GEN)'),
         (14, 'NISSAN GT-R (R35)'),
-        (15, 'AUDI RS4 AVANT (B8)'),
+        (15, 'AUDI RS4 AVANT (B8)'),
+
         (17, 'MERCEDES-BENZ C63 AMG (W204)'),
         (18, 'NISSAN SILVIA S15 / SPEC-R'),
         (19, 'MERCEDES-AMG GT S'),
@@ -234,15 +336,21 @@ export async function runStoreMigrations(storeArg?: TursoHttpClient): Promise<vo
         (21, 'JEEP WRANGLER RUBICON (JK)'),
         (22, 'BMW M6 GRAN COUPE (F06)'),
         (23, 'HYUNDAI VELOSTER TURBO'),
-        (24, 'PORSCHE PANAMERA TURBO'),,
+        (24, 'PORSCHE PANAMERA TURBO'),
+
+,
         (27, 'BUGATTI VEYRON 16.4'),
         (28, 'PORSCHE CAYENNE TURBO'),
         (29, 'HONDA CIVIC TYPE R (FN2 HATCHBACK)'),
         (30, 'BMW 5 SERIES / M5 (E39)'),
         (31, 'BMW 5 SERIES / M5 (E60)'),
-        (32, 'KOENIGSEGG AGERA R'),,
-        (35, 'FORD MUSTANG GT (5TH GEN)'),
-        (37, 'FORD TRANSIT VAN'),
+        (32, 'KOENIGSEGG AGERA R'),
+
+,
+        (35, 'FORD MUSTANG GT (5TH GEN)'),
+
+        (37, 'FORD TRANSIT VAN'),
+
         (39, 'DODGE CHARGER R/T (1970)'),
         (40, 'CHEVROLET CORVETTE C7 STINGRAY'),
         (41, 'MCLAREN P1'),
@@ -273,20 +381,31 @@ export async function runStoreMigrations(storeArg?: TursoHttpClient): Promise<vo
         (59, 'SMART FORTWO (W451)'),
         (60, 'CADILLAC ESCALADE'),
         (61, 'MERCEDES-BENZ S-CLASS (W221)'),
-        (62, 'DODGE CHARGER SRT HELLCAT (2015)'),
+        (62, 'DODGE CHARGER SRT HELLCAT (2015)'),
+
         (65, 'LAMBORGHINI GALLARDO SPYDER'),
-        (66, 'CHRYSLER 300C'),,
-        (70, 'SCANIA R-SERIES HEAVY TRUCK'),,,
+        (66, 'CHRYSLER 300C'),
+
+,
+        (70, 'SCANIA R-SERIES HEAVY TRUCK'),
+
+,
+,
         (74, 'PEUGEOT 308'),
         (76, 'BMW Z4 M ROADSTER (E85)'),
         (77, 'MINI COOPER S ROADSTER (R59)'),
         (81, 'SUBARU IMPREZA WRX STI WRC RALLY'),
-        (82, 'MITSUBISHI LANCER EVOLUTION IX'),,
+        (82, 'MITSUBISHI LANCER EVOLUTION IX'),
+
+,
         (85, 'FORD F-150 SVT RAPTOR'),
         (86, 'BMW X5 M (E53)'),
         (87, 'MERCEDES-BENZ CL 65 AMG'),
         (88, 'BMW M3 COUPE (E46)'),
-        (89, 'OPEL OMEGA B / VAUXHALL OMEGA'),,,
+        (89, 'OPEL OMEGA B / VAUXHALL OMEGA'),
+
+,
+,
         (99, 'LADA PRIORA'),
         (100, 'TOFAS SAHIN / KARTAL SLX'),
         (101, 'FORD F-650 TOW TRUCK'),
@@ -434,7 +553,8 @@ export async function runStoreMigrations(storeArg?: TursoHttpClient): Promise<vo
       sql: `INSERT OR IGNORE INTO vanta_cpm2_cars (code, name) VALUES
         (221, 'HONDA NSX-R (NA1 CLASSIC)'),
         (226, 'BMW 7 SERIES (G70 / I7)'),
-        (227, 'MERCEDES-AMG ONE'),
+        (227, 'MERCEDES-AMG ONE'),
+
         (236, 'CLASS A MOTORHOME / RV'),
         (241, 'LAFERRARI'),
         (243, 'JEEP GLADIATOR RUBICON'),
@@ -449,7 +569,8 @@ export async function runStoreMigrations(storeArg?: TursoHttpClient): Promise<vo
         (261, 'CHEVROLET SILVERADO 1500 TRAIL BOSS'),
         (262, 'TOYOTA CELICA GT-FOUR (ST205)'),
         (263, 'FORD MODEL A COUPE (1930)'),
-        (264, 'TOYOTA CAMRY (XV80 / 2025)'),
+        (264, 'TOYOTA CAMRY (XV80 / 2025)'),
+
         (266, 'MASERATI MC20'),
         (267, 'ALFA ROMEO STELVIO QUADRIFOGLIO'),
         (268, 'FIAT 500 ABARTH'),
@@ -458,7 +579,12 @@ export async function runStoreMigrations(storeArg?: TursoHttpClient): Promise<vo
         (271, 'DODGE CHARGER DAYTONA / SRT'),
         (272, 'TOYOTA SUPRA MK4 CUSTOM DRIFT BUILD'),
         (273, 'RAM 1500 TRX OFFROAD EDITION'),
-        (274, 'POLARIS RZR PRO XP BUGGY'),,,,,
+        (274, 'POLARIS RZR PRO XP BUGGY'),
+
+,
+,
+,
+,
         ))`,
       args: [],
     });
@@ -469,7 +595,69 @@ export async function runStoreMigrations(storeArg?: TursoHttpClient): Promise<vo
   // Seed batch 6 (codes 282-354)
   try {
     await store.execute({
-      sql: `INSERT OR IGNORE INTO vanta_cpm2_cars (code, name) VALUES,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+      sql: `INSERT OR IGNORE INTO vanta_cpm2_cars (code, name) VALUES
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
         ))`,
       args: [],
     });
@@ -480,7 +668,57 @@ export async function runStoreMigrations(storeArg?: TursoHttpClient): Promise<vo
   // Seed batch 7 (codes 352-409)
   try {
     await store.execute({
-      sql: `INSERT OR IGNORE INTO vanta_cpm2_cars (code, name) VALUES,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+      sql: `INSERT OR IGNORE INTO vanta_cpm2_cars (code, name) VALUES
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
+,
         ))`,
       args: [],
     });

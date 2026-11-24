@@ -5,6 +5,7 @@ import {
   getProduct,
   listProducts,
   listCategories,
+  getStoreStats,
 } from "@/lib/store/products";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +29,10 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   // Next 16: params is a Promise — must be awaited.
   const { id } = await params;
   const product = await getProduct(Number(id)).catch(() => null);
-  if (product) return <ProductPageClient productId={id} />;
+  if (product) {
+    const stats = await getStoreStats().catch(() => null);
+    return <ProductPageClient productId={id} storeStats={stats} />;
+  }
 
   const categories = await listCategories();
   const category = categories.find((c) => c.id === Number(id));

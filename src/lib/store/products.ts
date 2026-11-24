@@ -254,6 +254,37 @@ export async function listProducts({ onlyPublished = true, featuredOnly = false,
   return result.rows.map(rowToProduct);
 }
 
+/**
+ * Store statistics for the product page footer — real counts, no vanity:
+ * verified orders sold, active listings, total units on shelves.
+ */
+export async function getStoreStats(): Promise<{
+  soldCount: number;
+  activeListings: number;
+  totalStock: number;
+}> {
+  const db = await getStoreDb();
+  const [sold, listed, stock] = await Promise.all([
+    db.execute({
+      sql: `SELECT COUNT(*) AS n FROM vanta_orders WHERE payment_state = 'verified'`,
+      args: [],
+    }),
+    db.execute({
+      sql: `SELECT COUNT(*) AS n FROM vanta_products WHERE is_published = 1`,
+      args: [],
+    }),
+    db.execute({
+      sql: `SELECT COALESCE(SUM(stock_quantity), 0) AS n FROM vanta_products WHERE is_published = 1`,
+      args: [],
+    }),
+  ]);
+  return {
+    soldCount: Number(sold.rows[0]?.n ?? 0),
+    activeListings: Number(listed.rows[0]?.n ?? 0),
+    totalStock: Number(stock.rows[0]?.n ?? 0),
+  };
+}
+
 /** Remove the "New" tag from products created more than 3 days ago. */
 async function expireOldNewTags(): Promise<void> {
   const db = await getStoreDb();

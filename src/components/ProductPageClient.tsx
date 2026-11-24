@@ -32,7 +32,16 @@ const SPEC_ROWS: Array<{
   { key: "unlockedBodykits", label: "Bodykit unlocks", fmt: (p) => (p.unlockedBodykits ? "Yes" : "—") },
 ];
 
-export function ProductPageClient({ productId }: { productId: string }) {
+/** Stars paid (verified, Stars method) that unlocks lifetime free access. */
+const LOYALTY_THRESHOLD_STARS = 500;
+
+export function ProductPageClient({
+  productId,
+  storeStats,
+}: {
+  productId: string;
+  storeStats?: { soldCount: number; activeListings: number; totalStock: number } | null;
+}) {
   const [product, setProduct] = useState<VantaProduct | null>(null);
   const [media, setMedia] = useState<{ publicUrl: string }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,9 +50,29 @@ export function ProductPageClient({ productId }: { productId: string }) {
   const [carouselWidth, setCarouselWidth] = useState(0);
   const [cartAdded, setCartAdded] = useState(false);
   const cartAddTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Loyalty is DERIVED, not a stored balance: stars actually paid on verified
+  // orders, converted with the same pricing the shop uses. Anonymous visitors
+  // (no resolvable customer) get no bar rather than a fake one.
+  const [loyaltyStars, setLoyaltyStars] = useState<number | null>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Loyalty: stars paid on THIS customer's verified orders.
+    fetch("/api/store/orders")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        const orders = data?.orders ?? [];
+        if (!Array.isArray(orders) || orders.length === 0) {
+          setLoyaltyStars(null);
+          return;
+        }
+        const starsCents = orders
+          .filter((o: { paymentState?: string; paymentMethod?: string }) =>
+            o.paymentState === "verified" && o.paymentMethod === "stars")
+          .reduce((sum: number, o: { amountCents?: number }) => sum + Number(o.amountCents ?? 0), 0);
+        setLoyaltyStars(approxStarsForCents(starsCents));
+      })
+      .catch(() => setLoyaltyStars(null));
     const t = setTimeout(async () => {
       try {
         const [pRes, mRes] = await Promise.all([
@@ -294,6 +323,52 @@ export function ProductPageClient({ productId }: { productId: string }) {
               Secured checkout · EFT, PayFast or Telegram Stars
             </p>
           </section>
+
+          {/* Store statistics — real counts, computed server-side */}
+          {storeStats ? (
+            <section className="mt-6 grid grid-cols-3 gap-2">
+              {[
+                { label: "Sold", value: storeStats.soldCount },
+                { label: "Listings", value: storeStats.activeListings },
+                { label: "In stock", value: storeStats.totalStock },
+              ].map((stat) => (
+                <div
+                  key={stat.label}
+                  className="rounded-xl border border-border bg-background py-3 text-center"
+                >
+                  <p className="text-lg font-bold text-foreground">
+                    {stat.value.toLocaleString("en-ZA")}
+                  </p>
+                  <p className="text-[11px] text-ink-soft">{stat.label}</p>
+                </div>
+              ))}
+            </section>
+          ) : null}
+
+          {/* Loyalty — derived from real Stars spend; the threshold unlocks lifetime free */}
+          {loyaltyStars !== null ? (
+            <section className="mt-4 rounded-xl border border-border bg-background p-4">
+              <div className="mb-2 flex items-baseline justify-between">
+                <p className="text-sm font-semibold text-foreground">Lifetime free access</p>
+                <p className="text-xs text-ink-soft">
+                  {Math.min(loyaltyStars, LOYALTY_THRESHOLD_STARS)} / {LOYALTY_THRESHOLD_STARS} stars
+                </p>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+                <div
+                  className="h-full rounded-full bg-accent"
+                  style={{
+                    width: `${Math.min(100, (loyaltyStars / LOYALTY_THRESHOLD_STARS) * 100)}%`,
+                  }}
+                />
+              </div>
+              <p className="mt-2 text-[11px] text-ink-soft">
+                {loyaltyStars >= LOYALTY_THRESHOLD_STARS
+                  ? "Unlocked — you have lifetime free access."
+                  : `${Math.max(0, LOYALTY_THRESHOLD_STARS - loyaltyStars)} more stars to unlock lifetime free access.`}
+              </p>
+            </section>
+          ) : null}
         </div>
       </div>
     </StoreShell>

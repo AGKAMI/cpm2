@@ -22,6 +22,7 @@ import { hasDiscount, discountedPriceCents, approxStarsForCents } from "@/lib/st
 import { StoreShell } from "@/components/StoreShell";
 import { HeartToggle } from "@/components/HeartToggle";
 import { addToCartLocal } from "@/lib/store/cart-client";
+import { GarageLead } from "./GarageLead";
 import { Button } from "@/components/ui/Button";
 import { CartPlusIcon } from "@/components/ui/icons";
 import { StarIcon } from "@/components/StarIcon";
@@ -521,6 +522,7 @@ export function StoreHomeClient({
 
   return (
     <StoreShell dock={null}>
+      <GarageLead />
       {content}
       {error && (
         <div className="p-6 text-center">

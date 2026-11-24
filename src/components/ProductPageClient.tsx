@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { vantaApi, formatPrice, type VantaProduct } from "@/lib/store/client";
 import { approxStarsForCents } from "@/lib/store/pricing";
 import { StoreShell } from "@/components/StoreShell";
+import { AccountNotice } from "@/components/AccountNotice";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 import { addToCartLocal } from "@/lib/store/cart-client";
@@ -323,6 +324,9 @@ export function ProductPageClient({
               Secured checkout · EFT, PayFast or Telegram Stars
             </p>
           </section>
+
+          {/* Account-management warning — only for credential-delivered stock */}
+          {product?.kind === "account" ? <AccountNotice /> : null}
 
           {/* Store statistics — real counts, computed server-side */}
           {storeStats ? (

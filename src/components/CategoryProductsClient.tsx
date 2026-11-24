@@ -8,6 +8,7 @@ import Link from "next/link";
 import { StoreShell } from "@/components/StoreShell";
 import { formatPrice, type VantaProduct } from "@/lib/store/client";
 import { approxStarsForCents } from "@/lib/store/pricing";
+import { AccountNotice } from "@/components/AccountNotice";
 
 export function CategoryProductsClient({
   categoryName,
@@ -71,6 +72,7 @@ export function CategoryProductsClient({
                     {stars ? (
                       <p className="text-[11px] text-ink-faint">{stars} stars</p>
                     ) : null}
+                    {p.kind === "account" ? <AccountNotice compact /> : null}
                     <div className="mt-auto flex items-center justify-between pt-2">
                       <span className="text-sm font-bold text-foreground">
                         {formatPrice(p.basePriceCents, p.currency)}

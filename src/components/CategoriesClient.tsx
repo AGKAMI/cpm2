@@ -335,7 +335,7 @@ export function CategoriesClient({
                         </span>
                       )}
                       <span
-                        className="flex items-center gap-1 rounded-md border border-border px-2 py-0.5 text-sm font-bold text-foreground tabular-nums"
+                        className="flex shrink-0 whitespace-nowrap items-center gap-1 rounded-md border border-border px-2 py-0.5 text-sm font-bold text-foreground tabular-nums"
                         title="Telegram Stars"
                       >
                         <StarIcon className="w-4 h-4" />

@@ -1800,7 +1800,11 @@ html {
   transition: all 250ms ease-out;
   display: flex;
   flex-direction: column;
-  min-width: 200px;
+  /* No min-width floor on purpose. At xl the 5-column grid gives each slot
+     only ~237px, so a 200px floor leaves 37px of headroom -- add a 2xl
+     breakpoint or widen padding and cards get forced wider than their slot,
+     overflowing the grid regardless of how few columns it declares.
+     Column count alone must govern card width. */
 }
 .vanta-card:hover {
   border-color: var(--brand-gold);

@@ -608,7 +608,7 @@ const ProductCard = React.memo(
                 )}
                 <h3 className="vanta-card-title">
                   {product.name}</h3>
-                <div className="flex items-end gap-2">
+                <div className="flex flex-wrap items-end gap-2">
                   <HeartToggle productId={product.id} />
                   {hasDiscount(product) ? (
                     <>
@@ -626,7 +626,7 @@ const ProductCard = React.memo(
                     </span>
                   )}
                   <span
-                    className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-sm font-bold text-foreground tabular-nums"
+                    className="flex shrink-0 whitespace-nowrap items-center gap-1 rounded-md border border-border px-2 py-1 text-sm font-bold text-foreground tabular-nums"
                     title="Telegram Stars"
                   >
                     <StarIcon className="w-4 h-4" />
@@ -719,7 +719,7 @@ function SkeletonFeaturedCard() {
           <div className="flex-1 min-w-0">
             <SkeletonBar className="h-2.5 w-20 rounded mb-1.5" />
             <SkeletonBar className="h-4 w-3/4 rounded mb-2" />
-            <div className="flex items-end gap-2">
+            <div className="flex flex-wrap items-end gap-2">
               <SkeletonBar className="w-5 h-5 rounded-full" />
               <SkeletonBar className="h-[18px] w-16 rounded" />
             </div>

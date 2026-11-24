@@ -13,6 +13,7 @@
 
 import Link from "next/link";
 import type { VantaProduct, VantaCategory } from "@/lib/store/client";
+import { HubIdentity } from "@/components/HubIdentity";
 
 /** The hub is NOT a shop window, so it does not take StoreHomeData -- it needs
  *  the raw catalogue to derive its discovery shelves plus the promotions feed. */
@@ -164,15 +165,8 @@ export async function StoreHub({ products, categories: _categories }: StoreHubDa
     <main className="mx-auto w-full max-w-3xl px-4 pb-24">
       {/* ---------- identity ---------- */}
       <header className="flex items-center gap-3 py-5">
-        <div className="grid h-11 w-11 place-items-center rounded-full border border-border bg-secondary">
-          <IconGlobe />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[11px] uppercase tracking-[0.16em] text-ink-soft">
-            {greeting()}, AG KAMI
-          </p>
-          <p className="truncate text-[11px] text-ink-faint">Welcome back to CPM STORE.</p>
-        </div>
+        {/* Real profile — every customer sees their own name, never a hardcode */}
+        <HubIdentity />
         <Link
           href="/store/notifications"
           aria-label="Notifications"
@@ -188,36 +182,6 @@ export async function StoreHub({ products, categories: _categories }: StoreHubDa
           <IconCart />
         </Link>
       </header>
-
-      {/* ---------- balance ---------- */}
-      <section className="rounded-3xl border border-border bg-secondary p-5">
-        <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-ink-soft">
-          <IconWallet />
-          Available balance
-        </div>
-        <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
-          <div className="flex items-baseline gap-3">
-            <span className="text-4xl font-bold tabular-nums text-foreground">0.00</span>
-            <span className="text-xs font-bold uppercase tracking-[0.16em] text-ink-soft">USDT</span>
-            <span className="flex items-center gap-1 text-sm font-bold text-primary tabular-nums">
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2l2.6 6.3 6.8.5-5.2 4.4 1.6 6.6L12 16.6 6.2 19.8l1.6-6.6L2.6 8.8l6.8-.5L12 2Z" />
-              </svg>
-              0 Stars
-            </span>
-          </div>
-          <button
-            type="button"
-            className="rounded-full bg-primary px-5 py-3 text-xs font-bold uppercase tracking-[0.16em] text-primary-foreground hover:brightness-110"
-          >
-            + Add funds
-          </button>
-        </div>
-        <p className="mt-3 flex items-center gap-2 text-[11px] text-ink-faint">
-          <IconPin />
-          @AG_KAMI
-        </p>
-      </section>
 
       {/* ---------- game picker ---------- */}
       <nav aria-label="Browse" className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">

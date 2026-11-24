@@ -43,7 +43,9 @@ const productSchema = z.object({
   unlockedBodykits: z.boolean().default(false), // Design unlocks bodykits
   // Which catalogue the product belongs to; without it the server default (cpm2) applies.
   game: z.enum(["cpm1", "cpm2"]).optional(),
-  kind: z.enum(["car", "account"]).optional(),
+  // 'service' must be settable here or /store/{game}/services can never fill:
+  // sections resolve from an explicit product kind, never a name match.
+  kind: z.enum(["car", "account", "service"]).optional(),
 });
 
 export const dynamic = "force-dynamic";

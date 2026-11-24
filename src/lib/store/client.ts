@@ -271,7 +271,7 @@ export type VantaProduct = {
   /** Catalogue the product belongs to. */
   game?: "cpm1" | "cpm2";
   /** What kind of thing is being sold — a car or a game account. */
-  kind?: "car" | "account";
+  kind?: "car" | "account" | "service";
   name: string;
   description: string;
   basePriceCents: number;

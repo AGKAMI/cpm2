@@ -10,22 +10,6 @@
 import Link from "next/link";
 import type { VantaProduct } from "@/lib/store/client";
 
-const SERVICE_HINTS = [
-  "calliper",
-  "headlight",
-  "money injection",
-  "coin injection",
-  "injection",
-  "unban",
-  "boost",
-  "service",
-  "mod",
-  "engine",
-  "paint",
-  "rim",
-  "tune",
-];
-
 export type SectionKey = "accounts" | "cars" | "services";
 
 export function resolveSection(key: string): SectionKey | null {
@@ -33,7 +17,14 @@ export function resolveSection(key: string): SectionKey | null {
   return null;
 }
 
-/** Which products belong to this section, for this game. */
+/**
+ * Which products belong to this section, for this game.
+ *
+ * Sections are an EXPLICIT product kind, never a name match: guessing services
+ * from the product name swept real cars (Toyota Fortuner) into the services
+ * shelf. So services = kind 'service', accounts = kind 'account', and cars is
+ * the default catch-all for everything else in that game.
+ */
 export function productsForSection(
   products: VantaProduct[],
   game: "cpm1" | "cpm2",
@@ -41,18 +32,9 @@ export function productsForSection(
 ): VantaProduct[] {
   const inGame = products.filter((p) => (p.game ?? "cpm2") === game && p.isPublished);
   if (section === "accounts") return inGame.filter((p) => p.kind === "account");
-  if (section === "services") {
-    return inGame.filter((p) => {
-      const hay = (p.name ?? "").toLowerCase();
-      return p.kind !== "account" && SERVICE_HINTS.some((h) => hay.includes(h));
-    });
-  }
+  if (section === "services") return inGame.filter((p) => p.kind === "service");
   // cars = the rest of the game's catalogue
-  return inGame.filter(
-    (p) =>
-      p.kind !== "account" &&
-      !SERVICE_HINTS.some((h) => (p.name ?? "").toLowerCase().includes(h)),
-  );
+  return inGame.filter((p) => p.kind !== "account" && p.kind !== "service");
 }
 
 const SECTION_META: Record<SectionKey, { title: string; blurb: string }> = {
@@ -109,9 +91,9 @@ export function GameSectionList({
                   }`}
                 >
                   <div className="aspect-video w-full overflow-hidden border-b border-border bg-secondary">
-                    {p.imageUrl ? (
+                    {p.coverUrl ?? p.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={p.imageUrl} alt={p.name} className="h-full w-full object-cover" />
+                      <img src={p.coverUrl ?? p.imageUrl ?? ""} alt={p.name} className="h-full w-full object-cover" />
                     ) : (
                       <span className="grid h-full w-full place-items-center text-2xl font-bold text-ink-faint">
                         {p.name.slice(0, 1)}

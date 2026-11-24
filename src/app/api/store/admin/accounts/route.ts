@@ -60,8 +60,18 @@ export async function POST(request: Request) {
     await requireStoreAdmin(request);
     const body = importSchema.parse(await readJson(request));
     const result = await importAccountUnits({ ...body, productId: body.productId ?? null });
-    await syncProductStock(body.productId ?? 0);
-    return ok({ imported: result.inserted, skipped: result.skipped, rejected: result.rejected }, 201);
+        await syncProductStock(body.productId ?? 0);
+        // `duplicates` is carried through: dropping it here made a re-import report
+        // 0/0 and look like nothing happened, when the truth is "already had these".
+        return ok(
+          {
+            imported: result.inserted,
+            duplicates: result.duplicates,
+            skipped: result.skipped,
+            rejected: result.rejected,
+          },
+          201,
+        );
   } catch (err) {
     return fail(err);
   }

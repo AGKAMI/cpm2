@@ -93,6 +93,45 @@ async function persistDataUrlImage(dataUrl: string): Promise<string> {
   return `/api/store/admin/uploads/${filename}`;
 }
 
+/**
+ * Admin product list — every row including unpublished, carrying kind + game.
+ * The public /api/store/products endpoint only serves published rows, so it
+ * can never drive an admin selector; without this GET the credential importer
+ * at /store/admin/accounts had an empty product <select> and could only do
+ * pool-only imports with no product attached.
+ */
+export async function GET(request: Request) {
+  try {
+    await requireStoreAdmin(request);
+    const store = await getStoreDb();
+    const result = await store.execute({
+      sql: `SELECT * FROM vanta_products ORDER BY id DESC`,
+      args: [], // this store client requires args to be present, even when empty
+    });
+    // SELECT * + defensive mapping: a rename in store/products.ts must not
+    // blank the admin's dropdown. libsql returns int columns as strings, so
+    // every numeric read is wrapped in Number().
+    const products = result.rows.map((r) => {
+      const row = r as Record<string, unknown>;
+      const stock =
+        Number(row.stock_qty ?? row.stockQuantity ?? row.stock ?? row.stock_quantity ?? 0) || 0;
+      return {
+        id: Number(row.id),
+        name: String(row.name ?? ""),
+        kind: String(row.kind ?? "car"),
+        game: String(row.game ?? "cpm2"),
+        stockQuantity: stock,
+      };
+    });
+    return ok({ products });
+  } catch {
+    return fail({
+      status: 403,
+      body: { error: { code: "not_admin", message: "Store admin session required." } },
+    });
+  }
+}
+
 export async function POST(request: Request) {
   try {
     await requireStoreAdmin(request);

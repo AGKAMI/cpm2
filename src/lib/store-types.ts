@@ -38,7 +38,7 @@ export type Category = {
     createdAt: string;
   };
 
-export type ProductKind = "car" | "account";
+export type ProductKind = "car" | "account" | "service";
 export type ProductGame = "cpm1" | "cpm2";
 
 export type Product = {

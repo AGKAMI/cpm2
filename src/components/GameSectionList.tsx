@@ -9,6 +9,8 @@
 
 import Link from "next/link";
 import type { VantaProduct } from "@/lib/store/client";
+import { formatPrice } from "@/lib/store/client";
+import { approxStarsForCents } from "@/lib/store/pricing";
 
 export type SectionKey = "accounts" | "cars" | "services";
 
@@ -105,7 +107,13 @@ export function GameSectionList({
                       {p.name}
                     </span>
                     <span className="mt-auto text-[12px] font-bold tabular-nums text-foreground">
-                      {soldOut ? "Sold out" : `R ${(p.basePriceCents / 100).toFixed(2)}`}
+                      {soldOut
+                        ? "Sold out"
+                        : `${formatPrice(p.basePriceCents, p.currency)}${
+                            approxStarsForCents(p.basePriceCents)
+                              ? ` (${approxStarsForCents(p.basePriceCents)} stars)`
+                              : ""
+                          }`}
                     </span>
                   </div>
                 </Link>

@@ -1,7 +1,8 @@
 /**
  * CategoryProductsClient — a category's product list, reference-style:
- * image, name, price, units in stock, stars and a direct "Buy now" on every
- * card (checkout straight from the list, like the reference store).
+ * compact grid cards (max 5 per row, wrapping), image, name, price with stars
+ * inline, units in stock, and a direct "Buy now" on every card (checkout
+ * straight from the list, like the reference store).
  */
 
 import Link from "next/link";
@@ -36,18 +37,20 @@ export function CategoryProductsClient({
             Nothing on this shelf yet — check back soon.
           </p>
         ) : (
-          <div className="grid gap-3">
+          /* Max 5 cards per row; extra cards append to the next row.
+             2-up on phones (like the reference store), scaling to 5 on wide. */
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
             {products.map((p) => {
               const stars = approxStarsForCents(p.basePriceCents);
               const soldOut = p.stockQuantity === 0;
               return (
                 <article
                   key={p.id}
-                  className="flex gap-3 rounded-xl border border-border bg-background p-3"
+                  className="flex flex-col overflow-hidden rounded-xl border border-border bg-background"
                 >
                   <Link
                     href={`/store/products/${p.id}`}
-                    className="h-20 w-28 shrink-0 overflow-hidden rounded-lg border border-border bg-secondary"
+                    className="block aspect-[4/3] overflow-hidden border-b border-border bg-secondary"
                   >
                     {p.coverUrl ? (
                       <img
@@ -57,37 +60,40 @@ export function CategoryProductsClient({
                         loading="lazy"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-lg font-bold text-ink-faint">
+                      <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-ink-faint">
                         {p.name.charAt(0)}
                       </div>
                     )}
                   </Link>
-                  <div className="flex min-w-0 flex-1 flex-col">
+                  <div className="flex flex-1 flex-col p-2.5">
                     <Link href={`/store/products/${p.id}`} className="min-w-0">
-                      <h2 className="truncate text-sm font-semibold text-foreground">{p.name}</h2>
+                      <h2 className="truncate text-xs font-semibold text-foreground" title={p.name}>
+                        {p.name}
+                      </h2>
                     </Link>
-                    <p className="mt-0.5 text-xs text-ink-soft">
-                      {soldOut ? "Sold out" : `${p.stockQuantity} unit${p.stockQuantity === 1 ? "" : "s"} in stock`}
+                    <p className="mt-0.5 text-[11px] text-ink-soft">
+                      {soldOut
+                        ? "Sold out"
+                        : `${p.stockQuantity.toLocaleString("en-ZA")} unit${p.stockQuantity === 1 ? "" : "s"} in stock`}
                     </p>
-
                     {p.kind === "account" ? <AccountNotice compact /> : null}
-                    <div className="mt-auto flex items-center justify-between pt-2">
+                    <div className="mt-auto flex flex-wrap items-center justify-between gap-1 pt-2">
                       <span className="text-sm font-bold text-foreground">
                         {formatPrice(p.basePriceCents, p.currency)}
                         {stars ? (
-                          <span className="ml-1 text-xs font-normal text-ink-soft">
+                          <span className="ml-1 text-[11px] font-normal text-ink-soft">
                             ({stars} stars)
                           </span>
                         ) : null}
                       </span>
                       {soldOut ? (
-                        <span className="rounded-md bg-secondary px-3 py-1.5 text-xs font-medium text-ink-faint">
+                        <span className="rounded-md bg-secondary px-2.5 py-1 text-[11px] font-medium text-ink-faint">
                           Sold out
                         </span>
                       ) : (
                         <Link
                           href={`/store/checkout/${p.id}`}
-                          className="rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-white"
+                          className="rounded-md bg-accent px-2.5 py-1 text-[11px] font-semibold text-white"
                         >
                           Buy now
                         </Link>

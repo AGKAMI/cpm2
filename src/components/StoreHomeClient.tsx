@@ -106,14 +106,19 @@ export function StoreHomeClient({
   // User rule: a product with no renderable image is never shown. Filter
   // every section once here so hero counts, carousel dots and grids all
   // agree on the same list.
-  const hasCover = useCallback(
-    (p: VantaProduct) => Boolean(coverMap[p.id]) && !brokenCovers.has(p.id),
-    [coverMap, brokenCovers],
+  //
+  // A product with NO uploaded media MUST still appear — ProductCard renders a
+  // generated name thumbnail when coverImage is null. Filtering on cover
+  // presence hid every media-less product from the whole storefront (all 48
+  // premium CPM1 cars, for one). Only genuinely BROKEN covers are dropped.
+  const notBroken = useCallback(
+    (p: VantaProduct) => !brokenCovers.has(p.id),
+    [brokenCovers],
   );
-  const featured = useMemo(() => featuredRaw.filter(hasCover), [featuredRaw, hasCover]);
-  const allProducts = useMemo(() => allProductsRaw.filter(hasCover), [allProductsRaw, hasCover]);
-  const newArrivals = useMemo(() => newArrivalsRaw.filter(hasCover), [newArrivalsRaw, hasCover]);
-  const onSale = useMemo(() => onSaleRaw.filter(hasCover), [onSaleRaw, hasCover]);
+  const featured = useMemo(() => featuredRaw.filter(notBroken), [featuredRaw, notBroken]);
+  const allProducts = useMemo(() => allProductsRaw.filter(notBroken), [allProductsRaw, notBroken]);
+  const newArrivals = useMemo(() => newArrivalsRaw.filter(notBroken), [newArrivalsRaw, notBroken]);
+  const onSale = useMemo(() => onSaleRaw.filter(notBroken), [onSaleRaw, notBroken]);
 
   // Track which carousel item is currently visible via scroll position.
   // scroll-snap carousels align items to the start, so scrollLeft / step

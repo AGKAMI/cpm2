@@ -6,13 +6,18 @@
 import { getStoreDb } from "../store-db.ts";
 import type { Product, Category, ProductMedia, Inventory, ProductInput, Exclusivity, AvailabilityState, Promotion, PromotionInput } from "../store-types.ts";
 
-export type ProductKind = "car" | "account";
+export type ProductKind = "car" | "account" | "service";
 export type ProductGame = "cpm1" | "cpm2";
 
 /** Column values are trusted only as far as they parse; anything unexpected
  *  falls back to the default instead of propagating garbage into the UI. */
 function safeKind(v: unknown): ProductKind {
-  return v === "account" ? "account" : "car";
+  // 'service' must pass through, not collapse to 'car'. The fallback used to
+  // be non-account => car, which silently moved every service product onto the
+  // cars shelf and emptied /store/{game}/services even with a correct DB row.
+  if (v === "account") return "account";
+  if (v === "service") return "service";
+  return "car";
 }
 function safeGame(v: unknown): ProductGame {
   return v === "cpm1" ? "cpm1" : "cpm2";

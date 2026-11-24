@@ -71,16 +71,17 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     await createInventory(input.productId, product.stockQuantity);
   }
 
-  // Atomic stock reservation
-  let reserved = await reserveStock(input.productId, input.quantity);
-  if (!reserved) {
-    // Reservation failed — possibly a leaked reservation from a previous
-    // failed checkout attempt (stock reserved but order insert failed).
-    // Release and retry once.
-    await releaseStock(input.productId, input.quantity);
-    reserved = await reserveStock(input.productId, input.quantity);
-  }
-  if (!reserved) {
+  // Atomic stock reservation.
+  //
+  // NOTE: there is deliberately NO "release and retry" here. reserveStock()
+  // failing means the pool is full — most often because OTHER live orders hold
+  // that stock. Releasing input.quantity off the shared counter unconditionally
+  // would steal those orders' reservations, which is precisely the oversell
+  // this fix removes. A reservation genuinely leaked by a failed order insert
+  // is reclaimed by the expiry sweep (listExpiredReservations -> 
+  // expireReservation), which is the only component that can tell a leaked
+  // hold from a legitimate one.
+  if (!(await reserveStock(input.productId, input.quantity))) {
     throw new ApiError(400, "INSUFFICIENT_STOCK", "Insufficient stock available.");
   }
 
@@ -173,30 +174,44 @@ export async function confirmPayment(orderId: string): Promise<void> {
    * Payment verified server-side. Move reserved stock to confirmed deduction,
    * advance order state to payment_confirmed.
    */
+  const db = await getStoreDb();
   const order = await getOrder(orderId);
   if (!order) throw new Error("Order not found");
-  if (order.paymentState === "verified") return; // idempotent
-  // Mirror rejectPayment's guard. Without this, an order the admin already
-  // REJECTED could be verified again. rejectPayment calls releaseStock(), so
-  // reserved_quantity is already back in the pool — then confirmStockDeduction
-  // subtracts from reserved_quantity AGAIN, stealing units from UNRELATED live
-  // orders and inflating available stock.
-  //
-  // Proven live: on_hand 10 -> A reserves 2, B reserves 3 -> reject A (reserved 3)
-  // -> verify A (reserved 1, on_hand 8). B is still owed 3, so a following order
-  // for 6 units was committed against only 5 real ones: an oversell. The order
-  // state also flips cancelled -> payment_confirmed and the customer is re-notified
-  // with payment_verified for an order they were told was cancelled.
-  if (order.paymentState === "rejected" || order.orderState === "cancelled") {
-    throw new Error("Payment was rejected; reinstate the order before verifying");
+  if (order.paymentState === "verified") return; // idempotent (fast path)
+
+  // ONE-SHOT + RACE-FREE: only the caller that flips payment_state performs the
+  // deduction. PayFast retries the ITN and the admin can double-click Verify —
+  // either way the second caller finds the flip already done and returns. The
+  // previous read-then-deduct pattern let two callers that both read 'pending'
+  // each run confirmStockDeduction, selling the same units twice.
+  const flipped = await db.execute({
+    sql: `UPDATE vanta_orders
+          SET payment_state = 'verified', updated_at = ?
+          WHERE id = ?
+            AND payment_state NOT IN ('verified', 'rejected', 'expired')`,
+    args: [nowIso(), orderId],
+  });
+  if (flipped.affectedRowCount === 0) {
+    // Lost the race or already terminal — re-read to decide which.
+    const fresh = await getOrder(orderId);
+    if (fresh?.paymentState === "verified") return; // idempotent success
+    throw new Error("Payment was rejected or expired; reinstate the order before verifying");
   }
 
   const inventory = await getInventory(order.productId);
   if (inventory) {
-    await confirmStockDeduction(order.productId, order.quantity);
+    const deducted = await confirmStockDeduction(order.productId, order.quantity);
+    // confirmStockDeduction now refuses rather than clamping when the counters
+    // cannot cover the deduction. Reaching that state means inventory no longer
+    // reflects reality, so verifying the order would hand over stock that was
+    // never subtracted — surface it instead of marking a paid order complete.
+    if (!deducted) {
+      throw new Error(
+        `Inventory could not cover the deduction for product ${order.productId} (qty ${order.quantity}) — the order was left unverified for manual review.`
+      );
+    }
   }
 
-  await updatePaymentState(orderId, "verified");
   await updateOrderState(orderId, "payment_confirmed");
 }
 
@@ -204,17 +219,36 @@ export async function expireReservation(orderId: string): Promise<void> {
   /**
    * Reservation expired without payment. Release stock, mark order cancelled.
    */
+  const db = await getStoreDb();
   const order = await getOrder(orderId);
   if (!order) return;
   if (order.paymentState === "verified") return; // paid — don't release
+  // Same one-release-per-order rule as rejectPayment: an order that already
+  // reached a terminal state has had its stock returned, so releasing again
+  // would take units from OTHER orders. The expiry sweep must be safe to
+  // re-run over the same row.
+  if (
+    order.paymentState === "rejected" ||
+    order.paymentState === "expired" ||
+    order.orderState === "cancelled"
+  ) {
+    return;
+  }
+
+  // RACE-FREE: conditional flip — only the caller that moves the row releases.
+  const flipped = await db.execute({
+    sql: `UPDATE vanta_orders
+          SET payment_state = 'expired', order_state = 'cancelled', updated_at = ?
+          WHERE id = ?
+            AND payment_state = 'pending'`,
+    args: [nowIso(), orderId],
+  });
+  if (flipped.affectedRowCount === 0) return; // lost the race or already terminal
 
   const inventory = await getInventory(order.productId);
   if (inventory) {
     await releaseStock(order.productId, order.quantity);
   }
-
-  await updatePaymentState(orderId, "expired");
-  await updateOrderState(orderId, "cancelled");
 }
 
 export async function listExpiredReservations(): Promise<Order[]> {
@@ -248,18 +282,45 @@ export async function rejectPayment(orderId: string): Promise<void> {
   /***
    * Admin rejects an EFT payment (proof invalid / not received).
    * Release reserved stock, mark payment rejected, order cancelled.
+   *
+   * Idempotent: a second reject finds the stock ALREADY back in the pool and
+   * must not release it a second time. releaseStock() subtracts from one
+   * shared aggregate, so a blind second release steals units that belong to
+   * other live orders — reproduced live (reserved 3 -> 1 after a double
+   * reject, then an order for 5 was committed against only 5 real units:
+   * an oversell by 3). Terminal-state check rather than a throw so a
+   * double-clicked Reject in the admin UI returns success, not an error.
    */
+  const db = await getStoreDb();
   const order = await getOrder(orderId);
   if (!order) throw new Error("Order not found");
   if (order.paymentState === "verified") throw new Error("Payment already verified");
+  if (
+    order.paymentState === "rejected" ||
+    order.paymentState === "expired" ||
+    order.orderState === "cancelled"
+  ) {
+    return;
+  }
+
+  // RACE-FREE: the flip itself is conditional, so only the caller that actually
+  // moves the row performs releaseStock. The guard above covers a sequential
+  // double-click; this covers two rejects that BOTH read 'pending' — without
+  // it, both pass the guard and both release.
+  const flipped = await db.execute({
+    sql: `UPDATE vanta_orders
+          SET payment_state = 'rejected', order_state = 'cancelled', updated_at = ?
+          WHERE id = ?
+            AND payment_state NOT IN ('rejected', 'expired')
+            AND order_state NOT IN ('cancelled', 'refunded')`,
+    args: [nowIso(), orderId],
+  });
+  if (flipped.affectedRowCount === 0) return; // lost the race — the winner releases
 
   const inventory = await getInventory(order.productId);
   if (inventory) {
     await releaseStock(order.productId, order.quantity);
   }
-
-  await updatePaymentState(orderId, "rejected");
-  await updateOrderState(orderId, "cancelled");
 }
 
 export async function setDeliveryEvidence(orderId: string, evidenceUrl: string): Promise<void> {

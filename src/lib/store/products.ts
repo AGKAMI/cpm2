@@ -348,27 +348,41 @@ export async function reserveStock(productId: number, quantity: number): Promise
   return result.affectedRowCount > 0;
 }
 
-export async function releaseStock(productId: number, quantity: number): Promise<void> {
-  const db = await getStoreDb();
-  await db.execute({
-    sql: `UPDATE vanta_inventory
-          SET reserved_quantity = MAX(0, reserved_quantity - ?), version = version + 1, updated_at = ?
-          WHERE product_id = ?`,
-    args: [quantity, new Date().toISOString(), productId],
-  });
-}
-
-export async function confirmStockDeduction(productId: number, quantity: number): Promise<void> {
+export async function releaseStock(productId: number, quantity: number): Promise<boolean> {
   /**
-   * Called after payment confirmed: move reserved stock out of available pool permanently.
+   * Return a reservation to the pool. The `reserved_quantity >= ?` guard is
+   * load-bearing: without it, MAX(0, ...) silently clamps a release that was
+   * never owed and the caller believes stock came back when it did not.
+   * `reserved_quantity` is one shared aggregate for the whole product, so a
+   * release this guard refuses is a release that would have taken another
+   * order's units. Returns false when there was nothing that large reserved.
    */
   const db = await getStoreDb();
-  await db.execute({
+  const result = await db.execute({
     sql: `UPDATE vanta_inventory
-          SET stock_quantity = stock_quantity - ?, reserved_quantity = MAX(0, reserved_quantity - ?), version = version + 1, updated_at = ?
-          WHERE product_id = ?`,
-    args: [quantity, quantity, new Date().toISOString(), productId],
+          SET reserved_quantity = reserved_quantity - ?, version = version + 1, updated_at = ?
+          WHERE product_id = ? AND reserved_quantity >= ?`,
+    args: [quantity, new Date().toISOString(), productId, quantity],
   });
+  return (result.affectedRowCount ?? 0) > 0;
+}
+
+export async function confirmStockDeduction(productId: number, quantity: number): Promise<boolean> {
+  /**
+   * Called after payment confirmed: move reserved stock out of available pool permanently.
+   *
+   * Both sides of the subtraction are guarded so a double-deduction cannot
+   * oversell: reserved_quantity must actually hold that much, and stock_quantity
+   * must too. Returns false when the guard refused (nothing was deducted).
+   */
+  const db = await getStoreDb();
+  const result = await db.execute({
+    sql: `UPDATE vanta_inventory
+          SET stock_quantity = stock_quantity - ?, reserved_quantity = reserved_quantity - ?, version = version + 1, updated_at = ?
+          WHERE product_id = ? AND reserved_quantity >= ? AND stock_quantity >= ?`,
+    args: [quantity, quantity, new Date().toISOString(), productId, quantity, quantity],
+  });
+  return (result.affectedRowCount ?? 0) > 0;
 }
 
 export async function listMedia(productId: number): Promise<ProductMedia[]> {

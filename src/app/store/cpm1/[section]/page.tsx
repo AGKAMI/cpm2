@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { GameSectionList, resolveSection } from "@/components/GameSectionList";
+import { StoreShell } from "@/components/StoreShell";
 import { listProducts } from "@/lib/store/products";
 
 export const dynamic = "force-dynamic";
@@ -25,5 +26,9 @@ export default async function Cpm1SectionPage({
   if (!key) notFound();
 
   const products = await listProducts({ onlyPublished: true }).catch(() => []);
-  return <GameSectionList game="cpm1" section={key} products={products} />;
+  return (
+    <StoreShell>
+      <GameSectionList game="cpm1" section={key} products={products} />
+    </StoreShell>
+  );
 }

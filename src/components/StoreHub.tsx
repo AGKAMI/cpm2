@@ -164,24 +164,6 @@ export async function StoreHub({ products, categories: _categories }: StoreHubDa
   return (
     <main className="mx-auto w-full max-w-3xl px-4 pb-24">
       {/* ---------- identity ---------- */}
-      <header className="flex items-center gap-3 py-5">
-        {/* Real profile — every customer sees their own name, never a hardcode */}
-        <HubIdentity />
-        <Link
-          href="/store/notifications"
-          aria-label="Notifications"
-          className="grid h-11 w-11 place-items-center rounded-full border border-border bg-secondary text-foreground hover:border-primary/60"
-        >
-          <IconBell />
-        </Link>
-        <Link
-          href="/store/cart"
-          aria-label="Cart"
-          className="grid h-11 w-11 place-items-center rounded-full border border-border bg-secondary text-foreground hover:border-primary/60"
-        >
-          <IconCart />
-        </Link>
-      </header>
 
       {/* ---------- game picker ---------- */}
       <nav aria-label="Browse" className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">

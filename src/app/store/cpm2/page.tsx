@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { GameHubShell } from "@/components/GameHubShell";
+import { StoreShell } from "@/components/StoreShell";
 
 export const metadata: Metadata = {
   title: "CPM 2 — CPM STORE",
@@ -10,6 +11,7 @@ export const dynamic = "force-dynamic";
 
 export default function Cpm2HubPage() {
   return (
+    <StoreShell>
     <GameHubShell
       game="cpm2"
       title="CPM 2"
@@ -27,5 +29,6 @@ export default function Cpm2HubPage() {
         },
       ]}
     />
+    </StoreShell>
   );
 }

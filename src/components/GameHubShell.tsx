@@ -74,7 +74,7 @@ export function GameHubShell({
   sections: GameSection[];
 }) {
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 pb-24">
+    <div className="mx-auto w-full max-w-3xl px-4 pb-24">
       <header className="py-6">
         <Link
           href="/store"
@@ -96,6 +96,6 @@ export function GameHubShell({
           );
         })}
       </nav>
-    </main>
+    </div>
   );
 }

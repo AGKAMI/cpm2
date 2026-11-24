@@ -8,13 +8,13 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Dock } from "@/components/ui/dock";
 import { LucideIcon } from "lucide-react";
-import { Home, Grid, List, ShoppingCart } from "lucide-react";
+import { Home, Grid, List } from "lucide-react";
 
 import { NotificationBell } from "@/components/NotificationBell";
+import { HubIdentity } from "@/components/HubIdentity";
 import { FleetProvider } from "@/components/FleetProvider";
 import { vantaApi } from "@/lib/store/client";
 import { useTheme } from "@/hooks/useTheme";
-import { cartCountLocal, loadServerCart, subscribeCart } from "@/lib/store/cart-client";
 import { AdminIcon } from "@/components/ui/admin-icon";
 import { OwnerIcon } from "@/components/ui/owner-icon";
 import { ProfileIcon } from "@/components/ui/profile-icon";
@@ -25,8 +25,7 @@ type StoreTab =
   | "orders"
   | "profile"
   | "admin"
-  | "owner"
-  | "cart";
+  | "owner";
 
 type StoreIcon = React.ComponentType<{ className?: string }>;
 
@@ -34,7 +33,6 @@ const STORE_NAV: { key: StoreTab; href: string; label: string; icon: StoreIcon }
   { key: "home", href: "/store", label: "HOME", icon: Home },
   { key: "categories", href: "/store/categories", label: "CATEGORIES", icon: Grid },
   { key: "orders", href: "/store/orders", label: "ORDERS", icon: List },
-  { key: "cart", href: "/store/cart", label: "CART", icon: ShoppingCart },
   { key: "profile", href: "/store/profile", label: "PROFILE", icon: ProfileIcon },
   { key: "admin", href: "/store/admin", label: "ADMIN", icon: AdminIcon },
   { key: "owner", href: "/store/owner", label: "OWNER", icon: OwnerIcon },
@@ -44,7 +42,6 @@ const ICON_MAP: Record<StoreTab, StoreIcon> = {
   home: Home,
   categories: Grid,
   orders: List,
-  cart: ShoppingCart,
   profile: ProfileIcon,
   admin: AdminIcon,
   owner: OwnerIcon,
@@ -62,7 +59,6 @@ export function StoreShell({ children, dock }: StoreShellProps) {
   const [profile, setProfile] = useState<{ photoUrl?: string; displayName?: string; username?: string } | null>(null);
   const [customerLoggedIn, setCustomerLoggedIn] = useState<boolean>(false);
   const [loaded, setLoaded] = useState<boolean>(true);
-  const [cartCount, setCartCount] = useState<number>(0);
   const { mode: themeMode, setMode: setThemeMode } = useTheme();
 
   // localStorage must NEVER be read during render: the server can't see it,
@@ -167,13 +163,6 @@ export function StoreShell({ children, dock }: StoreShellProps) {
     return () => window.removeEventListener("storage", checkLogin);
   }, []);
 
-  // Cart count badge — syncs with local cart + server cart changes.
-  useEffect(() => {
-    setCartCount(cartCountLocal());
-    const unsub = subscribeCart(() => setCartCount(cartCountLocal()));
-    return () => unsub();
-  }, []);
-
   // Re-check admin when session flag appears (other tab via storage event,
   // same tab via the explicit vanta-admin-session event from admin login).
   useEffect(() => {
@@ -211,14 +200,33 @@ export function StoreShell({ children, dock }: StoreShellProps) {
       return pathname === t.href || pathname.startsWith(`${t.href}/`);
     })?.key;
 
+  // The home header persists everywhere EXCEPT profile / admin / owner.
+  const homeHeader = !(
+    pathname?.startsWith("/store/profile") ||
+    pathname?.startsWith("/store/admin") ||
+    pathname?.startsWith("/store/owner")
+  );
+
   return (
     <div className="relative min-h-screen bg-background">
       <FleetProvider>
         <>
           <header
-            className="sticky top-0 z-30 border-b border-border shadow-sm px-4 pt-3 pb-3 sm:px-6"
+            className={
+              homeHeader
+                ? "sticky top-0 z-30 border-b border-border px-4 pt-3 pb-3 sm:px-6"
+                : "sticky top-0 z-30 border-b border-border shadow-sm px-4 pt-3 pb-3 sm:px-6"
+            }
             style={{ backgroundColor: "var(--background)" }}
           >
+            {homeHeader ? (
+              /* The HOME header persists on every store page except profile,
+                 admin and owner: greeting + real profile + notifications. */
+              <div className="flex items-center gap-3">
+                <HubIdentity />
+                <NotificationBell />
+              </div>
+            ) : (
             <div className="relative flex items-center justify-between gap-2">
               {/* LEFT — leave the store, then the brand */}
               <div className="flex items-center gap-2 shrink-0">
@@ -309,9 +317,9 @@ export function StoreShell({ children, dock }: StoreShellProps) {
                 </span>
               </button>
               <NotificationBell />
-
             </div>
           </div>
+          )}
         </header>
         <main
           id="store-main"
@@ -329,7 +337,6 @@ export function StoreShell({ children, dock }: StoreShellProps) {
             item.label.charAt(0).toUpperCase() + item.label.slice(1),
           href: item.href,
           active: activeTab === item.key,
-          badge: item.key === "cart" ? cartCount : undefined,
         }))}
       />
     </div>

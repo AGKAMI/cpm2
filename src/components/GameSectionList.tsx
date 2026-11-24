@@ -64,7 +64,7 @@ export function GameSectionList({
   const items = productsForSection(products, game, section);
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 pb-24">
+    <div className="mx-auto w-full max-w-3xl px-4 pb-24">
       <header className="py-6">
         <Link
           href={`/store/${game}`}
@@ -122,6 +122,6 @@ export function GameSectionList({
           })}
         </ul>
       )}
-    </main>
+    </div>
   );
 }

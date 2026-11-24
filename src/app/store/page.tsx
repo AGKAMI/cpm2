@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { Suspense } from "react";
 import { StoreHub } from "@/components/StoreHub";
+import { StoreShell } from "@/components/StoreShell";
 import { StoreHomeSkeleton } from "@/components/skeleton";
 import { listProducts, listCategories } from "@/lib/store/products";
 
@@ -22,7 +23,9 @@ async function StoreContent() {
     listCategories(),
   ]);
   return (
-    <StoreHub products={products} categories={categories} />
+    <StoreShell>
+      <StoreHub products={products} categories={categories} />
+    </StoreShell>
   );
 }
 

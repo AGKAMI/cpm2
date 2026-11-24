@@ -118,7 +118,16 @@ export function ProductPageClient({
 
   return (
     <StoreShell>
-      <PageHeading folio="01" title={product.name} meta={formatPrice(product.basePriceCents, product.currency)} backHref="/store/categories" />
+      <PageHeading
+        folio="01"
+        title={product.name}
+        meta={`${formatPrice(product.basePriceCents, product.currency)}${
+          approxStarsForCents(product.basePriceCents)
+            ? ` (${approxStarsForCents(product.basePriceCents)} stars)`
+            : ""
+        }`}
+        backHref="/store/categories"
+      />
 
       {/* Hero image carousel */}
       <section className="mb-6 px-4">

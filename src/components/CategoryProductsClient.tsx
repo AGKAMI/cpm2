@@ -69,13 +69,16 @@ export function CategoryProductsClient({
                     <p className="mt-0.5 text-xs text-ink-soft">
                       {soldOut ? "Sold out" : `${p.stockQuantity} unit${p.stockQuantity === 1 ? "" : "s"} in stock`}
                     </p>
-                    {stars ? (
-                      <p className="text-[11px] text-ink-faint">{stars} stars</p>
-                    ) : null}
+
                     {p.kind === "account" ? <AccountNotice compact /> : null}
                     <div className="mt-auto flex items-center justify-between pt-2">
                       <span className="text-sm font-bold text-foreground">
                         {formatPrice(p.basePriceCents, p.currency)}
+                        {stars ? (
+                          <span className="ml-1 text-xs font-normal text-ink-soft">
+                            ({stars} stars)
+                          </span>
+                        ) : null}
                       </span>
                       {soldOut ? (
                         <span className="rounded-md bg-secondary px-3 py-1.5 text-xs font-medium text-ink-faint">

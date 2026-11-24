@@ -63,6 +63,10 @@ CREATE TABLE IF NOT EXISTS vanta_categories (
   description TEXT    NOT NULL DEFAULT '',
   sort_order  INTEGER NOT NULL DEFAULT 0,
   is_active   INTEGER NOT NULL DEFAULT 1,
+  -- Categories are game-scoped: a CPM2 shopper clicking "Flags" must not land
+  -- on 0 results. Defaults to cpm2 because every existing row is a CPM2 car
+  -- category (Coupes/Sedans/SUVs/4x4s/Hatchbacks/Van).
+  game        TEXT    NOT NULL DEFAULT 'cpm2' CHECK (game IN ('cpm1', 'cpm2')),
   created_at  TEXT    NOT NULL
 );
 

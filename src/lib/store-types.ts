@@ -31,9 +31,12 @@ export type Category = {
   description: string;
   imageUrl: string;
   sortOrder: number;
-  isActive: boolean;
-  createdAt: string;
-};
+    isActive: boolean;
+    /** Which game's catalogue this category belongs to. Scoped so a CPM2
+     *  shopper never sees CPM1's tree (and vice versa) as empty results. */
+    game: ProductGame;
+    createdAt: string;
+  };
 
 export type ProductKind = "car" | "account";
 export type ProductGame = "cpm1" | "cpm2";

@@ -217,6 +217,21 @@ export async function runStoreMigrations(storeArg?: TursoHttpClient): Promise<vo
     // Column already exists — safe to ignore
   }
 
+  // Migration: vanta_categories.game. Categories were global, so CPM1's tree
+  // (Flags/Security/Police/Premium/Mods/Accounts) would have shown to CPM2
+  // shoppers as six empty results. SQLite cannot ALTER in a CHECK, so the
+  // constraint lives only in the CREATE TABLE for fresh databases; app code
+  // validates the value. Existing rows are all CPM2 categories, so the default
+  // is correct and no backfill is needed.
+  try {
+    await store.execute({
+      sql: `ALTER TABLE vanta_categories ADD COLUMN game TEXT NOT NULL DEFAULT 'cpm2'`,
+      args: [],
+    });
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
   // Migration: vanta_account_units.email_hash. The email is AES-256-GCM
   // encrypted with a random IV, so the same address never encrypts to the same
   // string twice — dedupe cannot match on the ciphertext. This hash is what

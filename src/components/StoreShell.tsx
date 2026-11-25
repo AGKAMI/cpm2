@@ -261,7 +261,10 @@ export function StoreShell({ children, dock }: StoreShellProps) {
                     strokeLinejoin="round"
                     aria-hidden="true"
                   >
-                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                    <rect x="3" y="3" width="8" height="18" rx="2" />
+                    <path d="M11 21V3" />
+                    <path d="M16 12H11" />
+                    <path d="M13 15l3-3-3-3" />
                   </svg>
                 </button>
 

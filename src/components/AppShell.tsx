@@ -334,7 +334,12 @@ export function AppShell({ children }: { children: ReactNode }) {
               </span>
             </Link>
             <Button variant="ghost" size="icon" onClick={() => router.push("/")} aria-label="Back to app selection">
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 19l-7-7 7-7"/></svg>
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="8" height="18" rx="2" />
+                <path d="M11 21V3" />
+                <path d="M16 12H11" />
+                <path d="M13 15l3-3-3-3" />
+              </svg>
             </Button>
 
             <nav className="ml-auto hidden items-center gap-2 sm:flex">

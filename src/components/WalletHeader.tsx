@@ -16,7 +16,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { vantaApi } from "@/lib/store/client";
-import { NotificationBell } from "@/components/NotificationBell";
 import { detectPlatform, type Platform } from "@/lib/platform";
 
 function greeting(): string {
@@ -45,6 +44,7 @@ export function WalletHeader() {
     username?: string;
     photoUrl?: string;
     telegramLinked?: boolean;
+    authed?: boolean;
   } | null>(null);
   const [hidden, setHidden] = useState(false);
   // "Logged in on X" — where this session actually runs. Read after mount so
@@ -65,6 +65,8 @@ export function WalletHeader() {
           username: data.telegramUser?.username,
           photoUrl: data.telegramUser?.photoUrl,
           telegramLinked: Boolean(data.customer?.telegramLinked),
+          // A real session = an authenticated customer or a Telegram identity.
+          authed: Boolean(data.customer || data.telegramUser),
         });
       })
       .catch(() => {
@@ -75,7 +77,7 @@ export function WalletHeader() {
     };
   }, []);
 
-  const name = profile?.displayName || "there";
+  const name = profile?.displayName || "customer";
 
   return (
     <section className="space-y-3 px-1 pt-4">
@@ -106,7 +108,7 @@ export function WalletHeader() {
               <span className="ml-1 text-xs font-normal text-ink-faint">@{profile.username}</span>
             ) : null}
           </p>
-          {platform ? (
+          {profile?.authed && platform ? (
             <p className="mt-0.5 inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
               {platform.icon ? (
                 /* The platform's own mark (SVG Repo files in /brands) */
@@ -122,7 +124,6 @@ export function WalletHeader() {
           ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <NotificationBell />
           <Link
             href="/store/cart"
             aria-label="Cart"

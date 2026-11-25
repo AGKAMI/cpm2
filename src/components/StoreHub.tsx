@@ -66,14 +66,6 @@ function IconGamepad() {
   );
 }
 
-function IconCar() {
-  return (
-    <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-      <path d="M5 16h14M3 13l2-5h14l2 5v3h-2a2 2 0 1 1-4 0H9a2 2 0 1 1-4 0H3v-3Z" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 function IconHeadset() {
   return (
     <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
@@ -176,25 +168,18 @@ export async function StoreHub({ products, categories: _categories }: StoreHubDa
         <GameTile href="/store/cpm1" label="CPM 1">
           <IconGamepad />
         </GameTile>
-        <GameTile href="/store/cpm1/cars" label="Cars">
-          <IconCar />
-        </GameTile>
         <GameTile href="/store/support" label="Support">
           <IconHeadset />
         </GameTile>
       </nav>
 
       {/* ---------- discovery shelves (NOT products) ---------- */}
-      <Shelf
-        title="Promotions"
-        actionHref="/store/cpm2/cars"
-        actionLabel="Manage"
-      >
-        {onSale.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-[11px] text-ink-faint">
-            No promotions running.
-          </p>
-        ) : (
+      {onSale.length > 0 && (
+        <Shelf
+          title="Promotions"
+          actionHref="/store/cpm2/cars"
+          actionLabel="Manage"
+        >
           <ul className="grid gap-3 sm:grid-cols-2">
             {onSale.map((p) => (
               <li key={p.id}>
@@ -210,8 +195,8 @@ export async function StoreHub({ products, categories: _categories }: StoreHubDa
               </li>
             ))}
           </ul>
-        )}
-      </Shelf>
+        </Shelf>
+      )}
 
       <Shelf title="Notifications" actionHref="/store/notifications" actionLabel="All">
         <Link
@@ -222,12 +207,8 @@ export async function StoreHub({ products, categories: _categories }: StoreHubDa
         </Link>
       </Shelf>
 
-      <Shelf title="New additions" actionHref="/store/cpm2/cars" actionLabel="Browse">
-        {arrivals.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-[11px] text-ink-faint">
-            Nothing new yet.
-          </p>
-        ) : (
+      {arrivals.length > 0 && (
+        <Shelf title="New additions" actionHref="/store/cpm2/cars" actionLabel="Browse">
           <ul className="grid gap-3 sm:grid-cols-2">
             {arrivals.map((p) => (
               <li key={p.id}>
@@ -243,8 +224,8 @@ export async function StoreHub({ products, categories: _categories }: StoreHubDa
               </li>
             ))}
           </ul>
-        )}
-      </Shelf>
+        </Shelf>
+      )}
     </main>
   );
 }

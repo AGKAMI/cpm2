@@ -48,7 +48,7 @@ export function HubIdentity() {
     };
   }, []);
 
-  const name = profile?.displayName || "there";
+  const name = profile?.displayName || "customer";
 
   return (
     <Link href="/store/profile" className="flex min-w-0 flex-1 items-center gap-3">

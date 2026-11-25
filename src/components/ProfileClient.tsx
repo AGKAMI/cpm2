@@ -776,7 +776,9 @@ export function ProfileClient({
           Real numbers where the app has data: total orders, Stars spend and
           Stars-paid top-ups come from the order history. The wallet balance
           reads a stored wallet that does not exist yet (0 until the wallet
-          feature lands) and reviews have no feature behind them yet. */}
+          feature lands) and reviews have no feature behind them yet.
+          Hidden when signed out — no reason to show zeros to a stranger. */}
+      {customer && (
       <section className="mb-8 px-4">
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-2xl border border-border bg-secondary p-4">
@@ -835,6 +837,7 @@ export function ProfileClient({
           </div>
         </div>
       </section>
+      )}
 
       {/* ============ LOGGED-OUT ENTRY ============
           Account tab only. Two buttons — Log in / Create account — both open

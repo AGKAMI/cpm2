@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { vantaApi, formatPrice, type VantaOrder, type VantaProduct } from "@/lib/store/client";
 import { StoreShell } from "@/components/StoreShell";
 import { OrdersSkeleton } from "@/components/skeleton";
+import { List } from "lucide-react";
 
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-ZA", {
@@ -77,10 +78,7 @@ export function OrdersClient() {
         {/* Header — title + explanation + the cube glyph */}
         <div className="flex items-start gap-4 py-5">
           <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-border bg-secondary text-ink-soft">
-            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
-              <path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7L12 2.5Z" strokeLinejoin="round" />
-              <path d="M3.5 7 12 11.5 20.5 7M12 11.5v10" strokeLinejoin="round" />
-            </svg>
+            <List className="h-6 w-6" aria-hidden="true" />
           </div>
           <div className="min-w-0">
             <h1 className="text-sm font-bold uppercase tracking-[0.16em] text-foreground">

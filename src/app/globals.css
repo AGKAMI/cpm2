@@ -2332,8 +2332,8 @@ html {
 .app-card { position: relative; width: 190px; height: 254px; border-radius: 10px; overflow: hidden; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 0 15px; background: linear-gradient(0deg, #000, #272727); border: none; color: white; font-weight: 400; cursor: pointer; }
 .app-card__bg { position: absolute; top: 5px; left: 5px; width: calc(100% - 10px); height: calc(100% - 10px); z-index: 2; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
 .app-card__blob { position: absolute; z-index: 1; top: 50%; left: 50%; width: 150px; height: 150px; border-radius: 50%; opacity: 1; filter: blur(12px); animation: blob-bounce 5s infinite ease; pointer-events: none; }
-.app-card--fleet .app-card__blob { background: var(--fleet-primary); }
-.app-card--garage .app-card__blob { background: var(--brand-gold); }
+.app-card--fleet .app-card__blob { background: var(--card-primary); }
+.app-card--garage .app-card__blob { background: var(--card-primary); }
 @keyframes blob-bounce {
   0% { transform: translate(-100%, -100%) translate3d(0, 0, 0); }
   25% { transform: translate(-100%, -100%) translate3d(100%, 0, 0); }
@@ -2381,7 +2381,7 @@ html {
       transparent 180deg,
       rgba(255, 255, 255, 0.9) 195deg,
       transparent 235deg),
-    var(--border-gradient-garage);
+    linear-gradient(45deg, var(--card-secondary) 0%, var(--card-primary) 25%, var(--card-deep) 50%, var(--card-primary) 75%, var(--card-secondary) 100%);
   animation: app-card-shine 3.5s linear infinite;
 }
 /* Soft glow trailing the glints */
@@ -2399,10 +2399,10 @@ html {
 .app-card--garage::after {
   background: conic-gradient(from var(--shine-angle),
     transparent 0deg,
-    #d4af4f 30deg,
+    var(--card-primary) 30deg,
     transparent 80deg,
     transparent 180deg,
-    #d4af4f 210deg,
+    var(--card-primary) 210deg,
     transparent 260deg);
   filter: blur(10px);
   animation: app-card-shine 3.5s linear infinite;
@@ -2416,13 +2416,17 @@ html {
       transparent 180deg,
       rgba(255, 255, 255, 0.9) 195deg,
       transparent 235deg),
-    linear-gradient(45deg, color-mix(in srgb, var(--fleet-primary) 55%, white) 0%, var(--fleet-primary) 25%, color-mix(in srgb, var(--fleet-primary) 60%, black) 50%, var(--fleet-primary) 75%, color-mix(in srgb, var(--fleet-primary) 55%, white) 100%);
+    linear-gradient(45deg, color-mix(in srgb, var(--card-primary) 55%, white) 0%, var(--card-primary) 25%, color-mix(in srgb, var(--card-primary) 60%, black) 50%, var(--card-primary) 75%, color-mix(in srgb, var(--card-primary) 55%, white) 100%);
   animation: app-card-shine 3.5s linear infinite;
 }
 .app-card--fleet::after {
   background: conic-gradient(from var(--shine-angle),
     transparent 0deg,
-    var(--fleet-primary) 30deg,
+    var(--card-primary) 30deg,
+    transparent 80deg,
+    transparent 180deg,
+    var(--card-primary) 210deg,
+    transparent 260deg);
     transparent 80deg,
     transparent 180deg,
     var(--fleet-primary) 210deg,
@@ -2444,10 +2448,10 @@ html {
   animation: text-shine 6s linear infinite;
 }
 .app-card--fleet .text-shine {
-  background-image: linear-gradient(90deg, color-mix(in srgb, var(--fleet-primary) 45%, transparent) 0%, var(--fleet-primary) 50%, color-mix(in srgb, var(--fleet-primary) 45%, transparent) 100%);
+  background-image: linear-gradient(90deg, color-mix(in srgb, var(--card-primary) 45%, transparent) 0%, var(--card-primary) 50%, color-mix(in srgb, var(--card-primary) 45%, transparent) 100%);
 }
 .app-card--garage .text-shine {
-  background-image: linear-gradient(90deg, rgba(212, 175, 79, 0.45) 0%, #f6e3a0 50%, rgba(212, 175, 79, 0.45) 100%);
+  background-image: linear-gradient(90deg, color-mix(in srgb, var(--card-secondary) 45%, transparent) 0%, var(--card-primary) 50%, color-mix(in srgb, var(--card-secondary) 45%, transparent) 100%);
 }
 @keyframes text-shine {
   0% { background-position: 200% 0; }
@@ -2471,8 +2475,8 @@ html {
   opacity: 0.75;
   transition: opacity 0.2s ease, color 0.2s ease;
 }
-.app-card--fleet .app-card__cta { color: var(--fleet-primary); }
-.app-card--garage .app-card__cta { color: var(--brand-gold); }
+.app-card--fleet .app-card__cta { color: var(--card-primary); }
+.app-card--garage .app-card__cta { color: var(--card-primary); }
 .app-card-link:hover .app-card__cta { opacity: 1; }
 .app-card__arrow { transition: transform 0.2s ease; }
 .app-card-link:hover .app-card__arrow { transform: translateX(2px); }
@@ -2510,7 +2514,7 @@ html {
       rgba(255, 255, 255, 0.95) 40deg,
       transparent 120deg,
       transparent 360deg),
-    var(--border-gradient-garage);
+    linear-gradient(45deg, var(--card-secondary) 0%, var(--card-primary) 25%, var(--card-deep) 50%, var(--card-primary) 75%, var(--card-secondary) 100%);
   animation: app-card-shine 3.5s linear infinite;
 }
 .icon-shine::after {
@@ -2525,7 +2529,7 @@ html {
 .icon-shine--garage::after {
   background: conic-gradient(from var(--shine-angle),
     transparent 0deg,
-    #d4af4f 50deg,
+    var(--card-primary) 50deg,
     transparent 140deg,
     transparent 360deg);
   filter: blur(6px);
@@ -2538,13 +2542,15 @@ html {
       rgba(255, 255, 255, 0.95) 40deg,
       transparent 120deg,
       transparent 360deg),
-    linear-gradient(45deg, color-mix(in srgb, var(--fleet-primary) 55%, white) 0%, var(--fleet-primary) 25%, color-mix(in srgb, var(--fleet-primary) 60%, black) 50%, var(--fleet-primary) 75%, color-mix(in srgb, var(--fleet-primary) 55%, white) 100%);
+    linear-gradient(45deg, color-mix(in srgb, var(--card-primary) 55%, white) 0%, var(--card-primary) 25%, color-mix(in srgb, var(--card-primary) 60%, black) 50%, var(--card-primary) 75%, color-mix(in srgb, var(--card-primary) 55%, white) 100%);
   animation: app-card-shine 3.5s linear infinite;
 }
 .icon-shine--fleet::after {
   background: conic-gradient(from var(--shine-angle),
     transparent 0deg,
-    var(--fleet-primary) 50deg,
+    var(--card-primary) 50deg,
+    transparent 140deg,
+    transparent 360deg);
     transparent 140deg,
     transparent 360deg);
   filter: blur(6px);

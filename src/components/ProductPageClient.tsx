@@ -133,7 +133,7 @@ export function ProductPageClient({
       <section className="mb-6 px-4">
         <div
           ref={carouselRef}
-          className="relative rounded-[28px] overflow-hidden border border-border bg-background"
+          className="relative h-[500px] sm:h-[640px] rounded-[28px] overflow-hidden border border-border bg-background"
         >
           <div
             className="flex transition-transform duration-500 ease-in-out"

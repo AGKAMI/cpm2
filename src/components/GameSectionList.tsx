@@ -104,10 +104,10 @@ export function GameSectionList({
                     <img src={p.coverUrl ?? ""} alt={p.name} className="h-full w-full object-cover" />
                   </div>
                   <div className="flex flex-1 flex-col gap-1 p-2.5">
-                    <span className="line-clamp-2 text-[12px] font-bold leading-tight text-foreground">
+                    <span className="line-clamp-2 text-[11px] font-bold leading-tight text-foreground">
                       {p.name}
                     </span>
-                    <span className="mt-auto text-[12px] font-bold tabular-nums text-foreground">
+                    <span className="mt-auto text-[11px] font-bold tabular-nums text-foreground">
                       {soldOut
                         ? "Sold out"
                         : `${formatPrice(p.basePriceCents, p.currency)}${

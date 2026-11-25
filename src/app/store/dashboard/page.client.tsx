@@ -163,7 +163,7 @@ export default function DashboardClient() {
 
       {/* Quick links */}
       <section className="grid gap-3 sm:grid-cols-2">
-        <Link href="/store/categories">
+        <Link href="/store">
           <Button variant="outline" className="w-full flex flex-col items-center gap-2 px-4 py-4">
             <span className="flex items-center justify-center w-6 h-6 shrink-0" dangerouslySetInnerHTML={{ __html: ICONS.grid }} />
             <span className="text-[10px] uppercase tracking-[0.15em]">Browse Vehicles</span>

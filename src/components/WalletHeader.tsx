@@ -138,7 +138,8 @@ export function WalletHeader() {
         </div>
       </div>
 
-      {/* Balance card */}
+      {/* Balance card — only visible when logged in */}
+      {profile && (
       <div className="rounded-3xl border border-border bg-secondary p-5">
         <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-ink-soft">
           <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
@@ -175,6 +176,7 @@ export function WalletHeader() {
           load balance and it lands here.
         </p>
       </div>
+      )}
     </section>
   );
 }

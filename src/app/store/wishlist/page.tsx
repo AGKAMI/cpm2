@@ -103,7 +103,7 @@ export default function WishlistPage() {
       {items.length === 0 ? (
         <section className="panel rounded-xl border border-border p-12 text-center">
           <p className="text-muted-foreground">Your wishlist is empty.</p>
-          <a href="/store/categories" className="text-xs text-gold underline underline-offset-4 hover:text-gold/80">
+          <a href="/store" className="text-xs text-gold underline underline-offset-4 hover:text-gold/80">
             Browse Vehicles
           </a>
         </section>

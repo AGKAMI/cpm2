@@ -94,7 +94,7 @@ export function GarageLead() {
             game: g as "cpm1" | "cpm2",
             title: GAME_META[g].title,
             sub: GAME_META[g].sub,
-            href: `/store/categories?game=${g}`,
+            href: `/store?game=${g}`,
             glyph: GAME_META[g].glyph,
           })),
         );

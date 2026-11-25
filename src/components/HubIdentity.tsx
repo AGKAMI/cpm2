@@ -69,7 +69,7 @@ export function HubIdentity() {
         <p className="truncate text-[11px] uppercase tracking-[0.16em] text-ink-soft">
           {greeting()}, {name}
         </p>
-        <p className="truncate text-[11px] text-ink-faint">Welcome back to CPM STORE.</p>
+        <p className="truncate text-[11px] text-ink-faint">Welcome back to VANTA GARAGE.</p>
       </div>
     </Link>
   );

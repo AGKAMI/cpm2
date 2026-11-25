@@ -126,7 +126,7 @@ export function ProductPageClient({
             ? ` (${approxStarsForCents(product.basePriceCents)} stars)`
             : ""
         }`}
-        backHref="/store/categories"
+        backHref="/store"
       />
 
       {/* Hero image carousel */}

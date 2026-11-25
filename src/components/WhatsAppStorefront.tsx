@@ -33,7 +33,7 @@ export function WhatsAppStorefront() {
         {categories.map((cat) => (
           <Link
             key={cat.name}
-            href="/store/categories"
+            href="/store"
             className={`flex items-center justify-between p-4 rounded-lg border border-border ${cat.color} bg-background/40 hover:border-gold hover:text-gold transition-all duration-200 cursor-pointer`}
           >
             <div>

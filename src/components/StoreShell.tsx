@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Dock } from "@/components/ui/dock";
 import { LucideIcon } from "lucide-react";
-import { Home, Grid, List, ShoppingCart } from "lucide-react";
+import { Home, List, ShoppingCart } from "lucide-react";
 
 import { NotificationBell } from "@/components/NotificationBell";
 import { HubIdentity } from "@/components/HubIdentity";
@@ -21,7 +21,6 @@ import { ProfileIcon } from "@/components/ui/profile-icon";
 
 type StoreTab =
   | "home"
-  | "categories"
   | "orders"
   | "profile"
   | "admin"
@@ -31,7 +30,6 @@ type StoreIcon = React.ComponentType<{ className?: string }>;
 
 const STORE_NAV: { key: StoreTab; href: string; label: string; icon: StoreIcon }[] = [
   { key: "home", href: "/store", label: "HOME", icon: Home },
-  { key: "categories", href: "/store/categories", label: "CATEGORIES", icon: Grid },
   { key: "orders", href: "/store/orders", label: "ORDERS", icon: List },
   { key: "profile", href: "/store/profile", label: "PROFILE", icon: ProfileIcon },
   { key: "admin", href: "/store/admin", label: "ADMIN", icon: AdminIcon },
@@ -40,7 +38,6 @@ const STORE_NAV: { key: StoreTab; href: string; label: string; icon: StoreIcon }
 
 const ICON_MAP: Record<StoreTab, StoreIcon> = {
   home: Home,
-  categories: Grid,
   orders: List,
   profile: ProfileIcon,
   admin: AdminIcon,
@@ -252,7 +249,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
                   className="grid w-10 h-10 shrink-0 place-items-center rounded-full border border-border bg-background text-ink-soft transition-colors hover:border-gold hover:text-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[var(--scale-medium)]"
                 >
                   <svg
-                    className="h-3.5 w-3.5"
+                    className="h-4 w-4"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"

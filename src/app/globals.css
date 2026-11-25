@@ -2427,10 +2427,6 @@ html {
     transparent 180deg,
     var(--card-primary) 210deg,
     transparent 260deg);
-    transparent 80deg,
-    transparent 180deg,
-    var(--fleet-primary) 210deg,
-    transparent 260deg);
   filter: blur(10px);
   animation: app-card-shine 3.5s linear infinite;
 }
@@ -2549,8 +2545,6 @@ html {
   background: conic-gradient(from var(--shine-angle),
     transparent 0deg,
     var(--card-primary) 50deg,
-    transparent 140deg,
-    transparent 360deg);
     transparent 140deg,
     transparent 360deg);
   filter: blur(6px);

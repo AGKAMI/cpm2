@@ -191,7 +191,7 @@ export function StoreHomeClient({
               <h3 className="font-serif font-bold mt-[6px]">
                 Featured Vehicles</h3>
             </div>
-            <Link href={withGame("/store/categories")} className="vanta-section-see-all">
+            <Link href={withGame("/store")} className="vanta-section-see-all">
               See all
             </Link>
           </div>
@@ -269,7 +269,7 @@ export function StoreHomeClient({
                 Current Promotions
               </h3>
             </div>
-            <Link href={withGame("/store/categories")} className="vanta-section-see-all">
+            <Link href={withGame("/store")} className="vanta-section-see-all">
               See all
             </Link>
           </div>
@@ -277,7 +277,7 @@ export function StoreHomeClient({
             {promotions.map((promo: VantaPromotion) => (
               <Link
                 key={promo.id}
-                href={promo.ctaLink || "/store/categories"}
+                href={promo.ctaLink || "/store"}
                 className="cursor-pointer block"
               >
                 <div
@@ -376,7 +376,7 @@ export function StoreHomeClient({
                   All available builds
                 </h3>
               </div>
-              <Link href={withGame("/store/categories")} className="vanta-section-see-all">
+              <Link href={withGame("/store")} className="vanta-section-see-all">
                 See all
               </Link>
             </div>
@@ -409,7 +409,7 @@ export function StoreHomeClient({
             <h3 className="font-serif font-bold text-[20px] leading-none">
               Featured categories
             </h3>
-            <Link href={withGame("/store/categories")} className="vanta-section-see-all">
+            <Link href={withGame("/store")} className="vanta-section-see-all">
               All
             </Link>
           </div>
@@ -427,7 +427,7 @@ export function StoreHomeClient({
                 className="vanta-card group"
               >
                 <Link
-                  href={withGame(`/store/categories?category=${cat.slug}`)}
+                  href={withGame("/store")}
                   className="block h-full w-full text-center"
                 >
                   <div className="vanta-card-media">
@@ -473,7 +473,7 @@ export function StoreHomeClient({
                 New arrivals
               </h3>
             </div>
-            <Link href={withGame("/store/categories")} className="vanta-section-see-all">
+            <Link href={withGame("/store")} className="vanta-section-see-all">
               See all
             </Link>
           </div>
@@ -499,7 +499,7 @@ export function StoreHomeClient({
                 On sale
               </h3>
             </div>
-            <Link href={withGame("/store/categories")} className="vanta-section-see-all">
+            <Link href={withGame("/store")} className="vanta-section-see-all">
               See all
             </Link>
           </div>

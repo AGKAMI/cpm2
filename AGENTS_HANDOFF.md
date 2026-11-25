@@ -1447,3 +1447,22 @@ pm run build clean ? local server on :3001 returns 200 ? deploy hook fired.
 
 **Deploy:** Pushed to master (commit 61bddb9), Vercel deploy hook fired (job AgjTaZgkwZkXr8401wIE, PENDING). Prod https://cpm2-bay.vercel.app will serve the new build once the job completes.
 
+### 2026-11-25 (N) — Store header fixes — Agent
+
+**What:** Four store header fixes based on user feedback:
+1. **StarIcon replaces emojis** — ProfileClient wallet balance and total spent cards now use <StarIcon /> from lucide-react instead of inline <svg> star emojis (matching the product page style).
+2. **Remove @username handle** — WalletHeader no longer renders @{profile.username} next to the customer name on the store home page.
+3. **Support tile full-width** — StoreHub game picker Support button now spans the full bottom row on mobile (col-span-2 sm:col-span-1) when it's the lone tile in its grid row.
+4. **Greeting-only header** — HubIdentity subtitle "Welcome back to VANTA GARAGE." removed; only the greeting ("GOOD EVENING, CUSTOMER") shows in the header.
+
+**Where:**
+- src/components/ProfileClient.tsx — replaced two inline <svg> stars with <StarIcon className="h-5 w-5 text-gold" />
+- src/components/WalletHeader.tsx — removed {profile?.username ? <span>@{profile.username}</span> : null} from the name line
+- src/components/StoreHub.tsx — Support GameTile gets className="col-span-2 sm:col-span-1"; GameTile accepts className prop
+- src/components/HubIdentity.tsx — removed subtitle paragraph
+
+**Gate:** 	sc --noEmit exit 0 ? 
+pm run build clean ? local server on :3001 returns 200 ? deploy hook fired.
+
+**Deploy:** Pushed to master (commit 8dce9a6), Vercel deploy hook fired (job Ec1eBRzTHJojgEPB0H1b, PENDING). Prod https://cpm2-bay.vercel.app will serve the new build once the job completes.
+

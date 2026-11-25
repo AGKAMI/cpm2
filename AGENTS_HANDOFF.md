@@ -1397,3 +1397,16 @@ Verified in the browser: "All" 21x17 -> 37x44, "See all" 45x17 -> 61x44, same y 
 **Also shipped:** theme-aware Telegram Star icon (black on `paper`/light, white on `night`/dark) on cards + checkout (`fe0b1ff`); Stars price shown alongside Rands. Then **scrapped the animated rain/aurora backdrop (`3ce3913`)** â€” frozen on mobile and the 36-layer animated gradient caused jank/lag; removed the Pattern mounts + CSS and restored clean theme backgrounds on VANTA and Fleet. Stars price + star icon unaffected.
 
 **Gate:** tsc 0 Â· tests 66/66 Â· build 0 Â· verified on prod (decode fix present, `pattern-bg` gone). Deploy hook fired for each.
+### 2026-11-25 (N) — App picker theme now matches each app's active theme — Agent
+
+**What:** The app selection page (/) previously hardcoded Fleet Ledger as blue and VANTA Garage as gold via CSS, ignoring each app's stored active theme. Now AppSelection.tsx reads both apps' stored palette + mode from localStorage (cpm2:palette:v1:fleet/store and cpm2:theme:v2:fleet/store) and renders each card in that app's active theme colors (blob, border gradient, glow, text-shine, CTA, icon-shine all driven by --card-primary/--card-deep/--card-secondary set inline on each card).
+
+**Where:** src/components/AppSelection.tsx (rewritten to read themes + pass colors), src/app/globals.css (fleet/garage card rules now use ar(--card-primary) etc. instead of --fleet-primary/--brand-gold/hardcoded gold).
+
+**Why:** User complaint — tapping a theme in the store profile didn't change the app picker cards, so the picker didn't match the active theme of its app.
+
+**Gate:** 	sc --noEmit exit 0 ? 
+pm run build clean ? local server on :3001 returns 200 ? deploy hook fired.
+
+**Deploy:** Pushed to master (commit 8d92681), Vercel deploy hook fired (job uCAcLoHgFbYAtf4u5Rn, PENDING). Prod https://cpm2-bay.vercel.app will serve the new build once the job completes.
+

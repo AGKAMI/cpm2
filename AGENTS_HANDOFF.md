@@ -1410,3 +1410,22 @@ pm run build clean ? local server on :3001 returns 200 ? deploy hook fired.
 
 **Deploy:** Pushed to master (commit 8d92681), Vercel deploy hook fired (job uCAcLoHgFbYAtf4u5Rn, PENDING). Prod https://cpm2-bay.vercel.app will serve the new build once the job completes.
 
+### 2026-11-25 (N) — Removed redundant categories page and nav icon — Agent
+
+**What:** Removed the CATEGORIES nav icon from the store dock and deleted the /store/categories page. Honest assessment: the home page game picker (CPM 2, CPM 1, Cars, Support) already serves as the category selector, so the categories page was redundant — an extra layer that duplicated the home page. All links that pointed to /store/categories now point to /store instead (dashboard quick links, wishlist empty state, GarageLead game links, WhatsApp storefront, product page back link, store home "See all" links, promotion ctaLink fallbacks, admin ctaLink defaults).
+
+**Where:**
+- Deleted: src/app/store/categories/page.tsx
+- src/components/StoreShell.tsx — removed "categories" from StoreTab type, STORE_NAV, ICON_MAP; dropped unused Grid import
+- src/app/store/dashboard/page.client.tsx, src/app/store/wishlist/page.tsx, src/components/GarageLead.tsx, src/components/WhatsAppStorefront.tsx, src/components/ProductPageClient.tsx, src/components/StoreHomeClient.tsx, src/app/store/admin/page.tsx, src/app/store/admin/AdminPageClient.tsx — updated /store/categories ? /store references
+- src/components/HubIdentity.tsx — greeting text "CPM STORE" ? "VANTA GARAGE"
+- src/components/WalletHeader.tsx — balance card now hidden when not logged in ({profile && (...)})
+- src/components/StoreShell.tsx — back-button SVG size h-3.5 ? h-4
+
+**Why:** User feedback — categories page is redundant with the home game picker; greeting said wrong store name; wallet shouldn't show to logged-out users; back button SVG too small.
+
+**Gate:** 	sc --noEmit exit 0 ? 
+pm run build clean ? local server on :3001 returns 200 ? deploy hook fired.
+
+**Deploy:** Pushed to master (commit da4cc94), Vercel deploy hook fired (job hCfY8fjltF3Gql9ej0YR, PENDING). Prod https://cpm2-bay.vercel.app will serve the new build once the job completes.
+

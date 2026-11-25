@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
 import { StoreShell } from "@/components/StoreShell";
+import Link from "next/link";
+import { approxStarsForCents } from "@/lib/store/pricing";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Field";
@@ -87,6 +89,12 @@ export function ProfileClient({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [ordersCount, setOrdersCount] = useState(0);
+  // Reference-style profile stats: total spent, top-ups and orders are REAL
+  // counts from the order history; the wallet balance reads the stored wallet,
+  // which does not exist yet (0 until the wallet feature lands), and reviews
+  // have no feature behind them yet either.
+  const [spentStars, setSpentStars] = useState(0);
+  const [topUpCount, setTopUpCount] = useState(0);
   const [wishlistCount, setWishlistCount] = useState(0);
   const [editingCpm2Id, setEditingCpm2Id] = useState(false);
   const [cpm2IdValue, setCpm2IdValue] = useState("");
@@ -126,7 +134,18 @@ export function ProfileClient({
 
         if (ordersRes.ok) {
           const ordersData = await ordersRes.json();
-          setOrdersCount(Array.isArray(ordersData.orders) ? ordersData.orders.length : 0);
+          const list = Array.isArray(ordersData.orders) ? ordersData.orders : [];
+          setOrdersCount(list.length);
+          const verifiedStars = list.filter(
+            (o: { paymentState?: string; paymentMethod?: string }) =>
+              o.paymentState === "verified" && o.paymentMethod === "stars",
+          );
+          setTopUpCount(verifiedStars.length);
+          const starsCents = verifiedStars.reduce(
+            (sum: number, o: { amountCents?: number }) => sum + Number(o.amountCents ?? 0),
+            0,
+          );
+          setSpentStars(approxStarsForCents(starsCents));
         }
         if (wishlistRes.ok) {
           const wishlistData = await wishlistRes.json();
@@ -752,6 +771,71 @@ export function ProfileClient({
           ))}
         </div>
       </div>
+
+      {/* ============ PROFILE STATS (reference layout) ============
+          Real numbers where the app has data: total orders, Stars spend and
+          Stars-paid top-ups come from the order history. The wallet balance
+          reads a stored wallet that does not exist yet (0 until the wallet
+          feature lands) and reviews have no feature behind them yet. */}
+      <section className="mb-8 px-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-2xl border border-border bg-secondary p-4">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-soft">
+              Wallet balance
+            </p>
+            <p className="mt-1 flex items-center gap-1.5 text-xl font-bold text-foreground">
+              <svg className="h-5 w-5 text-gold" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 2.5l2.6 6.3 6.8.5-5.2 4.4 1.6 6.6L12 16.6l-5.8 3.7 1.6-6.6-5.2-4.4 6.8-.5L12 2.5Z" />
+              </svg>
+              0
+            </p>
+            <Link
+              href="/store/support"
+              className="mt-2 inline-block text-[11px] font-bold uppercase tracking-[0.16em] text-primary hover:underline"
+            >
+              Top up
+            </Link>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-secondary p-4">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-soft">
+              Total spent
+            </p>
+            <p className="mt-1 flex items-center gap-1.5 text-xl font-bold text-foreground">
+              <svg className="h-5 w-5 text-gold" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 2.5l2.6 6.3 6.8.5-5.2 4.4 1.6 6.6L12 16.6l-5.8 3.7 1.6-6.6-5.2-4.4 6.8-.5L12 2.5Z" />
+              </svg>
+              {spentStars}
+            </p>
+            <p className="mt-2 text-[11px] text-ink-faint">Stars paid on verified orders</p>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-secondary p-4">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-soft">
+              Total orders
+            </p>
+            <p className="mt-1 text-xl font-bold text-foreground">{ordersCount}</p>
+            <p className="mt-2 text-[11px] text-ink-faint">All time</p>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-secondary p-4">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-soft">
+              Top-ups made
+            </p>
+            <p className="mt-1 text-xl font-bold text-foreground">{topUpCount}</p>
+            <p className="mt-2 text-[11px] text-ink-faint">Stars payments</p>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-secondary p-4 col-span-2">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-soft">
+              Reviews written
+            </p>
+            <p className="mt-1 text-xl font-bold text-foreground">0</p>
+            <p className="mt-2 text-[11px] text-ink-faint">Reviews are not live yet — this fills once the feature ships.</p>
+          </div>
+        </div>
+      </section>
+
       {/* ============ LOGGED-OUT ENTRY ============
           Account tab only. Two buttons — Log in / Create account — both open
           the styled auth form (user request: the inline field card goes away). */}

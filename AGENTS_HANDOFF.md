@@ -1429,3 +1429,21 @@ pm run build clean ? local server on :3001 returns 200 ? deploy hook fired.
 
 **Deploy:** Pushed to master (commit da4cc94), Vercel deploy hook fired (job hCfY8fjltF3Gql9ej0YR, PENDING). Prod https://cpm2-bay.vercel.app will serve the new build once the job completes.
 
+### 2026-11-25 (N) — Store layout fixes — Agent
+
+**What:** Four store layout changes based on user feedback:
+1. **Game tiles fill screen** — Changed game picker nav from sm:grid-cols-4 to sm:grid-cols-3 so CPM 2, CPM 1, Support tiles are equally wide and fill the screen with no gaps on the right.
+2. **Notifications shelf conditional** — Removed the static Notifications shelf from StoreHub (it always showed "No notifications yet"). It will only render when there are actual app updates (to be wired with notification data).
+3. **Cart in header only** — Removed the duplicate cart link from WalletHeader (main section). Cart now only appears in the StoreShell header.
+4. **Notification bell matches cart size** — Changed NotificationBell button from w-8 h-8 to h-11 w-11 to match the cart icon size.
+
+**Where:**
+- src/components/StoreHub.tsx — grid-cols-4 ? grid-cols-3; removed Notifications Shelf block
+- src/components/WalletHeader.tsx — removed cart Link + inline SVG from identity card
+- src/components/NotificationBell.tsx — w-8 h-8 ? h-11 w-11
+
+**Gate:** 	sc --noEmit exit 0 ? 
+pm run build clean ? local server on :3001 returns 200 ? deploy hook fired.
+
+**Deploy:** Pushed to master (commit 61bddb9), Vercel deploy hook fired (job AgjTaZgkwZkXr8401wIE, PENDING). Prod https://cpm2-bay.vercel.app will serve the new build once the job completes.
+

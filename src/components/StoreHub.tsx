@@ -287,7 +287,7 @@ export function StoreHub({ products, categories: _categories }: StoreHubData) {
       <WalletHeader />
 
       {/* ---------- game picker ---------- */}
-      <nav aria-label="Browse" className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <nav aria-label="Browse" className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <GameTile href="/store/cpm2" label="CPM 2">
           <IconGamepad />
         </GameTile>
@@ -323,15 +323,6 @@ export function StoreHub({ products, categories: _categories }: StoreHubData) {
           </ul>
         </Shelf>
       )}
-
-      <Shelf title="Notifications" actionHref="/store/notifications" actionLabel="All">
-        <Link
-          href="/store/notifications"
-          className="block rounded-2xl border border-border bg-secondary px-4 py-3 text-xs text-ink-soft hover:border-primary/60"
-        >
-          Order updates and store announcements land here.
-        </Link>
-      </Shelf>
 
       {arrivals.length > 0 && (
         <Shelf title="New additions" actionHref="/store/cpm2/cars" actionLabel="Browse">

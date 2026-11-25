@@ -124,17 +124,6 @@ export function WalletHeader() {
           ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <Link
-            href="/store/cart"
-            aria-label="Cart"
-            className="grid h-11 w-11 place-items-center rounded-full border border-border bg-background text-foreground transition-colors hover:border-primary/60"
-          >
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
-              <circle cx="9" cy="20" r="1.6" />
-              <circle cx="18" cy="20" r="1.6" />
-              <path d="M2 3h3l3 12h11l2-8H6" strokeLinecap="round" />
-            </svg>
-          </Link>
         </div>
       </div>
 

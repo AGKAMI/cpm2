@@ -70,7 +70,10 @@ export function OrdersClient() {
       </StoreShell>
     );
 
-  const nameOf = (id: number) => products.find((p) => p.id === id)?.name ?? "Item";
+  // The snapshot wins: an order outlives its product, so history reads from
+  // what was bought. Live lookup is only a fallback for pre-snapshot rows.
+  const nameOf = (order: { productId: number; productName?: string | null }) =>
+    (order.productName ?? products.find((p) => p.id === order.productId)?.name ?? "Item");
 
   return (
     <StoreShell>
@@ -124,7 +127,7 @@ export function OrdersClient() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-foreground">
-                        {nameOf(order.productId)}
+                        {nameOf(order)}
                         <span className="ml-1 font-normal text-ink-soft">
                           × {order.quantity ?? 1}
                         </span>

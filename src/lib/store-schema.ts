@@ -38,6 +38,7 @@ export const VANTA_SCHEMA = `
 CREATE TABLE IF NOT EXISTS vanta_customers (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,
   in_game_name   TEXT    NOT NULL DEFAULT '',
+  product_name         TEXT,                            -- what was bought, snapshotted at order time (orders outlive products)
   player_id      TEXT    NOT NULL DEFAULT '',
   currency_pref  TEXT    NOT NULL DEFAULT 'ZAR',
   email          TEXT    NOT NULL DEFAULT '',

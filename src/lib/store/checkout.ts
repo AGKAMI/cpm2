@@ -90,12 +90,13 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   const now = nowIso();
 
   await db.execute({
-  sql: `INSERT INTO vanta_orders (id, customer_id, product_id, quantity, order_state, payment_state, delivery_state, amount_cents, currency, exchange_rate, reserved_until, payment_method, player_id, in_game_name, idempotency_key, created_at, updated_at)
-        VALUES (?, ?, ?, ?, 'awaiting_payment', 'pending', 'unscheduled', ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)`,
+  sql: `INSERT INTO vanta_orders (id, customer_id, product_id, product_name, quantity, order_state, payment_state, delivery_state, amount_cents, currency, exchange_rate, reserved_until, payment_method, player_id, in_game_name, idempotency_key, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, 'awaiting_payment', 'pending', 'unscheduled', ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)`,
   args: [
     id,
     input.customerId,
     input.productId,
+    product.name,
     input.quantity,
     input.amountCents,
     input.currency,
@@ -386,6 +387,7 @@ function rowToOrder(row: Record<string, unknown>): Order {
     playerId: String(row.player_id ?? ""),
     inGameName: String(row.in_game_name ?? ""),
     appointmentId: row.appointment_id === null ? null : String(row.appointment_id),
+    productName: row.product_name === null || row.product_name === undefined ? null : String(row.product_name),
     createdAt: String(row.created_at ?? ""),
     updatedAt: String(row.updated_at ?? ""),
   };

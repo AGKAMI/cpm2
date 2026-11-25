@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { GameSectionList, resolveSection } from "@/components/GameSectionList";
 import { StoreShell } from "@/components/StoreShell";
-import { listProducts } from "@/lib/store/products";
+import { enrichProductsWithCovers, listProducts } from "@/lib/store/products";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +26,9 @@ export default async function Cpm2SectionPage({
   // CPM2 has no services catalogue — anything other than accounts/cars is 404.
   if (!key || key === "services") notFound();
 
-  const products = await listProducts({ onlyPublished: true }).catch(() => []);
+  const products = (await enrichProductsWithCovers(
+    await listProducts({ onlyPublished: true }).catch(() => []),
+  ).catch(() => []));
   return (
     <StoreShell>
       <GameSectionList game="cpm2" section={key} products={products} />

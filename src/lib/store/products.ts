@@ -235,6 +235,49 @@ export async function getProduct(id: number): Promise<Product | null> {
   return rowToProduct(result.rows[0]);
 }
 
+/**
+ * Enrich products with their cover + gallery in ONE round-trip, exactly like
+ * the /api/store/products route does. SSR pages that call listProducts()
+ * directly previously got NO coverUrl at all — every card fell back to the
+ * "photo pending" glyph even when the product had uploaded art.
+ */
+/** Absolute-ise a stored media reference for the public payload. Same rules
+ *  the /api/store/products route has always applied: absolute http(s) URLs
+ *  pass through, data URLs are NOT proxied (they would 404 on the CDN), and
+ *  a bare path is prefixed with the site origin — with no origin configured a
+ *  relative path is handed back as-is for the browser to resolve. */
+export function absoluteImageUrl(raw: string, origin: string): string | null {
+  if (!raw) return null;
+  if (raw.startsWith("https://") || raw.startsWith("http://")) return raw;
+  if (raw.startsWith("data:")) return null;
+  if (!raw.startsWith("/")) return null;
+  return origin ? `${origin}${raw}` : raw;
+}
+
+export async function enrichProductsWithCovers<T extends { id: number; imageUrl?: string | null }>(
+  products: T[],
+  origin?: string,
+): Promise<(T & { coverUrl?: string | null; galleryUrls?: string[] })[]> {
+  if (products.length === 0) return [];
+  const base = origin ?? process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "";
+  const [covers, galleries] = await Promise.all([
+    listCoverImageMap(products.map((p) => p.id)),
+    listGalleryMap(products.map((p) => p.id)),
+  ]);
+  return products.map((p) => {
+    const coverRaw = covers.get(p.id) ?? p.imageUrl ?? "";
+    const coverUrl = coverRaw ? absoluteImageUrl(coverRaw, base) : null;
+    const gallery = (galleries.get(p.id) ?? [])
+      .map((u) => absoluteImageUrl(u, base))
+      .filter((u): u is string => u !== null);
+    return {
+      ...p,
+      coverUrl,
+      galleryUrls: gallery.length > 0 ? gallery : coverUrl ? [coverUrl] : [],
+    };
+  });
+}
+
 export async function listProducts({ onlyPublished = true, featuredOnly = false, game }: { onlyPublished?: boolean; featuredOnly?: boolean; game?: ProductGame } = {}): Promise<Product[]> {
   // Expire "New" tags on products older than 3 days (auto-tag: new products
   // get the tag at creation, it is removed automatically after 3 days).

@@ -33,10 +33,16 @@ export function productsForSection(
   section: SectionKey,
 ): VantaProduct[] {
   const inGame = products.filter((p) => (p.game ?? "cpm2") === game && p.isPublished);
-  if (section === "accounts") return inGame.filter((p) => p.kind === "account");
-  if (section === "services") return inGame.filter((p) => p.kind === "service");
+  // KAMI's standing rule: a product whose image does not render is NOT shown.
+  // An imageless card is a broken card — it is hidden here, not prettied with
+  // a placeholder. (coverUrl is set by the page's cover enrichment; products
+  // with no published media, or a data-URL cover the CDN cannot proxy, have
+  // none.)
+  const visible = inGame.filter((p) => Boolean((p as { coverUrl?: string | null }).coverUrl));
+  if (section === "accounts") return visible.filter((p) => p.kind === "account");
+  if (section === "services") return visible.filter((p) => p.kind === "service");
   // cars = the rest of the game's catalogue
-  return inGame.filter((p) => p.kind !== "account" && p.kind !== "service");
+  return visible.filter((p) => p.kind !== "account" && p.kind !== "service");
 }
 
 const SECTION_META: Record<SectionKey, { title: string; blurb: string }> = {
@@ -93,31 +99,9 @@ export function GameSectionList({
                   }`}
                 >
                   <div className="aspect-video w-full overflow-hidden border-b border-border bg-secondary">
-                    {p.coverUrl ?? p.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={p.coverUrl ?? p.imageUrl ?? ""} alt={p.name} className="h-full w-full object-cover" />
-                    ) : (
-                      // No photo uploaded yet: an honest section glyph, not the
-                      // product name's first letter (which looked like a logo).
-                      <span className="grid h-full w-full place-items-center gap-1 text-ink-faint">
-                        {section === "cars" ? (
-                          <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-                            <path d="M3 13.5 4.6 8.8A2 2 0 0 1 6.5 7.4h11a2 2 0 0 1 1.9 1.4L21 13.5" />
-                            <path d="M3 13.5h18v4.2a.8.8 0 0 1-.8.8h-1.4a.8.8 0 0 1-.8-.8v-.9H6v.9a.8.8 0 0 1-.8.8H3.8a.8.8 0 0 1-.8-.8z" />
-                            <circle cx="7.5" cy="14.2" r="1.1" />
-                            <circle cx="16.5" cy="14.2" r="1.1" />
-                          </svg>
-                        ) : (
-                          <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-                            <rect x="4" y="10.5" width="16" height="9" rx="1.5" />
-                            <path d="M4 10.5 6 7h12l2 3.5M8.5 14.5h7" />
-                          </svg>
-                        )}
-                        <span className="text-[9px] font-bold uppercase tracking-[0.14em]">
-                          {section === "cars" ? "Photo pending" : "No image"}
-                        </span>
-                      </span>
-                    )}
+                    {/* Only products whose image renders reach this list. */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={p.coverUrl ?? ""} alt={p.name} className="h-full w-full object-cover" />
                   </div>
                   <div className="flex flex-1 flex-col gap-1 p-2.5">
                     <span className="line-clamp-2 text-[12px] font-bold leading-tight text-foreground">

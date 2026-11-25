@@ -2,6 +2,8 @@
 
 This file is the **single source of truth** for every agent working in this project.
 
+**SUPERSEDES the root `AGENTS_HANDOFF.md` copy** — the root copy predates the VANTA GARAGE store, the Turso migration and the Vercel deploy, and is scheduled for removal (see `docs/CLEANUP-PLAN.md`). Where the two disagree, this file wins.
+
 **PRIORITY: NON-NEGOTIABLE — same priority as commit/deploy.** Every agent reads this file before any work and logs every entry in the Activity Log after finishing work. Skipping it is a defect, not an option.
 
 Read it before making any edits. Append to the **Agent Activity Log** after completing work.

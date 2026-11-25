@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { vantaApi } from "@/lib/store/client";
 import { NotificationBell } from "@/components/NotificationBell";
+import { detectPlatform, type Platform } from "@/lib/platform";
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -46,16 +47,11 @@ export function WalletHeader() {
     telegramLinked?: boolean;
   } | null>(null);
   const [hidden, setHidden] = useState(false);
-  // The badge is Telegram-mini-app-only: the SDK injects window.Telegram.WebApp
-  // with real initData there, and nowhere else. Read after mount so SSR stays
-  // hydration-safe.
-  const [inTelegram, setInTelegram] = useState(false);
+  // "Logged in on X" — where this session actually runs. Read after mount so
+  // SSR stays hydration-safe.
+  const [platform, setPlatform] = useState<Platform | null>(null);
   useEffect(() => {
-    setInTelegram(
-      typeof window !== "undefined" &&
-        typeof window.Telegram !== "undefined" &&
-        Boolean(window.Telegram.WebApp?.initData),
-    );
+    setPlatform(detectPlatform());
   }, []);
 
   useEffect(() => {
@@ -110,23 +106,32 @@ export function WalletHeader() {
               <span className="ml-1 text-xs font-normal text-ink-faint">@{profile.username}</span>
             ) : null}
           </p>
-          {inTelegram ? (
+          {platform ? (
             <p className="mt-0.5 inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
-              {/* Telegram's own mark — the mini app's real identity signal */}
-              <svg className="h-4 w-4" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-                <defs>
-                  <linearGradient id="tgBadgeGrad" x1="16" y1="2" x2="16" y2="30" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#37BBFE" />
-                    <stop offset="1" stopColor="#007DBB" />
-                  </linearGradient>
-                </defs>
-                <circle cx="16" cy="16" r="14" fill="url(#tgBadgeGrad)" />
-                <path
-                  d="M22.9866 10.2088C23.1112 9.40332 22.3454 8.76755 21.6292 9.082L7.36482 15.3448C6.85123 15.5703 6.8888 16.3483 7.42147 16.5179L10.3631 17.4547C10.9246 17.6335 11.5325 17.541 12.0228 17.2023L18.655 12.6203C18.855 12.4821 19.073 12.7665 18.9021 12.9426L14.1281 17.8646C13.665 18.3421 13.7569 19.1512 14.314 19.5005L19.659 22.8523C20.2585 23.2282 21.0297 22.8506 21.1418 22.1261L22.9866 10.2088Z"
-                  fill="white"
-                />
-              </svg>
-              Telegram verified
+              {platform.kind === "telegram" ? (
+                /* Telegram's own mark — the mini app's real identity signal */
+                <svg className="h-4 w-4" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="tgBadgeGrad" x1="16" y1="2" x2="16" y2="30" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="#37BBFE" />
+                      <stop offset="1" stopColor="#007DBB" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="16" cy="16" r="14" fill="url(#tgBadgeGrad)" />
+                  <path
+                    d="M22.9866 10.2088C23.1112 9.40332 22.3454 8.76755 21.6292 9.082L7.36482 15.3448C6.85123 15.5703 6.8888 16.3483 7.42147 16.5179L10.3631 17.4547C10.9246 17.6335 11.5325 17.541 12.0228 17.2023L18.655 12.6203C18.855 12.4821 19.073 12.7665 18.9021 12.9426L14.1281 17.8646C13.665 18.3421 13.7569 19.1512 14.314 19.5005L19.659 22.8523C20.2585 23.2282 21.0297 22.8506 21.1418 22.1261L22.9866 10.2088Z"
+                    fill="white"
+                  />
+                </svg>
+              ) : (
+                /* Other platforms: honest label now, their real marks land when
+                   the SVGs arrive — no guessed icons. */
+                <svg className="h-4 w-4 text-ink-soft" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M3 12h18M12 3c3 3.5 3 14.5 0 18-3-3.5-3-14.5 0-18Z" />
+                </svg>
+              )}
+              Logged in on {platform.label}
             </p>
           ) : null}
         </div>

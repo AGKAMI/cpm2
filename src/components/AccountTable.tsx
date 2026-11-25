@@ -211,7 +211,7 @@ export function AccountTable({
       </div>
 
       {/* Mobile / tablet: stacked cards */}
-      <div className="flex flex-col gap-3 lg:hidden">
+      <div className="flex flex-col gap-3 lg:hidden pb-[max(1rem,env(safe-area-inset-bottom))]">
         {accounts.map((account) => (
           <article
             key={account.id}
@@ -307,7 +307,7 @@ export function AccountTable({
               <button
                 type="button"
                 onClick={() => onBuySlot(account)}
-                className="mt-3 w-full cursor-pointer rounded-full border border-border py-2 font-sans text-[11px] font-semibold text-racing hover:border-primary hover:text-primary-foreground"
+                className="mt-3 w-full min-h-[44px] cursor-pointer rounded-full border border-border py-2 font-sans text-[11px] font-semibold text-racing hover:border-primary hover:text-primary-foreground"
               >
                 + Unlock the 21st slot · 100 coins
               </button>
@@ -403,7 +403,7 @@ function StepButton({
       disabled={disabled}
       title={label}
       aria-label={label}
-      className="grid h-6 w-6 cursor-pointer place-items-center rounded-full border border-border text-[13px] leading-none text-ink-soft hover:border-primary hover:text-primary-foreground active:scale-95 disabled:bg-background"
+      className="grid h-10 w-10 cursor-pointer place-items-center rounded-full border border-border text-[13px] leading-none text-ink-soft hover:border-primary hover:text-primary-foreground active:scale-95 disabled:bg-background"
     >
       {children}
     </button>
@@ -429,7 +429,7 @@ function IconAction({
       onClick={onClick}
       title={label}
       aria-label={label}
-      className={`grid h-8 w-8 cursor-pointer place-items-center rounded-full border border-border transition-colors ${
+      className={`grid h-11 w-11 cursor-pointer place-items-center rounded-full border border-border transition-colors ${
         active
           ? "text-racing border-racing hover:border-primary hover:text-primary-foreground"
           : "text-ink-faint border-border hover:border-primary hover:text-primary-foreground"

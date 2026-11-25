@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
 import { StoreShell } from "@/components/StoreShell";
 import Link from "next/link";
-import { StarIcon } from "lucide-react";
+import { StarIcon } from "@/components/StarIcon";
 import { approxStarsForCents } from "@/lib/store/pricing";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
@@ -773,173 +773,7 @@ export function ProfileClient({
         </div>
       </div>
 
-      {/* ============ PROFILE STATS (reference layout) ============
-          Real numbers where the app has data: total orders, Stars spend and
-          Stars-paid top-ups come from the order history. The wallet balance
-          reads a stored wallet that does not exist yet (0 until the wallet
-          feature lands) and reviews have no feature behind them yet.
-          Hidden when signed out — no reason to show zeros to a stranger. */}
-      {customer && (
-      <section className="mb-8 px-4">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl border border-border bg-secondary p-4">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-soft">
-              Wallet balance
-            </p>
-            <p className="mt-1 flex items-center gap-1.5 text-xl font-bold text-foreground">
-              <StarIcon className="h-5 w-5 text-gold" />
-              0
-            </p>
-            <Link
-              href="/store/support"
-              className="mt-2 inline-block text-[11px] font-bold uppercase tracking-[0.16em] text-primary hover:underline"
-            >
-              Top up
-            </Link>
-          </div>
-
-          <div className="rounded-2xl border border-border bg-secondary p-4">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-soft">
-              Total spent
-            </p>
-            <p className="mt-1 flex items-center gap-1.5 text-xl font-bold text-foreground">
-              <StarIcon className="h-5 w-5 text-gold" />
-              {spentStars}
-            </p>
-            <p className="mt-2 text-[11px] text-ink-faint">Stars paid on verified orders</p>
-          </div>
-
-          <div className="rounded-2xl border border-border bg-secondary p-4">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-soft">
-              Total orders
-            </p>
-            <p className="mt-1 text-xl font-bold text-foreground">{ordersCount}</p>
-            <p className="mt-2 text-[11px] text-ink-faint">All time</p>
-          </div>
-
-          <div className="rounded-2xl border border-border bg-secondary p-4">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-soft">
-              Top-ups made
-            </p>
-            <p className="mt-1 text-xl font-bold text-foreground">{topUpCount}</p>
-            <p className="mt-2 text-[11px] text-ink-faint">Stars payments</p>
-          </div>
-
-          <div className="rounded-2xl border border-border bg-secondary p-4 col-span-2">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-soft">
-              Reviews written
-            </p>
-            <p className="mt-1 text-xl font-bold text-foreground">0</p>
-            <p className="mt-2 text-[11px] text-ink-faint">Reviews are not live yet — this fills once the feature ships.</p>
-          </div>
-        </div>
-      </section>
-      )}
-
-      {/* ============ LOGGED-OUT ENTRY ============
-          Account tab only. Two buttons — Log in / Create account — both open
-          the styled auth form (user request: the inline field card goes away). */}
-      {!customer && profileTab === "account" && (
-        <section className="mb-8 px-4">
-          {!authView ? (
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Button variant="primary" className="sm:flex-1" onClick={() => setAuthView("login")}>
-                Log in
-              </Button>
-              <Button variant="outline" className="sm:flex-1" onClick={() => setAuthView("create")}>
-                Create account
-              </Button>
-            </div>
-          ) : (
-            <div className="vanta-auth">
-              <form
-                className="vanta-auth-card"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void submitAuth(authView);
-                }}
-              >
-                <span className="vanta-auth-title">{authView === "login" ? "Login" : "Sign up"}</span>
-                <div className="vanta-auth-field">
-                  <svg width={24} height={24} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <defs>
-                      <linearGradient id="vanta-auth-grad-mail" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
-                        <stop offset="0%" stopColor="black" />
-                        <stop offset="100%" stopColor="white" />
-                      </linearGradient>
-                    </defs>
-                    <g stroke="url(#vanta-auth-grad-mail)" fill="none" strokeWidth={1}>
-                      <path d="M21.6365 5H3L12.2275 12.3636L21.6365 5Z" />
-                      <path d="M16.5 11.5L22.5 6.5V17L16.5 11.5Z" />
-                      <path d="M8 11.5L2 6.5V17L8 11.5Z" />
-                      <path d="M9.5 12.5L2.81805 18.5002H21.6362L15 12.5L12 15L9.5 12.5Z" />
-                    </g>
-                  </svg>
-                  <input
-                    className="vanta-auth-input"
-                    type="email"
-                    name="email"
-                    value={authEmail}
-                    onChange={(e) => setAuthEmail(e.target.value)}
-                    placeholder="Email"
-                    autoComplete="email"
-                    aria-label="Email"
-                  />
-                </div>
-                <div className="vanta-auth-field">
-                  <svg width={24} height={24} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <defs>
-                      <linearGradient id="vanta-auth-grad-key" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
-                        <stop offset="0%" stopColor="black" />
-                        <stop offset="100%" stopColor="white" />
-                      </linearGradient>
-                    </defs>
-                    <g stroke="url(#vanta-auth-grad-key)" fill="none" strokeWidth={1}>
-                      <path d="M3.5 15.5503L9.20029 9.85L12.3503 13L11.6 13.7503H10.25L9.8 15.1003L8 16.0003L7.55 18.2503L5.5 19.6003H3.5V15.5503Z" />
-                      <path d="M16 3.5H11L8.5 6L16 13.5L21 8.5L16 3.5Z" />
-                      <path d="M16 10.5L18 8.5L15 5.5H13L12 6.5L16 10.5Z" />
-                    </g>
-                  </svg>
-                  <input
-                    className="vanta-auth-input"
-                    type="password"
-                    name="password"
-                    value={authPassword}
-                    onChange={(e) => setAuthPassword(e.target.value)}
-                    placeholder="Password"
-                    autoComplete={authView === "login" ? "current-password" : "new-password"}
-                    aria-label="Password"
-                  />
-                </div>
-                <div className="vanta-auth-submit">
-                  <input
-                    className="vanta-auth-submit-input"
-                    type="submit"
-                    value={
-                      loginBusy || createBusy
-                        ? "Working…"
-                        : authView === "login"
-                          ? "Login"
-                          : "Create account"
-                    }
-                    disabled={loginBusy || createBusy || !authEmail.trim() || !authPassword}
-                  />
-                </div>
-                <div className="vanta-auth-texture" aria-hidden="true" />
-              </form>
-              <button
-                type="button"
-                onClick={() => setAuthView(null)}
-                className="mt-4 self-center cursor-pointer text-[11px] font-bold uppercase tracking-[0.18em] text-ink-soft transition-colors hover:text-foreground"
-              >
-                ← Back
-              </button>
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* ============ ACCOUNT TAB ============ */}
+      {/* ============ EDIT PROFILE (account tab only — top) ============ */}
       {customer && profileTab === "account" && (
         <section className="mb-8 px-4">
           {/* Edit profile card — CPM2 ID + stats */}
@@ -1184,9 +1018,9 @@ export function ProfileClient({
                             variant="outline"
                             size="sm"
                             onClick={cancelLinkVerification}
-                            className="mt-2 w-full"
+                            className="flex-1"
                           >
-                            Try again
+                            Cancel
                           </Button>
                         </div>
                       </>
@@ -1210,11 +1044,9 @@ export function ProfileClient({
                       </>
                     )}
                   </>
-
                 )}
               </div>
             )}
-
             {!showCredentials ? (
               <Button
                 variant="primary"
@@ -1278,6 +1110,109 @@ export function ProfileClient({
         </section>
       )}
 
+      {/* ============ LOGGED-OUT ENTRY ============
+          Account tab only. Two buttons — Log in / Create account — both open
+          the styled auth form (user request: the inline field card goes away). */}
+      {!customer && profileTab === "account" && (
+        <section className="mb-8 px-4">
+          {!authView ? (
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button variant="primary" className="sm:flex-1" onClick={() => setAuthView("login")}>
+                Log in
+              </Button>
+              <Button variant="outline" className="sm:flex-1" onClick={() => setAuthView("create")}>
+                Create account
+              </Button>
+            </div>
+          ) : (
+            <div className="vanta-auth">
+              <form
+                className="vanta-auth-card"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void submitAuth(authView);
+                }}
+              >
+                <span className="vanta-auth-title">{authView === "login" ? "Login" : "Sign up"}</span>
+                <div className="vanta-auth-field">
+                  <svg width={24} height={24} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <defs>
+                      <linearGradient id="vanta-auth-grad-mail" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stopColor="black" />
+                        <stop offset="100%" stopColor="white" />
+                      </linearGradient>
+                    </defs>
+                    <g stroke="url(#vanta-auth-grad-mail)" fill="none" strokeWidth={1}>
+                      <path d="M21.6365 5H3L12.2275 12.3636L21.6365 5Z" />
+                      <path d="M16.5 11.5L22.5 6.5V17L16.5 11.5Z" />
+                      <path d="M8 11.5L2 6.5V17L8 11.5Z" />
+                      <path d="M9.5 12.5L2.81805 18.5002H21.6362L15 12.5L12 15L9.5 12.5Z" />
+                    </g>
+                  </svg>
+                  <input
+                    className="vanta-auth-input"
+                    type="email"
+                    name="email"
+                    value={authEmail}
+                    onChange={(e) => setAuthEmail(e.target.value)}
+                    placeholder="Email"
+                    autoComplete="email"
+                    aria-label="Email"
+                  />
+                </div>
+                <div className="vanta-auth-field">
+                  <svg width={24} height={24} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <defs>
+                      <linearGradient id="vanta-auth-grad-key" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stopColor="black" />
+                        <stop offset="100%" stopColor="white" />
+                      </linearGradient>
+                    </defs>
+                    <g stroke="url(#vanta-auth-grad-key)" fill="none" strokeWidth={1}>
+                      <path d="M3.5 15.5503L9.20029 9.85L12.3503 13L11.6 13.7503H10.25L9.8 15.1003L8 16.0003L7.55 18.2503L5.5 19.6003H3.5V15.5503Z" />
+                      <path d="M16 3.5H11L8.5 6L16 13.5L21 8.5L16 3.5Z" />
+                      <path d="M16 10.5L18 8.5L15 5.5H13L12 6.5L16 10.5Z" />
+                    </g>
+                  </svg>
+                  <input
+                    className="vanta-auth-input"
+                    type="password"
+                    name="password"
+                    value={authPassword}
+                    onChange={(e) => setAuthPassword(e.target.value)}
+                    placeholder="Password"
+                    autoComplete={authView === "login" ? "current-password" : "new-password"}
+                    aria-label="Password"
+                  />
+                </div>
+                <div className="vanta-auth-submit">
+                  <input
+                    className="vanta-auth-submit-input"
+                    type="submit"
+                    value={
+                      loginBusy || createBusy
+                        ? "Working…"
+                        : authView === "login"
+                          ? "Login"
+                          : "Create account"
+                    }
+                    disabled={loginBusy || createBusy || !authEmail.trim() || !authPassword}
+                  />
+                </div>
+                <div className="vanta-auth-texture" aria-hidden="true" />
+              </form>
+              <button
+                type="button"
+                onClick={() => setAuthView(null)}
+                className="mt-4 self-center cursor-pointer text-[11px] font-bold uppercase tracking-[0.18em] text-ink-soft transition-colors hover:text-foreground"
+              >
+                ← Back
+              </button>
+            </div>
+          )}
+        </section>
+      )}
+
       {/* ============ APPEARANCE TAB ============ */}
       {profileTab === "appearance" && (
         <section className="mb-8 px-4">
@@ -1336,6 +1271,64 @@ export function ProfileClient({
                 </li>
               ))}
             </ul>
+          </div>
+        </section>
+      )}
+
+      {/* ============ PROFILE STATS (bottom, account tab only) ============ */}
+      {customer && profileTab === "account" && (
+        <section className="mb-8 px-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-2xl border border-border bg-secondary p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-soft">
+                Wallet balance
+              </p>
+              <p className="mt-1 flex items-center gap-1.5 text-xl font-bold text-foreground">
+                <StarIcon className="h-5 w-5 text-gold" />
+                0
+              </p>
+              <Link
+                href="/store/support"
+                className="mt-2 inline-block text-[11px] font-bold uppercase tracking-[0.16em] text-primary hover:underline"
+              >
+                Top up
+              </Link>
+            </div>
+
+            <div className="rounded-2xl border border-border bg-secondary p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-soft">
+                Total spent
+              </p>
+              <p className="mt-1 flex items-center gap-1.5 text-xl font-bold text-foreground">
+                <StarIcon className="h-5 w-5 text-gold" />
+                {spentStars}
+              </p>
+              <p className="mt-2 text-[11px] text-ink-faint">Stars paid on verified orders</p>
+            </div>
+
+            <div className="rounded-2xl border border-border bg-secondary p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-soft">
+                Total orders
+              </p>
+              <p className="mt-1 text-xl font-bold text-foreground">{ordersCount}</p>
+              <p className="mt-2 text-[11px] text-ink-faint">All time</p>
+            </div>
+
+            <div className="rounded-2xl border border-border bg-secondary p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-soft">
+                Top-ups made
+              </p>
+              <p className="mt-1 text-xl font-bold text-foreground">{topUpCount}</p>
+              <p className="mt-2 text-[11px] text-ink-faint">Stars payments</p>
+            </div>
+
+            <div className="rounded-2xl border border-border bg-secondary p-4 col-span-2">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-soft">
+                Reviews written
+              </p>
+              <p className="mt-1 text-xl font-bold text-foreground">0</p>
+              <p className="mt-2 text-[11px] text-ink-faint">Reviews are not live yet — this fills once the feature ships.</p>
+            </div>
           </div>
         </section>
       )}

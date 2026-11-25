@@ -99,9 +99,6 @@ export function WalletHeader() {
           )}
         </Link>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[11px] uppercase tracking-[0.16em] text-ink-soft">
-            {greeting()},
-          </p>
           <p className="truncate text-sm font-bold text-foreground">
             {name}
           </p>

@@ -6,7 +6,8 @@
 
 import { getStoreDb } from "../store-db.ts";
 import { assertTelegramAuth } from "../telegram";
-import { currentUserId } from "../auth.ts";
+import { consoleOwnerEmail, currentUserId } from "../auth.ts";
+import { getUserById } from "../service-turso.ts";
 
 export type AdminRecord = {
   id: number;
@@ -127,6 +128,22 @@ export async function removeAdmin(telegramUserId: string): Promise<boolean> {
 /** Resolve the calling user's admin status from Telegram initData or owner email header.
  *  Returns { isAdmin: boolean, isOwner: boolean, telegramUserId, role }.
  */
+/**
+ * True only when the request carries a valid CONSOLE-scoped session cookie
+ * (minted by the APP_PASSWORD login — the only way one is ever issued) whose
+ * user's email matches the configured owner email. A store-scoped session,
+ * a forged/absent cookie, or no owner email configured all answer false.
+ */
+export async function isSignedOwnerSession(request: Request): Promise<boolean> {
+  const sessionUserId = currentUserId(request);
+  if (!sessionUserId) return false;
+  const ownerEmail = consoleOwnerEmail();
+  if (!ownerEmail) return false;
+  const user = await getUserById(sessionUserId);
+  if (!user) return false;
+  return String(user.email).toLowerCase() === ownerEmail;
+}
+
 export async function resolveAdminStatus(
   request: Request,
   options: { maxAgeSeconds?: number } = {},
@@ -192,10 +209,14 @@ export async function resolveAdminStatus(
     }
   }
 
-  // Web fallback: check X-Owner-Email header against STORE_OWNER_EMAIL env var
-  const ownerEmail = request.headers.get("x-owner-email");
-  const ownerEmailEnv = process.env.STORE_OWNER_EMAIL ?? "";
-  if (ownerEmail && ownerEmailEnv && ownerEmail.toLowerCase() === ownerEmailEnv.toLowerCase()) {
+  // Owner by SIGNED session only. The header this replaces (`x-owner-email`
+  // matched against STORE_OWNER_EMAIL) was a plain request value: the browser
+  // stored the owner email in localStorage and replayed it on every call, so
+  // anyone who learned the address — it was public in source — held owner.
+  // Now the ONLY web owner path is the console-password session cookie
+  // (HMAC-signed, console-scoped) whose user's email matches env
+  // CONSOLE_OWNER_EMAIL/STORE_OWNER_EMAIL.
+  if (await isSignedOwnerSession(request)) {
     return { isAdmin: true, isOwner: true, telegramUserId: null, role: "owner" };
   }
 

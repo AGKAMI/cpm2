@@ -43,7 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <meta
           name="viewport"
-          content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+          content="width=device-width, initial-scale=1, minimum-scale=1, viewport-fit=cover"
         />
         {/* Lock scroll/zoom + call Telegram WebApp ready()/expand() ONLY if we're in a WebApp context.
            When opened from the bot profile "OPEN" button (outside the chat),

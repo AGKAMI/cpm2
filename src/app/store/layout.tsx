@@ -1,9 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import Script from "next/script";
 import { JetBrains_Mono } from "next/font/google";
 import "@/app/globals.css";
-import { TelegramBridge } from "@/components/TelegramBridge";
-import { TelegramInit } from "@/components/TelegramInit";
 import { ToastProvider } from "@/components/ui/Toaster";
 import { DEFAULT_PALETTE, PALETTE_IDS } from "@/lib/themes";
 
@@ -35,6 +32,14 @@ export const viewport: Viewport = {
 // owns the document (and wraps every route in the fleet AppShell). Rendering a
 // second document here left the streamed Suspense boundary stranded at body
 // level and duplicated the whole storefront after hydration.
+//
+// The Telegram Web App SDK (beforeInteractive in the root layout), the
+// ready()/expand() call and the header-colour adapter (TelegramBridge) are
+// all loaded in the ROOT layout and run on every route — /store included.
+// Mounting them here as well loaded the SDK a SECOND time (TelegramInit
+// appends its own script tag), called ready()/expand() twice, and fought
+// over the WebApp header colour (TelegramInit's hard-coded #0a0a0a vs the
+// theme-derived paint) — so this layout intentionally renders neither.
 export default function StoreLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
@@ -42,10 +47,10 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
         dangerouslySetInnerHTML={{ __html: themeScript }}
         suppressHydrationWarning
       />
-      <TelegramInit />
+      {/* Telegram SDK + TelegramBridge live in the root layout only (see the
+          comment above) — mounting them here duplicated both. */}
       <ToastProvider>
         {children}
-        <TelegramBridge />
       </ToastProvider>
     </>
   );

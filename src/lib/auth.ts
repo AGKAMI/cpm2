@@ -86,33 +86,56 @@ function timingSafeEqualBuffers(a: Buffer, b: Buffer): boolean {
 // ---------------------------------------------------------------- sessions
 
 /**
- * Issues a stateless session token: `<user-id>.<expiry-epoch>.<hmac>`.
- * The HMAC binds the user id and expiry to the signing key, so tampering with
- * either breaks the signature. No session table, nothing to clean up.
+ * Which app a session belongs to. The console (fleet/accounts/trade) and the
+ * storefront used to share one signing scheme with no audience claim, so a
+ * session minted by one unlocked the other for the same numeric user id. Every
+ * token now carries its scope, and a verifier that names a scope refuses
+ * tokens from any other one.
  */
-export function createSessionToken(userId: number, now: number = Date.now()): string {
+export type SessionScope = "console" | "store";
+
+const SESSION_SCOPES: readonly string[] = ["console", "store"];
+
+/**
+ * Issues a stateless session token: `<scope>.<user-id>.<expiry-epoch>.<hmac>`.
+ * The HMAC binds all three fields to the signing key, so tampering with any
+ * of them breaks the signature. No session table, nothing to clean up.
+ */
+export function createSessionToken(
+  userId: number,
+  scope: SessionScope,
+  now: number = Date.now(),
+): string {
+  if (!SESSION_SCOPES.includes(scope)) {
+    throw new Error(`Unknown session scope: ${scope}`);
+  }
   const expiresAt = Math.floor(now / 1000) + SESSION_MAX_AGE_SECONDS;
-  const payload = `${userId}.${expiresAt}`;
+  const payload = `${scope}.${userId}.${expiresAt}`;
   return `${payload}.${sessionMac(payload)}`;
 }
 
 /**
- * Parses a session token and returns the user id when valid AND not expired.
- * Returns null otherwise.
+ * Parses a session token and returns the user id when valid, unexpired AND —
+ * when a scope is given — minted for that scope. Returns null otherwise.
+ * Note: existing sessions were issued without a scope, so this one fix
+ * invalidates them once and everyone logs in again.
  */
-export function verifySessionToken(token: string | undefined): number | null {
+export function verifySessionToken(
+  token: string | undefined,
+  expectedScope?: SessionScope,
+): number | null {
   if (!token) return null;
-  const first = token.indexOf(".");
-  const last = token.lastIndexOf(".");
-  if (first <= 0 || last <= first || first === last) return null;
-  const userIdPart = token.slice(0, first);
-  const expiresPart = token.slice(first + 1, last);
-  const mac = token.slice(last + 1);
+  const parts = token.split(".");
+  if (parts.length !== 4) return null;
+  const [scopePart, userIdPart, expiresPart, mac] = parts;
+  if (expectedScope && scopePart !== expectedScope) return null;
+  if (!SESSION_SCOPES.includes(scopePart)) return null;
   const userId = Number(userIdPart);
   const expiresAt = Number(expiresPart);
   if (!Number.isInteger(userId) || userId <= 0) return null;
   if (!Number.isInteger(expiresAt) || expiresAt * 1000 <= Date.now()) return null;
-  return timingSafeEqualStrings(sessionMac(`${userId}.${expiresAt}`), mac) ? userId : null;
+  const payload = `${scopePart}.${userId}.${expiresAt}`;
+  return timingSafeEqualStrings(sessionMac(payload), mac) ? userId : null;
 }
 
 /**
@@ -198,6 +221,51 @@ export function readRequestCookie(request: Request, name: string): string | unde
   return pair.slice(pair.indexOf("=") + 1);
 }
 
+// ---------------------------------------------------------------- client IP (trusted)
+
+/**
+ * The caller's IP as seen by us — not as claimed by the caller.
+ *
+ * `x-forwarded-for` is client-writable: whoever sends the request can put
+ * anything in it, so keying a rate limiter on the FIRST entry meant rotating
+ * the header defeated login throttling entirely. The platform appends the
+ * real socket IP to the END of the chain (Vercel does this), and sets
+ * `x-real-ip` directly, so those are the two values we trust. A local node
+ * server behind TLS has neither — that path yields "local" and is not
+ * internet-exposed.
+ */
+export function trustedClientIp(request: Request): string {
+  const real = request.headers.get("x-real-ip")?.trim();
+  if (real) return real;
+  const xff = request.headers.get("x-forwarded-for");
+  if (xff) {
+    const entries = xff.split(",").map((e) => e.trim()).filter(Boolean);
+    if (entries.length > 0) return entries[entries.length - 1];
+  }
+  return "local";
+}
+
+/**
+ * Constant-time string comparison for secrets. Plain `===` leaks the match
+ * position through timing; this is used for the console password check.
+ */
+export function constantTimeEquals(a: string, b: string): boolean {
+  const bufA = Buffer.from(a.normalize("NFKC"), "utf8");
+  const bufB = Buffer.from(b.normalize("NFKC"), "utf8");
+  if (bufA.length !== bufB.length) {
+    crypto.timingSafeEqual(bufA, bufA);
+    return false;
+  }
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+/** The console owner's email, from env. The identity used to be a literal in
+ *  the login route — public in source and wrong for any other deployment. */
+export function consoleOwnerEmail(): string | null {
+  const fromEnv = process.env.CONSOLE_OWNER_EMAIL ?? process.env.STORE_OWNER_EMAIL;
+  return fromEnv ? fromEnv.trim().toLowerCase() : null;
+}
+
 // --------------------------------------------------------------- rate limiting
 
 const WINDOW_MS = 60_000;
@@ -232,8 +300,9 @@ export function rateLimited(key: string): boolean {
 
 export { scryptHash, scryptCompare };
 
-/** Returns the logged-in user's id from the session cookie, or null. */
+/** Returns the logged-in CONSOLE user's id from the session cookie, or null.
+ *  Store-scoped sessions never satisfy this — that is the point. */
 export function currentUserId(request: Request): number | undefined {
   const token = readRequestCookie(request, SESSION_COOKIE);
-  return verifySessionToken(token) ?? undefined;
+  return verifySessionToken(token, "console") ?? undefined;
 }

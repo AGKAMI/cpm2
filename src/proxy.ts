@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
-import { rateLimit } from "@/lib/store/rate-limit";
+import { SESSION_COOKIE, trustedClientIp, verifySessionToken } from "@/lib/auth";
+import { checkDurableRateLimit } from "@/lib/rate-limit";
 
 /**
  * The single gate in front of the whole console.
@@ -14,17 +14,12 @@ import { rateLimit } from "@/lib/store/rate-limit";
  * lock screen can do its job.
  */
 
-function clientIp(request: NextRequest): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
-  return request.headers.get("x-real-ip") ?? "unknown";
-}
-
 function routeBucket(pathname: string): { maxRequests: number; windowMs: number } {
   if (pathname.includes("/api/store/checkout")) return { maxRequests: 10, windowMs: 60_000 };
   if (pathname.includes("/api/store/payments/payfast/webhook")) return { maxRequests: 30, windowMs: 60_000 };
   if (pathname.includes("/api/store/notifications/send")) return { maxRequests: 5, windowMs: 60_000 };
   if (pathname.includes("/api/store/admin/")) return { maxRequests: 20, windowMs: 60_000 };
+  if (pathname.includes("/api/telegram/webhook")) return { maxRequests: 60, windowMs: 60_000 };
   if (pathname.startsWith("/api/")) return { maxRequests: 60, windowMs: 60_000 };
   return { maxRequests: 120, windowMs: 60_000 };
 }
@@ -33,12 +28,15 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // --- Rate limiting (Sec 19.2) ---
+  // Trust the platform-attested IP, not the first (client-writable) XFF entry,
+  // and count durably — a serverless instance's memory is per-invocation, so
+  // rotating the header (or landing on another instance) reset every counter.
   if (pathname.startsWith("/api/")) {
-    const ip = clientIp(request);
+    const ip = trustedClientIp(request);
     const { maxRequests, windowMs } = routeBucket(pathname);
-    const result = rateLimit(`rl:${ip}:${pathname}`, { maxRequests, windowMs });
+    const limited = await checkDurableRateLimit(`rl:${ip}:${pathname}`, maxRequests, windowMs);
 
-    if (!result.allowed) {
+    if (limited) {
       return new NextResponse(
         JSON.stringify({
           error: {
@@ -50,7 +48,7 @@ export async function proxy(request: NextRequest) {
           status: 429,
           headers: {
             "Content-Type": "application/json",
-            "Retry-After": Math.ceil((result.resetTime - Date.now()) / 1000).toString(),
+            "Retry-After": "60",
           },
         },
       );
@@ -77,6 +75,14 @@ export async function proxy(request: NextRequest) {
   if (pathname.startsWith("/api/bg")) {
     return NextResponse.next();
   }
+  // The Telegram webhook authenticates with its secret token inside the route
+  // (x-telegram-bot-api-secret-token checked against TELEGRAM_WEBHOOK_SECRET).
+  // It must stay reachable — the console session gate used to make it
+  // unreachable: Telegram can't log in, so payment updates and link
+  // verifications never arrived.
+  if (pathname.startsWith("/api/telegram/webhook")) {
+    return NextResponse.next();
+  }
   // VANTA GARAGE store API has its own identity model — public catalog,
   // guest checkout by player id, order scoping, and its own admin gate
   // (requireStoreAdmin). The console session must not gate it: the store
@@ -86,7 +92,9 @@ export async function proxy(request: NextRequest) {
   }
 
   // --- Per-user gate ---
-  const userId = verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value);
+  // Only a CONSOLE-scoped session opens the console; a store-customer token
+  // (same numeric user id, different app) is refused here.
+  const userId = verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value, "console");
 
   // API routes always require auth (401 JSON). Page routes load for everyone —
   // GuestGate blurs them client-side when there's no session, so guests can

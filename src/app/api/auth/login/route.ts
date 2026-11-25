@@ -3,11 +3,14 @@ import { fail, readJson } from "@/lib/route";
 import { getUserByEmail, getUserByTelegramId } from "@/lib/service-turso";
 import {
   SESSION_COOKIE,
+  consoleOwnerEmail,
+  constantTimeEquals,
   createSessionToken,
-  rateLimited,
   scryptCompare,
   sessionCookieOptions,
+  trustedClientIp,
 } from "@/lib/auth";
+import { checkDurableRateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -18,11 +21,10 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(request: Request) {
   try {
-    const ip =
-      request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-      request.headers.get("x-real-ip") ||
-      "local";
-    if (rateLimited(`login:${ip}`)) {
+    // Trust the platform-attested IP, not the first XFF entry the client
+    // controls; and count durably — serverless instances share no memory.
+    const ip = trustedClientIp(request);
+    if (await checkDurableRateLimit(`login:${ip}`, 10, 60_000)) {
       return NextResponse.json(
         { error: { code: "AUTH_SLOW_DOWN", message: "Too many attempts - wait a minute and try again." } },
         { status: 429 },
@@ -52,7 +54,7 @@ export async function POST(request: Request) {
         );
       }
       const response = NextResponse.json({ ok: true, user: { id: owner.id, email: owner.email }, mode: "console" });
-      response.cookies.set(SESSION_COOKIE, createSessionToken(owner.id), sessionCookieOptions(request));
+      response.cookies.set(SESSION_COOKIE, createSessionToken(owner.id, "console"), sessionCookieOptions(request));
       return response;
     }
 
@@ -67,7 +69,7 @@ export async function POST(request: Request) {
     }
 
     const response = NextResponse.json({ ok: true, user: { id: user.id, email: user.email }, mode: "player" });
-    response.cookies.set(SESSION_COOKIE, createSessionToken(user.id), sessionCookieOptions(request));
+    response.cookies.set(SESSION_COOKIE, createSessionToken(user.id, "console"), sessionCookieOptions(request));
     return response;
   } catch (err) {
     return fail(err);

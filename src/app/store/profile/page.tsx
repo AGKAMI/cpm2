@@ -3,6 +3,12 @@ import { Suspense } from "react";
 import { headers } from "next/headers";
 import { ProfileClient } from "@/components/ProfileClient";
 import { ProfileSkeleton } from "@/components/skeleton";
+import { getCustomerByPlatformIdentity } from "@/lib/store/customers";
+import { getStoreDb } from "@/lib/store-db";
+import { verifySessionToken, readRequestCookie, SESSION_COOKIE } from "@/lib/auth";
+import { resolveAdminStatus } from "@/lib/store/admin-service";
+import { fetchTelegramUser, fetchTelegramPhotoFileId } from "@/lib/telegram";
+import type { VantaCustomer, TelegramUser } from "@/lib/store/client";
 
 export const metadata: Metadata = {
   title: "Profile - VANTA GARAGE",
@@ -10,32 +16,169 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
+type ProfileData = {
+  customer: VantaCustomer | null;
+  telegramUser: TelegramUser | null;
+};
+
+/**
+ * Resolves the signed-in customer and Telegram identity for the profile page.
+ *
+ * This is the SAME resolution /api/store/profile performs — Telegram
+ * initData signature verification, signed session cookie, owner-email
+ * fallback — called IN-PROCESS instead of over HTTP. The page used to
+ * self-fetch its own API on every render through a Host header the client
+ * controls, which put an unnecessary internal hop (and a client-chosen
+ * origin) in front of plain server-side data access. No network hop, no
+ * Host header, never a fetch of our own API.
+ */
+async function resolveProfileData(request: Request): Promise<ProfileData> {
+  const adminStatus = await resolveAdminStatus(request);
+  const role: "owner" | "admin" | "customer" = adminStatus.role ?? "customer";
+
+  // 1. Try session cookie (web login)
+  const sessionToken = readRequestCookie(request, SESSION_COOKIE);
+  const sessionUserId = verifySessionToken(sessionToken);
+
+  if (sessionUserId) {
+    const db = await getStoreDb();
+    const customer = await db.execute({
+      sql: `SELECT id, in_game_name, player_id, email, currency_pref, notifications_enabled, created_at, updated_at FROM vanta_customers WHERE id = ?`,
+      args: [sessionUserId],
+    });
+    if (customer.rows.length > 0) {
+      const c = customer.rows[0];
+      // Telegram link status for the logged-in customer
+      const identity = await db.execute({
+        sql: `SELECT platform_user_id, platform_username FROM vanta_platform_identities WHERE platform = 'telegram' AND customer_id = ? LIMIT 1`,
+        args: [sessionUserId],
+      });
+      const telegramLinked = identity.rows.length > 0;
+
+      // Resolve the Telegram display identity (username / first name / avatar)
+      // so the profile header shows the Telegram identity instead of the email
+      // prefix. fetchTelegramUser uses getChat (getUser does not exist in the
+      // Bot API); the avatar is proxied so the bot token stays server-side.
+      let telegramUser: TelegramUser | null = null;
+      if (telegramLinked) {
+        const tgId = String(identity.rows[0].platform_user_id);
+        const tgInfo = await fetchTelegramUser(Number(tgId));
+        const dbUsername = String(identity.rows[0].platform_username ?? "");
+        const username = tgInfo?.username ?? (dbUsername || null);
+        const firstName = tgInfo?.first_name ?? null;
+        const hasPhoto = (await fetchTelegramPhotoFileId(Number(tgId))) !== null;
+        telegramUser = {
+          id: Number(tgId),
+          username: username ?? undefined,
+          firstName: firstName ?? undefined,
+          photoUrl: hasPhoto ? `/api/store/telegram-avatar?v=${tgId}` : undefined,
+          displayName: username || firstName || String(c.in_game_name ?? "") || "user",
+        };
+      }
+
+      return {
+        customer: {
+          id: Number(c.id),
+          inGameName: String(c.in_game_name ?? ""),
+          playerId: String(c.player_id ?? ""),
+          email: String(c.email ?? ""),
+          currencyPref: String(c.currency_pref ?? "ZAR"),
+          notificationsEnabled: Boolean(c.notifications_enabled),
+          telegramLinked,
+          telegramId: telegramLinked ? String(identity.rows[0].platform_user_id) : null,
+          role,
+          createdAt: String(c.created_at ?? ""),
+          updatedAt: String(c.updated_at ?? ""),
+        },
+        telegramUser,
+      };
+    }
+  }
+
+  // 2. Try Telegram initData (Mini App)
+  const initData = request.headers.get("X-Telegram-Init-Data");
+  if (initData) {
+    const params = new URLSearchParams(initData);
+    const userJson = params.get("user");
+    let tgUser: { id: number; username?: string; first_name?: string; last_name?: string; photo_url?: string } | null = null;
+
+    if (userJson) {
+      try {
+        tgUser = JSON.parse(userJson);
+      } catch {
+        tgUser = null;
+      }
+    }
+
+    // Only a Telegram-authenticated request reaches a customer here, so the
+    // identity is known: capture it before the render so the flag can be set
+    // without a narrowing dance TypeScript cannot follow.
+    let customer: VantaCustomer | null = null;
+    let resolvedTelegramId: string | null = null;
+    if (tgUser) {
+      const result = await getCustomerByPlatformIdentity("telegram", String(tgUser.id));
+      if (result) {
+        resolvedTelegramId = String(tgUser.id);
+        customer = {
+          ...result.customer,
+          // The linked customer record carries no email (Telegram users never
+          // set one); the field is display-only and an empty string renders
+          // exactly like the route's omitted value.
+          email: "",
+          role,
+          telegramLinked: true,
+          telegramId: resolvedTelegramId,
+        };
+      }
+    }
+
+    return {
+      customer,
+      telegramUser: tgUser
+        ? {
+            id: tgUser.id,
+            username: tgUser.username,
+            firstName: tgUser.first_name,
+            lastName: tgUser.last_name,
+            photoUrl: tgUser.photo_url,
+            displayName: tgUser.username || tgUser.first_name || "user"
+          }
+        : null,
+    };
+  }
+
+  return { customer: null, telegramUser: null };
+}
+
 async function ProfileContent() {
   const headerList = await headers();
+
+  // Build an in-process Request carrying the same auth inputs the profile API
+  // reads — the Telegram initData header, the signed session cookie and the
+  // owner email — and resolve directly. No self-fetch, and no Host header the
+  // client controls deciding where the app talks to itself.
+  const requestHeaders = new Headers();
+  const cookie = headerList.get("cookie");
+  if (cookie) requestHeaders.set("cookie", cookie);
   const initData = headerList.get("x-telegram-init-data");
-
-  const fetchHeaders: HeadersInit = {};
-  if (initData) fetchHeaders["X-Telegram-Init-Data"] = initData;
-
-  // Same-origin self-fetch. Resolve the host from the request headers instead
-  // of hardcoding one: a fixed localhost:3000 only works where something
-  // answers on that port. On a hostless deploy nothing listens there, the
-  // fetch throws, and the route dies through an error boundary.
-  const host =
-    headerList.get("x-forwarded-host") ?? headerList.get("host") ?? "localhost:3001";
-  const proto = headerList.get("x-forwarded-proto") ?? "http";
-
-  const res = await fetch(`${proto}://${host}/api/store/profile`, {
-    headers: fetchHeaders,
-    cache: "no-store",
+  if (initData) requestHeaders.set("X-Telegram-Init-Data", initData);
+  const ownerEmail = headerList.get("x-owner-email");
+  if (ownerEmail) requestHeaders.set("x-owner-email", ownerEmail);
+  const request = new Request("https://profile.internal/api/store/profile", {
+    headers: requestHeaders,
   });
 
-  let customer = null;
-  let telegramUser = null;
-  if (res.ok) {
-    const data = await res.json();
-    customer = data.customer ?? null;
-    telegramUser = data.telegramUser ?? null;
+  let customer: VantaCustomer | null = null;
+  let telegramUser: TelegramUser | null = null;
+  try {
+    const data = await resolveProfileData(request);
+    customer = data.customer;
+    telegramUser = data.telegramUser;
+  } catch {
+    // A forged/stale Telegram initData header used to come back as a non-ok
+    // response from the self-fetch: the page rendered signed-out and
+    // ProfileClient re-authenticated client-side. Keep that behaviour instead
+    // of letting the throw hit the error boundary.
   }
 
   return (

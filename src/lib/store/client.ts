@@ -15,6 +15,29 @@ function getCacheKey(path: string): string {
   return path;
 }
 
+/**
+ * Paths whose response depends on WHO is calling (session cookie, Telegram
+ * identity, playerId). These must never be served from the browser cache: on
+ * a shared machine the next user would see the previous user's profile,
+ * orders or cart for up to the 30s TTL. The public catalogue paths below are
+ * identity-independent and safe to cache.
+ */
+const PRIVATE_PATH_PREFIXES = [
+  "/profile",
+  "/orders",
+  "/cart",
+  "/customers",
+  "/checkout",
+  "/account",
+  "/admin",
+  "/appointments",
+  "/trade",
+];
+
+function isCacheablePath(path: string): boolean {
+  return !PRIVATE_PATH_PREFIXES.some((p) => path.startsWith(p));
+}
+
 import { clientInitData } from "../client-initdata";
 
 // In a desktop browser the official SDK empties window.Telegram.WebApp.initData,
@@ -33,23 +56,18 @@ function guestPlayerId(): string | null {
   return pid && pid.trim() ? pid.trim() : null;
 }
 
-function ownerEmail(): string | null {
-  if (typeof window === "undefined") return null;
-  const email = window.localStorage.getItem("vanta_owner_email");
-  return email && email.trim() ? email.trim() : null;
-}
-
 const TELEGRAM_INIT_DATA_HEADER = "X-Telegram-Init-Data";
-const OWNER_EMAIL_HEADER = "X-Owner-Email";
 
 export async function request<T>(
   path: string,
   init?: RequestInit,
 ): Promise<T> {
   const cacheKey = getCacheKey(path);
+  const cacheable = isCacheablePath(path);
 
-  // Return cached data if still fresh (only for GET requests without body)
-  if (!init?.method || init.method === "GET") {
+  // Return cached data if still fresh (only for GET requests without body,
+  // and only for identity-independent paths)
+  if ((!init?.method || init.method === "GET") && cacheable) {
     const cached = cache.get(cacheKey);
     if (cached && cached.expiry > Date.now()) {
       return cached.data as T;
@@ -67,8 +85,6 @@ export async function request<T>(
   }
   const initData = telegramInitData();
   if (initData) headers.set(TELEGRAM_INIT_DATA_HEADER, initData);
-  const email = ownerEmail();
-  if (email) headers.set(OWNER_EMAIL_HEADER, email);
 
   let response: Response;
   try {
@@ -96,8 +112,8 @@ export async function request<T>(
     }
   }
 
-  // Cache GET responses
-  if (!init?.method || init.method === "GET") {
+  // Cache GET responses — public paths only (see PRIVATE_PATH_PREFIXES)
+  if ((!init?.method || init.method === "GET") && cacheable) {
     const promise = Promise.resolve(result);
     inflight.set(cacheKey, promise);
     setTimeout(() => inflight.delete(cacheKey), 5000);

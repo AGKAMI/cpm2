@@ -40,7 +40,7 @@ const UPLOAD_ENDPOINT = `${APP_ORIGIN}/api/store/admin/upload-image`;
 
 // Owner = customer 1 (Telegram 7036681178 = STORE_ADMIN_TELEGRAM_ID).
 const OWNER_ID = 1;
-const token = createSessionToken(OWNER_ID);
+const token = createSessionToken(OWNER_ID, "console");
 
 async function uploadImage(absPath: string): Promise<string> {
   const bytes = fs.readFileSync(absPath);

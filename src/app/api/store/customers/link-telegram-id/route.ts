@@ -7,17 +7,86 @@
  * Used when opening the store in a web browser (no Telegram WebApp initData).
  */
 
-import { fail, ok, readJson } from "@/lib/route";
+import { fail, readJson } from "@/lib/route";
 import { telegramBotToken } from "@/lib/telegram";
-import { getCustomerByPlayerId, getCustomerByPlatformIdentity, linkPlatformIdentity, updateCustomer } from "@/lib/store/customers";
+import { getCustomerByPlatformIdentity } from "@/lib/store/customers";
 import { NextResponse } from "next/server";
 import { createSessionToken, sessionCookieOptions, currentUserId } from "@/lib/auth";
+import { getStoreDb } from "@/lib/store-db";
 
 export const dynamic = "force-dynamic";
 
+const VERIFICATION_WINDOW_SECONDS = 120; // 2 minutes
+
+function makeCode(length = 8): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no confusing 0/O/1/I
+  let code = "";
+  for (let i = 0; i < length; i += 1) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
 function setSessionCookie(response: NextResponse, customerId: number, request: Request) {
-  const token = createSessionToken(customerId);
+  const token = createSessionToken(customerId, "store");
   response.cookies.set("cpm2_session", token, sessionCookieOptions(request));
+}
+
+/** Send the Yes/No verification DM to the claimed Telegram id. The actual
+ *  linkPlatformIdentity happens in the webhook on a confirmed "yes" — never
+ *  here. */
+async function sendVerificationDm(
+  token: string,
+  telegramUserId: string,
+  customerId: number,
+): Promise<number | null> {
+  const db = await getStoreDb();
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + VERIFICATION_WINDOW_SECONDS * 1000);
+  const code = makeCode();
+
+  const result = await db.execute({
+    sql: `INSERT INTO vanta_telegram_verifications
+          (customer_id, telegram_user_id, verification_code, status, expires_at, created_at)
+          VALUES (?, ?, ?, 'pending', ?, ?)`,
+    args: [customerId, telegramUserId, code, expiresAt.toISOString(), now.toISOString()],
+  });
+  const verificationId = Number(result.lastInsertRowid);
+
+  const text = `
+🚨 <b>VANTA GARAGE — Link Verification</b> 🚨
+
+Someone is trying to link Telegram ID <code>${telegramUserId}</code> to a VANTA GARAGE store account on the web.
+
+<b>If this is YOU:</b> Click "Yes, it's me" below to confirm the link.
+
+<b>If this is NOT YOU:</b> Click "No, it's not me" to reject. Your Telegram ID will NOT be linked to any account, and no action will be taken against you.
+
+⚠️ <b>This verification expires in 2 minutes.</b> If you do nothing, the link request will expire automatically.
+    `.trim();
+
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: telegramUserId,
+        text,
+        parse_mode: "HTML",
+        disable_web_page_preview: true,
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: "✅ Yes, it's me", callback_data: `tg_verify_yes_${verificationId}` },
+              { text: "❌ No, it's not me", callback_data: `tg_verify_no_${verificationId}` },
+            ],
+          ],
+        },
+      }),
+    });
+  } catch {
+    // Non-fatal: the verification row exists; the user can start a new
+    // attempt if the DM never arrived.
+  }
+  return verificationId;
 }
 
 export async function POST(request: Request) {
@@ -54,92 +123,70 @@ export async function POST(request: Request) {
       }
     }
 
-    // Check if this Telegram ID is already linked to a customer
+    // Already linked to SOMEONE — the caller may only be told "already yours"
+    // when the session IS that customer. Anything else is refused: no session
+    // is minted for another customer's account (that was the takeover), and a
+    // session may not move an identity that belongs to a different customer.
     const existing = await getCustomerByPlatformIdentity("telegram", telegramUserId);
-
-    // Session-aware linking: a customer already logged in via email/password
-    // attaches this Telegram ID to their EXISTING account. Profiles are
-    // relinkable — if the ID belongs to a different account it is moved here.
     const sessionUserId = currentUserId(request);
-    if (sessionUserId) {
-      const alreadyLinked = Boolean(existing && existing.customer.id === sessionUserId);
-      await linkPlatformIdentity(sessionUserId, "telegram", telegramUserId, tgDisplayName ?? "");
-
-      const response = new NextResponse(
-        JSON.stringify({
-          customerId: sessionUserId,
-          inGameName: alreadyLinked && existing ? existing.customer.inGameName : (tgDisplayName ?? ""),
-          message: alreadyLinked ? "Telegram already linked to this account." : "Telegram linked to your account.",
-        }),
-        {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      );
-      setSessionCookie(response, sessionUserId, request);
-      const cookie = `vanta_telegram_id=${telegramUserId}; Path=/; Max-Age=2592000; SameSite=Lax`;
-      response.headers.append("Set-Cookie", cookie);
-      return response;
-    }
-
     if (existing) {
-      // If they linked before with a placeholder tg_XXX name, update to real name
-      if (existing.customer.inGameName.startsWith("tg_") && tgDisplayName) {
-        await updateCustomer(existing.customer.id, { inGameName: tgDisplayName });
+      if (sessionUserId && existing.customer.id === sessionUserId) {
+        if (token) await sendVerificationDm(token, telegramUserId, sessionUserId);
+        const response = NextResponse.json({
+          customerId: sessionUserId,
+          verificationPending: true,
+          message: "Telegram is already linked to this account.",
+        });
+        setSessionCookie(response, sessionUserId, request);
+        return response;
       }
-
-      // Set cookie for owner/admin tab detection on web
-      const response = new NextResponse(
-        JSON.stringify({
-          customerId: existing.customer.id,
-          inGameName: tgDisplayName ?? existing.customer.inGameName,
-          message: "Telegram already linked to this account.",
-        }),
+      return NextResponse.json(
         {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
+          error: {
+            code: "ALREADY_LINKED",
+            message:
+              "That Telegram ID is already linked to another account. Sign in to that account, or use a different Telegram ID.",
           },
         },
+        { status: 409 },
       );
-      setSessionCookie(response, existing.customer.id, request);
-      const cookie = `vanta_telegram_id=${telegramUserId}; Path=/; Max-Age=2592000; SameSite=Lax`;
-      response.headers.append("Set-Cookie", cookie);
-      return response;
     }
 
-    // Check if there's an existing customer via guest playerId
-    // We can't know which customer this is without some identifier,
-    // so create a new customer linked to this Telegram ID.
-    const { createCustomer } = await import("@/lib/store/customers");
-    const created = await createCustomer({
-      inGameName: tgDisplayName ?? `tg_${telegramUserId}`,
-      playerId: "",
-      currencyPref: "ZAR",
+    if (!token) {
+      return NextResponse.json(
+        { error: { code: "BOT_NOT_CONFIGURED", message: "Telegram verification is unavailable right now." } },
+        { status: 503 },
+      );
+    }
+
+    // Unlinked id — the only way to attach it is the DM proof.
+    let customerId: number;
+    const db = await getStoreDb();
+
+    if (sessionUserId) {
+      customerId = sessionUserId;
+    } else {
+      // Sessionless callers get a guest customer of their OWN — never the
+      // account that already owns (or will own) this Telegram id. The
+      // identity itself stays unattached until the DM confirmation.
+      const now = new Date().toISOString();
+      const created = await db.execute({
+        sql: `INSERT INTO vanta_customers (in_game_name, player_id, currency_pref, created_at, updated_at)
+              VALUES (?, '', 'ZAR', ?, ?)`,
+        args: [tgDisplayName ?? `tg_${telegramUserId}`, now, now],
+      });
+      customerId = Number(created.lastInsertRowid);
+    }
+
+    await sendVerificationDm(token, telegramUserId, customerId);
+
+    const response = NextResponse.json({
+      customerId,
+      verificationPending: true,
+      message:
+        "Check your Telegram — confirm the 'Yes, it's me' button in the DM from the VANTA GARAGE bot to finish linking. The link expires in 2 minutes.",
     });
-
-    await linkPlatformIdentity(created.id, "telegram", telegramUserId, "");
-
-    // Set a cookie so the owner/admin tabs show on web (no Telegram WebApp initData).
-    // resolveAdminStatus checks this cookie against STORE_ADMIN_TELEGRAM_ID.
-    const response = new NextResponse(
-      JSON.stringify({
-        customerId: created.id,
-        inGameName: created.inGameName,
-        message: "Telegram linked successfully.",
-      }),
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
-    );
-    setSessionCookie(response, created.id, request);
-    const cookie = `vanta_telegram_id=${telegramUserId}; Path=/; Max-Age=2592000; SameSite=Lax`;
-    response.headers.append("Set-Cookie", cookie);
+    setSessionCookie(response, customerId, request);
     return response;
   } catch (err) {
     return fail(err);

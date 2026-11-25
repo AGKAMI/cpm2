@@ -39,25 +39,6 @@ export async function GET(
         body: { error: { code: "invalid_filename", message: "Image not found." } },
       });
     }
-    // path.join(), which does NOT neutralise traversal — proven live before this
-    // guard: GET /api/store/admin/uploads/..%2F..%2Fpackage.json returned 200
-    // with the app's package.json contents.
-    // Every filename written by saveUpload() is a uuid + a known image
-    // extension, so anything else is refused here.
-    if (
-      !filename ||
-      filename.includes("/") ||
-      filename.includes("\\") ||
-      filename.includes("..") ||
-      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(png|jpe?g|gif|webp)$/i.test(
-        filename,
-      )
-    ) {
-      return fail({
-        status: 400,
-        body: { error: { code: "invalid_filename", message: "Image not found." } },
-      });
-    }
 
     // DB-backed copy first — serverless deploys have a read-only FS and never
     // wrote the file to disk in the first place.

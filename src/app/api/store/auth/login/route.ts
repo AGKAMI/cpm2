@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStoreDb } from "@/lib/store-db";
-import { scryptCompare, createSessionToken, sessionCookieOptions, rateLimited } from "@/lib/auth";
+import {
+  scryptCompare,
+  createSessionToken,
+  sessionCookieOptions,
+  trustedClientIp,
+} from "@/lib/auth";
+import { checkDurableRateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  if (rateLimited(`store-login:${ip}`)) {
+  // Platform-attested IP + a durable counter (serverless shares no memory).
+  const ip = trustedClientIp(request);
+  if (await checkDurableRateLimit(`store-login:${ip}`, 10, 60_000)) {
     return NextResponse.json(
       { error: { code: "RATE_LIMITED", message: "Too many login attempts. Try again later." } },
       { status: 429 }
@@ -72,7 +79,8 @@ export async function POST(request: NextRequest) {
     const c = customer.rows[0];
 
     // Create session token and set cookie
-    const token = createSessionToken(customerId);
+    // Store-scoped session: it unlocks the storefront, never the console.
+    const token = createSessionToken(customerId, "store");
     const response = NextResponse.json({
       customer: {
         id: Number(c.id),

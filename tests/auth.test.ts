@@ -28,19 +28,35 @@ const { resetKeyCache } = await import("../src/lib/crypto.ts");
 
 describe("auth · session tokens", () => {
   it("round-trips a fresh token", () => {
-    assert.equal(verifySessionToken(createSessionToken(1)), 1);
+    const token = createSessionToken(1, "console");
+    assert.equal(verifySessionToken(token, "console"), 1);
   });
 
   it("refuses an expired token", () => {
-    const stale = createSessionToken(1, Date.now() - (SESSION_MAX_AGE_SECONDS + 60) * 1000);
-    assert.equal(verifySessionToken(stale), null);
+    const stale = createSessionToken(1, "console", Date.now() - (SESSION_MAX_AGE_SECONDS + 60) * 1000);
+    assert.equal(verifySessionToken(stale, "console"), null);
   });
 
   it("refuses a tampered expiry — the signature no longer matches", () => {
-    const token = createSessionToken(1);
+    const token = createSessionToken(1, "console");
     const parts = token.split(".");
-    const forged = `${parts[0]}.${Number(parts[1]) + 86_400}.${parts[2]}`;
-    assert.equal(verifySessionToken(forged), null);
+    const forged = `${parts[0]}.${parts[1]}.${Number(parts[2]) + 86_400}.${parts[3]}`;
+    assert.equal(verifySessionToken(forged, "console"), null);
+  });
+
+  it("refuses a token minted for the OTHER app — scopes do not cross", () => {
+    // A store-customer token must not open the console for the same numeric id.
+    const storeToken = createSessionToken(1, "store");
+    assert.equal(verifySessionToken(storeToken, "console"), null);
+    const consoleToken = createSessionToken(1, "console");
+    assert.equal(verifySessionToken(consoleToken, "store"), null);
+  });
+
+  it("refuses a forged scope — the MAC covers it", () => {
+    const token = createSessionToken(1, "store");
+    const [scope, id, exp, mac] = token.split(".");
+    const flipped = `console.${id}.${exp}.${mac}`;
+    assert.equal(verifySessionToken(flipped, "console"), null);
   });
 
   it("refuses garbage, empty and missing tokens", () => {
@@ -51,18 +67,18 @@ describe("auth · session tokens", () => {
   });
 
   it("is not re-issuable without the key: a token signed by another key fails", () => {
-    const real = createSessionToken(1);
+    const real = createSessionToken(1, "console");
 
     const savedEnv = process.env.CPM2_ENCRYPTION_KEY;
     process.env.CPM2_ENCRYPTION_KEY = Buffer.from(crypto.randomBytes(32)).toString("base64");
     resetKeyCache();
-    const forged = createSessionToken(1);
+    const forged = createSessionToken(1, "console");
     if (savedEnv) process.env.CPM2_ENCRYPTION_KEY = savedEnv;
     else delete process.env.CPM2_ENCRYPTION_KEY;
     resetKeyCache();
 
-    assert.equal(verifySessionToken(forged), null, "a foreign-key token must not open the console");
-    assert.equal(verifySessionToken(real), 1, "the real token still verifies");
+    assert.equal(verifySessionToken(forged, "console"), null, "a foreign-key token must not open the console");
+    assert.equal(verifySessionToken(real, "console"), 1, "the real token still verifies");
   });
 });
 

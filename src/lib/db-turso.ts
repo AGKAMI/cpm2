@@ -116,6 +116,13 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email
   ON users (email COLLATE NOCASE);
 
+-- A Telegram id identifies at most one console user. Without this index the
+-- same Telegram id could be bound to several accounts and
+-- getUserByTelegramId() returned whichever duplicate came back first. The
+-- partial index ignores the NULL column of unbound users.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_telegram
+  ON users (telegram_user_id) WHERE telegram_user_id IS NOT NULL;
+
 CREATE TABLE IF NOT EXISTS accounts (${ACCOUNT_COLUMNS});
 
 CREATE INDEX IF NOT EXISTS idx_accounts_user_id

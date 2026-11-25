@@ -121,7 +121,7 @@ export function NotificationBell() {
         disabled={loading}
       >
         <svg
-          className="w-3 h-3"
+          className="h-5 w-5"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"

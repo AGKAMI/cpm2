@@ -8,13 +8,17 @@ import { reserveStock, releaseStock, confirmStockDeduction, getInventory, create
 import type { Order, OrderState, PaymentState, DeliveryState } from "../store-types.ts";
 import { ApiError } from "../api.ts";
 
-const RESERVATION_MINUTES = 60;
+/** Stock reservation window in minutes. Exported so tests assert the real
+ *  value instead of a private copy that can drift from production. */
+export const RESERVATION_MINUTES = 60;
 
 function nowIso(): string {
   return new Date().toISOString();
 }
 
-function orderId(): string {
+/** Order id: `VNT_<base36 ms>_<6 random base36 chars>` — prefixed for
+ *  readability and time-sortable. Exported for tests + scripts. */
+export function orderId(): string {
   return `VNT_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 

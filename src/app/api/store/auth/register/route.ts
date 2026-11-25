@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStoreDb } from "@/lib/store-db";
-import { scryptHash, createSessionToken, sessionCookieOptions, rateLimited } from "@/lib/auth";
+import { scryptHash, createSessionToken, sessionCookieOptions, trustedClientIp } from "@/lib/auth";
+import { checkDurableRateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  if (rateLimited(`store-register:${ip}`)) {
+  // Platform-attested IP + durable counter (serverless shares no memory).
+  const ip = trustedClientIp(request);
+  if (await checkDurableRateLimit(`store-register:${ip}`, 10, 60_000)) {
     return NextResponse.json(
       { error: { code: "RATE_LIMITED", message: "Too many attempts. Try again later." } },
       { status: 429 }
@@ -20,7 +22,15 @@ export async function POST(request: NextRequest) {
     } catch {
       body = {}; // empty or malformed body -> validation below, not a 500
     }
-    const { email, password, playerId } = body as { email?: string; password?: string; playerId?: string };
+    // playerId is deliberately NOT accepted as an identity claim. It used to
+    // be: an anonymous POST with any (email, password, playerId) resolved the
+    // victim's customer row by that playerId, overwrote their email,
+    // attached the ATTACKER's credentials, and issued a session for the
+    // victim's account — a full takeover, and player ids are short and
+    // visible in orders/URLs. A guest record's history is only ever bound to
+    // a login through a verified identity (Telegram link or the DM-proof
+    // flow), never through a guessable string.
+    const { email, password } = body as { email?: string; password?: string; playerId?: string };
 
     if (!email || !password) {
       return NextResponse.json(
@@ -45,42 +55,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let customerId: number;
-
-    if (playerId && playerId.trim()) {
-      // Find customer by playerId (web guest who checked out)
-      const customer = await db.execute({
-        sql: `SELECT id FROM vanta_customers WHERE player_id = ? LIMIT 1`,
-        args: [playerId.trim()],
-      });
-
-      if (customer.rows.length > 0) {
-        customerId = Number(customer.rows[0].id);
-        // Update customer with email if not set
-        await db.execute({
-          sql: `UPDATE vanta_customers SET email = ?, updated_at = ? WHERE id = ?`,
-          args: [customerEmail, new Date().toISOString(), customerId],
-        });
-      } else {
-        // Create new customer with playerId and email
+    // Every registration creates its OWN customer — no lookup, no claiming,
+        // no email overwrite (see the playerId note above).
         const now = new Date().toISOString();
         const result = await db.execute({
-          sql: `INSERT INTO vanta_customers (in_game_name, player_id, email, currency_pref, created_at, updated_at)
-                VALUES (?, ?, ?, 'ZAR', ?, ?)`,
-          args: ["", playerId.trim(), customerEmail, now, now],
+          sql: `INSERT INTO vanta_customers (email, in_game_name, currency_pref, created_at, updated_at)
+                VALUES (?, ?, 'ZAR', ?, ?)`,
+          args: [customerEmail, customerEmail.split("@")[0], now, now],
         });
-        customerId = Number(result.lastInsertRowid);
-      }
-    } else {
-      // Create new customer with just email
-      const now = new Date().toISOString();
-      const result = await db.execute({
-        sql: `INSERT INTO vanta_customers (email, in_game_name, currency_pref, created_at, updated_at)
-              VALUES (?, ?, 'ZAR', ?, ?)`,
-        args: [customerEmail, customerEmail.split("@")[0], now, now],
-      });
-      customerId = Number(result.lastInsertRowid);
-    }
+        const customerId = Number(result.lastInsertRowid);
 
     // Create credentials table if not exists
     await db.execute({
@@ -104,17 +87,18 @@ export async function POST(request: NextRequest) {
 
     // Hash password
     const passwordHash = scryptHash(password);
-    const now = new Date().toISOString();
+    const credsNow = new Date().toISOString();
 
     // Insert credentials
     await db.execute({
       sql: `INSERT INTO vanta_customer_credentials (customer_id, email, password_hash, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?)`,
-      args: [customerId, customerEmail, passwordHash, now, now],
+      args: [customerId, customerEmail, passwordHash, credsNow, credsNow],
     });
 
     // Create session token and set cookie
-    const token = createSessionToken(customerId);
+    // Store-scoped session: it unlocks the storefront, never the console.
+    const token = createSessionToken(customerId, "store");
     const response = NextResponse.json({
       customer: {
         id: customerId,

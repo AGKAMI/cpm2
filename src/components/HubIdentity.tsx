@@ -13,13 +13,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { vantaApi } from "@/lib/store/client";
 
-function greeting(): string {
-  const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  return "Good evening";
-}
-
 export function HubIdentity() {
   const [profile, setProfile] = useState<{
     displayName?: string;
@@ -66,9 +59,7 @@ export function HubIdentity() {
         </div>
       )}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[11px] uppercase tracking-[0.16em] text-ink-soft">
-          {greeting()}, {name}
-        </p>
+        <p className="truncate text-sm font-bold text-foreground">{name}</p>
       </div>
     </Link>
   );

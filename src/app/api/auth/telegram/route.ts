@@ -57,7 +57,7 @@ export async function POST(request: Request) {
     if (user) {
       // Already bound — session straight in.
       const response = NextResponse.json({ ok: true, user: { id: user.id, email: user.email } });
-      response.cookies.set(SESSION_COOKIE, createSessionToken(user.id), sessionCookieOptions(request));
+      response.cookies.set(SESSION_COOKIE, createSessionToken(user.id, "console"), sessionCookieOptions(request));
       return response;
     }
 
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
         }
         await bindUserTelegram(owner.id, telegramUserId);
         const response = NextResponse.json({ ok: true, user: { id: owner.id, email: owner.email }, mode: "console" });
-        response.cookies.set(SESSION_COOKIE, createSessionToken(owner.id), sessionCookieOptions(request));
+        response.cookies.set(SESSION_COOKIE, createSessionToken(owner.id, "console"), sessionCookieOptions(request));
         return response;
       }
     }
@@ -111,7 +111,7 @@ export async function POST(request: Request) {
 
     await bindUserTelegram(verified.id, telegramUserId);
     const response = NextResponse.json({ ok: true, user: { id: verified.id, email: verified.email } });
-    response.cookies.set(SESSION_COOKIE, createSessionToken(verified.id), sessionCookieOptions(request));
+    response.cookies.set(SESSION_COOKIE, createSessionToken(verified.id, "console"), sessionCookieOptions(request));
     return response;
   } catch (err) {
     return fail(err);

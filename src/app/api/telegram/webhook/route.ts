@@ -12,7 +12,8 @@ import { readJson } from "@/lib/route";
 import { telegramBotToken } from "@/lib/telegram";
 import { getStoreDb } from "@/lib/store-db";
 import { linkPlatformIdentity } from "@/lib/store/customers";
-import { getOrder, updatePaymentState, updateOrderState } from "@/lib/store/checkout";
+import { confirmPayment, getOrder } from "@/lib/store/checkout";
+import { constantTimeEquals } from "@/lib/auth";
 import { recordPayment } from "@/lib/store/payments";
 import { ledgerEntry } from "@/lib/store/ledger";
 import { notifyCustomer } from "@/lib/store/notifications";
@@ -82,6 +83,18 @@ async function sendFollowup(token: string, chatId: number | string, text: string
 
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate the caller as TELEGRAM, not as anyone who found the URL.
+    // The webhook is registered with a secret_token; Telegram replays it in
+    // this header on every update. When TELEGRAM_WEBHOOK_SECRET is configured,
+    // a missing or wrong value is refused — without this check anyone could
+    // POST a fabricated successful_payment and mark an order paid.
+    const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
+    if (secret) {
+      const provided = request.headers.get("x-telegram-bot-api-secret-token") ?? "";
+      if (!provided || !constantTimeEquals(provided, secret)) {
+        return NextResponse.json({ error: { code: "WEBHOOK_FORBIDDEN" } }, { status: 403 });
+      }
+    }
     const body = (await readJson(request)) as Record<string, unknown>;
     const token = telegramBotToken();
     if (!token) {
@@ -235,20 +248,37 @@ export async function POST(request: NextRequest) {
       const sp = message.successful_payment;
       const orderId = String(sp.invoice_payload ?? "");
       const order = orderId ? await getOrder(orderId) : null;
-      if (order && order.paymentState !== "verified") {
+      // Everything the pre_checkout gate re-validates must ALSO hold at
+      // settlement: this update is the only proof of payment, so an order we
+      // never invoiced, a non-XTR currency, an amount that does not match the
+      // order, or a payer who is not the order's customer must never settle.
+      const expectedStars = order ? starsForCents(order.amountCents) : null;
+      const customerTgId = order ? await getCustomerTelegramId(order.customerId) : null;
+      const settled =
+        order !== null &&
+        order.paymentMethod === "stars" &&
+        order.paymentState !== "verified" &&
+        String(sp.currency ?? "") === "XTR" &&
+        expectedStars !== null &&
+        Number(sp.total_amount) === expectedStars &&
+        customerTgId !== null &&
+        String(customerTgId) === String(message.from?.id ?? "");
+      if (settled && order) {
         const amountCents = order.amountCents;
         await recordPayment({
-          orderId,
+          orderId: order.id,
           provider: "telegram_stars",
           providerRef: String(sp.telegram_payment_charge_id ?? ""),
           amountCents,
           currency: order.currency,
           status: "verified",
         });
-        await updatePaymentState(orderId, "verified");
-        await updateOrderState(orderId, "payment_confirmed");
+        // The shared race-safe path: flips state with a conditional UPDATE and
+        // deducts stock exactly once. Calling updatePaymentState directly (as
+        // before) skipped confirmStockDeduction entirely.
+        await confirmPayment(order.id);
         await ledgerEntry({
-          orderId,
+          orderId: order.id,
           type: "payment",
           amountCents,
           currency: order.currency,
@@ -262,6 +292,10 @@ export async function POST(request: NextRequest) {
           inGameName: order.inGameName,
           playerId: order.playerId,
         }).catch((err) => console.error("Stars notification failed:", err));
+      } else if (order) {
+        console.error(
+          `Stars settlement refused for ${order.id}: currency=${sp.currency} amount=${sp.total_amount} expected=${expectedStars} payer=${message.from?.id} customer=${customerTgId}`,
+        );
       }
       return NextResponse.json({ ok: true });
     }

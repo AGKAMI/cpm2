@@ -14,7 +14,7 @@ import { createSessionToken, sessionCookieOptions, currentUserId } from "@/lib/a
 export const dynamic = "force-dynamic";
 
 function setSessionCookie(response: NextResponse, customerId: number, request: Request) {
-  const token = createSessionToken(customerId);
+  const token = createSessionToken(customerId, "store");
   response.cookies.set("cpm2_session", token, sessionCookieOptions(request));
 }
 
@@ -85,4 +85,3 @@ export async function POST(request: Request) {
     return fail(err);
   }
 }
-

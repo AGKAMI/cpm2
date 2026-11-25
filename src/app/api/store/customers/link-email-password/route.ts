@@ -2,13 +2,15 @@
  * VANTA GARAGE — link email + password to a customer.
  * POST /api/store/customers/link-email-password
  * Body: { email, password }
- * Header: X-Telegram-Init-Data (for Telegram users) OR X-Owner-Email (for web owner access)
+ * Header: X-Telegram-Init-Data (for Telegram users) OR a signed console
+ * session cookie (for the web owner — the plain X-Owner-Email header path
+ * was a client-replayed value and is removed).
  *
  * Links an email + password to a customer account so the customer can also
  * log in from the web browser.
  *
  * Telegram users: authenticated via initData, customer found by Telegram link.
- * Web owner: authenticated via X-Owner-Email matching STORE_OWNER_EMAIL env var,
+ * Web owner: authenticated by a signed console session (APP_PASSWORD login),
  * customer found/created by email.
  */
 
@@ -16,6 +18,7 @@ import { NextResponse } from "next/server";
 import { fail, ok, readJson } from "@/lib/route";
 import { initDataUserId, telegramBotToken, verifyTelegramInitData } from "@/lib/telegram";
 import { scryptHash } from "@/lib/auth";
+import { isSignedOwnerSession } from "@/lib/store/admin-service";
 import { getStoreDb } from "@/lib/store-db";
 
 export const dynamic = "force-dynamic";
@@ -32,9 +35,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const ownerEmailEnv = process.env.STORE_OWNER_EMAIL ?? "";
-    const ownerEmailHeader = request.headers.get("x-owner-email") ?? "";
-    const isOwnerEmail = ownerEmailEnv && ownerEmailHeader.toLowerCase() === ownerEmailEnv.toLowerCase();
+    // Signed console session only — never a plain header value.
+    const isOwnerEmail = await isSignedOwnerSession(request);
 
     let customerId: number;
     const customerEmail = email.trim().toLowerCase();

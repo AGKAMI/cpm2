@@ -44,6 +44,9 @@ const WHATSAPP_CHANNEL_ID = "0029Vb9MVBOGpLHVobbY3e0s";
 const VANTA_WHATSAPP_WEBHOOK_URL = process.env.VANTA_WHATSAPP_WEBHOOK_URL || "";
 const VANTA_WHATSAPP_WEBHOOK_SECRET = process.env.VANTA_WHATSAPP_WEBHOOK_SECRET || "";
 
+/** Canonical origin for links inside notifications (order deep links). */
+const SITE_ORIGIN = process.env.NEXT_PUBLIC_SITE_URL ?? "https://cpm2-bay.vercel.app";
+
 export async function broadcastToWhatsAppBot(text: string, imageUrl?: string): Promise<void> {
   if (!VANTA_WHATSAPP_WEBHOOK_URL) {
     console.warn("VANTA_WHATSAPP_WEBHOOK_URL not set — skipping WhatsApp bot broadcast");
@@ -283,7 +286,7 @@ export async function notifyCustomer(
     order.id
       ? {
           inline_keyboard: [
-            [{ text: "View Order", url: `https://cpm2-bay.vercel.app/store/orders?id=${order.id}` }],
+            [{ text: "View Order", url: `${SITE_ORIGIN}/store/orders/${order.id}` }],
             ...(showConfirm ? [[{ text: "Confirm Delivery", callback_data: `tg_delivery_confirm_${order.id}` }]] : []),
           ],
         }

@@ -1141,6 +1141,15 @@ export async function getUserByTelegramId(telegramUserId: number) {
   return (row.rows[0] as unknown as UserRow | undefined) ?? null;
 }
 
+export async function getUserById(id: number) {
+  const db = await getTursoDb();
+  const row = await db.execute({
+    sql: `SELECT * FROM users WHERE id = ? LIMIT 1`,
+    args: [id],
+  });
+  return (row.rows[0] as unknown as UserRow | undefined) ?? null;
+}
+
 export async function getUserByEmail(email: string) {
   const db = await getTursoDb();
   const row = await db.execute({
@@ -1182,6 +1191,22 @@ export async function bindUserTelegram(userId: number, telegramUserId: number) {
   });
   if (!row.rows[0]) {
     throw new ApiError(404, "USER_NOT_FOUND", "That user does not exist.");
+  }
+  // A Telegram id may be bound to at most one console user (there is a unique
+  // index on the column). Rebinding someone else's id silently MOVED their
+  // identity to the caller — the victim then resolved to the wrong account
+  // (or none) on getUserByTelegramId(). Only the current owner of the binding
+  // may re-affirm it.
+  const holder = await db.execute({
+    sql: `SELECT id FROM users WHERE telegram_user_id = ? AND id != ? LIMIT 1`,
+    args: [telegramUserId, userId],
+  });
+  if (holder.rows.length > 0) {
+    throw new ApiError(
+      409,
+      "TELEGRAM_ALREADY_BOUND",
+      "That Telegram ID is already linked to another account.",
+    );
   }
   await db.execute({
     sql: `UPDATE users SET telegram_user_id = ?, updated_at = ? WHERE id = ?`,

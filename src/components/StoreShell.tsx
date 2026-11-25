@@ -249,7 +249,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
                   className="grid w-11 h-11 shrink-0 place-items-center rounded-full border border-border bg-background text-ink-soft transition-colors hover:border-gold hover:text-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[var(--scale-medium)]"
                 >
                   <svg
-                    className="h-4 w-4"
+                    className="h-5 w-5"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"

@@ -13,9 +13,9 @@
  */
 
 export type Platform =
-  | { kind: "telegram"; label: string; platform?: string }
-  | { kind: "browser"; label: string }
-  | { kind: "unknown"; label: string };
+  | { kind: "telegram"; label: string; platform?: string; icon: string }
+  | { kind: "browser"; label: string; icon: string }
+  | { kind: "unknown"; label: string; icon?: undefined };
 
 function detectBrowser(): string | null {
   const ua = typeof navigator === "undefined" ? "" : navigator.userAgent;
@@ -61,10 +61,15 @@ export function detectPlatform(): Platform {
   // Desktop, Web) stays available on the detection result for future use.
   const tg = window.Telegram;
   if (tg && tg.WebApp?.initData) {
-    return { kind: "telegram", label: "Telegram", platform: tg.WebApp.platform ?? "unknown" };
+    return { kind: "telegram", label: "Telegram", platform: tg.WebApp.platform ?? "unknown", icon: "/brands/telegram.svg" };
   }
 
   const browser = detectBrowser();
-  if (browser) return { kind: "browser", label: browser };
+  if (browser) {
+    // The brand files live in public/brands; "Samsung Internet" files as
+    // samsung.svg, everything else lowercases cleanly.
+    const key = browser === "Samsung Internet" ? "samsung" : browser.toLowerCase();
+    return { kind: "browser", label: browser, icon: `/brands/${key}.svg` };
+  }
   return { kind: "unknown", label: detectOS() ? `this ${detectOS()} device` : "this browser" };
 }

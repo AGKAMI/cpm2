@@ -11,9 +11,14 @@
  *   /store/cpm1 -> accounts | cars | services
  */
 
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { VantaProduct, VantaCategory } from "@/lib/store/client";
 import { WalletHeader } from "@/components/WalletHeader";
+import { Modal } from "@/components/ui/Modal";
 
 /** The hub is NOT a shop window, so it does not take StoreHomeData -- it needs
  *  the raw catalogue to derive its discovery shelves plus the promotions feed. */
@@ -32,23 +37,39 @@ function greeting(): string {
 
 function GameTile({
   href,
+  onClick,
   label,
   active,
   children,
 }: {
-  href: string;
+  href?: string;
+  onClick?: () => void;
   label: string;
   active?: boolean;
   children: React.ReactNode;
 }) {
+  const base = `flex flex-col items-center justify-center gap-3 rounded-2xl border px-3 py-6 text-center transition-colors ${
+    active
+      ? "border-primary bg-primary/10 text-foreground"
+      : "border-border bg-secondary text-foreground hover:border-primary/60"
+  }`;
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={base}
+        aria-label={label}
+      >
+        <span className="text-ink-soft">{children}</span>
+        <span className="text-[10px] font-bold uppercase tracking-[0.16em]">{label}</span>
+      </button>
+    );
+  }
   return (
     <Link
-      href={href}
-      className={`flex flex-col items-center justify-center gap-3 rounded-2xl border px-3 py-6 text-center transition-colors ${
-        active
-          ? "border-primary bg-primary/10 text-foreground"
-          : "border-border bg-secondary text-foreground hover:border-primary/60"
-      }`}
+      href={href!}
+      className={base}
     >
       <span className="text-ink-soft">{children}</span>
       <span className="text-[10px] font-bold uppercase tracking-[0.16em]">{label}</span>
@@ -147,14 +168,119 @@ function Shelf({ title, actionHref, actionLabel, children }: {
   );
 }
 
-export async function StoreHub({ products, categories: _categories }: StoreHubData) {
+/** Support contact options — open in a dialog when the customer taps Support
+ *  from the hub: submit a ticket in-app, or reach the owner on Telegram /
+ *  WhatsApp. No username is known for the owner, so Telegram deep-links by
+ *  user id (tg://user?id=7036681178). */
+function SupportOptions({
+  open,
+  onClose,
+  onSubmitTicket,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSubmitTicket: () => void;
+}) {
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Contact support"
+      subtitle="Choose how you'd like to reach us."
+      width="max-w-md"
+    >
+      <div className="space-y-2">
+        <button
+          type="button"
+          onClick={() => {
+            onClose();
+            onSubmitTicket();
+          }}
+          className="flex w-full items-center gap-3 rounded-xl border border-border bg-background px-4 py-3 text-left text-foreground transition-colors hover:bg-secondary"
+        >
+          <svg
+            className="shrink-0 h-5 w-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            aria-hidden="true"
+          >
+            <path
+              d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <div>
+            <div className="font-semibold">Submit a ticket</div>
+            <div className="text-xs text-muted-foreground">
+              Open a support ticket in the app
+            </div>
+          </div>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            onClose();
+            window.location.href = "tg://user?id=7036681178";
+          }}
+          className="flex w-full items-center gap-3 rounded-xl border border-border bg-background px-4 py-3 text-left text-foreground transition-colors hover:bg-secondary"
+        >
+          <img
+            src="/brands/telegram.svg"
+            alt=""
+            width="24"
+            height="24"
+            className="shrink-0 h-5 w-5 rounded-md"
+            aria-hidden="true"
+          />
+          <div>
+            <div className="font-semibold">Contact owner on Telegram</div>
+            <div className="text-xs text-muted-foreground">
+              Open a chat with the store owner
+            </div>
+          </div>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            onClose();
+            window.location.href = "https://wa.me/27840820712";
+          }}
+          className="flex w-full items-center gap-3 rounded-xl border border-border bg-background px-4 py-3 text-left text-foreground transition-colors hover:bg-secondary"
+        >
+          <img
+            src="/brands/whatsapp.svg"
+            alt=""
+            width="24"
+            height="24"
+            className="shrink-0 h-5 w-5"
+            aria-hidden="true"
+          />
+          <div>
+            <div className="font-semibold">Contact owner on WhatsApp</div>
+            <div className="text-xs text-muted-foreground">
+              Message the store owner directly
+            </div>
+          </div>
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+export function StoreHub({ products, categories: _categories }: StoreHubData) {
   // Derived shelves, not a second product grid: these are the "new additions"
   // and "promotions" strips, capped so they never read as a shop window.
   const arrivals = products.filter((p) => p.isNew).slice(0, 4);
   const onSale = products.filter((p) => p.isSale).slice(0, 4);
+  const router = useRouter();
+  const [supportOpen, setSupportOpen] = useState(false);
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 pb-24">
+    <>
+      <main className="mx-auto w-full max-w-3xl px-4 pb-24">
       {/* ---------- identity ---------- */}
 
       {/* ---------- wallet-style header (reference layout) ---------- */}
@@ -168,7 +294,7 @@ export async function StoreHub({ products, categories: _categories }: StoreHubDa
         <GameTile href="/store/cpm1" label="CPM 1">
           <IconGamepad />
         </GameTile>
-        <GameTile href="/store/support" label="Support">
+        <GameTile label="Support" onClick={() => setSupportOpen(true)}>
           <IconHeadset />
         </GameTile>
       </nav>
@@ -227,5 +353,11 @@ export async function StoreHub({ products, categories: _categories }: StoreHubDa
         </Shelf>
       )}
     </main>
+    <SupportOptions
+      open={supportOpen}
+      onClose={() => setSupportOpen(false)}
+      onSubmitTicket={() => router.push("/store/support")}
+    />
+    </>
   );
 }

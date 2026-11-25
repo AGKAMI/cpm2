@@ -6,8 +6,17 @@ import { resolveAdminStatus } from "@/lib/store/admin-service";
 import { fetchTelegramUser, fetchTelegramPhotoFileId, initDataUserId, telegramBotToken, verifyTelegramInitData } from "@/lib/telegram";
 
 export async function GET(request: NextRequest) {
-  const adminStatus = await resolveAdminStatus(request);
-  const role: "owner" | "admin" | "customer" = adminStatus.role ?? "customer";
+  // resolveAdminStatus -> assertTelegramAuth THROWS on an invalid signature
+  // (it does not return null), and an unhandled throw here surfaced as a 500
+  // on the profile page — the verification hardening must degrade to the
+  // signed-out render instead, exactly like the old unverified-parse path.
+  let adminStatus: Awaited<ReturnType<typeof resolveAdminStatus>> | null = null;
+  try {
+    adminStatus = await resolveAdminStatus(request);
+  } catch {
+    adminStatus = null;
+  }
+  const role: "owner" | "admin" | "customer" = adminStatus?.role ?? "customer";
 
   // 1. Try session cookie (web login)
   const sessionToken = readRequestCookie(request, SESSION_COOKIE);
@@ -77,8 +86,17 @@ export async function GET(request: NextRequest) {
   if (initData) {
     let telegramUser: { id: number; username?: string; first_name?: string; last_name?: string; photo_url?: string } | null = null;
 
-    const token = telegramBotToken();
-    if (token && (await verifyTelegramInitData(initData, token))) {
+    // A failed signature, a stale auth_date or a malformed payload all make
+    // verifyTelegramInitData THROW — unverified must mean "signed-out render",
+    // never a 500, so the whole check is guarded.
+    let initDataVerified = false;
+    try {
+      const token = telegramBotToken();
+      initDataVerified = Boolean(token && (await verifyTelegramInitData(initData, token)));
+    } catch {
+      initDataVerified = false;
+    }
+    if (initDataVerified) {
       const telegramUserId = initDataUserId(initData);
       if (telegramUserId) {
         // Re-read the user object from the verified initData itself.

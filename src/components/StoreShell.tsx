@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Dock } from "@/components/ui/dock";
 import { LucideIcon } from "lucide-react";
-import { Home, Grid, List } from "lucide-react";
+import { Home, Grid, List, ShoppingCart } from "lucide-react";
 
 import { NotificationBell } from "@/components/NotificationBell";
 import { HubIdentity } from "@/components/HubIdentity";
@@ -225,6 +225,15 @@ export function StoreShell({ children, dock }: StoreShellProps) {
               <div className="flex items-center gap-3">
                 <HubIdentity />
                 <NotificationBell />
+                {/* Cart stays a HEADER action — it's only the bottom nav that
+                    drops it */}
+                <Link
+                  href="/store/cart"
+                  aria-label="Cart"
+                  className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-border bg-secondary text-foreground transition-colors hover:border-primary/60"
+                >
+                  <ShoppingCart className="h-5 w-5" />
+                </Link>
               </div>
             ) : (
             <div className="relative flex items-center justify-between gap-2">

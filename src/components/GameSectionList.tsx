@@ -97,8 +97,25 @@ export function GameSectionList({
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={p.coverUrl ?? p.imageUrl ?? ""} alt={p.name} className="h-full w-full object-cover" />
                     ) : (
-                      <span className="grid h-full w-full place-items-center text-2xl font-bold text-ink-faint">
-                        {p.name.slice(0, 1)}
+                      // No photo uploaded yet: an honest section glyph, not the
+                      // product name's first letter (which looked like a logo).
+                      <span className="grid h-full w-full place-items-center gap-1 text-ink-faint">
+                        {section === "cars" ? (
+                          <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                            <path d="M3 13.5 4.6 8.8A2 2 0 0 1 6.5 7.4h11a2 2 0 0 1 1.9 1.4L21 13.5" />
+                            <path d="M3 13.5h18v4.2a.8.8 0 0 1-.8.8h-1.4a.8.8 0 0 1-.8-.8v-.9H6v.9a.8.8 0 0 1-.8.8H3.8a.8.8 0 0 1-.8-.8z" />
+                            <circle cx="7.5" cy="14.2" r="1.1" />
+                            <circle cx="16.5" cy="14.2" r="1.1" />
+                          </svg>
+                        ) : (
+                          <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                            <rect x="4" y="10.5" width="16" height="9" rx="1.5" />
+                            <path d="M4 10.5 6 7h12l2 3.5M8.5 14.5h7" />
+                          </svg>
+                        )}
+                        <span className="text-[9px] font-bold uppercase tracking-[0.14em]">
+                          {section === "cars" ? "Photo pending" : "No image"}
+                        </span>
                       </span>
                     )}
                   </div>

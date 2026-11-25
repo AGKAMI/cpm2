@@ -4,6 +4,8 @@
  *
  * - Inside the Telegram mini app the SDK hands us the exact platform:
  *   android / ios / tdesktop / weba (web) / macos / unknown.
+ * - When no browser matches, the DEVICE (Windows / macOS / iOS / Android /
+ *   Linux) carries the badge with its own mark; the globe is the last resort.
  * - In a plain browser, userAgent gives the browser (Chrome incl. iOS, Safari,
  *   Firefox, Edge, Opera, Samsung Internet) and the OS (Windows / macOS /
  *   Android / iOS / Linux). Anything unrecognised reports "this browser"
@@ -15,6 +17,7 @@
 export type Platform =
   | { kind: "telegram"; label: string; platform?: string; icon: string }
   | { kind: "browser"; label: string; icon: string }
+  | { kind: "device"; label: string; icon: string }
   | { kind: "unknown"; label: string; icon?: undefined };
 
 function detectBrowser(): string | null {
@@ -71,5 +74,12 @@ export function detectPlatform(): Platform {
     const key = browser === "Samsung Internet" ? "samsung" : browser.toLowerCase();
     return { kind: "browser", label: browser, icon: `/brands/${key}.svg` };
   }
-  return { kind: "unknown", label: detectOS() ? `this ${detectOS()} device` : "this browser" };
+
+  // Browser unrecognised — fall back to the DEVICE (its own mark), and only
+  // if that is unknown too does the badge drop to the neutral globe.
+  const os = detectOS();
+  if (os) {
+    return { kind: "device", label: os, icon: `/brands/${os.toLowerCase()}.svg` };
+  }
+  return { kind: "unknown", label: "this browser" };
 }

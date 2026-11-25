@@ -352,6 +352,7 @@ export type VantaOrder = {
   id: string;
   customerId: number;
   productId: number;
+  quantity: number;
   orderState: string;
   paymentState: string;
   deliveryState: string;

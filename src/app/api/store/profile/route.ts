@@ -3,7 +3,7 @@ import { getCustomerByPlatformIdentity } from "@/lib/store/customers";
 import { getStoreDb } from "@/lib/store-db";
 import { verifySessionToken, readRequestCookie, SESSION_COOKIE } from "@/lib/auth";
 import { resolveAdminStatus } from "@/lib/store/admin-service";
-import { fetchTelegramUser, fetchTelegramPhotoFileId } from "@/lib/telegram";
+import { fetchTelegramUser, fetchTelegramPhotoFileId, initDataUserId, telegramBotToken, verifyTelegramInitData } from "@/lib/telegram";
 
 export async function GET(request: NextRequest) {
   const adminStatus = await resolveAdminStatus(request);
@@ -11,7 +11,8 @@ export async function GET(request: NextRequest) {
 
   // 1. Try session cookie (web login)
   const sessionToken = readRequestCookie(request, SESSION_COOKIE);
-  const sessionUserId = verifySessionToken(sessionToken);
+  // Store-scoped: a console session must not resolve a store profile.
+  const sessionUserId = verifySessionToken(sessionToken, "store");
   
   if (sessionUserId) {
     const db = await getStoreDb();
@@ -66,18 +67,34 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // 2. Try Telegram initData (Mini App)
+  // 2. Try Telegram initData (Mini App) — SIGNED ONLY. This used to parse the
+  // `user` JSON straight out of the header with no signature check, so a
+  // forged header (any Telegram id) returned that customer's name, player id,
+  // email and link status. Now the initData must verify against the bot
+  // token, and the identity comes from the VERIFIED payload, not the raw
+  // header.
   const initData = request.headers.get("X-Telegram-Init-Data");
   if (initData) {
-    const params = new URLSearchParams(initData);
-    const userJson = params.get("user");
     let telegramUser: { id: number; username?: string; first_name?: string; last_name?: string; photo_url?: string } | null = null;
-    
-    if (userJson) {
-      try {
-        telegramUser = JSON.parse(userJson);
-      } catch {
-        telegramUser = null;
+
+    const token = telegramBotToken();
+    if (token && (await verifyTelegramInitData(initData, token))) {
+      const telegramUserId = initDataUserId(initData);
+      if (telegramUserId) {
+        // Re-read the user object from the verified initData itself.
+        const params = new URLSearchParams(initData);
+        const userJson = params.get("user");
+        if (userJson) {
+          try {
+            telegramUser = JSON.parse(userJson);
+          } catch {
+            telegramUser = null;
+          }
+        }
+        // The verified id is authoritative even if the JSON is absent.
+        if (!telegramUser) {
+          telegramUser = { id: telegramUserId } as { id: number; username?: string; first_name?: string; last_name?: string; photo_url?: string };
+        }
       }
     }
 

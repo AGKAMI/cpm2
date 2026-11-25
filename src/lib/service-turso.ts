@@ -201,7 +201,17 @@ export async function createAccount(payload: unknown, userId?: number): Promise<
   // are overwritten from the import payload.
   const existing = await findAccountByEmailGame(input.email, input.game);
   if (existing) {
-    return restoreAndOverwrite(existing.id, input, userId);
+    // Ownership gate. findAccountByEmailGame is global, and
+    // restoreAndOverwrite blindly set user_id = the caller's id — so a POST
+    // with someone else's email+game took their account over (password,
+    // balances and all). Only the owner may overwrite their own row; an
+    // ownerless orphan (bulk-import rows before the owner fix) may be
+    // adopted; another user's row is refused.
+    const ownerId = existing.user_id === null ? null : Number(existing.user_id);
+    if (ownerId !== null && ownerId !== userId) {
+      throw new ApiError(403, "ACCOUNT_TAKEN", "That email is already in another fleet.");
+    }
+    return restoreAndOverwrite(existing.id, input, userId ?? ownerId ?? undefined);
   }
 
   await assertEmailFree(input.email, input.game);
@@ -792,14 +802,19 @@ export async function carOwners(game: GameType, carCode: number, userId?: number
 
   type OwnerRow = { account_id: number; email: string; hits: number };
   const db = await getTursoDb();
+  // Scoped, fail closed: the accepted userId used to be dropped, so every
+  // account's email and car count for the code was returned.
+  if (!userId) {
+    return { carCode, carName: entry.name, game, owners: [] };
+  }
   const rows = (await db.execute({
     sql: `SELECT a.id AS account_id, a.email AS email, COUNT(c.id) AS hits
          FROM account_cars c
          JOIN accounts a ON a.id = c.account_id
-        WHERE c.game = ? AND c.car_code = ?
+        WHERE c.game = ? AND c.car_code = ? AND a.user_id = ?
         GROUP BY a.id
         ORDER BY hits DESC, a.email ASC`,
-    args: [game, carCode],
+    args: [game, carCode, userId],
   })).rows as unknown as OwnerRow[];
 
   return {
@@ -936,9 +951,18 @@ export async function removeGarageCar(accountId: number, carId: number, userId?:
 
 export async function listEvents(userId?: number, limit = 100): Promise<FleetEvent[]> {
   const db = await getTursoDb();
+  const safeLimit = Math.min(Math.max(1, Math.trunc(limit) || 100), 500);
+  // Scoped, fail closed. This query used to ignore userId and read every
+  // user's account emails, balances and change summaries — on a shared
+  // console instance that is the whole fleet leaking to any session. Without
+  // an identity there is nothing to show.
+  if (!userId) return [];
   const rows = (await db.execute({
-    sql: `SELECT * FROM account_events ORDER BY id DESC LIMIT ?`,
-    args: [Math.min(Math.max(1, Math.trunc(limit) || 100), 500)],
+    sql: `SELECT e.* FROM account_events e
+          JOIN accounts a ON a.id = e.account_id
+         WHERE a.user_id = ?
+         ORDER BY e.id DESC LIMIT ?`,
+    args: [userId, safeLimit],
   })).rows as unknown as EventRow[];
 
   return rows.map((row) => {
@@ -1086,7 +1110,10 @@ export async function importAccounts(payload: unknown, format: "csv" | "json", u
     const email = typeof normalized.email === "string" ? normalized.email : undefined;
 
     try {
-      const account = await createAccount(normalized);
+      // Carry the owner. This used to call createAccount(normalized) without
+      // it, so every imported row was ownerless: invisible to the importer
+      // but readable by every logged-in user via getAccount().
+      const account = await createAccount(normalized, userId);
       results.push({ row: rowNumber, email: account.email, status: "created" });
     } catch (err) {
       if (err instanceof ApiError) {
@@ -1285,14 +1312,20 @@ export async function addAccountImages(
   return inserted;
 }
 
-export async function listAccountImages(accountId: number): Promise<NewAccountImage[]> {
+export async function listAccountImages(accountId: number, userId?: number): Promise<NewAccountImage[]> {
   const db = await getTursoDb();
+  // Ownership-checked, fail closed. The GET routes computed the caller's
+  // userId and then called this without it, and the query had no ownership
+  // check at all — any logged-in user could enumerate and fetch another
+  // user's account photos by guessing ids.
+  if (!userId) return [];
   const rows = await db.execute({
-    sql: `SELECT id, account_id, image_url, sort_order, is_cover, uploaded_at
-          FROM fleet_account_images
-          WHERE account_id = ?
-          ORDER BY sort_order ASC, id ASC`,
-    args: [accountId],
+    sql: `SELECT i.id, i.account_id, i.image_url, i.sort_order, i.is_cover, i.uploaded_at
+          FROM fleet_account_images i
+          JOIN accounts a ON a.id = i.account_id
+         WHERE i.account_id = ? AND a.user_id = ?
+         ORDER BY i.sort_order ASC, i.id ASC`,
+    args: [accountId, userId],
   });
   return (rows.rows as unknown as Array<{
     id: number;

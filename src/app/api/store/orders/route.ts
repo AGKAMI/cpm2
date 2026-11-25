@@ -20,19 +20,16 @@ export const dynamic = "force-dynamic";
  *   are scoped to that player, never the whole table).
  */
 async function resolveOrdersScope(request: Request): Promise<
-  { kind: "customerId"; value: number } | { kind: "playerId"; value: string } | null
+  { kind: "customerId"; value: number } | null
 > {
-  const telegramUserId = await assertTelegramAuth(request);
-  if (telegramUserId !== null) {
-    const linked = await getStoreCustomer(request);
-    if (linked) return { kind: "customerId", value: linked.customer.id };
-  }
-  const url = new URL(request.url);
-  const playerId = url.searchParams.get("playerId")?.trim();
-  if (playerId) {
-    const customer = await getCustomerByPlayerId(playerId);
-    if (customer) return { kind: "customerId", value: customer.id };
-  }
+  // SIGNED IDENTITIES ONLY. The playerId query fallback used to be enough:
+  // order ids, amounts, products, player names and delivery state were
+  // readable by anyone who guessed a playerId (short format, and visible in
+  // order URLs). A guest's playerId is now exchanged for a signed session at
+  // checkout, so reads come from the Telegram identity or the session cookie
+  // — never a query param.
+  const linked = await getStoreCustomer(request);
+  if (linked) return { kind: "customerId", value: linked.customer.id };
   return null;
 }
 
@@ -60,12 +57,8 @@ export async function GET(request: Request) {
         if (linked && order.customerId === linked.customer.id) {
           return ok({ order });
         }
-      } else {
-        const playerId = url.searchParams.get("playerId")?.trim();
-        if (playerId && order.playerId === playerId) {
-          return ok({ order });
-        }
       }
+      // Signed identity or admin only — a guessed playerId is never enough.
       return fail({ status: 403, body: { error: { code: "forbidden", message: "Not your order." } } });
     }
 
@@ -73,10 +66,7 @@ export async function GET(request: Request) {
     if (!scope) {
       return fail({ status: 401, body: { error: { code: "NO_CUSTOMER", message: "No orders found for this identity." } } });
     }
-    const orders =
-      scope.kind === "customerId"
-        ? await listOrders({ customerId: scope.value })
-        : await listOrders({ playerId: scope.value });
+    const orders = await listOrders({ customerId: scope.value });
     return ok({ orders });
   } catch (err) {
     return fail(err);

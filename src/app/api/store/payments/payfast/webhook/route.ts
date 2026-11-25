@@ -5,9 +5,9 @@
  * advances order state to payment_confirmed.
  */
 
-import { fail, ok, readJson } from "@/lib/route";
 import { createHash, timingSafeEqual } from "node:crypto";
-import { updatePaymentState, updateOrderState, getOrder } from "@/lib/store/checkout";
+import { fail, ok } from "@/lib/route";
+import { confirmPayment, getOrder, rejectPayment } from "@/lib/store/checkout";
 import { recordPayment } from "@/lib/store/payments";
 import { ledgerEntry } from "@/lib/store/ledger";
 import { notifyCustomer } from "@/lib/store/notifications";
@@ -16,16 +16,41 @@ const PAYFAST_MERCHANT_ID = process.env.PAYFAST_MERCHANT_ID;
 const PAYFAST_MERCHANT_KEY = process.env.PAYFAST_MERCHANT_KEY;
 const PAYFAST_PASSPHRASE = process.env.PAYFAST_PASSPHRASE;
 
-type PayFastBody = {
-  signature?: string;
-  m_payment_id?: string;
-  amount_gross?: string | number;
-  payment_status?: string;
-  custom_str1?: string;
-  [key: string]: unknown;
-};
-
 export const dynamic = "force-dynamic";
+
+/**
+ * Parse the ITN body in either encoding, with values as received.
+ * PayFast posts application/x-www-form-urlencoded — readJson() rejects that
+ * content-type, which is how every real ITN used to die before any code ran.
+ */
+async function readItnBody(request: Request): Promise<Record<string, string>> {
+  const contentType = request.headers.get("content-type") ?? "";
+  if (contentType.includes("application/json")) {
+    const parsed = (await request.json()) as Record<string, unknown>;
+    const out: Record<string, string> = {};
+    for (const [k, v] of Object.entries(parsed)) out[k] = String(v ?? "");
+    return out;
+  }
+  // form-urlencoded — URLSearchParams decodes percent-encoding, so values
+  // match exactly what PayFast signed.
+  const text = await request.text();
+  const params = new URLSearchParams(text);
+  const out: Record<string, string> = {};
+  for (const [k, v] of params.entries()) out[k] = v;
+  return out;
+}
+
+/** PayFast signature: MD5 over the sorted key=value&... string of every
+ *  received field except signature, passphrase appended. Empty fields stay
+ *  in the string — they are part of what PayFast signs. */
+function payfastSignature(body: Record<string, string>, passphrase: string): string {
+  const dataString = Object.keys(body)
+    .filter((k) => k !== "signature")
+    .sort()
+    .map((k) => `${k}=${body[k]}`)
+    .join("&");
+  return createHash("md5").update(`${dataString}${passphrase}`).digest("hex");
+}
 
 export async function POST(request: Request) {
   try {
@@ -33,22 +58,16 @@ export async function POST(request: Request) {
       throw new Error("PayFast not configured on the server.");
     }
 
-    const body = (await readJson(request)) as PayFastBody;
+    const body = await readItnBody(request);
 
-    // Verify PayFast signature: MD5 of sorted param string + passphrase
-    const signature = body.signature;
-    const dataString = Object.keys(body)
-      .filter((k) => k !== "signature")
-      .sort()
-      .map((k) => `${k}=${body[k]}`)
-      .join("&");
-
-    const expected = createHash("md5")
-      .update(`${dataString}${PAYFAST_PASSPHRASE}`)
-      .digest("hex");
-
-    if (!signature || !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
-      throw new Error("Invalid PayFast signature");
+    const signature = body.signature ?? "";
+    const expected = payfastSignature(body, PAYFAST_PASSPHRASE);
+    if (
+      !signature ||
+      signature.length !== expected.length ||
+      !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))
+    ) {
+      return fail(new Error("Invalid PayFast signature"));
     }
 
     const orderId = body.custom_str1 || body.m_payment_id;
@@ -67,6 +86,7 @@ export async function POST(request: Request) {
     const amountCents = Math.round(Number(body.amount_gross ?? 0) * 100);
     const currency = "ZAR";
     const providerRef = String(body.m_payment_id ?? "");
+    const completed = body.payment_status === "COMPLETED";
 
     // Amount integrity: webhook amount must match order amount exactly
     if (amountCents !== order.amountCents) {
@@ -81,12 +101,15 @@ export async function POST(request: Request) {
       providerRef,
       amountCents,
       currency,
-      status: body.payment_status === "COMPLETED" ? "verified" : "rejected",
+      status: completed ? "verified" : "rejected",
     });
 
-    if (body.payment_status === "COMPLETED") {
-          await updatePaymentState(orderId, "verified");
-          await updateOrderState(orderId, "payment_confirmed");
+    if (completed) {
+          // The shared race-safe path: one-shot state flip + stock deduction.
+          // Calling updatePaymentState directly skipped confirmStockDeduction,
+          // so paid orders never reduced inventory (and duplicate ITNs
+          // double-recorded).
+          await confirmPayment(String(orderId));
           await ledgerEntry({
             orderId: String(orderId),
             type: "payment",
@@ -104,7 +127,7 @@ export async function POST(request: Request) {
             playerId: order.playerId,
           }).catch((err) => console.error("Notification failed:", err));
         } else {
-          await updatePaymentState(orderId, "rejected");
+          await rejectPayment(String(orderId));
           await ledgerEntry({
             orderId: String(orderId),
             type: "fee",

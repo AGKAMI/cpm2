@@ -26,7 +26,10 @@ export async function GET(
     const userId = currentUserId(request);
     const { id } = await context.params;
     const accountId = parseId(id);
-    const images = await listAccountImages(accountId);
+    // Pass the identity: listAccountImages is ownership-checked and returns
+    // nothing without it (it used to be called without, leaking every
+    // account's images by id).
+    const images = await listAccountImages(accountId, userId);
     return ok({ images });
   } catch (err) {
     return fail(err);

@@ -5,6 +5,13 @@
  */
 
 import { fail, ok, readJson } from "@/lib/route";
+import {
+  createSessionToken,
+  readRequestCookie,
+  SESSION_COOKIE,
+  sessionCookieOptions,
+  verifySessionToken,
+} from "@/lib/auth";
 import { ApiError } from "@/lib/api";
 import { z } from "zod";
 import { assertTelegramAuth } from "@/lib/telegram";
@@ -119,12 +126,25 @@ export async function POST(request: Request) {
       });
     }
 
-    return ok({
+    // A completed checkout IS the identity proof for a web guest: the buyer
+    // paid (PayFast/Stars) as this customer. Mint a store-scoped session so
+    // their order history reads back without a guessable playerId query
+    // param — that param used to be the only gate on /orders reads. EFT skips
+    // this (no payment proof yet); the EFT reviewer approves first.
+    const response = ok({
       order: result.order,
       reservedUntil: result.reservedUntil,
       payfastUrl,
       starsInvoiceUrl,
     }, 201);
+    if (!verifySessionToken(readRequestCookie(request, SESSION_COOKIE), "store")) {
+      response.cookies.set(
+        SESSION_COOKIE,
+        createSessionToken(result.order.customerId, "store"),
+        sessionCookieOptions(request),
+      );
+    }
+    return response;
   } catch (err) {
     return fail(err);
   }

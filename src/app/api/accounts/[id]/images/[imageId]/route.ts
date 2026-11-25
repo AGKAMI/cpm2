@@ -39,7 +39,9 @@ export async function GET(
     // directly in <img src>). parseId would 400 on a filename, which made
     // every uploaded image unviewable — match by filename when it is one.
     const isFilename = imageId.includes(".");
-    const images = await listAccountImages(accountId);
+    // The caller's identity: listAccountImages is ownership-checked, and the
+    // binary-serving path below skips a separate check — this is the gate.
+    const images = await listAccountImages(accountId, currentUserId(request));
     const image = isFilename
       ? images.find((img) => img.imageUrl.endsWith(`/${imageId}`))
       : images.find((img) => img.id === parseId(imageId));

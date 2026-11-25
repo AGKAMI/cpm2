@@ -94,7 +94,9 @@ export async function retryWebhook(paymentId: string): Promise<void> {
   if (isPayFastConfigured() && payment.providerRef) {
     try {
       const pfQuery = await fetch(
-        `https://sandbox.payfast.co.za/eng/query_transactions?merchant_id=${encodeURIComponent(PAYFAST_MERCHANT_ID)}&merchant_key=${encodeURIComponent(PAYFAST_MERCHANT_KEY)}&payment_id=${encodeURIComponent(payment.providerRef)}`,
+        // The configured base URL, not the hardcoded sandbox — live
+        // payments never recovered via retries with the sandbox endpoint.
+        `${getPayFastBaseUrl()}/eng/query_transactions?merchant_id=${encodeURIComponent(PAYFAST_MERCHANT_ID)}&merchant_key=${encodeURIComponent(PAYFAST_MERCHANT_KEY)}&payment_id=${encodeURIComponent(payment.providerRef)}`,
       );
       if (pfQuery.ok) {
         const text = await pfQuery.text();

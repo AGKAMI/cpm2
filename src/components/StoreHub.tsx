@@ -41,18 +41,20 @@ function GameTile({
   label,
   active,
   children,
+  className,
 }: {
   href?: string;
   onClick?: () => void;
   label: string;
   active?: boolean;
   children: React.ReactNode;
+  className?: string;
 }) {
   const base = `flex flex-col items-center justify-center gap-3 rounded-2xl border px-3 py-6 text-center transition-colors ${
     active
       ? "border-primary bg-primary/10 text-foreground"
       : "border-border bg-secondary text-foreground hover:border-primary/60"
-  }`;
+  } ${className ?? ""}`;
   if (onClick) {
     return (
       <button
@@ -294,7 +296,7 @@ export function StoreHub({ products, categories: _categories }: StoreHubData) {
         <GameTile href="/store/cpm1" label="CPM 1">
           <IconGamepad />
         </GameTile>
-        <GameTile label="Support" onClick={() => setSupportOpen(true)}>
+        <GameTile label="Support" onClick={() => setSupportOpen(true)} className="col-span-2 sm:col-span-1">
           <IconHeadset />
         </GameTile>
       </nav>

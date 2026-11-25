@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
 import { StoreShell } from "@/components/StoreShell";
 import Link from "next/link";
+import { StarIcon } from "lucide-react";
 import { approxStarsForCents } from "@/lib/store/pricing";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
@@ -786,9 +787,7 @@ export function ProfileClient({
               Wallet balance
             </p>
             <p className="mt-1 flex items-center gap-1.5 text-xl font-bold text-foreground">
-              <svg className="h-5 w-5 text-gold" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M12 2.5l2.6 6.3 6.8.5-5.2 4.4 1.6 6.6L12 16.6l-5.8 3.7 1.6-6.6-5.2-4.4 6.8-.5L12 2.5Z" />
-              </svg>
+              <StarIcon className="h-5 w-5 text-gold" />
               0
             </p>
             <Link
@@ -804,9 +803,7 @@ export function ProfileClient({
               Total spent
             </p>
             <p className="mt-1 flex items-center gap-1.5 text-xl font-bold text-foreground">
-              <svg className="h-5 w-5 text-gold" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M12 2.5l2.6 6.3 6.8.5-5.2 4.4 1.6 6.6L12 16.6l-5.8 3.7 1.6-6.6-5.2-4.4 6.8-.5L12 2.5Z" />
-              </svg>
+              <StarIcon className="h-5 w-5 text-gold" />
               {spentStars}
             </p>
             <p className="mt-2 text-[11px] text-ink-faint">Stars paid on verified orders</p>

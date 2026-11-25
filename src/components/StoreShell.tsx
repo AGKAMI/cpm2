@@ -246,7 +246,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
                   }}
                   aria-label="Back to app selection"
                   title="Back to app selection"
-                  className="grid w-10 h-10 shrink-0 place-items-center rounded-full border border-border bg-background text-ink-soft transition-colors hover:border-gold hover:text-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[var(--scale-medium)]"
+                  className="grid w-11 h-11 shrink-0 place-items-center rounded-full border border-border bg-background text-ink-soft transition-colors hover:border-gold hover:text-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[var(--scale-medium)]"
                 >
                   <svg
                     className="h-4 w-4"
@@ -291,7 +291,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
                 onClick={() => setThemeMode(themeMode === "night" ? "paper" : "night")}
                 aria-label={`Switch to ${themeMode === "night" ? "daylight" : "midnight"} theme`}
                 aria-pressed={themeMode === "paper"}
-                className="relative w-8 h-8 rounded-full border border-border bg-background flex items-center justify-center text-ink-soft hover:border-gold hover:text-gold transition-colors disabled:opacity-50"
+                className="relative w-11 h-11 rounded-full border border-border bg-background flex items-center justify-center text-ink-soft hover:border-gold hover:text-gold transition-colors disabled:opacity-50"
               >
                 <span
                   aria-hidden="true"
@@ -329,6 +329,13 @@ export function StoreShell({ children, dock }: StoreShellProps) {
                 </span>
               </button>
               <NotificationBell />
+              <Link
+                href="/store/cart"
+                aria-label="Cart"
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-border bg-background text-foreground transition-colors hover:border-primary/60"
+              >
+                <ShoppingCart className="h-5 w-5" />
+              </Link>
             </div>
           </div>
           )}

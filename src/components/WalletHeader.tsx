@@ -104,9 +104,6 @@ export function WalletHeader() {
           </p>
           <p className="truncate text-sm font-bold text-foreground">
             {name}
-            {profile?.username ? (
-              <span className="ml-1 text-xs font-normal text-ink-faint">@{profile.username}</span>
-            ) : null}
           </p>
           {profile?.authed && platform ? (
             <p className="mt-0.5 inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
@@ -150,7 +147,7 @@ export function WalletHeader() {
             <span className="text-4xl font-bold tabular-nums text-foreground">
               {hidden ? "••••" : "0.00"}
             </span>
-            <span className="text-xs font-bold uppercase tracking-[0.16em] text-ink-soft">USDT</span>
+            <span className="text-xs font-bold uppercase tracking-[0.16em] text-ink-soft">ZAR</span>
           </div>
           {/* Until a stored wallet exists, top-ups are a support request */}
           <Link

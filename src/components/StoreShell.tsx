@@ -200,8 +200,11 @@ export function StoreShell({ children, dock }: StoreShellProps) {
       return pathname === t.href || pathname.startsWith(`${t.href}/`);
     })?.key;
 
-  // The home header persists everywhere EXCEPT profile / admin / owner.
+  // The home header persists everywhere EXCEPT profile / admin / owner — and
+  // the home itself, which shows the wallet-style header (greeting card +
+  // balance) instead of the plain one.
   const homeHeader = !(
+    pathname === "/store" ||
     pathname?.startsWith("/store/profile") ||
     pathname?.startsWith("/store/admin") ||
     pathname?.startsWith("/store/owner")

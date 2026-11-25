@@ -13,7 +13,7 @@
 
 import Link from "next/link";
 import type { VantaProduct, VantaCategory } from "@/lib/store/client";
-import { HubIdentity } from "@/components/HubIdentity";
+import { WalletHeader } from "@/components/WalletHeader";
 
 /** The hub is NOT a shop window, so it does not take StoreHomeData -- it needs
  *  the raw catalogue to derive its discovery shelves plus the promotions feed. */
@@ -164,6 +164,9 @@ export async function StoreHub({ products, categories: _categories }: StoreHubDa
   return (
     <main className="mx-auto w-full max-w-3xl px-4 pb-24">
       {/* ---------- identity ---------- */}
+
+      {/* ---------- wallet-style header (reference layout) ---------- */}
+      <WalletHeader />
 
       {/* ---------- game picker ---------- */}
       <nav aria-label="Browse" className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">

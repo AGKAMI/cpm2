@@ -34,8 +34,55 @@ import {
   type CategoryFormInput,
   type PromotionFormInput,
 } from "@/lib/store/validation";
+import {
+  filterAndSortCatalogue,
+  type GameFilter,
+} from "@/lib/store/catalogue.ts";
+
+type Game = "cpm1" | "cpm2";
+
+const GAME_OPTIONS: Array<{ value: Game; label: string }> = [
+  { value: "cpm2", label: "CPM 2" },
+  { value: "cpm1", label: "CPM 1" },
+];
+
+/** Only the pill's hue is configurable; material and shine are fixed in CSS. */
+const PILL_HUES = [
+  { label: "Gold", value: "#d4af4f" },
+  { label: "Rose", value: "#b76e79" },
+  { label: "Copper", value: "#b87333" },
+  { label: "Silver", value: "#b8b8c0" },
+  { label: "Emerald", value: "#2f9e6e" },
+  { label: "Sapphire", value: "#3a6fd8" },
+];
+
+function GamePicker({
+  value,
+  onChange,
+  id,
+}: {
+  value: Game;
+  onChange: (game: Game) => void;
+  id: string;
+}) {
+  return (
+    <select
+      id={id}
+      value={value}
+      onChange={(e) => onChange(e.target.value as Game)}
+      className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
+    >
+      {GAME_OPTIONS.map((g) => (
+        <option key={g.value} value={g.value}>
+          {g.label}
+        </option>
+      ))}
+    </select>
+  );
+}
 
 type ProductForm = {
+  game: Game;
   cpm2CarCode: string;
   imageUrl: string;
   name: string;
@@ -55,6 +102,7 @@ type ProductForm = {
 };
 
 const EMPTY_FORM: ProductForm = {
+  game: "cpm2",
   cpm2CarCode: "",
   imageUrl: "",
   name: "",
@@ -74,6 +122,7 @@ const EMPTY_FORM: ProductForm = {
 };
 
 type CategoryForm = {
+  game: Game;
   name: string;
   slug: string;
   description: string;
@@ -82,6 +131,7 @@ type CategoryForm = {
 };
 
 const EMPTY_CATEGORY_FORM: CategoryForm = {
+  game: "cpm2",
   name: "",
   slug: "",
   description: "",
@@ -90,6 +140,9 @@ const EMPTY_CATEGORY_FORM: CategoryForm = {
 };
 
 type PromotionForm = {
+  game: Game;
+  productId: string;
+  pillColor: string;
   title: string;
   subtitle: string;
   description: string;
@@ -105,6 +158,9 @@ type PromotionForm = {
 };
 
 const EMPTY_PROMOTION_FORM: PromotionForm = {
+  game: "cpm2",
+  productId: "",
+  pillColor: "#d4af4f",
   title: "",
   subtitle: "",
   description: "",
@@ -112,7 +168,7 @@ const EMPTY_PROMOTION_FORM: PromotionForm = {
   discountCode: "",
   ctaText: "Shop now",
   ctaLink: "/store",
-  backgroundColor: "var(--color-paper-raised)",
+  backgroundColor: "#1c1c1f",
   accentColor: "#d4af4f",
   imageUrl: "",
   isActive: true,
@@ -174,6 +230,12 @@ export default function AdminPage() {
   const [editingPromotionId, setEditingPromotionId] = useState<number | null>(null);
   const [promotionForm, setPromotionForm] = useState<PromotionForm>(EMPTY_PROMOTION_FORM);
   const [promotionSaving, setPromotionSaving] = useState(false);
+  // Catalogue browsing: game separation, search, category and explicit sort.
+  // The admin has hundreds of listings; a flat unordered list is unusable.
+  const [catalogueGame, setCatalogueGame] = useState<GameFilter>("all");
+  const [catalogueSearch, setCatalogueSearch] = useState("");
+  const [catalogueCategory, setCatalogueCategory] = useState("");
+  const [catalogueSort, setCatalogueSort] = useState("newest");
   // Car search state for the searchable catalog picker
   const [carQuery, setCarQuery] = useState("");
   const [carOpen, setCarOpen] = useState(false);
@@ -201,7 +263,7 @@ export default function AdminPage() {
     setLoading(true);
     try {
       const [pRes, cRes, promoRes, carsRes] = await Promise.all([
-        vantaApi.products({}),
+        vantaApi.adminProducts(),
         vantaApi.categories(),
         vantaApi.promotions(),
         fetch("/api/store/cars").then((r) => r.json()),
@@ -320,6 +382,7 @@ export default function AdminPage() {
 
     const selectProduct = async (p: VantaProduct) => {
       setForm({
+        game: p.game ?? "cpm2",
         cpm2CarCode: String(p.cpm2CarCode ?? ""),
         imageUrl: p.imageUrl ?? "",
         name: p.name,
@@ -384,6 +447,7 @@ export default function AdminPage() {
       }
       try {
         const body = {
+          game: v.game,
           cpm2CarCode: v.cpm2CarCode ? Number(v.cpm2CarCode) : undefined,
           imageUrl: v.imageUrl || undefined,
           name: v.name,
@@ -475,6 +539,7 @@ export default function AdminPage() {
         try {
           if (editingCategoryId) {
             await vantaApi.updateCategory(editingCategoryId, {
+              game: v.game,
               name: v.name,
               slug: v.slug,
               description: v.description,
@@ -484,6 +549,7 @@ export default function AdminPage() {
             setMsg("Category updated.");
           } else {
             await vantaApi.createCategory({
+              game: v.game,
               name: v.name,
               slug: v.slug,
               description: v.description,
@@ -516,6 +582,11 @@ export default function AdminPage() {
 
     const selectPromotion = (p: VantaPromotion) => {
       setPromotionForm({
+        // A legacy banner has no game/product; keep the form usable by
+        // defaulting it to CPM2 with nothing attached until the admin picks.
+        game: p.game ?? "cpm2",
+        productId: p.productId ? String(p.productId) : "",
+        pillColor: p.pillColor || "#d4af4f",
         title: p.title,
         subtitle: p.subtitle,
         description: p.description,
@@ -523,8 +594,10 @@ export default function AdminPage() {
         discountCode: p.discountCode,
         ctaText: p.ctaText,
         ctaLink: p.ctaLink,
-        backgroundColor: p.backgroundColor,
-        accentColor: p.accentColor,
+        // Legacy banners stored a CSS variable; the form uses hex inputs, so
+        // normalise them to the current default before validation.
+        backgroundColor: /^#[0-9a-f]{6}$/i.test(p.backgroundColor) ? p.backgroundColor : "#1c1c1f",
+        accentColor: /^#[0-9a-f]{6}$/i.test(p.accentColor) ? p.accentColor : "#d4af4f",
         imageUrl: p.imageUrl,
         isActive: p.isActive,
         sortOrder: String(p.sortOrder),
@@ -550,8 +623,22 @@ export default function AdminPage() {
         return;
       }
       const v = validated.data;
+      const attached = products.find((p) => p.id === Number(v.productId));
+      if (!attached) {
+        toast.error("Pick an existing product.", "The selected product is no longer in the catalogue.");
+        setPromotionSaving(false);
+        return;
+      }
+      if ((attached.game ?? "cpm2") !== v.game) {
+        toast.error("Game mismatch.", `That product belongs to ${(attached.game ?? "cpm2") === "cpm1" ? "CPM 1" : "CPM 2"}.`);
+        setPromotionSaving(false);
+        return;
+      }
       try {
         const body = {
+          game: v.game,
+          productId: Number(v.productId),
+          pillColor: v.pillColor,
           title: v.title,
           subtitle: v.subtitle || undefined,
           description: v.description || undefined,
@@ -666,6 +753,16 @@ export default function AdminPage() {
       (c) => !carQuery || c.name.toLowerCase().includes(carQuery.toLowerCase())
     ).slice(0, 30);
 
+    const catalogueRows = filterAndSortCatalogue(products, {
+      game: catalogueGame,
+      search: catalogueSearch,
+      categoryId: catalogueCategory,
+      sort: catalogueSort,
+    });
+    const gameCategories = categories.filter(
+      (c) => (c.game ?? "cpm2") === form.game,
+    );
+
     return (
           <StoreShell>
             <PageHeading folio="AD" title="Admin - Product Manager" />
@@ -744,6 +841,13 @@ export default function AdminPage() {
           {showCategoryForm && (
             <form onSubmit={handleCategorySubmit} className="flex flex-col gap-3 mb-4">
               {/* Errors now shown as floating toasts */}
+              <Field label="Game / store" error={categoryErrors.game} hint="This category only appears in the chosen game's store.">
+                <GamePicker
+                  id="category-game"
+                  value={categoryForm.game}
+                  onChange={(game) => setCategoryForm((f) => ({ ...f, game }))}
+                />
+              </Field>
               <Field label="Name" error={categoryErrors.name}>
                 <TextInput
                   value={categoryForm.name}
@@ -844,7 +948,7 @@ export default function AdminPage() {
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-foreground truncate">{cat.name}</p>
                     <p className="text-[10px] text-muted-foreground truncate">
-                      /{cat.slug} · sort {cat.sortOrder}
+                      {cat.game === "cpm1" ? "CPM 1" : "CPM 2"} · /{cat.slug} · sort {cat.sortOrder}
                       {cat.description ? ` · ${cat.description}` : ""}
                     </p>
                   </div>
@@ -854,6 +958,7 @@ export default function AdminPage() {
                     className="shrink-0"
                     onClick={() => {
                       setCategoryForm({
+                        game: cat.game ?? "cpm2",
                         name: cat.name,
                         slug: cat.slug,
                         description: cat.description,
@@ -926,6 +1031,69 @@ export default function AdminPage() {
                       onChange={(e) => setPromotionForm((f) => ({ ...f, description: e.target.value }))}
                       placeholder="10% off every Limited Edition"
                     />
+                  </Field>
+                  <Field label="Game / store" error={promotionErrors.game} hint="The promotion only applies in this game.">
+                    <GamePicker
+                      id="promotion-game"
+                      value={promotionForm.game}
+                      onChange={(game) =>
+                        setPromotionForm((f) => {
+                          const stillValid = products.some(
+                            (p) => p.id === Number(f.productId) && (p.game ?? "cpm2") === game,
+                          );
+                          return { ...f, game, productId: stillValid ? f.productId : "" };
+                        })
+                      }
+                    />
+                  </Field>
+                  <Field
+                    label="Attach product"
+                    error={promotionErrors.productId}
+                    hint="This overrides the product's displayed price and card on the storefront."
+                  >
+                    <select
+                      id="promotion-product"
+                      value={promotionForm.productId}
+                      onChange={(e) => setPromotionForm((f) => ({ ...f, productId: e.target.value }))}
+                      className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
+                    >
+                      <option value="">Pick an existing product…</option>
+                      {products
+                        .filter((p) => (p.game ?? "cpm2") === promotionForm.game)
+                        .map((p) => (
+                          <option key={p.id} value={p.id}>
+                            #{p.id} · {p.name}
+                          </option>
+                        ))}
+                    </select>
+                  </Field>
+                  <Field
+                    label="Promoted pill colour"
+                    error={promotionErrors.pillColor}
+                    hint="Only the hue changes — the metallic material and shine are fixed."
+                  >
+                    <div className="flex flex-wrap gap-2">
+                      {PILL_HUES.map((hue) => (
+                        <button
+                          key={hue.value}
+                          type="button"
+                          onClick={() => setPromotionForm((f) => ({ ...f, pillColor: hue.value }))}
+                          aria-pressed={promotionForm.pillColor === hue.value}
+                          className={`rounded border px-2 py-1 text-[10px] font-bold cursor-pointer ${
+                            promotionForm.pillColor === hue.value
+                              ? "border-primary text-foreground"
+                              : "border-border text-muted-foreground"
+                          }`}
+                        >
+                          <span
+                            className="promo-pill"
+                            style={{ ["--pill-hue" as string]: hue.value }}
+                          >
+                            {hue.label}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
                   </Field>
                   <Field label="Discount %">
                     <input
@@ -1152,6 +1320,20 @@ export default function AdminPage() {
                       <div className="flex items-center justify-between gap-2 px-3 py-2 border-t border-border bg-background">
                         <div className="flex items-center gap-1 min-w-0">
                           <span className="text-xs font-mono text-muted-foreground">#{p.id}</span>
+                          <span className="text-[10px] font-bold text-foreground">
+                            {p.game === "cpm1" ? "CPM1" : p.game === "cpm2" ? "CPM2" : "BOTH"}
+                          </span>
+                          {p.productId ? (
+                            <span className="truncate text-[10px] text-primary">
+                              → #{p.productId}
+                            </span>
+                          ) : null}
+                          <span
+                            className="promo-pill shrink-0"
+                            style={{ ["--pill-hue" as string]: p.pillColor || "#d4af4f" }}
+                          >
+                            Promoted
+                          </span>
                           {p.isActive ? (
                             <span className="text-[10px] text-primary font-bold">ACTIVE</span>
                           ) : (
@@ -1203,6 +1385,23 @@ export default function AdminPage() {
                       </div>
                       <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {/* Errors now shown as floating toasts */}
+          <Field label="Game / store" error={productErrors.game} hint="Products only appear in their own game's catalogue.">
+            <GamePicker
+              id="product-game"
+              value={form.game}
+              onChange={(game) =>
+                setForm((f) => {
+                  const category = categories.find((c) => c.id === Number(f.categoryId));
+                  return {
+                    ...f,
+                    game,
+                    // Never leave a CPM1 category attached to a CPM2 product.
+                    categoryId: category && (category.game ?? "cpm2") === game ? f.categoryId : "",
+                  };
+                })
+              }
+            />
+          </Field>
           <Field label="Image" error={productErrors.imageUrl}>
             <Uploader
               inputRef={fileInputRef}
@@ -1436,16 +1635,16 @@ export default function AdminPage() {
               </button>
             </div>
           </Field>
-          <Field label="Category" htmlFor="category" hint={categories.length === 0 ? "No categories yet" : undefined}>
-            {categories.length === 0 ? (
+          <Field label="Category" htmlFor="category" hint={gameCategories.length === 0 ? `No ${form.game === "cpm1" ? "CPM 1" : "CPM 2"} categories yet` : undefined}>
+            {gameCategories.length === 0 ? (
               <p className="text-xs text-muted-foreground">
-                No categories yet — create one in the Categories section.
+                No categories for this game yet — create one in the Categories section.
               </p>
             ) : (
               /* Cards, not a dropdown: you see every category and tap the one
                  you want. Tapping the active card clears the selection. */
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {categories.map((cat) => {
+                {gameCategories.map((cat) => {
                   const active = String(form.categoryId) === String(cat.id);
                   return (
                     <button
@@ -1558,7 +1757,7 @@ export default function AdminPage() {
                               <div className="flex items-baseline justify-between mb-4">
                                 <h3 className="admin-section-title">Catalogue</h3>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-xs text-muted-foreground">{products.length} product{products.length === 1 ? "" : "s"}</span>
+                                  <span className="text-xs text-muted-foreground">{catalogueRows.length} / {products.length} products</span>
                                   <Button
                                     variant="outline"
                                     size="sm"
@@ -1571,15 +1770,79 @@ export default function AdminPage() {
                                   </Button>
                                 </div>
                               </div>
-                  {products.length === 0 ? (
+                  {/* Filtering is client-side over the full admin catalogue so
+                      hidden products stay manageable and the two games never
+                      appear mixed together. */}
+                  <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <label className="flex flex-col gap-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Game
+                      <select
+                        value={catalogueGame}
+                        onChange={(e) => {
+                          setCatalogueGame(e.target.value as GameFilter);
+                          setCatalogueCategory("");
+                        }}
+                        className="border border-input bg-background px-3 py-2 text-sm font-normal normal-case tracking-normal text-foreground rounded-md"
+                      >
+                        <option value="all">Both games</option>
+                        <option value="cpm1">CPM 1</option>
+                        <option value="cpm2">CPM 2</option>
+                      </select>
+                    </label>
+                    <label className="flex flex-col gap-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Search
+                      <input
+                        type="search"
+                        value={catalogueSearch}
+                        onChange={(e) => setCatalogueSearch(e.target.value)}
+                        placeholder="Name or #id"
+                        className="border border-input bg-background px-3 py-2 text-sm font-normal normal-case tracking-normal text-foreground rounded-md"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Category
+                      <select
+                        value={catalogueCategory}
+                        onChange={(e) => setCatalogueCategory(e.target.value)}
+                        className="border border-input bg-background px-3 py-2 text-sm font-normal normal-case tracking-normal text-foreground rounded-md"
+                      >
+                        <option value="">All categories</option>
+                        {categories
+                          .filter((c) => catalogueGame === "all" || (c.game ?? "cpm2") === catalogueGame)
+                          .map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.game === "cpm1" ? "CPM1" : "CPM2"} · {c.name}
+                            </option>
+                          ))}
+                      </select>
+                    </label>
+                    <label className="flex flex-col gap-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Sort
+                      <select
+                        value={catalogueSort}
+                        onChange={(e) => setCatalogueSort(e.target.value)}
+                        className="border border-input bg-background px-3 py-2 text-sm font-normal normal-case tracking-normal text-foreground rounded-md"
+                      >
+                        <option value="newest">Newest first</option>
+                        <option value="oldest">Oldest first</option>
+                        <option value="name">Name A–Z</option>
+                        <option value="price_asc">Price: low to high</option>
+                        <option value="price_desc">Price: high to low</option>
+                        <option value="stock_asc">Stock: low to high</option>
+                        <option value="stock_desc">Stock: high to low</option>
+                        <option value="category">Category</option>
+                      </select>
+                    </label>
+                  </div>
+                  {catalogueRows.length === 0 ? (
                     <div className="flex flex-col items-center gap-3 py-6 text-center">
-                      <p className="text-muted-foreground">No products yet.</p>
+                      <p className="text-muted-foreground">No products match these filters.</p>
                     </div>
                   ) : (
                     /* Every product listed as its own row with an Edit button —
                        no picker dropdown (item 13). */
                     <div className="flex flex-col gap-2">
-                      {products.map((p) => (
+                      {catalogueRows.map((p) => (
                         <div
                           key={p.id}
                           className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2"
@@ -1592,7 +1855,7 @@ export default function AdminPage() {
                               )}
                             </p>
                             <p className="text-[10px] text-muted-foreground truncate">
-                              #{p.id} · {p.cpm2CarCode ? `Car ${p.cpm2CarCode}` : "No car code"} · {formatPrice(p.basePriceCents, p.currency)} · {p.stockQuantity} in stock
+                              {p.game === "cpm1" ? "CPM 1" : "CPM 2"} · #{p.id} · {p.cpm2CarCode ? `Car ${p.cpm2CarCode}` : "No car code"} · {formatPrice(p.basePriceCents, p.currency)} · {p.stockQuantity} in stock
                             </p>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">

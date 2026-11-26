@@ -41,13 +41,38 @@ export function CategoryProductsClient({
              2-up on phones (like the reference store), scaling to 5 on wide. */
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
             {products.map((p) => {
-              const stars = p.promoStarsPrice ?? p.starsPrice ?? approxStarsForCents(p.basePriceCents);
+              const displayPriceCents =
+                p.promoPriceCents ??
+                (p.discountPercent > 0
+                  ? Math.round((p.basePriceCents * (100 - p.discountPercent)) / 100)
+                  : p.basePriceCents);
+              const stars = p.promoStarsPrice ?? p.starsPrice ?? approxStarsForCents(displayPriceCents);
               const soldOut = p.stockQuantity === 0;
               return (
                 <article
                   key={p.id}
-                  className="flex flex-col overflow-hidden rounded-xl border border-border bg-background"
+                  className={`flex flex-col overflow-hidden rounded-xl border bg-background ${
+                    p.promo ? "promo-card" : "border-border"
+                  }`}
+                  style={
+                    p.promo
+                      ? {
+                          background: `linear-gradient(160deg, ${p.promo.backgroundColor}, ${p.promo.accentColor}22)`,
+                          borderColor: p.promo.accentColor,
+                        }
+                      : undefined
+                  }
                 >
+                  {p.promo ? (
+                    <div className="flex justify-center pt-1.5">
+                      <span
+                        className="promo-pill"
+                        style={{ ["--pill-hue" as string]: p.promo.pillColor }}
+                      >
+                        Promoted
+                      </span>
+                    </div>
+                  ) : null}
                   <Link
                     href={`/store/products/${p.id}`}
                     className="block aspect-[4/3] overflow-hidden border-b border-border bg-secondary"
@@ -79,7 +104,7 @@ export function CategoryProductsClient({
                     {p.kind === "account" ? <AccountNotice compact /> : null}
                     <div className="mt-auto flex flex-wrap items-center justify-between gap-1 pt-2">
                       <span className="text-sm font-bold text-foreground">
-                        {formatPrice(p.basePriceCents, p.currency)}
+                        {formatPrice(displayPriceCents, p.currency)}
                         {stars ? (
                           <span className="ml-1 text-[11px] font-normal text-ink-soft">
                             ({stars} stars)

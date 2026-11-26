@@ -241,6 +241,37 @@ export async function runStoreMigrations(storeArg?: TursoHttpClient): Promise<vo
     // Column already exists — safe to ignore
   }
 
+  // Migrations: product-attached promotions. The schema's CREATE TABLE has
+  // these columns for fresh databases, but the LIVE Turso table predates them.
+  // Without these ALTERs every promotion write (INSERT includes game,
+  // product_id and pill_color explicitly) fails with "no such column" on the
+  // deployed store, so the new admin fields would be silently unusable.
+  // SQLite cannot ALTER in a CHECK/FK, so values are validated by the API.
+  try {
+    await store.execute({
+      sql: `ALTER TABLE vanta_promotions ADD COLUMN game TEXT`,
+      args: [],
+    });
+  } catch {
+    // Column already exists — safe to ignore
+  }
+  try {
+    await store.execute({
+      sql: `ALTER TABLE vanta_promotions ADD COLUMN product_id INTEGER`,
+      args: [],
+    });
+  } catch {
+    // Column already exists — safe to ignore
+  }
+  try {
+    await store.execute({
+      sql: `ALTER TABLE vanta_promotions ADD COLUMN pill_color TEXT NOT NULL DEFAULT '#d4af4f'`,
+      args: [],
+    });
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
   // Migration: vanta_account_units.email_hash. The email is AES-256-GCM
   // encrypted with a random IV, so the same address never encrypts to the same
   // string twice — dedupe cannot match on the ciphertext. This hash is what

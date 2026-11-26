@@ -138,6 +138,9 @@ export const vantaApi = {
     if (qs.toString()) url += `?${qs.toString()}`;
     return request<{ products: VantaProduct[]; total: number }>(url);
   },
+  /** Admin-only full catalogue, including hidden products. */
+  adminProducts: () =>
+    request<{ products: VantaProduct[]; total: number }>("/admin/products?full=1"),
   categories: () => request<{ categories: VantaCategory[] }>("/categories"),
   createCategory: (body: { name: string; slug: string; description?: string; sortOrder?: number; imageUrl?: string; game?: "cpm1" | "cpm2" }) =>
     request<{ category: VantaCategory }>("/admin/categories", {
@@ -364,6 +367,12 @@ export type VantaPromotion = {
   startDate: string | null;
   endDate: string | null;
   sortOrder: number;
+  /** null = legacy banner for both games; otherwise this catalogue only. */
+  game: "cpm1" | "cpm2" | null;
+  /** Product whose displayed price/card this promotion overrides. */
+  productId: number | null;
+  /** Hue of the (fixed-material, fixed-shine) Promoted pill. */
+  pillColor: string;
   createdAt: string;
   updatedAt: string;
 };

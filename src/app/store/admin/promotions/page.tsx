@@ -132,16 +132,46 @@ export default function AdminPromotionsPage() {
       setError("Title is required.");
       return;
     }
+    if (!draft.game) {
+      setError("Choose which game this promotion is for.");
+      return;
+    }
+    if (!draft.productId) {
+      setError("Attach an existing product to this promotion.");
+      return;
+    }
+    const attachedProduct = products.find((p) => p.id === Number(draft.productId));
+    if (!attachedProduct) {
+      setError("That product no longer exists. Pick another one.");
+      return;
+    }
+    if (attachedProduct.game !== draft.game) {
+      setError(`That product belongs to ${attachedProduct.game === "cpm1" ? "CPM 1" : "CPM 2"}. Pick a product in the promotion's game.`);
+      return;
+    }
     try {
       const isNew = editing === 0;
       const url = isNew
         ? "/api/store/admin/promotions"
         : `/api/store/admin/promotions?id=${editing}`;
+      // Ensure the API's required text defaults are present — an empty
+      // imageUrl is invalid (z.url()) and must be omitted. Unknown/local keys
+      // (id, dates) are stripped by the route's Zod schema.
+      const values = draft;
+      const body = {
+        ...values,
+        imageUrl: values.imageUrl || undefined,
+        subtitle: values.subtitle || "",
+        description: values.description || "",
+        discountCode: values.discountCode || "",
+        ctaText: values.ctaText || "Shop now",
+        ctaLink: values.ctaLink || "/store/categories",
+      };
       const res = await fetch(url, {
         method: isNew ? "POST" : "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(draft),
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error("Failed to save promotion");
       await loadPromotions();
@@ -197,11 +227,50 @@ export default function AdminPromotionsPage() {
         </Button>
       </div>
 
-      {promotions.length === 0 && (
+      {promotions.length === 0 && editing !== 0 && (
         <p className="text-muted-foreground">No promotions configured.</p>
       )}
 
       <div className="space-y-4">
+        {/* "+ Add Promotion" used to set editing=0 but render nothing for id 0:
+            the form existed only inside existing cards. Render a standalone
+            card for the new draft so creation is actually possible. */}
+        {editing === 0 && draft && (
+          <PromotionCard
+            promo={{
+              id: 0,
+              title: "New promotion",
+              subtitle: "",
+              description: "",
+              discountPercent: 0,
+              discountCode: "",
+              ctaText: "Shop now",
+              ctaLink: "/store/categories",
+              backgroundColor: "#1c1c1f",
+              accentColor: "#d4af4f",
+              imageUrl: "",
+              isActive: true,
+              startDate: null,
+              endDate: null,
+              sortOrder: 0,
+              game: null,
+              productId: null,
+              pillColor: "#d4af4f",
+              ...draft,
+            }}
+            products={products}
+            editing
+            setEditing={setEditing}
+            draft={draft}
+            setDraft={setDraft}
+            onToggle={() => undefined}
+            onDelete={() => {
+              setEditing(null);
+              setDraft(null);
+            }}
+            onSave={savePromotion}
+          />
+        )}
         {promotions.map((p) => (
           <PromotionCard
             key={p.id}
@@ -318,12 +387,15 @@ function PromotionCard({
               <select
                 value={draft.game ?? promo.game ?? ""}
                 className="w-full border border-border bg-surface-deep rounded px-3 py-2 text-sm focus:outline-none focus:border-gold"
-                onChange={(e) =>
+                onChange={(e) => {
+                  const game = e.target.value === "" ? null : (e.target.value as "cpm1" | "cpm2");
+                  const selected = products.find((p) => p.id === draft.productId);
                   setDraft({
                     ...draft,
-                    game: e.target.value === "" ? null : (e.target.value as "cpm1" | "cpm2"),
-                  })
-                }
+                    game,
+                    productId: selected && (!game || selected.game === game) ? draft.productId : null,
+                  });
+                }}
               >
                 <option value="">Both games</option>
                 <option value="cpm1">CPM 1</option>
@@ -333,7 +405,8 @@ function PromotionCard({
           </div>
           <div className="space-y-2">
             <label className="text-xs text-muted-foreground block">
-              Attached product (the promotion overrides its price + card on the storefront)
+              Attached product — required. The promotion overrides the price
+              and card of this product on the storefront.
             </label>
             <select
               value={draft.productId ?? promo.productId ?? ""}
@@ -345,12 +418,19 @@ function PromotionCard({
                 })
               }
             >
-              <option value="">None (banner campaign)</option>
-              {products.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.game === "cpm1" ? "CPM1" : "CPM2"} · {p.name}
-                </option>
-              ))}
+              <option value="">Pick an existing product…</option>
+              {products
+                .filter(
+                  (p) =>
+                    !draft.game ||
+                    !promo.game ||
+                    p.game === (draft.game ?? promo.game),
+                )
+                .map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.game === "cpm1" ? "CPM1" : "CPM2"} · {p.name}
+                  </option>
+                ))}
             </select>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -415,7 +495,29 @@ function PromotionCard({
       )}
       {!editing && (
         <div className="flex gap-2 mt-3">
-          <Button variant="outline" size="sm" onClick={() => setEditing(promo.id)}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              // Seed the draft: previously Save with no changes saw draft=null
+              // and always failed with "Title is required."
+              setEditing(promo.id);
+              // Legacy rows can hold a CSS variable; <input type="color">
+              // only accepts hex, so normalise before editing.
+              setDraft({
+                ...promo,
+                backgroundColor: /^#[0-9a-f]{6}$/i.test(promo.backgroundColor)
+                  ? promo.backgroundColor
+                  : "#1c1c1f",
+                accentColor: /^#[0-9a-f]{6}$/i.test(promo.accentColor)
+                  ? promo.accentColor
+                  : "#d4af4f",
+                pillColor: /^#[0-9a-f]{6}$/i.test(promo.pillColor)
+                  ? promo.pillColor
+                  : "#d4af4f",
+              });
+            }}
+          >
             Edit
           </Button>
           <Button variant="destructive" size="sm" onClick={onDelete}>

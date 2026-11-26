@@ -15,6 +15,7 @@ import {
   createProduct,
   createMedia,
   getProduct,
+  listProducts,
   updateProduct,
 } from "@/lib/store/products";
 import type { ProductInput } from "@/lib/store-types";
@@ -106,6 +107,13 @@ async function persistDataUrlImage(dataUrl: string): Promise<string> {
 export async function GET(request: Request) {
   try {
     await requireStoreAdmin(request);
+    // Full rows for the admin catalogue manager: the public catalogue hides
+    // unpublished products, but admins must still be able to find, filter and
+    // re-publish them. The default minimal shape stays for existing pickers.
+    if (new URL(request.url).searchParams.get("full") === "1") {
+      const all = await listProducts({ onlyPublished: false });
+      return ok({ products: all, total: all.length });
+    }
     const store = await getStoreDb();
     const result = await store.execute({
       sql: `SELECT * FROM vanta_products ORDER BY id DESC`,

@@ -2,6 +2,7 @@ import { sweepExpiredReservationsThrottled } from "@/lib/store/jobs";
 import type { Metadata } from "next";
 import { GameHubShell } from "@/components/GameHubShell";
 import { StoreShell } from "@/components/StoreShell";
+import { listCategories } from "@/lib/store/products";
 
 export const metadata: Metadata = {
   title: "CPM 1 — CPM STORE",
@@ -10,10 +11,11 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function Cpm1HubPage() {
+export default async function Cpm1HubPage() {
   // Expire stale reservations on real traffic (throttled to once/60s
   // process-wide, idempotent per order). The queue/cron path never ran it.
   void sweepExpiredReservationsThrottled();
+  const categories = await listCategories("cpm1").catch(() => []);
 
   return (
     <StoreShell>
@@ -21,6 +23,7 @@ export default function Cpm1HubPage() {
       game="cpm1"
       title="CPM 1"
       blurb="Pick what you're shopping for."
+      categories={categories}
       sections={[
         {
           slug: "accounts",

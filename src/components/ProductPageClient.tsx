@@ -238,7 +238,17 @@ export function ProductPageClient({
       <div className="grid gap-6 px-4">
         {/* Left column: details */}
         <div className="flex flex-col gap-6">
-          <section className="panel rounded-xl border border-border p-6">
+          <section
+            className={`panel rounded-xl border border-border p-6 ${product.promo ? "promo-card" : ""}`}
+            style={
+              product.promo
+                ? {
+                    background: `linear-gradient(160deg, ${product.promo.backgroundColor}, ${product.promo.accentColor}22)`,
+                    borderColor: product.promo.accentColor,
+                  }
+                : undefined
+            }
+          >
             <div className="flex items-baseline justify-between gap-2 mb-5">
               <span className="flex items-center gap-2 flex-wrap">
                 <span className="text-2xl font-bold text-primary">

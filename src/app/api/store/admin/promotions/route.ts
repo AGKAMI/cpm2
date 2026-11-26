@@ -11,6 +11,8 @@ import { fail, ok, readJson } from "@/lib/route";
 import { parseProvidedFields } from "@/lib/parse-patch.ts";
 import { requireStoreAdmin } from "@/lib/store/auth";
 import {
+  getProduct,
+  getPromotion,
   listPromotions,
   createPromotion,
   updatePromotion,
@@ -43,6 +45,39 @@ const promotionSchema = z.object({
   pillColor: z.string().min(1).default("#d4af4f"),
 });
 
+/**
+ * A product promotion must point at a real product in its own game. The UI
+ * filters the picker, but API writes also come from bots/scripts — without
+ * this check a CPM2 product could be promoted into the CPM1 catalogue.
+ */
+async function invalidAttachment(
+  game: "cpm1" | "cpm2" | null | undefined,
+  productId: number | null | undefined,
+) {
+  if (productId === null || productId === undefined) return null;
+  const product = await getProduct(productId);
+  if (!product) {
+    return fail({
+      status: 400,
+      body: {
+        error: { code: "unknown_product", message: `No product #${productId}.` },
+      },
+    });
+  }
+  if (game && product.game !== game) {
+    return fail({
+      status: 400,
+      body: {
+        error: {
+          code: "product_game_mismatch",
+          message: `Product #${productId} belongs to ${product.game}, not ${game}.`,
+        },
+      },
+    });
+  }
+  return null;
+}
+
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
@@ -59,6 +94,8 @@ export async function POST(request: Request) {
   try {
     await requireStoreAdmin(request);
     const body = promotionSchema.parse(await readJson(request));
+    const badAttachment = await invalidAttachment(body.game, body.productId);
+    if (badAttachment) return badAttachment;
     const input: PromotionInput = {
       title: body.title,
       subtitle: body.subtitle,
@@ -94,6 +131,14 @@ export async function PUT(request: Request) {
       return fail({ status: 400, body: { error: { code: "missing_id", message: "Promotion id required." } } });
     }
     const body = parseProvidedFields(promotionSchema, await readJson(request));
+    if (body.game !== undefined || body.productId !== undefined) {
+      const existing = await getPromotion(Number(id));
+      const badAttachment = await invalidAttachment(
+        body.game !== undefined ? body.game : (existing?.game ?? undefined),
+        body.productId !== undefined ? body.productId : (existing?.productId ?? undefined),
+      );
+      if (badAttachment) return badAttachment;
+    }
     const updated = await updatePromotion(Number(id), body);
     if (!updated) {
       return fail({ status: 404, body: { error: { code: "not_found", message: "Promotion not found." } } });

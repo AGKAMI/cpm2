@@ -6,6 +6,7 @@
  */
 
 import Link from "next/link";
+import type { VantaCategory } from "@/lib/store/client";
 
 export type GameSection = {
   slug: string;
@@ -67,11 +68,14 @@ export function GameHubShell({
   title,
   blurb,
   sections,
+  categories = [],
 }: {
   game: "cpm1" | "cpm2";
   title: string;
   blurb: string;
   sections: GameSection[];
+  /** Already filtered to this game by the page — never show the other game's tree. */
+  categories?: VantaCategory[];
 }) {
   return (
     <div className="mx-auto w-full max-w-3xl px-4 pb-24">
@@ -96,6 +100,36 @@ export function GameHubShell({
           );
         })}
       </nav>
+
+      {/* Admin-created categories are the game's own shelves. They only
+          appear here when their `game` matches, and they link into that
+          game's listing with the category preselected. */}
+      {categories.length > 0 && (
+        <section className="mt-6">
+          <h2 className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-ink-soft">
+            Shop by category
+          </h2>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {categories.map((cat) => (
+              <Link
+                key={cat.id}
+                href={`/store/${game}/cars?category=${encodeURIComponent(cat.slug)}`}
+                className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-3 text-xs font-bold text-foreground transition-colors hover:border-primary/60"
+              >
+                {cat.imageUrl ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={cat.imageUrl}
+                    alt=""
+                    className="h-7 w-7 shrink-0 rounded-md object-cover"
+                  />
+                ) : null}
+                <span className="truncate">{cat.name}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

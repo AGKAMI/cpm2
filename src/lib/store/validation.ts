@@ -22,6 +22,9 @@ const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 /** ── Product form ──────────────────────────────────────────────────── */
 
 export const productFormSchema = z.object({
+  // A product's game identity is mandatory: the admin catalogue separates the
+  // two games and storefront listings only show products in their own game.
+  game: z.enum(["cpm1", "cpm2"], { error: "Pick a game." }).default("cpm2"),
   cpm2CarCode: z
     .string({ error: "Car code is required." })
     .trim()
@@ -121,6 +124,15 @@ export const promotionFormSchema = z.object({
     .max(80, { error: "Title must be 80 characters or fewer." }),
   subtitle: z.string().trim().max(100, { error: "Max 100 characters." }).optional(),
   description: z.string().trim().max(300, { error: "Max 300 characters." }).optional(),
+  // Every promotion is scoped to one catalogue and overrides one existing
+  // product. It can no longer be created as a free-floating banner from the
+  // admin form: the brief requires a game + product attached at creation.
+  game: z.enum(["cpm1", "cpm2"], { error: "Pick a game." }).default("cpm2"),
+  productId: z
+    .string({ error: "Pick an existing product." })
+    .trim()
+    .min(1, { error: "Pick an existing product for this promotion." })
+    .refine((v) => /^\d+$/.test(v), { error: "Product must be a valid ID." }),
   discountPercent: z
     .string({ error: "Discount is required." })
     .trim()
@@ -162,6 +174,15 @@ export const promotionFormSchema = z.object({
     .refine((v) => HEX_COLOR_PATTERN.test(v), {
       error: "Enter a valid hex color (e.g. #d4af4f).",
     }),
+  // Only the hue is operator-controlled: the metallic gradient and shine are
+  // fixed in globals.css and never stored per promotion.
+  pillColor: z
+    .string({ error: "Pill colour is required." })
+    .trim()
+    .refine((v) => HEX_COLOR_PATTERN.test(v), {
+      error: "Enter a valid hex color for the pill.",
+    })
+    .default("#d4af4f"),
   imageUrl: z
     .string()
     .trim()

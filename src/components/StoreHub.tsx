@@ -17,6 +17,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { VantaProduct, VantaCategory } from "@/lib/store/client";
+import { promotedProducts } from "@/lib/store/catalogue.ts";
 import { WalletHeader } from "@/components/WalletHeader";
 import { Modal } from "@/components/ui/Modal";
 
@@ -285,11 +286,12 @@ export type StoreHubPromo = {
   game: "cpm1" | "cpm2";
 };
 
-export function StoreHub({ products, promoById }: StoreHubData) {
-  // Derived shelves, not a second product grid: these are the "new additions"
-  // and "promotions" strips, capped so they never read as a shop window.
+export function StoreHub({ products, categories, promoById }: StoreHubData) {
+  // Derived shelves, not a second product grid: promotions come from LIVE
+  // product-attached promos (not the legacy is_sale flag), so creating a
+  // promotion updates this strip immediately without editing the product.
   const arrivals = products.filter((p) => p.isNew).slice(0, 4);
-  const onSale = products.filter((p) => p.isSale).slice(0, 4);
+  const promoted = promotedProducts(products, promoById);
   const router = useRouter();
   const [supportOpen, setSupportOpen] = useState(false);
 
@@ -314,51 +316,76 @@ export function StoreHub({ products, promoById }: StoreHubData) {
         </GameTile>
       </nav>
 
+      {/* ---------- admin-created category shelves, scoped by game ----------
+          Only categories whose `game` matches reach this page (the server
+          passes both lists), so a CPM1 category can never appear here. */}
+      {(["cpm2", "cpm1"] as const).map((game) => {
+        const gameCategories = categories
+          .filter((c) => (c.game ?? "cpm2") === game)
+          .sort((a, b) => a.sortOrder - b.sortOrder)
+          .slice(0, 6);
+        if (gameCategories.length === 0) return null;
+        return (
+          <Shelf
+            key={game}
+            title={`${game === "cpm1" ? "CPM 1" : "CPM 2"} categories`}
+            actionHref={`/store/${game}`}
+            actionLabel="Browse"
+          >
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {gameCategories.map((cat) => (
+                <li key={cat.id}>
+                  <Link
+                    href={`/store/${game}/cars?category=${encodeURIComponent(cat.slug)}`}
+                    className="flex items-center gap-2 rounded-xl border border-border bg-secondary px-3 py-2 text-xs font-bold text-foreground hover:border-primary/60"
+                  >
+                    {cat.imageUrl ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={cat.imageUrl} alt="" className="h-7 w-7 rounded-md object-cover" />
+                    ) : null}
+                    <span className="truncate">{cat.name}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </Shelf>
+        );
+      })}
+
       {/* ---------- discovery shelves (NOT products) ---------- */}
-      {onSale.length > 0 && (
+      {promoted.length > 0 && (
         <Shelf
           title="Promotions"
           actionHref="/store/cpm2/cars"
-          actionLabel="Manage"
+          actionLabel="Browse"
         >
           <ul className="grid gap-3 sm:grid-cols-2">
-            {onSale.map((p) => {
-              const promo = promoById.get(p.id);
-              const promoPrice =
-                promo && promo.discountPercent > 0
-                  ? Math.round((p.basePriceCents * (100 - promo.discountPercent)) / 100)
-                  : null;
-              return (
-                <li key={p.id}>
-                  <Link
-                    href={`/store/products/${p.id}`}
-                    className="flex items-center justify-between gap-3 rounded-2xl border bg-secondary px-4 py-3 text-xs text-foreground hover:border-primary/60"
-                    style={promo ? { borderColor: promo.accentColor } : undefined}
-                  >
-                    <span className="truncate font-bold">
-                      {promo && (
-                        <span
-                          className="promo-pill mr-2"
-                          style={{ ["--pill-hue" as string]: promo.pillColor }}
-                        >
-                          Promoted
-                        </span>
-                      )}
-                      {p.name}
+            {promoted.map(({ product: p, promo, priceCents }) => (
+              <li key={p.id}>
+                <Link
+                  href={`/store/products/${p.id}`}
+                  className="promo-card flex items-center justify-between gap-3 rounded-2xl border bg-secondary px-4 py-3 text-xs text-foreground hover:brightness-110"
+                  style={{
+                    // Promotion's own primary/secondary colours, not the theme.
+                    background: `linear-gradient(160deg, ${promo.backgroundColor}, ${promo.accentColor}22)`,
+                    borderColor: promo.accentColor,
+                  }}
+                >
+                  <span className="truncate font-bold">
+                    <span
+                      className="promo-pill mr-2"
+                      style={{ ["--pill-hue" as string]: promo.pillColor }}
+                    >
+                      Promoted
                     </span>
-                    {promoPrice != null ? (
-                      <span className="shrink-0 tabular-nums text-ok">
-                        R {(promoPrice / 100).toFixed(2)}
-                      </span>
-                    ) : (
-                      <span className="shrink-0 text-[9px] font-bold uppercase tracking-[0.12em] text-ok">
-                        -{p.discountPercent}%
-                      </span>
-                    )}
-                  </Link>
-                </li>
-              );
-            })}
+                    {p.name}
+                  </span>
+                  <span className="shrink-0 tabular-nums text-ok">
+                    R {(priceCents / 100).toFixed(2)}
+                  </span>
+                </Link>
+              </li>
+            ))}
           </ul>
         </Shelf>
       )}

@@ -657,16 +657,6 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
                 <option value="cpm1">CPM1 Catalogue</option>
               </select>
             </Field>
-  <Field label="Store" hint="Which catalogue this shelf belongs to">
-              <select
-                value={categoryForm.game}
-                onChange={(e) => handleCategoryChange("game", e.target.value === "cpm1" ? "cpm1" : "cpm2")}
-                className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
-              >
-                <option value="cpm2">CPM2 Garage</option>
-                <option value="cpm1">CPM1 Catalogue</option>
-              </select>
-            </Field>
                                   <Field label="Name" error={categoryErrors.name}>
               <TextInput value={categoryForm.name} onChange={(e) => handleCategoryChange("name", e.target.value)} placeholder="e.g. Sports Cars" />
             </Field>

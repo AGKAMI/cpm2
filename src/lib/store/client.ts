@@ -288,6 +288,8 @@ export type VantaProduct = {
   game?: "cpm1" | "cpm2";
   /** What kind of thing is being sold — a car or a game account. */
   kind?: "car" | "account" | "service";
+  /** Stars price, quoted with the configured STARS_ZAR_PER_STAR by the API. */
+  starsPrice?: number;
   name: string;
   description: string;
   basePriceCents: number;

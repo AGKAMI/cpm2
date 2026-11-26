@@ -11,6 +11,7 @@ import {
   listCoverImageMap,
 } from "@/lib/store/products";
 import { approxStarsForCents, discountedPriceCents, hasDiscount } from "@/lib/store/pricing";
+import { zarPerStar } from "@/lib/store/stars";
 
 export const dynamic = "force-dynamic";
 
@@ -75,7 +76,9 @@ export async function GET(request: Request) {
         ...p,
         coverUrl,
         galleryUrls: gallery.length > 0 ? gallery : coverUrl ? [coverUrl] : [],
-        starsPrice: approxStarsForCents(finalPrice),
+        // Quote with the CONFIGURED rate (STARS_ZAR_PER_STAR), so the
+        // catalogue, the invoice and the checkout hint all agree.
+        starsPrice: approxStarsForCents(finalPrice, zarPerStar()),
       };
     });
 

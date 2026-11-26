@@ -79,9 +79,13 @@ CREATE TABLE IF NOT EXISTS vanta_cpm2_cars (
 CREATE TABLE IF NOT EXISTS vanta_products (
   id                 INTEGER PRIMARY KEY AUTOINCREMENT,
   category_id        INTEGER REFERENCES vanta_categories(id),
-  -- What kind of thing is this? 'car' = a vehicle (the only kind until accounts).
-  -- 'account' = a CPM credential unit. The two never share a card layout.
-  kind               TEXT    NOT NULL DEFAULT 'car' CHECK (kind IN ('car', 'account')),
+  -- What kind of thing is this? 'car' = a vehicle, 'account' = a CPM
+  -- credential unit, 'service' = work done on an account (the bot's "mods").
+  -- The CHECK that used to live here listed only car/account: on a FRESH
+  -- database the admin UI's service creation died on the constraint, while
+  -- the live DB (migrated earlier without it) accepted services fine. The
+  -- DDL now matches the column the app actually writes.
+  kind               TEXT    NOT NULL DEFAULT 'car' CHECK (kind IN ('car', 'account', 'service')),
   -- Which game the product belongs to. Car codes are NOT unique across games
   -- (CPM1 #2 is a Perodua Myvi, CPM2 #2 is a Scirocco III), so the game tag
   -- is what makes a code, a price or a catalogue lookup unambiguous.

@@ -520,10 +520,37 @@ export async function purchaseSlots(id: number, payload: unknown, userId?: numbe
   }
 
   const db = await getTursoDb();
-  await db.execute({
-    sql: `UPDATE accounts SET coins = coins - ?, slots = slots + ?, updated_at = ? WHERE id = ?`,
-    args: [cost, count, now(), id],
+  // Atomic spend: the guards above read-then-write, so two concurrent buys
+  // could BOTH pass the coins check and both deduct — overspending the
+  // account. The conditional UPDATE makes the database the arbiter: the row
+  // only moves while it still covers the cost AND the slots stay under the
+  // cap, and exactly one of the racing requests can win.
+  const spent = await db.execute({
+    sql: `UPDATE accounts
+             SET coins = coins - ?, slots = slots + ?, updated_at = ?
+           WHERE id = ?
+             AND coins >= ?
+             AND slots + ? <= ?`,
+    args: [cost, count, now(), id, cost, count, LIMITS.MAX_COIN_SLOTS],
   });
+  if ((spent.affectedRowCount ?? 0) === 0) {
+    // Lost the race or the account moved underneath us — re-read and refuse
+    // honestly rather than writing a log entry for a purchase that did not
+    // happen.
+    const fresh = await requireAccount(id);
+    if (fresh.coins < cost) {
+      throw new ApiError(
+        422,
+        "INSUFFICIENT_COINS",
+        `Need ${cost.toLocaleString("en-US")} coins for ${count} slot(s) - this account only has ${fresh.coins.toLocaleString("en-US")}.`,
+      );
+    }
+    throw new ApiError(
+      409,
+      "SLOT_PURCHASE_RACE",
+      "This garage changed while the purchase was being confirmed. Check the slot count and try again.",
+    );
+  }
   await logEvent(id, existing.email, "slots_purchased", `Bought ${count} car slot(s) for ${cost} coins`, {
     coins: { from: existing.coins, to: existing.coins - cost },
     slots: { from: existing.slots, to: existing.slots + count },

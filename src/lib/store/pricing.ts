@@ -17,10 +17,17 @@ export function discountSavingsCents(basePriceCents: number, discountPercent: nu
 
 /** Approximate Stars for a ZAR amount (whole Stars, ≥1). Client-side display
  *  only — the invoice is always created server-side with the same math. */
-export function approxStarsForCents(cents: number, zarPerStar = 0.24): number {
+export function approxStarsForCents(cents: number, zarPerStar?: number): number {
   // Nearest 5 Stars — identical rule to starsForCents() so what the buyer
   // sees on a card is exactly what the invoice charges.
-  const exact = Math.ceil((cents / 100) / zarPerStar);
+  //
+  // The caller that KNOWS the configured rate must pass it (the products API
+  // passes stars.ts's zarPerStar(), which honours STARS_ZAR_PER_STAR). It
+  // used to be a second hardcoded 0.24 here, so setting the env made the
+  // displayed quote and the charged invoice diverge. Stay pure for client
+  // components — never read env in this module.
+  const rate = zarPerStar ?? 0.24;
+  const exact = Math.ceil((cents / 100) / rate);
   return Math.max(5, Math.round(exact / 5) * 5);
 }
 

@@ -17,6 +17,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { VantaProduct, VantaCategory } from "@/lib/store/client";
+import { formatPrice } from "@/lib/store/client";
+import { approxStarsForCents } from "@/lib/store/pricing";
 import { WalletHeader } from "@/components/WalletHeader";
 import { Modal } from "@/components/ui/Modal";
 
@@ -24,8 +26,6 @@ import { Modal } from "@/components/ui/Modal";
  *  the raw catalogue to derive its discovery shelves plus the promotions feed. */
 export type StoreHubData = {
   products: VantaProduct[];
-  /** The live product promotions keyed by product id (server-resolved). */
-  promoById: Map<number, StoreHubPromo>;
   categories: VantaCategory[];
 };
 
@@ -274,22 +274,17 @@ function SupportOptions({
   );
 }
 
-/** The live product promotion data the hub shelves render (pill + price). */
-export type StoreHubPromo = {
-  id: number;
-  discountPercent: number;
-  backgroundColor: string;
-  accentColor: string;
-  pillColor: string;
-  title: string;
-  game: "cpm1" | "cpm2";
-};
-
-export function StoreHub({ products, promoById }: StoreHubData) {
+export function StoreHub({ products }: StoreHubData) {
   // Derived shelves, not a second product grid: these are the "new additions"
   // and "promotions" strips, capped so they never read as a shop window.
   const arrivals = products.filter((p) => p.isNew).slice(0, 4);
   const onSale = products.filter((p) => p.isSale).slice(0, 4);
+  // Full product cards for every product carrying a LIVE promotion — the
+  // homepage's Promoted shelf. Cover required (the listings' no-image rule),
+  // in stock, capped so the hub stays a hub.
+  const promoted = products
+    .filter((p) => p.promo && p.coverUrl && p.stockQuantity > 0)
+    .slice(0, 4);
   const router = useRouter();
   const [supportOpen, setSupportOpen] = useState(false);
 
@@ -314,6 +309,64 @@ export function StoreHub({ products, promoById }: StoreHubData) {
         </GameTile>
       </nav>
 
+      {/* ---------- Promoted: FULL product cards, promo styling ---------- */}
+      {promoted.length > 0 && (
+        <Shelf
+          title="Promoted"
+          actionHref="/store/cpm2/cars"
+          actionLabel="Browse"
+        >
+          <ul className="grid grid-cols-2 gap-3">
+            {promoted.map((p) => {
+              const promo = p.promo!;
+              const priceCents = p.promoPriceCents ?? p.basePriceCents;
+              return (
+                <li key={p.id}>
+                  <Link
+                    href={`/store/products/${p.id}`}
+                    className="promo-card flex h-full flex-col overflow-hidden rounded-xl border transition-colors hover:brightness-110"
+                    style={{
+                      background: `linear-gradient(160deg, ${promo.backgroundColor}, ${promo.accentColor}22)`,
+                      borderColor: promo.accentColor,
+                    }}
+                  >
+                    <div className="flex justify-center pt-1.5">
+                      <span
+                        className="promo-pill"
+                        style={{ ["--pill-hue" as string]: promo.pillColor }}
+                      >
+                        Promoted
+                      </span>
+                    </div>
+                    <div className="aspect-video w-full overflow-hidden border-b border-border">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={p.coverUrl ?? ""}
+                        alt={p.name}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className="flex flex-1 flex-col gap-1 p-2.5">
+                      <span className="line-clamp-2 text-[11px] font-bold leading-tight text-foreground">
+                        {p.name}
+                      </span>
+                      <span className="mt-auto text-[11px] font-bold tabular-nums text-foreground">
+                        {`${formatPrice(priceCents, p.currency)}${
+                          approxStarsForCents(priceCents)
+                            ? ` (${approxStarsForCents(priceCents)} stars)`
+                            : ""
+                        }`}
+                      </span>
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </Shelf>
+      )}
+
       {/* ---------- discovery shelves (NOT products) ---------- */}
       {onSale.length > 0 && (
         <Shelf
@@ -323,11 +376,8 @@ export function StoreHub({ products, promoById }: StoreHubData) {
         >
           <ul className="grid gap-3 sm:grid-cols-2">
             {onSale.map((p) => {
-              const promo = promoById.get(p.id);
-              const promoPrice =
-                promo && promo.discountPercent > 0
-                  ? Math.round((p.basePriceCents * (100 - promo.discountPercent)) / 100)
-                  : null;
+              const promo = p.promo ?? null;
+              const promoPrice = p.promoPriceCents ?? null;
               return (
                 <li key={p.id}>
                   <Link

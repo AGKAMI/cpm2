@@ -12,6 +12,7 @@ import {
 } from "@/lib/store/products";
 import { approxStarsForCents, discountedPriceCents, hasDiscount } from "@/lib/store/pricing";
 import { zarPerStar } from "@/lib/store/stars";
+import { productPromotionMap } from "@/lib/store/products";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +64,26 @@ export async function GET(request: Request) {
       listGalleryMap(ids),
     ]);
 
+    // Live product promotions per game — the storefront cards read these to
+    // override price, recolour the card and show the Promoted pill.
+    const [cpm1Promos, cpm2Promos] = await Promise.all([
+      productPromotionMap("cpm1"),
+      productPromotionMap("cpm2"),
+    ]);
+    const promoFor = (p: { id: number; game?: string }) => {
+      const map = (p.game ?? "cpm2") === "cpm1" ? cpm1Promos : cpm2Promos;
+      const promo = map.get(p.id);
+      if (!promo) return undefined;
+      return {
+        id: promo.id,
+        discountPercent: promo.discountPercent,
+        backgroundColor: promo.backgroundColor,
+        accentColor: promo.accentColor,
+        pillColor: promo.pillColor,
+        title: promo.title,
+      };
+    };
+
     const enriched = products.map((p) => {
       const gallery = (galleries.get(p.id) ?? [])
         .map((u) => absoluteImageUrl(u, origin))
@@ -72,8 +93,15 @@ export async function GET(request: Request) {
       const finalPrice = hasDiscount(p)
         ? discountedPriceCents(p.basePriceCents, p.discountPercent)
         : p.basePriceCents;
+      const promo = promoFor(p);
+      const promoPriceCents =
+        promo && promo.discountPercent > 0
+          ? Math.round((finalPrice * (100 - promo.discountPercent)) / 100)
+          : null;
       return {
         ...p,
+        promo: promo ?? null,
+        promoPriceCents,
         coverUrl,
         galleryUrls: gallery.length > 0 ? gallery : coverUrl ? [coverUrl] : [],
         // Quote with the CONFIGURED rate (STARS_ZAR_PER_STAR), so the

@@ -33,6 +33,13 @@ const promotionSchema = z.object({
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   sortOrder: z.coerce.number().int().default(0),
+  // Which catalogue the promotion belongs to; null = both games.
+  game: z.enum(["cpm1", "cpm2"]).nullable().optional().transform((v) => v ?? null),
+  // Attach an existing product: the promotion overrides its displayed price
+  // and card styling, and the product carries the Promoted pill.
+  productId: z.coerce.number().int().positive().nullable().optional().transform((v) => v ?? null),
+  // Hue of the Promoted pill (the metallic material + shine are fixed).
+  pillColor: z.string().min(1).default("#d4af4f"),
 });
 
 export const dynamic = "force-dynamic";
@@ -66,6 +73,9 @@ export async function POST(request: Request) {
       startDate: body.startDate ?? null,
       endDate: body.endDate ?? null,
       sortOrder: body.sortOrder,
+      game: body.game,
+      productId: body.productId,
+      pillColor: body.pillColor,
     };
     const promotion = await createPromotion(input);
     return ok({ promotion }, 201);

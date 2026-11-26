@@ -290,6 +290,17 @@ export type VantaProduct = {
   kind?: "car" | "account" | "service";
   /** Stars price, quoted with the configured STARS_ZAR_PER_STAR by the API. */
   starsPrice?: number;
+  /** The live product promotion, when one is attached to this product. */
+  promo?: {
+    id: number;
+    discountPercent: number;
+    backgroundColor: string;
+    accentColor: string;
+    pillColor: string;
+    title: string;
+  } | null;
+  /** The promotional price (after the promo's discount), when it applies. */
+  promoPriceCents?: number | null;
   name: string;
   description: string;
   basePriceCents: number;

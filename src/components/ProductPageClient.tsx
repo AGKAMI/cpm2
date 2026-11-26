@@ -36,6 +36,21 @@ const SPEC_ROWS: Array<{
 /** Stars paid (verified, Stars method) that unlocks lifetime free access. */
 const LOYALTY_THRESHOLD_STARS = 500;
 
+/** The price this page displays: the promotion's price when a live product
+ *  promotion is attached (its actual price changes, per the promotion), else
+ *  the product's own price after its own discount. */
+function promoAwarePrice(product: VantaProduct): number {
+  if (product.promo && product.promo.discountPercent > 0) {
+    const base =
+      product.discountPercent > 0
+        ? Math.round((product.basePriceCents * (100 - product.discountPercent)) / 100)
+        : product.basePriceCents;
+    return Math.round((base * (100 - product.promo.discountPercent)) / 100);
+  }
+  if (product.promoPriceCents != null) return product.promoPriceCents;
+  return product.basePriceCents;
+}
+
 export function ProductPageClient({
   productId,
   storeStats,
@@ -43,6 +58,7 @@ export function ProductPageClient({
   productId: string;
   storeStats?: { soldCount: number; activeListings: number; totalStock: number } | null;
 }) {
+
   const [product, setProduct] = useState<VantaProduct | null>(null);
   const [media, setMedia] = useState<{ publicUrl: string }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,6 +127,8 @@ export function ProductPageClient({
       </StoreShell>
     );
   if (!product) return <StoreShell><p className="text-muted-foreground">Vehicle not found.</p></StoreShell>;
+  const displayPriceCents = promoAwarePrice(product);
+
 
   const exclusivityLabel = EXCLUSIVITY_LABELS[product.exclusivity] ?? product.exclusivity;
   const isExclusive = product.exclusivity !== "standard";
@@ -223,8 +241,15 @@ export function ProductPageClient({
           <section className="panel rounded-xl border border-border p-6">
             <div className="flex items-baseline justify-between gap-2 mb-5">
               <span className="flex items-center gap-2 flex-wrap">
-                <span className="text-2xl font-bold text-primary">{formatPrice(product.basePriceCents, product.currency)}</span>
-                <span className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-sm font-bold text-foreground tabular-nums" title="Telegram Stars"><StarIcon className="w-4 h-4" />{approxStarsForCents(product.basePriceCents)}</span>
+                <span className="text-2xl font-bold text-primary">
+                  {formatPrice(displayPriceCents, product.currency)}
+                </span>
+                <span className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-sm font-bold text-foreground tabular-nums" title="Telegram Stars"><StarIcon className="w-4 h-4" />{approxStarsForCents(displayPriceCents)}</span>
+                {product.promo && (
+                  <span className="promo-pill" style={{ ["--pill-hue" as string]: product.promo.pillColor }}>
+                    Promoted
+                  </span>
+                )}
               </span>
               {isExclusive && (
                 <span className="text-[10px] uppercase tracking-[0.15em] text-[#17120a] bg-abs-gold px-2 py-0.5 rounded font-extrabold">
@@ -275,11 +300,11 @@ export function ProductPageClient({
               </div>
               <div className="flex items-baseline justify-between gap-2">
                 <span className="text-xs text-muted-foreground">Price</span>
-                <span className="text-lg font-bold text-primary">{formatPrice(product.basePriceCents, product.currency)}</span>
+                <span className="text-lg font-bold text-primary">{formatPrice(displayPriceCents, product.currency)}</span>
               </div>
               <div className="flex items-baseline justify-between gap-2 pt-3 border-t border-border">
                 <span className="text-xs text-muted-foreground">Total</span>
-                <span className="text-xl font-bold text-primary">{formatPrice(product.basePriceCents, product.currency)}</span>
+                <span className="text-xl font-bold text-primary">{formatPrice(displayPriceCents, product.currency)}</span>
               </div>
             </div>
             {/* The wrapper must be a block that fills the width. A bare <a> is

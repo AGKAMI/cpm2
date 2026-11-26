@@ -196,6 +196,16 @@ CREATE TABLE IF NOT EXISTS vanta_promotions (
   start_date      TEXT,
   end_date        TEXT,
   sort_order      INTEGER NOT NULL DEFAULT 0,
+  -- Which catalogue the promotion belongs to (CPM1 or CPM2). Null = applies
+  -- to both games (legacy banner behaviour).
+  game            TEXT,
+  -- The product this promotion is attached to. When set, the promotion
+  -- OVERRIDES that product's displayed price and card styling, and the
+  -- product carries the Promoted pill.
+  product_id      INTEGER REFERENCES vanta_products(id) ON DELETE SET NULL,
+  -- Colour of the Promoted pill. The metallic material and shine are fixed in
+  -- the UI and NOT stored per promotion — only the hue is the operator's.
+  pill_color      TEXT    NOT NULL DEFAULT '#d4af4f',
   created_at      TEXT    NOT NULL,
   updated_at      TEXT    NOT NULL
 );

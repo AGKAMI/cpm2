@@ -24,6 +24,8 @@ import { Modal } from "@/components/ui/Modal";
  *  the raw catalogue to derive its discovery shelves plus the promotions feed. */
 export type StoreHubData = {
   products: VantaProduct[];
+  /** The live product promotions keyed by product id (server-resolved). */
+  promoById: Map<number, StoreHubPromo>;
   categories: VantaCategory[];
 };
 
@@ -272,7 +274,18 @@ function SupportOptions({
   );
 }
 
-export function StoreHub({ products, categories: _categories }: StoreHubData) {
+/** The live product promotion data the hub shelves render (pill + price). */
+export type StoreHubPromo = {
+  id: number;
+  discountPercent: number;
+  backgroundColor: string;
+  accentColor: string;
+  pillColor: string;
+  title: string;
+  game: "cpm1" | "cpm2";
+};
+
+export function StoreHub({ products, promoById }: StoreHubData) {
   // Derived shelves, not a second product grid: these are the "new additions"
   // and "promotions" strips, capped so they never read as a shop window.
   const arrivals = products.filter((p) => p.isNew).slice(0, 4);
@@ -309,19 +322,43 @@ export function StoreHub({ products, categories: _categories }: StoreHubData) {
           actionLabel="Manage"
         >
           <ul className="grid gap-3 sm:grid-cols-2">
-            {onSale.map((p) => (
-              <li key={p.id}>
-                <Link
-                  href={`/store/products/${p.id}`}
-                  className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-secondary px-4 py-3 text-xs text-foreground hover:border-primary/60"
-                >
-                  <span className="truncate font-bold">{p.name}</span>
-                  <span className="shrink-0 text-[9px] font-bold uppercase tracking-[0.12em] text-ok">
-                    -{p.discountPercent}%
-                  </span>
-                </Link>
-              </li>
-            ))}
+            {onSale.map((p) => {
+              const promo = promoById.get(p.id);
+              const promoPrice =
+                promo && promo.discountPercent > 0
+                  ? Math.round((p.basePriceCents * (100 - promo.discountPercent)) / 100)
+                  : null;
+              return (
+                <li key={p.id}>
+                  <Link
+                    href={`/store/products/${p.id}`}
+                    className="flex items-center justify-between gap-3 rounded-2xl border bg-secondary px-4 py-3 text-xs text-foreground hover:border-primary/60"
+                    style={promo ? { borderColor: promo.accentColor } : undefined}
+                  >
+                    <span className="truncate font-bold">
+                      {promo && (
+                        <span
+                          className="promo-pill mr-2"
+                          style={{ ["--pill-hue" as string]: promo.pillColor }}
+                        >
+                          Promoted
+                        </span>
+                      )}
+                      {p.name}
+                    </span>
+                    {promoPrice != null ? (
+                      <span className="shrink-0 tabular-nums text-ok">
+                        R {(promoPrice / 100).toFixed(2)}
+                      </span>
+                    ) : (
+                      <span className="shrink-0 text-[9px] font-bold uppercase tracking-[0.12em] text-ok">
+                        -{p.discountPercent}%
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </Shelf>
       )}

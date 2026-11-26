@@ -254,26 +254,77 @@ export function absoluteImageUrl(raw: string, origin: string): string | null {
   return origin ? `${origin}${raw}` : raw;
 }
 
-export async function enrichProductsWithCovers<T extends { id: number; imageUrl?: string | null }>(
+export async function enrichProductsWithCovers<
+  T extends {
+    id: number;
+    imageUrl?: string | null;
+    basePriceCents?: number;
+    discountPercent?: number;
+    game?: string;
+  },
+>(
   products: T[],
   origin?: string,
-): Promise<(T & { coverUrl?: string | null; galleryUrls?: string[] })[]> {
+): Promise<
+  (T & {
+    coverUrl?: string | null;
+    galleryUrls?: string[];
+    promo?: {
+      id: number;
+      discountPercent: number;
+      backgroundColor: string;
+      accentColor: string;
+      pillColor: string;
+      title: string;
+    } | null;
+    promoPriceCents?: number | null;
+  })[]
+> {
   if (products.length === 0) return [];
   const base = origin ?? process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "";
-  const [covers, galleries] = await Promise.all([
+  // Covers, galleries AND the live product promotions in the same round-trip
+  // budget — SSR pages (the listing cards) need the promo price + pill exactly
+  // like the API payload gives the browser.
+  const [covers, galleries, cpm1Promos, cpm2Promos] = await Promise.all([
     listCoverImageMap(products.map((p) => p.id)),
     listGalleryMap(products.map((p) => p.id)),
+    productPromotionMap("cpm1"),
+    productPromotionMap("cpm2"),
   ]);
+  const promoFor = (p: { id: number; game?: string }) => {
+    const map = (p.game ?? "cpm2") === "cpm1" ? cpm1Promos : cpm2Promos;
+    const promo = map.get(p.id);
+    if (!promo) return null;
+    return {
+      id: promo.id,
+      discountPercent: promo.discountPercent,
+      backgroundColor: promo.backgroundColor,
+      accentColor: promo.accentColor,
+      pillColor: promo.pillColor,
+      title: promo.title,
+    };
+  };
   return products.map((p) => {
     const coverRaw = covers.get(p.id) ?? p.imageUrl ?? "";
     const coverUrl = coverRaw ? absoluteImageUrl(coverRaw, base) : null;
     const gallery = (galleries.get(p.id) ?? [])
       .map((u) => absoluteImageUrl(u, base))
       .filter((u): u is string => u !== null);
+    const promo = promoFor(p);
+    const basePrice = p.basePriceCents ?? 0;
+    const discount = p.discountPercent ?? 0;
+    const finalPrice =
+      discount > 0 ? Math.round((basePrice * (100 - discount)) / 100) : basePrice;
+    const promoPrice =
+      promo && promo.discountPercent > 0
+        ? Math.round((finalPrice * (100 - promo.discountPercent)) / 100)
+        : null;
     return {
       ...p,
       coverUrl,
       galleryUrls: gallery.length > 0 ? gallery : coverUrl ? [coverUrl] : [],
+      promo,
+      promoPriceCents: promoPrice,
     };
   });
 }
@@ -624,6 +675,9 @@ function rowToPromotion(row: Record<string, unknown>): Promotion {
     startDate: row.start_date === null || row.start_date === undefined ? null : String(row.start_date),
     endDate: row.end_date === null || row.end_date === undefined ? null : String(row.end_date),
     sortOrder: Number(row.sort_order ?? 0),
+    game: row.game === null || row.game === undefined || row.game === "" ? null : (String(row.game) as "cpm1" | "cpm2"),
+    productId: row.product_id === null || row.product_id === undefined ? null : Number(row.product_id),
+    pillColor: String(row.pill_color ?? "#d4af4f"),
     createdAt: String(row.created_at ?? ""),
     updatedAt: String(row.updated_at ?? ""),
   };
@@ -660,8 +714,8 @@ export async function createPromotion(input: PromotionInput): Promise<Promotion>
   const db = await getStoreDb();
   const now = new Date().toISOString();
   const result = await db.execute({
-    sql: `INSERT INTO vanta_promotions (title, subtitle, description, discount_percent, discount_code, cta_text, cta_link, background_color, accent_color, image_url, is_active, start_date, end_date, sort_order, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    sql: `INSERT INTO vanta_promotions (title, subtitle, description, discount_percent, discount_code, cta_text, cta_link, background_color, accent_color, image_url, is_active, start_date, end_date, sort_order, game, product_id, pill_color, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       input.title.trim(),
       input.subtitle ?? "",
@@ -677,6 +731,9 @@ export async function createPromotion(input: PromotionInput): Promise<Promotion>
       input.startDate ?? null,
       input.endDate ?? null,
       input.sortOrder ?? 0,
+      input.game ?? null,
+      input.productId ?? null,
+      input.pillColor ?? "#d4af4f",
       now,
       now,
     ],
@@ -711,6 +768,9 @@ export async function updatePromotion(
   if (input.startDate !== undefined) set("start_date", input.startDate);
   if (input.endDate !== undefined) set("end_date", input.endDate);
   if (input.sortOrder !== undefined) set("sort_order", input.sortOrder);
+  if (input.game !== undefined) set("game", input.game);
+  if (input.productId !== undefined) set("product_id", input.productId);
+  if (input.pillColor !== undefined) set("pill_color", input.pillColor);
   if (fields.length === 0) return getPromotion(promotionId);
   set("updated_at", new Date().toISOString());
   args.push(promotionId);
@@ -719,6 +779,44 @@ export async function updatePromotion(
     args,
   });
   return getPromotion(promotionId);
+}
+
+/**
+ * The ACTIVE product-attached promotions for a game — the data the storefront
+ * cards read to apply a promotion's price override, card colours and pill.
+ * A promotion is live when is_active AND (no start OR started) AND (no end OR
+ * not ended). Banner-style promotions (no product attached) are excluded.
+ */
+export async function listActiveProductPromotions(
+  game: "cpm1" | "cpm2",
+): Promise<Promotion[]> {
+  const db = await getStoreDb();
+  const now = new Date().toISOString();
+  const result = await db.execute({
+    sql: `SELECT * FROM vanta_promotions
+           WHERE is_active = 1
+             AND product_id IS NOT NULL
+             AND (game IS NULL OR game = ?)
+             AND (start_date IS NULL OR start_date <= ?)
+             AND (end_date IS NULL OR end_date >= ?)
+           ORDER BY sort_order DESC, id DESC`,
+    args: [game, now, now],
+  });
+  return result.rows.map(rowToPromotion);
+}
+
+/** Map productId -> its live promotion (first wins per product). */
+export async function productPromotionMap(
+  game: "cpm1" | "cpm2",
+): Promise<Map<number, Promotion>> {
+  const promos = await listActiveProductPromotions(game);
+  const map = new Map<number, Promotion>();
+  for (const promo of promos) {
+    if (promo.productId !== null && !map.has(promo.productId)) {
+      map.set(promo.productId, promo);
+    }
+  }
+  return map;
 }
 
 export async function deletePromotion(promotionId: number): Promise<boolean> {

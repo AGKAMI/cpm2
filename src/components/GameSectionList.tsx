@@ -94,10 +94,32 @@ export function GameSectionList({
               <li key={p.id}>
                 <Link
                   href={`/store/products/${p.id}`}
-                  className={`flex h-full flex-col overflow-hidden rounded-xl border border-border bg-background transition-colors hover:border-primary/60 ${
-                    soldOut ? "opacity-50" : ""
-                  }`}
+                  className={`flex h-full flex-col overflow-hidden rounded-xl border transition-colors ${
+                    p.promo
+                      ? "promo-card hover:brightness-110"
+                      : "border-border bg-background hover:border-primary/60"
+                  } ${soldOut ? "opacity-50" : ""}`}
+                  style={
+                    p.promo
+                      ? {
+                          // The promotion's own Primary/Secondary colours —
+                          // NOT the theme's black/white accents.
+                          background: `linear-gradient(160deg, ${p.promo.backgroundColor}, ${p.promo.accentColor}22)`,
+                          borderColor: p.promo.accentColor,
+                        }
+                      : undefined
+                  }
                 >
+                  {p.promo && (
+                    <div className="flex justify-center pt-1.5">
+                      <span
+                        className="promo-pill"
+                        style={{ ["--pill-hue" as string]: p.promo.pillColor }}
+                      >
+                        Promoted
+                      </span>
+                    </div>
+                  )}
                   <div className="aspect-video w-full overflow-hidden border-b border-border bg-secondary">
                     {/* Only products whose image renders reach this list. */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -110,11 +132,17 @@ export function GameSectionList({
                     <span className="mt-auto text-[11px] font-bold tabular-nums text-foreground">
                       {soldOut
                         ? "Sold out"
-                        : `${formatPrice(p.basePriceCents, p.currency)}${
-                            approxStarsForCents(p.basePriceCents)
-                              ? ` (${approxStarsForCents(p.basePriceCents)} stars)`
-                              : ""
-                          }`}
+                        : p.promoPriceCents != null
+                          ? `${formatPrice(p.promoPriceCents, p.currency)}${
+                              approxStarsForCents(p.promoPriceCents)
+                                ? ` (${approxStarsForCents(p.promoPriceCents)} stars)`
+                                : ""
+                            }`
+                          : `${formatPrice(p.basePriceCents, p.currency)}${
+                              approxStarsForCents(p.basePriceCents)
+                                ? ` (${approxStarsForCents(p.basePriceCents)} stars)`
+                                : ""
+                            }`}
                     </span>
                   </div>
                 </Link>

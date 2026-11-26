@@ -1,11 +1,14 @@
 /** VANTA GARAGE — admin promotions management.
  * /store/admin/promotions
- * Admin: create, edit, activate/deactivate promotional banners.
+ *
+ * A promotion is either a banner (campaign) or a PRODUCT promotion: pick a
+ * game, attach an existing product, and the promotion overrides that
+ * product's displayed price and card styling on the storefront and puts the
+ * Promoted pill on its card. The pill's metallic material and shine are fixed
+ * — only its colour is chosen here.
  */
 
 "use client";
-
-
 
 import { useEffect, useState } from "react";
 import { StoreShell } from "@/components/StoreShell";
@@ -28,10 +31,28 @@ type Promotion = {
   startDate: string | null;
   endDate: string | null;
   sortOrder: number;
+  game: "cpm1" | "cpm2" | null;
+  productId: number | null;
+  pillColor: string;
 };
+
+type ProductOption = { id: number; name: string; game: string };
+
+const PILL_HUES = [
+  { label: "Gold", value: "#d4af4f" },
+  { label: "Rose", value: "#b76e79" },
+  { label: "Copper", value: "#b87333" },
+  { label: "Silver", value: "#b8b8c0" },
+  { label: "Bronze", value: "#8c6a3f" },
+  { label: "Amber", value: "#e08a2e" },
+  { label: "Emerald", value: "#2f9e6e" },
+  { label: "Sapphire", value: "#3a6fd8" },
+  { label: "Ruby", value: "#c23b4e" },
+];
 
 export default function AdminPromotionsPage() {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [products, setProducts] = useState<ProductOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<number | null>(null);
@@ -39,6 +60,7 @@ export default function AdminPromotionsPage() {
 
   useEffect(() => {
     loadPromotions();
+    loadProducts();
   }, []);
 
   async function loadPromotions() {
@@ -58,10 +80,28 @@ export default function AdminPromotionsPage() {
     }
   }
 
+  async function loadProducts() {
+    try {
+      const res = await fetch("/api/store/admin/products", { credentials: "include" });
+      if (!res.ok) return;
+      const data = await res.json();
+      const rows: ProductOption[] = (data.products ?? data ?? []).map((p: ProductOption) => ({
+        id: Number(p.id),
+        name: String(p.name),
+        game: String(p.game ?? "cpm2"),
+      }));
+      setProducts(rows);
+    } catch {
+      // The product picker is a convenience — its failure must not break the page.
+    }
+  }
+
+  // The main route owns PUT/DELETE via ?id= (there is no /[id] route; the old
+  // page called those paths, so every toggle and delete 404'd).
   async function togglePromotion(id: number, isActive: boolean) {
     try {
-      const res = await fetch(`/api/store/admin/promotions/${id}`, {
-        method: "PATCH",
+      const res = await fetch(`/api/store/admin/promotions?id=${id}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ isActive: !isActive }),
@@ -76,7 +116,7 @@ export default function AdminPromotionsPage() {
   async function deletePromotion(id: number) {
     if (!window.confirm("Delete this promotion?")) return;
     try {
-      const res = await fetch(`/api/store/admin/promotions/${id}`, {
+      const res = await fetch(`/api/store/admin/promotions?id=${id}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -133,8 +173,26 @@ export default function AdminPromotionsPage() {
       )}
 
       <div className="flex items-baseline justify-between mb-4">
-        <h2 className="text-sm font-semibold text-foreground">Promotional Banners</h2>
-        <Button variant="primary" onClick={() => setEditing(0)}>
+        <h2 className="text-sm font-semibold text-foreground">Promotions</h2>
+        <Button
+          variant="primary"
+          onClick={() => {
+            setEditing(0);
+            setDraft({
+              title: "",
+              description: "",
+              discountPercent: 10,
+              discountCode: "",
+              backgroundColor: "#1c1c1f",
+              accentColor: "#d4af4f",
+              pillColor: "#d4af4f",
+              isActive: true,
+              sortOrder: 0,
+              game: null,
+              productId: null,
+            });
+          }}
+        >
           + Add Promotion
         </Button>
       </div>
@@ -148,6 +206,7 @@ export default function AdminPromotionsPage() {
           <PromotionCard
             key={p.id}
             promo={p}
+            products={products}
             editing={editing === p.id}
             setEditing={setEditing}
             draft={draft}
@@ -164,6 +223,7 @@ export default function AdminPromotionsPage() {
 
 function PromotionCard({
   promo,
+  products,
   editing,
   setEditing,
   draft,
@@ -173,6 +233,7 @@ function PromotionCard({
   onSave,
 }: {
   promo: Promotion;
+  products: ProductOption[];
   editing: boolean;
   setEditing: (id: number | null) => void;
   draft: Partial<Promotion> | null;
@@ -181,7 +242,7 @@ function PromotionCard({
   onDelete: () => void;
   onSave: () => void;
 }) {
-  const isEditing = editing;
+  const attached = products.find((p) => p.id === promo.productId);
   return (
     <article className="panel rounded-xl border border-border p-4">
       <div className="flex items-baseline justify-between mb-2">
@@ -197,43 +258,143 @@ function PromotionCard({
         </span>
       </div>
       <p className="text-xs text-muted-foreground mb-3">{promo.description}</p>
-      <div className="flex items-center gap-3 mb-3">
-        <span className="text-xs text-muted-foreground">
-          Discount: {promo.discountPercent}% | Code: {promo.discountCode || "—"}
+      <div className="flex flex-wrap items-center gap-3 mb-3 text-xs text-muted-foreground">
+        <span>Discount: {promo.discountPercent}%</span>
+        <span>Code: {promo.discountCode || "—"}</span>
+        <span className="font-bold text-foreground">
+          Game: {promo.game === null ? "Both" : promo.game === "cpm1" ? "CPM 1" : "CPM 2"}
+        </span>
+        {attached && <span className="text-primary">→ {attached.name}</span>}
+        {promo.productId !== null && !attached && (
+          <span className="text-primary">→ Product #{promo.productId}</span>
+        )}
+        {/* Pill preview with the chosen hue — the metal + shine are fixed. */}
+        <span className="promo-pill" style={{ ["--pill-hue" as string]: promo.pillColor }}>
+          Promoted
         </span>
         <Button variant="outline" size="sm" onClick={onToggle}>
           {promo.isActive ? "Deactivate" : "Activate"}
         </Button>
-        {promo.imageUrl && (
-          <img
-            src={promo.imageUrl}
-            alt="Promo banner"
-            className="h-12 w-24 object-cover rounded border border-border"
-          />
-        )}
       </div>
-      {isEditing && draft && (
+      {promo.imageUrl && (
+        <img
+          src={promo.imageUrl}
+          alt="Promo banner"
+          className="mb-3 h-12 w-24 object-cover rounded border border-border"
+        />
+      )}
+      {editing && draft && (
         <div className="space-y-3 pt-4 border-t border-border">
           <div className="space-y-2">
             <label className="text-xs text-muted-foreground block">Title</label>
             <input
               defaultValue={draft.title ?? promo.title}
               className="w-full border border-border bg-surface-deep rounded px-3 py-2 text-sm focus:outline-none focus:border-gold"
-              onChange={(e) =>
-                setDraft({ ...draft, title: e.target.value })
-              }
+              onChange={(e) => setDraft({ ...draft, title: e.target.value })}
             />
           </div>
           <div className="space-y-2">
-            <label className="text-xs text-muted-foreground block">Discount %</label>
+            <label className="text-xs text-muted-foreground block">Description</label>
             <input
-              type="number"
-              defaultValue={draft.discountPercent ?? promo.discountPercent}
+              defaultValue={draft.description ?? promo.description}
+              className="w-full border border-border bg-surface-deep rounded px-3 py-2 text-sm focus:outline-none focus:border-gold"
+              onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <label className="text-xs text-muted-foreground block">Discount %</label>
+              <input
+                type="number"
+                defaultValue={draft.discountPercent ?? promo.discountPercent}
+                className="w-full border border-border bg-surface-deep rounded px-3 py-2 text-sm focus:outline-none focus:border-gold"
+                onChange={(e) =>
+                  setDraft({ ...draft, discountPercent: Number(e.target.value) })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs text-muted-foreground block">Game</label>
+              <select
+                value={draft.game ?? promo.game ?? ""}
+                className="w-full border border-border bg-surface-deep rounded px-3 py-2 text-sm focus:outline-none focus:border-gold"
+                onChange={(e) =>
+                  setDraft({
+                    ...draft,
+                    game: e.target.value === "" ? null : (e.target.value as "cpm1" | "cpm2"),
+                  })
+                }
+              >
+                <option value="">Both games</option>
+                <option value="cpm1">CPM 1</option>
+                <option value="cpm2">CPM 2</option>
+              </select>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs text-muted-foreground block">
+              Attached product (the promotion overrides its price + card on the storefront)
+            </label>
+            <select
+              value={draft.productId ?? promo.productId ?? ""}
               className="w-full border border-border bg-surface-deep rounded px-3 py-2 text-sm focus:outline-none focus:border-gold"
               onChange={(e) =>
-                setDraft({ ...draft, discountPercent: Number(e.target.value) })
+                setDraft({
+                  ...draft,
+                  productId: e.target.value === "" ? null : Number(e.target.value),
+                })
               }
-            />
+            >
+              <option value="">None (banner campaign)</option>
+              {products.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.game === "cpm1" ? "CPM1" : "CPM2"} · {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <label className="text-xs text-muted-foreground block">Primary colour</label>
+              <input
+                type="color"
+                defaultValue={draft.backgroundColor ?? promo.backgroundColor}
+                className="h-9 w-full border border-border bg-surface-deep rounded"
+                onChange={(e) => setDraft({ ...draft, backgroundColor: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs text-muted-foreground block">Secondary colour</label>
+              <input
+                type="color"
+                defaultValue={draft.accentColor ?? promo.accentColor}
+                className="h-9 w-full border border-border bg-surface-deep rounded"
+                onChange={(e) => setDraft({ ...draft, accentColor: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs text-muted-foreground block">
+              Promoted pill colour — the metallic material and shine are fixed
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {PILL_HUES.map((hue) => (
+                <button
+                  key={hue.value}
+                  type="button"
+                  className={`rounded border px-2 py-1 text-[10px] font-bold ${
+                    (draft.pillColor ?? promo.pillColor) === hue.value
+                      ? "border-primary text-foreground"
+                      : "border-border text-muted-foreground"
+                  }`}
+                  onClick={() => setDraft({ ...draft, pillColor: hue.value })}
+                >
+                  <span className="promo-pill" style={{ ["--pill-hue" as string]: hue.value }}>
+                    {hue.label}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
           <div className="flex gap-2">
             <Button
@@ -252,7 +413,7 @@ function PromotionCard({
           </div>
         </div>
       )}
-      {!isEditing && (
+      {!editing && (
         <div className="flex gap-2 mt-3">
           <Button variant="outline" size="sm" onClick={() => setEditing(promo.id)}>
             Edit

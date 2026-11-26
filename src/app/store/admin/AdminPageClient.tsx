@@ -182,6 +182,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
   const [form, setForm] = useState<ProductForm>(EMPTY_FORM);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [inlineEditingId, setInlineEditingId] = useState<number | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -195,6 +196,11 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
   const [categorySaving, setCategorySaving] = useState(false);
   const [inlineEditingCategoryId, setInlineEditingCategoryId] = useState<number | null>(null);
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
+  // Catalogue browsing state: game separation + search + filters + sorting.
+  const [catalogueGame, setCatalogueGame] = useState<"all" | "cpm1" | "cpm2">("all");
+  const [catalogueSearch, setCatalogueSearch] = useState("");
+  const [catalogueCategory, setCatalogueCategory] = useState("");
+  const [catalogueSort, setCatalogueSort] = useState("newest");
   const [showPromotionForm, setShowPromotionForm] = useState(false);
   const [editingPromotionId, setEditingPromotionId] = useState<number | null>(null);
   const [promotionForm, setPromotionForm] = useState<PromotionForm>(EMPTY_PROMOTION_FORM);
@@ -202,6 +208,32 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
   const [carQuery, setCarQuery] = useState("");
   const [carOpen, setCarOpen] = useState(false);
   const [pickedCar, setPickedCar] = useState<CarEntry | null>(null);
+
+  /** The catalogue rows after game filter, search, category filter and sort. */
+  const catalogueRows: VantaProduct[] = (() => {
+    const q = catalogueSearch.trim().toLowerCase();
+    let rows = products.filter((p) => {
+      if (catalogueGame === "cpm1" && p.game !== "cpm1") return false;
+      if (catalogueGame === "cpm2" && p.game === "cpm1") return false;
+      if (catalogueCategory && String(p.categoryId ?? "") !== catalogueCategory) return false;
+      if (q && !(`${p.name} #${p.id}`.toLowerCase().includes(q))) return false;
+      return true;
+    });
+    const byName = (a: VantaProduct, b: VantaProduct) => a.name.localeCompare(b.name);
+    rows = [...rows].sort((a, b) => {
+      switch (catalogueSort) {
+        case "oldest": return a.id - b.id;
+        case "name": return byName(a, b);
+        case "price_asc": return a.basePriceCents - b.basePriceCents;
+        case "price_desc": return b.basePriceCents - a.basePriceCents;
+        case "stock_asc": return a.stockQuantity - b.stockQuantity;
+        case "stock_desc": return b.stockQuantity - a.stockQuantity;
+        case "category": return (a.categoryId ?? 0) - (b.categoryId ?? 0);
+        default: return b.id - a.id; // newest
+      }
+    });
+    return rows;
+  })();
   const [cars, setCars] = useState<CarEntry[]>([]);
   const [productConverterFile, setProductConverterFile] = useState<File | null>(null);
   const [productConverterResult, setProductConverterResult] = useState<string | null>(null);
@@ -1154,21 +1186,154 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
           <p className="text-muted-foreground">No products yet. Add your first above.</p>
         ) : (
           <>
-            <div className="flex items-center gap-3 mb-4">
-              <label className="text-xs font-medium text-muted-foreground">Product</label>
-              <select
-                value={selectedProductId ?? ""}
-                onChange={(e) => setSelectedProductId(Number(e.target.value) || null)}
-                className="flex-1 border border-input bg-background px-3 py-1.5 rounded-md text-sm"
-              >
-                <option value="">Select a product</option>
-                {products.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    #{p.id} · {p.name}
-                  </option>
+            {/* ── Catalogue controls: game separation + filtering + sorting ──
+                The old picker was a single-product dropdown — with 90+
+                products there was no way to tell CPM1 from CPM2, to find a
+                product, or to sort anything. */}
+            <div className="mb-4 space-y-3">
+              {/* Game tabs — the two catalogues never mix */}
+              <div className="flex items-center gap-2">
+                {([
+                  ["all", `All (${products.length})`],
+                  ["cpm1", `CPM 1 (${products.filter((p) => p.game === "cpm1").length})`],
+                  ["cpm2", `CPM 2 (${products.filter((p) => p.game !== "cpm1").length})`],
+                ] as const).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => { setCatalogueGame(key); setSelectedProductId(null); }}
+                    className={`rounded-md border px-3 py-1.5 text-xs font-bold transition-colors ${
+                      catalogueGame === key
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border text-muted-foreground hover:border-primary/50"
+                    }`}
+                  >
+                    {label}
+                  </button>
                 ))}
-              </select>
+              </div>
+              {/* Search + category filter + sort */}
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  value={catalogueSearch}
+                  onChange={(e) => setCatalogueSearch(e.target.value)}
+                  placeholder="Search name, #id…"
+                  className="min-w-[160px] flex-1 border border-input bg-background px-3 py-1.5 rounded-md text-sm"
+                />
+                <select
+                  value={catalogueCategory}
+                  onChange={(e) => setCatalogueCategory(e.target.value)}
+                  className="border border-input bg-background px-3 py-1.5 rounded-md text-sm"
+                >
+                  <option value="">All categories</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={String(c.id)}>
+                      {c.name}
+                      {c.game ? ` (${c.game === "cpm1" ? "CPM1" : "CPM2"})` : ""}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={catalogueSort}
+                  onChange={(e) => setCatalogueSort(e.target.value)}
+                  className="border border-input bg-background px-3 py-1.5 rounded-md text-sm"
+                >
+                  <option value="newest">Newest first</option>
+                  <option value="oldest">Oldest first</option>
+                  <option value="name">Name A→Z</option>
+                  <option value="price_asc">Price ↑</option>
+                  <option value="price_desc">Price ↓</option>
+                  <option value="stock_asc">Stock ↑</option>
+                  <option value="stock_desc">Stock ↓</option>
+                  <option value="category">Category</option>
+                </select>
+              </div>
+              {/* The catalogue table itself — click a row to edit */}
+              <div className="overflow-x-auto rounded-lg border border-border">
+                <table className="w-full text-left text-xs">
+                  <thead className="border-b border-border text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                    <tr>
+                      <th className="px-3 py-2">#</th>
+                      <th className="px-3 py-2">Game</th>
+                      <th className="px-3 py-2">Name</th>
+                      <th className="px-3 py-2">Category</th>
+                      <th className="px-3 py-2 text-right">Price</th>
+                      <th className="px-3 py-2 text-right">Stock</th>
+                      <th className="px-3 py-2">State</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {catalogueRows.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">
+                          No products match these filters.
+                        </td>
+                      </tr>
+                    )}
+                    {catalogueRows.map((p) => {
+                      const cat = categories.find((c) => c.id === p.categoryId);
+                      const price = p.discountPercent > 0
+                        ? Math.round((p.basePriceCents * (100 - p.discountPercent)) / 100)
+                        : p.basePriceCents;
+                      return (
+                        <tr
+                          key={p.id}
+                          onClick={() => { setSelectedProductId(p.id); setInlineEditingId(null); }}
+                          className={`cursor-pointer border-b border-border/60 last:border-0 hover:bg-primary/5 ${
+                            selectedProductId === p.id ? "bg-primary/10" : ""
+                          }`}
+                        >
+                          <td className="px-3 py-2 font-mono text-muted-foreground">{p.id}</td>
+                          <td className="px-3 py-2">
+                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                              p.game === "cpm1" ? "bg-blue-500/15 text-blue-400" : "bg-emerald-500/15 text-emerald-400"
+                            }`}>
+                              {p.game === "cpm1" ? "CPM1" : "CPM2"}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 font-medium text-foreground">
+                            <span className="line-clamp-1">{p.name}</span>
+                            {p.promoPriceCents != null && (
+                              <span className="ml-2 promo-pill" style={{ ["--pill-hue" as string]: p.promo?.pillColor ?? "#d4af4f" }}>
+                                Promoted
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2 text-muted-foreground">{cat?.name ?? "—"}</td>
+                          <td className="px-3 py-2 text-right font-mono text-foreground">
+                            {p.discountPercent > 0 && (
+                              <span className="mr-1 text-muted-foreground line-through">
+                                {formatPrice(p.basePriceCents, p.currency)}
+                              </span>
+                            )}
+                            {formatPrice(price, p.currency)}
+                          </td>
+                          <td className="px-3 py-2 text-right font-mono text-foreground">{p.stockQuantity}</td>
+                          <td className="px-3 py-2">
+                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                              p.isPublished
+                                ? "bg-emerald-500/15 text-emerald-400"
+                                : "bg-ink-faint/15 text-ink-faint"
+                            }`}>
+                              {p.isPublished ? "LIVE" : "HIDDEN"}
+                            </span>
+                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ml-1 ${
+                              p.stockQuantity <= 0 ? "bg-destructive/15 text-destructive" : "bg-border text-muted-foreground"
+                            }`}>
+                              {p.stockQuantity <= 0 ? "OUT" : "IN"}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                {catalogueRows.length} shown of {products.length} · click a row to edit it below
+              </p>
             </div>
+
             {selectedProductId && (
               <div className="grid grid-cols-1 gap-3">
                 {products.filter((p) => p.id === selectedProductId).map((p) => {

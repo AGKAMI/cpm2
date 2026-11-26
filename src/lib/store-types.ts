@@ -248,6 +248,13 @@ export type Promotion = {
   startDate: string | null;
   endDate: string | null;
   sortOrder: number;
+  /** Which catalogue this promotion belongs to. Null = both games. */
+  game: "cpm1" | "cpm2" | null;
+  /** The attached product. When set, the promotion overrides that product's
+   *  displayed price and card styling on the storefront. */
+  productId: number | null;
+  /** Hue of the Promoted pill. The metallic material + shine are fixed. */
+  pillColor: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -267,4 +274,10 @@ export type PromotionInput = {
   startDate?: string | null;
   endDate?: string | null;
   sortOrder?: number;
+  /** cpm1 | cpm2, or null for both games. */
+  game?: "cpm1" | "cpm2" | null;
+  /** Attach an existing product; null detaches. */
+  productId?: number | null;
+  /** Promoted-pill hue (metallic material + shine stay fixed). */
+  pillColor?: string;
 };

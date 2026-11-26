@@ -11,7 +11,7 @@
   "crons": [
     {
       "path": "/api/store/internal/cron",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 3 * * *"
     }
   ],
   "env": {

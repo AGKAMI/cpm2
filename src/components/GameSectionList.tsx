@@ -91,19 +91,32 @@ export function GameSectionList({
                 <Link
                   href={`/store/products/${p.id}`}
                   className={`flex h-full flex-col overflow-hidden rounded-xl border transition-colors ${
-                    p.promo
-                      ? "promo-card hover:brightness-110"
-                      : "border-border bg-background hover:border-primary/60"
-                  } ${soldOut ? "opacity-50" : ""}`}
+                    // SOLD OUT turns the whole card red — it wins over promo
+                    // colours: an unavailable promoted car reads as red first.
+                    soldOut
+                      ? ""
+                      : p.promo
+                        ? "promo-card hover:brightness-110"
+                        : "border-border bg-background hover:border-primary/60"
+                  }`}
                   style={
-                    p.promo
+                    soldOut
                       ? {
-                          // The promotion's own Primary/Secondary colours —
-                          // NOT the theme's black/white accents.
-                          background: `linear-gradient(160deg, ${p.promo.backgroundColor}, ${p.promo.accentColor}22)`,
-                          borderColor: p.promo.accentColor,
+                          // The red sold-out card: the theme's destructive
+                          // colour, inline (the project hand-rolls destructive
+                          // utilities; the opacity variants do not exist).
+                          borderColor: "var(--destructive)",
+                          background:
+                            "color-mix(in oklab, var(--destructive) 12%, transparent)",
                         }
-                      : undefined
+                      : p.promo
+                        ? {
+                            // The promotion's own Primary/Secondary colours —
+                            // NOT the theme's black/white accents.
+                            background: `linear-gradient(160deg, ${p.promo.backgroundColor}, ${p.promo.accentColor}22)`,
+                            borderColor: p.promo.accentColor,
+                          }
+                        : undefined
                   }
                 >
                   {p.promo && (
@@ -116,18 +129,30 @@ export function GameSectionList({
                       </span>
                     </div>
                   )}
-                  <div className="aspect-video w-full overflow-hidden border-b border-border bg-secondary">
+                  <div className="relative aspect-video w-full overflow-hidden border-b border-border bg-secondary">
                     {/* Only products whose image renders reach this list. */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={p.coverUrl ?? ""} alt={p.name} className="h-full w-full object-cover" />
+                    {soldOut && (
+                      <div
+                        aria-hidden
+                        className="absolute inset-0 mix-blend-multiply"
+                        style={{ background: "var(--destructive)", opacity: 0.25 }}
+                      />
+                    )}
                   </div>
                   <div className="flex flex-1 flex-col gap-1 p-2.5">
                     <span className="line-clamp-2 text-[11px] font-bold leading-tight text-foreground">
                       {p.name}
                     </span>
-                    <span className="mt-auto text-[11px] font-bold tabular-nums text-foreground">
+                    <span
+                      className={`mt-auto text-[11px] font-bold tabular-nums ${
+                        soldOut ? "" : "text-foreground"
+                      }`}
+                      style={soldOut ? { color: "var(--destructive)" } : undefined}
+                    >
                       {soldOut
-                        ? "Sold out"
+                        ? "SOLD OUT"
                         : p.promoPriceCents != null
                           ? `${formatPrice(p.promoPriceCents, p.currency)}${
                               approxStarsForCents(p.promoPriceCents)

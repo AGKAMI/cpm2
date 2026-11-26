@@ -42,7 +42,7 @@ import { clientInitData } from "../client-initdata";
 
 // In a desktop browser the official SDK empties window.Telegram.WebApp.initData,
 // so read the initData captured from the URL hash first (see client-initdata.ts).
-function telegramInitData(): string {
+export function telegramInitData(): string {
   return clientInitData();
 }
 

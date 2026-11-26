@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Live preview proxies requests through https://{port}-{sandbox}.e2b.app.
+  // Next 16's dev origin check rejects that host unless it is allowlisted.
+  allowedDevOrigins: ["*.e2b.app"],
   // Security upgrade marker (agent-driven upgrade run)
   experimental: {
     agentUpgrade: "security",

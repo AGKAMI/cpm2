@@ -235,3 +235,69 @@ describe("vanta · effective price", () => {
     assert.equal(effectiveUnitPriceCents(product, { discountPercent: 0 }), 50000);
   });
 });
+
+describe("payfast · base URL normalization", () => {
+  it("accepts either a bare origin or the checkout endpoint", async () => {
+    const saved = process.env.PAYFAST_BASE_URL;
+    const { getPayFastCheckoutUrl, getPayFastQueryUrl } = await import("../src/lib/store/payfast-url.ts");
+    try {
+      process.env.PAYFAST_BASE_URL = "https://sandbox.payfast.co.za";
+      assert.equal(getPayFastCheckoutUrl(), "https://sandbox.payfast.co.za/eng/process");
+      assert.equal(getPayFastQueryUrl(), "https://sandbox.payfast.co.za/eng/query_transactions");
+      process.env.PAYFAST_BASE_URL = "https://live.payfast.co.za/eng/process/";
+      assert.equal(getPayFastCheckoutUrl(), "https://live.payfast.co.za/eng/process");
+      assert.equal(getPayFastQueryUrl(), "https://live.payfast.co.za/eng/query_transactions");
+    } finally {
+      if (saved) process.env.PAYFAST_BASE_URL = saved;
+      else delete process.env.PAYFAST_BASE_URL;
+    }
+  });
+});
+
+describe("fresh schema · order product snapshot", () => {
+  function createTableBlock(table: string): string {
+    const start = VANTA_SCHEMA.indexOf(`CREATE TABLE IF NOT EXISTS ${table} (`);
+    assert.notEqual(start, -1, `${table} must be in the schema`);
+    const end = VANTA_SCHEMA.indexOf("\n);", start);
+    return VANTA_SCHEMA.slice(start, end);
+  }
+
+  it("declares product_name on orders, not on customers", () => {
+    assert.match(createTableBlock("vanta_orders"), /product_name\s+TEXT/);
+    assert.doesNotMatch(createTableBlock("vanta_customers"), /product_name/);
+  });
+});
+
+describe("payfast · shared signature", () => {
+  it("sorts fields, appends the passphrase, and excludes the signature field", async () => {
+    const { payfastSignature } = await import("../src/lib/store/payfast-signature.ts");
+    assert.equal(
+      payfastSignature({ b: "2", signature: "ignore-me", a: "1" }, "passphrase"),
+      "f6c9f84f59819204ca1a97b71b838131",
+    );
+  });
+
+  it("keeps empty fields in the signed string", async () => {
+    const { payfastSignature } = await import("../src/lib/store/payfast-signature.ts");
+    const { createHash } = await import("node:crypto");
+    assert.equal(
+      payfastSignature({ b: "2", a: "" }, "secret"),
+      createHash("md5").update("a=&b=2secret").digest("hex"),
+    );
+  });
+});
+
+describe("admin partial updates", () => {
+  it("does not apply defaults for fields the caller omitted", async () => {
+    const { z } = await import("zod");
+    const { parseProvidedFields } = await import("../src/lib/parse-patch.ts");
+    const schema = z.object({
+      name: z.string(),
+      stock: z.number().default(1),
+      active: z.boolean().default(false),
+    });
+    assert.deepEqual(parseProvidedFields(schema, { active: true }), { active: true });
+    assert.deepEqual(parseProvidedFields(schema, { stock: 7 }), { stock: 7 });
+    assert.deepEqual(parseProvidedFields(schema, { name: "Car" }), { name: "Car" });
+  });
+});

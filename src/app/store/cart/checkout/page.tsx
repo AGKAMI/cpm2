@@ -73,7 +73,7 @@ export default function CartCheckoutPage() {
     } finally {
       setBusy(false);
     }
-  }, [playerId, inGameName]);
+  }, [playerId, inGameName, paymentMethod]);
 
   useEffect(() => {
     // Only auto-submit when landed here from the cart page (marker set). Wait

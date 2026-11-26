@@ -271,7 +271,7 @@ names without values. Vercel holds its own copies for the deployed storefront + 
 | `ACCOUNT_ENCRYPTION_KEY` | — | Key for delivered store account units — the app refuses to store credentials without it |
 | `CPM2_BCRYPT_ROUNDS` | `12` | Password-hashing cost |
 | `TELEGRAM_BOT_TOKEN` | — | Bot token — Mini App initData, the webhook and order notifications (`src/lib/telegram.ts`) |
-| `TELEGRAM_WEBHOOK_SECRET` | — | Shared secret Telegram sends to `/api/telegram/webhook` (`x-telegram-bot-api-secret-token`) |
+| `TELEGRAM_WEBHOOK_SECRET` | — | Required: Telegram sends it to `/api/telegram/webhook` (`x-telegram-bot-api-secret-token`); the webhook refuses all updates when unset. Set it with `node scripts/set-webhook-secret.mjs` |
 | `CRON_SECRET` | — | Required by `/api/store/internal/cron`; Vercel Cron sends it as `Authorization: Bearer …` |
 | `APP_PASSWORD` | — | The console password — gates the browser and reveal consent (`/api/auth/login`) |
 | `STORE_OWNER_EMAIL` | — | Owner email (`CONSOLE_OWNER_EMAIL` is accepted as an alias) |
@@ -285,3 +285,16 @@ names without values. Vercel holds its own copies for the deployed storefront + 
 | `GEMINI_API_KEY` | — | Gemini screenshot identification on the trade desk |
 | `VANTA_WHATSAPP_WEBHOOK_URL` | — | WhatsApp bot notification webhook |
 | `VANTA_WHATSAPP_WEBHOOK_SECRET` | — | Shared secret for that webhook |
+
+### Payment settlement invariants
+
+- PayFast ITNs are accepted only when the signature **and** `merchant_id` match
+  the configured merchant and `amount_gross` matches the order exactly. All
+  three PayFast variables must be present, or checkout returns no payment URL.
+- PayFast, Telegram Stars and manual EFT verification all settle through the
+  same guarded state flip (`confirmPayment`) and the idempotent
+  `ensureSettlementRecords()` helper. A retry can repair a half-written
+  payment/ledger audit trail without double-counting it.
+- An order's reserved stock is released only by the caller that actually moves
+  the row into a terminal state, or by the expiry sweep. A failed order INSERT
+  compensates its own reservation immediately.

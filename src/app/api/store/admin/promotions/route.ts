@@ -8,6 +8,7 @@
  */
 
 import { fail, ok, readJson } from "@/lib/route";
+import { parseProvidedFields } from "@/lib/parse-patch.ts";
 import { requireStoreAdmin } from "@/lib/store/auth";
 import {
   listPromotions,
@@ -92,7 +93,7 @@ export async function PUT(request: Request) {
     if (!id) {
       return fail({ status: 400, body: { error: { code: "missing_id", message: "Promotion id required." } } });
     }
-    const body = promotionSchema.partial().parse(await readJson(request));
+    const body = parseProvidedFields(promotionSchema, await readJson(request));
     const updated = await updatePromotion(Number(id), body);
     if (!updated) {
       return fail({ status: 404, body: { error: { code: "not_found", message: "Promotion not found." } } });

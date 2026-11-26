@@ -32,13 +32,12 @@ CREATE TABLE IF NOT EXISTS vanta_account_units (
   created_at     TEXT    NOT NULL,
   updated_at     TEXT    NOT NULL,
   UNIQUE (email_hash, product_id)
-)`;
+);`;
 
 export const VANTA_SCHEMA = `
 CREATE TABLE IF NOT EXISTS vanta_customers (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,
   in_game_name   TEXT    NOT NULL DEFAULT '',
-  product_name         TEXT,                            -- what was bought, snapshotted at order time (orders outlive products)
   player_id      TEXT    NOT NULL DEFAULT '',
   currency_pref  TEXT    NOT NULL DEFAULT 'ZAR',
   email          TEXT    NOT NULL DEFAULT '',
@@ -46,6 +45,19 @@ CREATE TABLE IF NOT EXISTS vanta_customers (
   created_at     TEXT    NOT NULL,
   updated_at     TEXT    NOT NULL
 );
+
+-- Web login credentials for store customers. Created here (not lazily in the
+-- login route) so a fresh deployment can log in before anyone has registered.
+CREATE TABLE IF NOT EXISTS vanta_customer_credentials (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id    INTEGER NOT NULL REFERENCES vanta_customers(id) ON DELETE CASCADE,
+  email          TEXT    NOT NULL,
+  password_hash  TEXT    NOT NULL,
+  created_at     TEXT    NOT NULL,
+  updated_at     TEXT    NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_vanta_customer_credentials_email
+  ON vanta_customer_credentials (email COLLATE NOCASE);
 
 CREATE TABLE IF NOT EXISTS vanta_platform_identities (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -267,8 +279,10 @@ CREATE TABLE IF NOT EXISTS vanta_financial_ledger (
 CREATE TABLE IF NOT EXISTS vanta_orders (
   id                 TEXT PRIMARY KEY,
   customer_id        INTEGER NOT NULL REFERENCES vanta_customers(id),
-  product_id         INTEGER NOT NULL REFERENCES vanta_products(id),
-  quantity           INTEGER NOT NULL DEFAULT 1,
+  product_id       INTEGER NOT NULL REFERENCES vanta_products(id),
+  -- What was bought, snapshotted at order time (orders outlive products).
+  product_name     TEXT,
+  quantity         INTEGER NOT NULL DEFAULT 1,
   order_state        TEXT NOT NULL DEFAULT 'awaiting_payment' CHECK (order_state IN ('checkout_initiated', 'awaiting_payment', 'payment_verification', 'payment_confirmed', 'processing', 'delivery_scheduled', 'awaiting_delivery', 'delivery_in_progress', 'delivery_verified', 'completed', 'cancelled', 'refund_pending', 'refunded', 'disputed')),
   payment_state      TEXT    NOT NULL DEFAULT 'pending' CHECK (payment_state IN ('pending', 'verified', 'rejected', 'expired')),
   delivery_state     TEXT    NOT NULL DEFAULT 'unscheduled' CHECK (delivery_state IN ('unscheduled', 'scheduled', 'in_progress', 'completed', 'missed')),
@@ -416,4 +430,20 @@ CREATE INDEX IF NOT EXISTS idx_vanta_account_units_pending
   ON vanta_account_units (status, created_at);
 CREATE INDEX IF NOT EXISTS idx_vanta_account_units_order
   ON vanta_account_units (order_id);
+
+-- vanta_inventory is the stock ledger reservations/settlement mutate. Keep the
+-- catalogue's stock_quantity (what cards and admin see) in lockstep with it;
+-- without these triggers every sale left the card showing the original stock
+-- while the purchasable pool quietly shrank.
+CREATE TRIGGER IF NOT EXISTS vanta_inventory_stock_insert
+  AFTER INSERT ON vanta_inventory
+  BEGIN
+    UPDATE vanta_products SET stock_quantity = NEW.stock_quantity WHERE id = NEW.product_id;
+  END;
+
+CREATE TRIGGER IF NOT EXISTS vanta_inventory_stock_update
+  AFTER UPDATE OF stock_quantity ON vanta_inventory
+  BEGIN
+    UPDATE vanta_products SET stock_quantity = NEW.stock_quantity WHERE id = NEW.product_id;
+  END;
 `;

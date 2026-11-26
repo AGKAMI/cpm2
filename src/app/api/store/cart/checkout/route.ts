@@ -72,7 +72,8 @@ async function resolveBuyer(
 export async function POST(request: Request) {
   try {
     const body = cartCheckoutSchema.parse(await readJson(request));
-    const customer = await resolveBuyer(request, body.playerId.trim(), body.inGameName.trim(), body.paymentMethod);
+    const normalizedPlayerId = body.playerId.trim().toUpperCase();
+    const customer = await resolveBuyer(request, normalizedPlayerId, body.inGameName.trim(), body.paymentMethod);
     const cart = await getCart(customer.id);
 
     if (cart.items.length === 0) {
@@ -85,8 +86,17 @@ export async function POST(request: Request) {
         "Cart checkout currently supports EFT only. Check out PayFast items one at a time.",
       );
     }
+    // PayFast and Stars settle in ZAR; an order labelled in another currency
+    // would be charged at a ZAR rate while its audit trail says otherwise.
+    if (body.paymentMethod !== "eft" && cart.items.some((i) => (i.currency || "ZAR").toUpperCase() !== "ZAR")) {
+      throw new ApiError(
+        400,
+        "UNSUPPORTED_GATEWAY_CURRENCY",
+        "Card and Stars payments are available in ZAR only. Choose EFT for this cart.",
+      );
+    }
 
-    const playerId = body.playerId.trim();
+    const playerId = normalizedPlayerId;
     const inGameName = body.inGameName.trim();
     const orders = [];
     // Promotions are game-scoped; a cart item carries no game column, so load
@@ -99,7 +109,10 @@ export async function POST(request: Request) {
     const promoFor = (productId: number) => cpm1Promos.get(productId) ?? cpm2Promos.get(productId);
 
     for (const item of cart.items) {
-      const idempotencyKey = `cart_${customer.id}_${item.productId}_${item.quantity}`;
+      // Include the cart row's last update so adding the same product again
+      // later does not replay an old, already-paid order. A genuine retry of
+      // the unchanged cart still resolves to the same order.
+      const idempotencyKey = `cart_${customer.id}_${item.productId}_${item.quantity}_${item.updatedAt}`;
       const result = await createOrder({
         customerId: customer.id,
         productId: item.productId,

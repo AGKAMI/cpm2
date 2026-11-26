@@ -7,6 +7,7 @@
  */
 
 import { fail, ok, readJson } from "@/lib/route";
+import { parseProvidedFields } from "@/lib/parse-patch.ts";
 import { saveUpload } from "@/lib/store/uploads";
 import { requireStoreAdmin } from "@/lib/store/auth";
 import { getStoreDb } from "@/lib/store-db";
@@ -185,7 +186,7 @@ export async function PUT(request: Request) {
       return fail({ status: 400, body: { error: { code: "missing_id", message: "Product id required." } } });
     }
     // Allow partial updates (e.g. publish toggle only sends isPublished)
-    const body = productSchema.partial().parse(await readJson(request));
+    const body = parseProvidedFields(productSchema, await readJson(request));
     const badCode = await invalidCarCode(body.cpm2CarCode);
     if (badCode) return badCode;
     const product = await getProduct(Number(id));
@@ -221,6 +222,7 @@ export async function PUT(request: Request) {
           stockQuantity: body.stockQuantity,
           availabilityState: body.availabilityState,
           exclusivity: body.exclusivity,
+          isFeatured: body.isFeatured,
           isSale: body.isSale,
           isPublished: body.isPublished,
           airSuspension: body.airSuspension,

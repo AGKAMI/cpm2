@@ -413,6 +413,9 @@ export type CartItem = {
   quantity: number;
   exclusivity: string;
   addedAt: string;
+  updatedAt?: string;
+  /** Live promotional unit price included in subtotal and cart checkout. */
+  promoPriceCents?: number | null;
 };
 
 export type CartSummary = {

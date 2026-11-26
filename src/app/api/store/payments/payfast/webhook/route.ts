@@ -5,11 +5,14 @@
  * advances order state to payment_confirmed.
  */
 
-import { createHash, timingSafeEqual } from "node:crypto";
+import { timingSafeEqual } from "node:crypto";
+import { ApiError } from "@/lib/api";
 import { fail, ok } from "@/lib/route";
+import { payfastSignature } from "@/lib/store/payfast-signature.ts";
 import { confirmPayment, getOrder, rejectPayment } from "@/lib/store/checkout";
-import { recordPayment } from "@/lib/store/payments";
-import { ledgerEntry } from "@/lib/store/ledger";
+import { getPaymentsForOrder, recordPayment } from "@/lib/store/payments";
+import { ledgerEntry, listLedgerEntries } from "@/lib/store/ledger";
+import { ensureSettlementRecords } from "@/lib/store/settlement.ts";
 import { notifyCustomer } from "@/lib/store/notifications";
 
 const PAYFAST_MERCHANT_ID = process.env.PAYFAST_MERCHANT_ID;
@@ -40,22 +43,10 @@ async function readItnBody(request: Request): Promise<Record<string, string>> {
   return out;
 }
 
-/** PayFast signature: MD5 over the sorted key=value&... string of every
- *  received field except signature, passphrase appended. Empty fields stay
- *  in the string — they are part of what PayFast signs. */
-function payfastSignature(body: Record<string, string>, passphrase: string): string {
-  const dataString = Object.keys(body)
-    .filter((k) => k !== "signature")
-    .sort()
-    .map((k) => `${k}=${body[k]}`)
-    .join("&");
-  return createHash("md5").update(`${dataString}${passphrase}`).digest("hex");
-}
-
 export async function POST(request: Request) {
   try {
     if (!PAYFAST_MERCHANT_ID || !PAYFAST_MERCHANT_KEY || !PAYFAST_PASSPHRASE) {
-      throw new Error("PayFast not configured on the server.");
+      throw new ApiError(500, "PAYFAST_NOT_CONFIGURED", "PayFast payments are not available.");
     }
 
     const body = await readItnBody(request);
@@ -67,19 +58,33 @@ export async function POST(request: Request) {
       signature.length !== expected.length ||
       !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))
     ) {
-      return fail(new Error("Invalid PayFast signature"));
+      throw new ApiError(401, "INVALID_SIGNATURE", "Invalid PayFast signature");
+    }
+
+    // A valid signature alone only proves the message was signed with SOME
+    // PayFast account. Without this check, anyone who can sign with their own
+    // passphrase could mark an order paid for R0.
+    if ((body.merchant_id ?? "").trim() !== PAYFAST_MERCHANT_ID.trim()) {
+      throw new ApiError(401, "INVALID_MERCHANT", "PayFast merchant ID does not match.");
     }
 
     const orderId = body.custom_str1 || body.m_payment_id;
     if (!orderId) {
-      throw new Error("No order reference in webhook");
+      throw new ApiError(400, "INVALID_WEBHOOK", "No order reference in webhook");
     }
     const order = await getOrder(String(orderId));
     if (!order) {
-      throw new Error("Order not found");
+      throw new ApiError(404, "ORDER_NOT_FOUND", "Order not found");
     }
 
     if (order.paymentState === "verified") {
+      // Repair a half-written settlement (state flipped, payment/ledger write
+      // lost) instead of leaving the audit trail permanently incomplete.
+      await ensureSettlementRecords({
+        order,
+        provider: "payfast",
+        providerRef: String(body.m_payment_id ?? ""),
+      });
       return ok({ received: true }); // idempotent
     }
 
@@ -90,62 +95,67 @@ export async function POST(request: Request) {
 
     // Amount integrity: webhook amount must match order amount exactly
     if (amountCents !== order.amountCents) {
-      throw new Error(
-        `Amount mismatch: webhook ${amountCents}¢ ≠ order ${order.amountCents}¢ (order ${order.id})`,
+      // Keep the numbers in server logs, not in a client-visible error payload.
+      console.error(
+        "[cpm2] PayFast amount mismatch for order %s: got %s cents, expected %s cents",
+        order.id,
+        amountCents,
+        order.amountCents,
       );
+      throw new ApiError(400, "AMOUNT_MISMATCH", "Payment amount does not match the order.");
     }
 
-    await recordPayment({
-      orderId: String(orderId),
-      provider: "payfast",
-      providerRef,
-      amountCents,
-      currency,
-      status: completed ? "verified" : "rejected",
-    });
-
     if (completed) {
-          // The shared race-safe path: one-shot state flip + stock deduction.
-          // Calling updatePaymentState directly skipped confirmStockDeduction,
-          // so paid orders never reduced inventory (and duplicate ITNs
-          // double-recorded).
-          await confirmPayment(String(orderId));
-          await ledgerEntry({
-            orderId: String(orderId),
-            type: "payment",
-            amountCents,
-            currency,
-            relatedPaymentId: providerRef,
-          });
-          // Notify customer (fire-and-forget)
-          notifyCustomer(order.customerId, "payment_confirmed_payfast", {
-            id: order.id,
-            productId: order.productId,
-            amountCents: order.amountCents,
-            currency: order.currency,
-            inGameName: order.inGameName,
-            playerId: order.playerId,
-          }).catch((err) => console.error("Notification failed:", err));
-        } else {
-          await rejectPayment(String(orderId));
-          await ledgerEntry({
-            orderId: String(orderId),
-            type: "fee",
-            amountCents: 0,
-            currency,
-            relatedPaymentId: providerRef,
-          });
-          // Notify customer (fire-and-forget)
-          notifyCustomer(order.customerId, "payment_rejected", {
-            id: order.id,
-            productId: order.productId,
-            amountCents: order.amountCents,
-            currency: order.currency,
-            inGameName: order.inGameName,
-            playerId: order.playerId,
-            reason: "PayFast payment failed or cancelled",
-          }).catch((err) => console.error("Notification failed:", err));
-        }
+      // The shared race-safe path: one-shot state flip + stock deduction,
+      // followed by idempotent payment/ledger bookkeeping. A retry after a
+      // partial failure repairs the missing rows without double-counting.
+      await confirmPayment(String(orderId));
+      await ensureSettlementRecords({
+        order,
+        provider: "payfast",
+        providerRef,
+      });
+      notifyCustomer(order.customerId, "payment_confirmed_payfast", {
+        id: order.id,
+        productId: order.productId,
+        amountCents: order.amountCents,
+        currency: order.currency,
+        inGameName: order.inGameName,
+        playerId: order.playerId,
+      }).catch((err) => console.error("Notification failed:", err));
+    } else {
+      const priorAttempts = await getPaymentsForOrder(String(orderId));
+      if (!priorAttempts.some((p) => p.status === "rejected" && p.providerRef === providerRef)) {
+        await recordPayment({
+          orderId: String(orderId),
+          provider: "payfast",
+          providerRef,
+          amountCents,
+          currency,
+          status: "rejected",
+        });
+      }
+      await rejectPayment(String(orderId));
+      const priorFees = await listLedgerEntries({ orderId: String(orderId) });
+      if (!priorFees.some((entry) => entry.type === "fee" && entry.relatedPaymentId === providerRef)) {
+        await ledgerEntry({
+          orderId: String(orderId),
+          type: "fee",
+          amountCents: 0,
+          currency,
+          relatedPaymentId: providerRef,
+        });
+      }
+      notifyCustomer(order.customerId, "payment_rejected", {
+        id: order.id,
+        productId: order.productId,
+        amountCents: order.amountCents,
+        currency: order.currency,
+        inGameName: order.inGameName,
+        playerId: order.playerId,
+        reason: "PayFast payment failed or cancelled",
+      }).catch((err) => console.error("Notification failed:", err));
+    }
 
     return ok({ received: true });
   } catch (err) {

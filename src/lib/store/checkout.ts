@@ -59,13 +59,25 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     }
   }
 
-  // Idempotency: if an order with this key already exists, return it instead of duplicating
+  // Idempotency: if an order with this key already exists, return it instead of duplicating.
+  // The key is customer-scoped by the caller, but verify the ownership anyway:
+  // a replayed key must never become a read of somebody else's order.
   const existing = await db.execute({
-    sql: `SELECT id FROM vanta_orders WHERE idempotency_key = ? LIMIT 1`,
+    sql: `SELECT id, customer_id, product_id, quantity, payment_method
+          FROM vanta_orders WHERE idempotency_key = ? LIMIT 1`,
     args: [input.idempotencyKey],
   });
   if (existing.rows.length > 0) {
-    const order = await getOrder(existing.rows[0].id as string);
+    const prior = existing.rows[0];
+    const sameRequest =
+      Number(prior.customer_id) === input.customerId &&
+      Number(prior.product_id) === input.productId &&
+      Number(prior.quantity) === input.quantity &&
+      String(prior.payment_method) === input.paymentMethod;
+    if (!sameRequest) {
+      throw new ApiError(409, "IDEMPOTENCY_CONFLICT", "This checkout key was already used for a different order.");
+    }
+    const order = await getOrder(String(prior.id));
     if (!order) throw new ApiError(500, "ORDER_NOT_FOUND", "Existing order not found.");
     return { order, reservedUntil: order.reservedUntil ?? "" };
   }
@@ -82,10 +94,9 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   // failing means the pool is full — most often because OTHER live orders hold
   // that stock. Releasing input.quantity off the shared counter unconditionally
   // would steal those orders' reservations, which is precisely the oversell
-  // this fix removes. A reservation genuinely leaked by a failed order insert
-  // is reclaimed by the expiry sweep (listExpiredReservations -> 
-  // expireReservation), which is the only component that can tell a leaked
-  // hold from a legitimate one.
+  // this fix removes. If the INSERT below fails, we compensate immediately;
+  // an order that actually exists is reclaimed only by the expiry sweep
+  // (listExpiredReservations -> expireReservation).
   if (!(await reserveStock(input.productId, input.quantity))) {
     throw new ApiError(400, "INSUFFICIENT_STOCK", "Insufficient stock available.");
   }
@@ -121,10 +132,15 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   const id = orderId();
   const now = nowIso();
 
-  await db.execute({
-  sql: `INSERT INTO vanta_orders (id, customer_id, product_id, product_name, quantity, order_state, payment_state, delivery_state, amount_cents, currency, exchange_rate, reserved_until, payment_method, player_id, in_game_name, idempotency_key, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, 'awaiting_payment', 'pending', 'unscheduled', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  args: [
+  // Re-check the one-of-one rule INSIDE the write. The earlier SELECT is a
+  // fast path for the UI; two concurrent checkouts can both pass it, so the
+  // INSERT itself must refuse the second buyer atomically.
+  const exclusiveGuard =
+    product.exclusivity === "one_of_one"
+      ? ` WHERE NOT EXISTS (SELECT 1 FROM vanta_orders
+            WHERE product_id = ? AND order_state NOT IN ('cancelled', 'refunded'))`
+      : "";
+  const insertArgs: unknown[] = [
     id,
     input.customerId,
     input.productId,
@@ -140,8 +156,27 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     input.idempotencyKey,
     now,
     now,
-  ],
-  });
+  ];
+  if (product.exclusivity === "one_of_one") insertArgs.push(input.productId);
+
+  try {
+    const inserted = await db.execute({
+      sql: `INSERT INTO vanta_orders (id, customer_id, product_id, product_name, quantity, order_state, payment_state, delivery_state, amount_cents, currency, exchange_rate, reserved_until, payment_method, player_id, in_game_name, idempotency_key, created_at, updated_at)
+            SELECT ?, ?, ?, ?, ?, 'awaiting_payment', 'pending', 'unscheduled', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?${exclusiveGuard}`,
+      args: insertArgs,
+    });
+    if ((inserted.affectedRowCount ?? 0) === 0) {
+      throw new ApiError(409, "EXCLUSIVE_STOCK_UNAVAILABLE", "This exclusive vehicle has already been purchased.");
+    }
+  } catch (err) {
+    // The reservation has no order to expire if the INSERT fails, so the
+    // expiry sweep can never reclaim it. Give exactly our hold back now.
+    // releaseStock() is guarded, so a concurrent release cannot go negative.
+    await releaseStock(input.productId, input.quantity).catch((releaseErr) => {
+      console.error("[cpm2] failed to roll back reservation after order insert error:", releaseErr);
+    });
+    throw err;
+  }
 
   const order = await getOrder(id);
   if (!order) throw new ApiError(500, "ORDER_INSERT_FAILED", "Order insert returned no row.");
@@ -211,7 +246,15 @@ export async function confirmPayment(orderId: string): Promise<void> {
   const db = await getStoreDb();
   const order = await getOrder(orderId);
   if (!order) throw new Error("Order not found");
-  if (order.paymentState === "verified") return; // idempotent (fast path)
+  if (order.paymentState === "verified") {
+    // The one-shot flip may have succeeded while the following order-state
+    // write failed (network blip). Retry must repair that half-settled order,
+    // not leave it stuck in awaiting_payment forever.
+    if (order.orderState !== "payment_confirmed") {
+      await updateOrderState(orderId, "payment_confirmed");
+    }
+    return;
+  }
 
   // ONE-SHOT + ATOMIC: the conditional flip is the only write. The database
   // trigger installed in store-db.ts deducts reserved stock inside this same

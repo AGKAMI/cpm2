@@ -36,14 +36,24 @@ export async function createCustomer(input: {
 }): Promise<Customer> {
   const db = await getStoreDb();
   const now = new Date().toISOString();
+  const playerId = input.playerId.trim().toUpperCase();
+  // Conditional INSERT makes concurrent first-time checkouts with the SAME
+  // player id share one customer. A plain insert-then-lookup let two requests
+  // both create rows, splitting that player's orders across two identities.
   const result = await db.execute({
     sql: `INSERT INTO vanta_customers (in_game_name, player_id, currency_pref, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?)`,
-    args: [input.inGameName.trim(), input.playerId.trim(), input.currencyPref ?? "ZAR", now, now],
+          SELECT ?, ?, ?, ?, ?
+          WHERE ? = '' OR NOT EXISTS (SELECT 1 FROM vanta_customers WHERE UPPER(player_id) = UPPER(?))`,
+    args: [input.inGameName.trim(), playerId, input.currencyPref ?? "ZAR", now, now, playerId, playerId],
   });
+  if ((result.affectedRowCount ?? 0) === 0) {
+    const existing = await getCustomerByPlayerId(playerId);
+    if (existing) return existing;
+    throw new Error("Customer insert returned no row");
+  }
   const id = result.lastInsertRowid;
   if (id === null) throw new Error("Customer insert returned no id");
-  return rowToCustomer({ id, in_game_name: input.inGameName.trim(), player_id: input.playerId.trim(), currency_pref: input.currencyPref ?? "ZAR", created_at: now, updated_at: now });
+  return rowToCustomer({ id, in_game_name: input.inGameName.trim(), player_id: playerId, currency_pref: input.currencyPref ?? "ZAR", created_at: now, updated_at: now });
 }
 
 export async function updateCustomer(id: number, updates: { inGameName?: string; playerId?: string; currencyPref?: string }): Promise<Customer | null> {
@@ -78,7 +88,7 @@ export async function getCustomer(id: number): Promise<Customer | null> {
 export async function getCustomerByPlayerId(playerId: string): Promise<Customer | null> {
   const db = await getStoreDb();
   const result = await db.execute({
-    sql: `SELECT * FROM vanta_customers WHERE player_id = ? LIMIT 1`,
+    sql: `SELECT * FROM vanta_customers WHERE UPPER(player_id) = UPPER(?) LIMIT 1`,
     args: [playerId],
   });
   if (result.rows.length === 0) return null;

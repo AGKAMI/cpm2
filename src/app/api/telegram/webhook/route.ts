@@ -14,7 +14,7 @@ import { getStoreDb } from "@/lib/store-db";
 import { getCustomerByPlatformIdentity, linkPlatformIdentity } from "@/lib/store/customers";
 import { confirmPayment, getOrder } from "@/lib/store/checkout";
 import { constantTimeEquals } from "@/lib/auth";
-import { recordPayment } from "@/lib/store/payments";
+import { ensureSettlementRecords } from "@/lib/store/settlement.ts";
 import { ledgerEntry } from "@/lib/store/ledger";
 import { notifyCustomer } from "@/lib/store/notifications";
 import { getCustomerTelegramId } from "@/lib/store/notifications";
@@ -89,11 +89,16 @@ export async function POST(request: NextRequest) {
     // a missing or wrong value is refused — without this check anyone could
     // POST a fabricated successful_payment and mark an order paid.
     const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
-    if (secret) {
-      const provided = request.headers.get("x-telegram-bot-api-secret-token") ?? "";
-      if (!provided || !constantTimeEquals(provided, secret)) {
-        return NextResponse.json({ error: { code: "WEBHOOK_FORBIDDEN" } }, { status: 403 });
-      }
+    // Fail closed. An unconfigured secret used to skip the check entirely,
+    // leaving the payment-settlement endpoint open to any forged update.
+    // scripts/set-webhook-secret.mjs registers the same value with Telegram.
+    if (!secret) {
+      console.error("TELEGRAM_WEBHOOK_SECRET is not configured — refusing Telegram updates.");
+      return NextResponse.json({ error: { code: "WEBHOOK_NOT_CONFIGURED" } }, { status: 503 });
+    }
+    const provided = request.headers.get("x-telegram-bot-api-secret-token") ?? "";
+    if (!constantTimeEquals(provided, secret)) {
+      return NextResponse.json({ error: { code: "WEBHOOK_FORBIDDEN" } }, { status: 403 });
     }
     const body = (await readJson(request)) as Record<string, unknown>;
     const token = telegramBotToken();
@@ -236,13 +241,20 @@ export async function POST(request: NextRequest) {
       try {
         const order = pq.invoice_payload ? await getOrder(String(pq.invoice_payload)) : null;
         const expected = order ? starsForCents(order.amountCents) : null;
+        // The buyer must be the customer this invoice was created for. Without
+        // this, anybody holding a link to someone else's unpaid Stars invoice
+        // could get Telegram to approve their own payment, then have the
+        // settlement refused — leaving them charged for an order they don't get.
+        const customerTgId = order ? await getCustomerTelegramId(order.customerId) : null;
         const ok = Boolean(
           order &&
             order.paymentMethod === "stars" &&
             order.paymentState !== "verified" &&
             pq.currency === "XTR" &&
             expected !== null &&
-            Number(pq.total_amount) === expected,
+            Number(pq.total_amount) === expected &&
+            customerTgId !== null &&
+            String(customerTgId) === String(pq.from?.id ?? ""),
         );
         await answerPreCheckoutQuery(
           pq.id,
@@ -289,30 +301,19 @@ export async function POST(request: NextRequest) {
         customerTgId !== null &&
         String(customerTgId) === String(message.from?.id ?? "");
       if (settled && order) {
-        const amountCents = order.amountCents;
-        await recordPayment({
-          orderId: order.id,
-          provider: "telegram_stars",
-          providerRef: String(sp.telegram_payment_charge_id ?? ""),
-          amountCents,
-          currency: order.currency,
-          status: "verified",
-        });
         // The shared race-safe path: flips state with a conditional UPDATE and
         // deducts stock exactly once. Calling updatePaymentState directly (as
         // before) skipped confirmStockDeduction entirely.
         await confirmPayment(order.id);
-        await ledgerEntry({
-          orderId: order.id,
-          type: "payment",
-          amountCents,
-          currency: order.currency,
-          relatedPaymentId: String(sp.telegram_payment_charge_id ?? ""),
+        await ensureSettlementRecords({
+          order,
+          provider: "telegram_stars",
+          providerRef: String(sp.telegram_payment_charge_id ?? ""),
         });
         notifyCustomer(order.customerId, "payment_confirmed_payfast", {
           id: order.id,
           productId: order.productId,
-          amountCents,
+          amountCents: order.amountCents,
           currency: order.currency,
           inGameName: order.inGameName,
           playerId: order.playerId,
@@ -327,7 +328,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
+    // Keep the detail in server logs: Telegram may retry, and a public error
+    // body should never echo internal SQL/webhook strings back to the caller.
     console.error("Webhook error:", err);
-    return NextResponse.json({ error: { code: "WEBHOOK_FAILED", message: String(err) } }, { status: 500 });
+    return NextResponse.json(
+      { error: { code: "WEBHOOK_FAILED", message: "Webhook processing failed." } },
+      { status: 500 },
+    );
   }
 }

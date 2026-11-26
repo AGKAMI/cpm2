@@ -159,7 +159,17 @@ export async function resolveAdminStatus(
   telegramUserId: string | null;
   role: "owner" | "admin" | null;
 }> {
-  const telegramUserId = await assertTelegramAuth(request, options);
+  // A stale or forged initData header must degrade to "not a Telegram admin",
+  // not throw. assertTelegramAuth deliberately throws on a bad signature, and
+  // callers such as requireStoreAdmin would surface that as a 500 on every
+  // admin page instead of the correct 403/anonymous render. The signed web
+  // session below still gets a chance to resolve the caller.
+  let telegramUserId: number | null = null;
+  try {
+    telegramUserId = await assertTelegramAuth(request, options);
+  } catch {
+    telegramUserId = null;
+  }
   if (telegramUserId !== null) {
     const ownerIdRaw = process.env.STORE_ADMIN_TELEGRAM_ID ?? "";
     const ownerId = ownerIdRaw ? Number(ownerIdRaw) : null;

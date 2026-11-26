@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { vantaApi, formatPrice } from "@/lib/store/client";
-import { discountedPriceCents } from "@/lib/store/pricing";
+import { effectiveUnitPriceCents } from "@/lib/store/pricing";
 import { CartSkeleton } from "@/components/skeleton";
 import {
   addToCartLocal,
@@ -28,6 +28,7 @@ type CartItem = {
   stockQuantity: number;
   quantity: number;
   exclusivity: string;
+  promoPriceCents?: number | null;
 };
 
 export function CartClient() {
@@ -37,8 +38,14 @@ export function CartClient() {
   const [error, setError] = useState<string | null>(null);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
 
+  const unitPrice = (i: CartItem) =>
+    i.promoPriceCents ??
+    effectiveUnitPriceCents({
+      basePriceCents: i.basePriceCents,
+      discountPercent: i.discountPercent,
+    });
   const subtotalCents = items.reduce(
-    (sum, i) => sum + discountedPriceCents(i.basePriceCents, i.discountPercent) * i.quantity,
+    (sum, i) => sum + unitPrice(i) * i.quantity,
     0,
   );
 
@@ -67,6 +74,7 @@ export function CartClient() {
             currency: string;
             stockQuantity: number;
             exclusivity: string;
+            promoPriceCents?: number | null;
           }
         >();
         try {
@@ -84,6 +92,7 @@ export function CartClient() {
                 currency: string;
                 stockQuantity: number;
                 exclusivity: string;
+                promoPriceCents?: number | null;
               }>;
             };
             for (const p of data.products ?? []) {
@@ -95,6 +104,7 @@ export function CartClient() {
                 currency: p.currency ?? "ZAR",
                 stockQuantity: p.stockQuantity,
                 exclusivity: p.exclusivity ?? "standard",
+                promoPriceCents: p.promoPriceCents ?? null,
               });
             }
           }
@@ -114,6 +124,7 @@ export function CartClient() {
               stockQuantity: meta?.stockQuantity ?? 0,
               quantity: it.quantity,
               exclusivity: meta?.exclusivity ?? "standard",
+              promoPriceCents: meta?.promoPriceCents ?? null,
             };
           }),
         );
@@ -137,6 +148,7 @@ export function CartClient() {
         stockQuantity?: number;
         quantity?: number;
         exclusivity?: string;
+        promoPriceCents?: number | null;
       }>;
       setItems(
         serverItems.map((i) => ({
@@ -149,6 +161,7 @@ export function CartClient() {
           stockQuantity: i.stockQuantity ?? 0,
           quantity: i.quantity ?? 1,
           exclusivity: i.exclusivity ?? "standard",
+          promoPriceCents: i.promoPriceCents ?? null,
         })),
       );
       setError(null);
@@ -362,7 +375,7 @@ export function CartClient() {
                     : `${item.stockQuantity} left`}
                 </span>
                 <span className="text-lg font-bold text-primary block">
-                  {formatPrice(discountedPriceCents(item.basePriceCents, item.discountPercent) * item.quantity, currency)}
+                  {formatPrice(unitPrice(item) * item.quantity, currency)}
                 </span>
               </div>
             </div>

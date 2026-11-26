@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { vantaApi, formatPrice, rememberOrderAccess, type VantaProduct } from "@/lib/store/client";
+import { vantaApi, formatPrice, getOrderAccessToken, rememberOrderAccess, type VantaProduct } from "@/lib/store/client";
 import { effectiveUnitPriceCents, approxStarsForCents } from "@/lib/store/pricing";
 import { StoreShell } from "@/components/StoreShell";
 import { Button } from "@/components/ui/Button";
@@ -79,7 +79,8 @@ export function CheckoutClient({ productId }: { productId: number }) {
   };
   }, []);
 
-  // Stash the guest player ID so Orders can scope by it.
+  // Stash the player ID as a convenience for later checkout forms. It is NOT
+  // used as identity/authorisation anywhere on the server.
   useEffect(() => {
     if (playerId.trim() && typeof window !== "undefined") {
       window.localStorage.setItem("vanta_player_id", playerId.trim());
@@ -209,10 +210,15 @@ export function CheckoutClient({ productId }: { productId: number }) {
           const form = new FormData();
           form.set("orderId", order.id);
           form.set("file", proofFile);
+          // A web guest has no customer session. Send the signed capability
+          // returned by checkout, exactly as the order page does — otherwise
+          // canAccessOrder() refuses the very first proof upload with 403.
+          const token = getOrderAccessToken(order.id);
           const res = await fetch(`/api/store/checkout/${product.id}/proof`, {
             method: "POST",
             body: form,
             credentials: "same-origin",
+            headers: token ? { "x-order-access": token } : undefined,
           });
           proofStatus = res.ok ? "" : "&proof=failed";
         } else {

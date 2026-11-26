@@ -69,9 +69,10 @@ async function resolveBuyer(
 export async function POST(request: Request) {
   try {
     const body = checkoutSchema.parse(await readJson(request));
+    const normalizedPlayerId = body.playerId.trim().toUpperCase();
     const customer = await resolveBuyer(
       request,
-      body.playerId.trim(),
+      normalizedPlayerId,
       body.inGameName.trim(),
       body.paymentMethod,
     );
@@ -82,6 +83,19 @@ export async function POST(request: Request) {
     }
     if (!product.isPublished) {
       throw new ApiError(400, "product_unpublished", "That vehicle isn't available for purchase.");
+    }
+    // PayFast settles in ZAR and Telegram Stars prices from a ZAR-per-star
+    // rate. Letting a USD/GBP product through would charge its ZAR-denominated
+    // amount while labelling the order in the foreign currency.
+    if (
+      body.paymentMethod !== "eft" &&
+      (product.currency || "ZAR").toUpperCase() !== "ZAR"
+    ) {
+      throw new ApiError(
+        400,
+        "UNSUPPORTED_GATEWAY_CURRENCY",
+        "Card and Stars payments are available in ZAR only. Choose EFT for this item.",
+      );
     }
 
     // Charge the price the storefront advertised: product sale first, then a
@@ -97,13 +111,20 @@ export async function POST(request: Request) {
       productId: body.productId,
       quantity: body.quantity,
       amountCents,
-      // The BUYER's currency pref (createOrder resolves the per-currency
-      // price + exchange rate; the product's base is only the fallback).
-      currency: customer.currencyPref || product.currency,
+      // PayFast, EFT and Telegram Stars all settle in the product's base
+      // currency here (ZAR). `currency_pref` is a LANGUAGE preference in this
+      // schema, not a payment currency — passing it here used to label an
+      // order "en"/"USD" while the gateway charged Rands, and the PayFast ITN
+      // check hardcodes ZAR.
+      currency: product.currency,
       paymentMethod: body.paymentMethod,
-      playerId: body.playerId.trim(),
+      playerId: normalizedPlayerId,
       inGameName: body.inGameName.trim(),
-      idempotencyKey: body.idempotencyKey,
+      // Namespace the client key with the RESOLVED customer. A raw client key
+      // (e.g. "checkout_12_<timestamp>") is guessable/replayable; without the
+      // namespace, replaying someone else's key returned their order — plus a
+      // signed capability for it — from the idempotency early-exit.
+      idempotencyKey: `customer_${customer.id}:${body.idempotencyKey}`,
     });
 
     let payfastUrl: string | null = null;
@@ -129,7 +150,7 @@ export async function POST(request: Request) {
     if (body.paymentMethod === "stars") {
       starsInvoiceUrl = await createStarsInvoiceLink({
         title: `VANTA GARAGE — ${product.name}`.slice(0, 32),
-        description: `In-game delivery to ${body.inGameName.trim()} (${body.playerId.trim()})`.slice(0, 255),
+        description: `In-game delivery to ${body.inGameName.trim()} (${normalizedPlayerId})`.slice(0, 255),
         payload: String(result.order.id),
         starAmount: starsForCents(result.order.amountCents),
       });

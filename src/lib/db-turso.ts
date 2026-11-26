@@ -1,5 +1,6 @@
 import { LIMITS, MAX_CARS, type GameType } from "./constants.ts";
 import { Agent, fetch as undiciFetch } from "undici";
+import { splitSqlStatements } from "./sql.ts";
 
 /**
  * Long-lived keep-alive agent for Turso. Node's default pool closes idle
@@ -324,6 +325,16 @@ export class TursoHttpClient {
     if (!resp.ok) {
       throw new Error(`Turso batch HTTP ${resp.status}: ${await resp.text()}`);
     }
+    // A pipeline can answer 200 even when individual statements fail. The
+    // schema batch used to ignore those errors, leaving a half-created
+    // database while every later query appeared to boot "successfully".
+    const data = (await resp.json()) as {
+      results?: { type: string; error?: { message?: string } }[];
+    };
+    const failed = data.results?.find((result) => result.type !== "ok");
+    if (failed) {
+      throw new Error(`Turso batch failed: ${failed.error?.message ?? JSON.stringify(failed)}`);
+    }
   }
 }
 
@@ -351,7 +362,7 @@ export async function createTursoClient(): Promise<TursoHttpClient> {
     const client = new TursoHttpClient(getTursoUrl(), getTursoToken());
     // Apply schema (idempotent — IF NOT EXISTS everywhere)
     await client.batch(
-      SCHEMA.trim().split(";").filter((s) => s.trim()).map((s) => s.trim() + ";"),
+      splitSqlStatements(SCHEMA),
     );
 
     // Migration: existing databases created before the multi-user change have no

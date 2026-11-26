@@ -404,12 +404,34 @@ export async function searchProducts(query: string): Promise<Product[]> {
   return result.rows.map(rowToProduct);
 }
 
+/**
+ * Catalogue stock is a projection of the inventory ledger. Admins set the
+ * catalogue number, but writing only vanta_products left the purchasable pool
+ * unchanged (and a later settlement silently overwrote the card stock again).
+ * Apply the edit to inventory too, never below reserved units.
+ */
+async function syncInventoryStock(productId: number, stockQuantity: number): Promise<void> {
+  const db = await getStoreDb();
+  const existing = await getInventory(productId);
+  if (!existing) {
+    await createInventory(productId, stockQuantity);
+    return;
+  }
+  await db.execute({
+    sql: `UPDATE vanta_inventory
+          SET stock_quantity = MAX(?, reserved_quantity), version = version + 1, updated_at = ?
+          WHERE product_id = ?`,
+    args: [stockQuantity, new Date().toISOString(), productId],
+  });
+}
+
 export async function updateProductStock(productId: number, stockQuantity: number): Promise<void> {
   const db = await getStoreDb();
   await db.execute({
     sql: `UPDATE vanta_products SET stock_quantity = ?, updated_at = ? WHERE id = ?`,
     args: [stockQuantity, new Date().toISOString(), productId],
   });
+  await syncInventoryStock(productId, stockQuantity);
 }
 
 export async function updateProduct(
@@ -459,20 +481,27 @@ export async function updateProduct(
     sql: `UPDATE vanta_products SET ${fields.join(", ")} WHERE id = ?`,
     args,
   });
+  if (input.stockQuantity !== undefined) {
+    await syncInventoryStock(productId, input.stockQuantity);
+  }
   return getProduct(productId);
 }
 
 export async function createInventory(productId: number, stockQuantity: number): Promise<Inventory> {
   const db = await getStoreDb();
   const now = new Date().toISOString();
-  const result = await db.execute({
+  // Another checkout may have seeded this product between our read and this
+  // insert. The unique index on product_id makes that a no-op instead of a
+  // second row that splits the stock pool.
+  await db.execute({
     sql: `INSERT INTO vanta_inventory (product_id, stock_quantity, reserved_quantity, version, updated_at)
-          VALUES (?, ?, 0, 1, ?)`,
-    args: [productId, stockQuantity, now],
+          SELECT ?, ?, 0, 1, ?
+          WHERE NOT EXISTS (SELECT 1 FROM vanta_inventory WHERE product_id = ?)`,
+    args: [productId, stockQuantity, now, productId],
   });
-  const id = result.lastInsertRowid;
-  if (id === null) throw new Error("Inventory insert returned no id");
-  return rowToInventory({ id, product_id: productId, stock_quantity: stockQuantity, reserved_quantity: 0, version: 1, updated_at: now });
+  const inventory = await getInventory(productId);
+  if (!inventory) throw new Error("Inventory insert returned no row");
+  return inventory;
 }
 
 export async function getInventory(productId: number): Promise<Inventory | null> {

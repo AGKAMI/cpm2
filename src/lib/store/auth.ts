@@ -14,10 +14,17 @@ import { readRequestCookie, verifySessionToken, SESSION_COOKIE } from "../auth";
 import { getCustomer, getCustomerByPlatformIdentity } from "./customers";
 import type { Customer, PlatformIdentity } from "../store-types";
 
- export type StoreCustomer = {
-   customer: Customer;
-   identity: PlatformIdentity | null;
- };
+/** The storefront's user id, if any. A CONSOLE-scoped session must never
+ *  resolve a store customer — the two apps share one cookie name. Every
+ *  storefront route that needs an identity goes through this helper. */
+export function currentStoreUserId(request: Request): number | undefined {
+  return verifySessionToken(readRequestCookie(request, SESSION_COOKIE), "store") ?? undefined;
+}
+
+export type StoreCustomer = {
+  customer: Customer;
+  identity: PlatformIdentity | null;
+};
 
  export async function getStoreCustomer(request: Request): Promise<StoreCustomer | null> {
   // Telegram auth is optional here — the caller (checkout) decides whether it's
@@ -39,18 +46,18 @@ import type { Customer, PlatformIdentity } from "../store-types";
     return await getCustomerByPlatformIdentity("telegram", String(telegramUserId));
   }
 
-   // Web session fallback — the customer logged in with email + password.
-   // The token must be store-scoped: a console session never satisfies this.
-     const sessionUserId = verifySessionToken(readRequestCookie(request, SESSION_COOKIE), "store");
-     if (sessionUserId) {
-       const customer = await getCustomer(sessionUserId);
-       if (customer) {
-         return { customer, identity: null };
-       }
-     }
+  // Web session fallback — the customer logged in with email + password.
+  // Store-scoped only (see currentStoreUserId).
+  const sessionUserId = currentStoreUserId(request);
+  if (sessionUserId) {
+    const customer = await getCustomer(sessionUserId);
+    if (customer) {
+      return { customer, identity: null };
+    }
+  }
 
-     return null;
-   }
+  return null;
+}
 
 export async function requireStoreCustomer(request: Request) {
   const customer = await getStoreCustomer(request);

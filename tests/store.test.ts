@@ -206,3 +206,17 @@ describe("vanta · exclusivity classes", () => {
     }
   });
 });
+
+describe("site origin", () => {
+  it("uses NEXT_PUBLIC_SITE_URL without a trailing slash", async () => {
+    const { siteUrl } = await import("../src/lib/site.ts");
+    const saved = process.env.NEXT_PUBLIC_SITE_URL;
+    process.env.NEXT_PUBLIC_SITE_URL = "https://shop.example.com/";
+    try {
+      assert.equal(siteUrl(), "https://shop.example.com");
+    } finally {
+      if (saved) process.env.NEXT_PUBLIC_SITE_URL = saved;
+      else delete process.env.NEXT_PUBLIC_SITE_URL;
+    }
+  });
+});

@@ -40,13 +40,20 @@ export async function POST(request: Request) {
       const appPassword = process.env.APP_PASSWORD;
       const given = password.trim();
       const expected = appPassword ? appPassword.trim() : "";
-      if (!appPassword || given !== expected) {
+      if (!appPassword || !constantTimeEquals(given, expected)) {
         return NextResponse.json(
           { error: { code: "AUTH_INVALID", message: "Wrong console password." } },
           { status: 401 },
         );
       }
-      const owner = await getUserByEmail("ojuniormaluleke@gmail.com");
+      const ownerEmail = consoleOwnerEmail();
+      if (!ownerEmail) {
+        return NextResponse.json(
+          { error: { code: "OWNER_NOT_CONFIGURED", message: "Set CONSOLE_OWNER_EMAIL to enable console login." } },
+          { status: 500 },
+        );
+      }
+      const owner = await getUserByEmail(ownerEmail);
       if (!owner) {
         return NextResponse.json(
           { error: { code: "OWNER_NOT_FOUND", message: "Console owner account not found. Register first." } },

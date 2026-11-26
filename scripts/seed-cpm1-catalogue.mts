@@ -96,7 +96,7 @@ for (const [key, group] of Object.entries(catalog)) {
   const name = catNames[key] ?? key;
   const categoryId = await upsertCategory(name, key, sortOrder++);
   const items = Object.values(group as Record<string, Record<string, unknown>>);
-  let catCreated = 0, catHeld = 0, catMedia = 0, catNoImg = 0;
+  let catMedia = 0, catNoImg = 0;
 
   for (const item of items) {
     if (!item || typeof item !== "object" || !item.name) continue;

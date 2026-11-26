@@ -9,7 +9,7 @@ import { fetchTelegramPhotoUrl } from "@/lib/telegram";
  *  session link or no photo. */
 export async function GET(request: NextRequest) {
   const sessionToken = readRequestCookie(request, SESSION_COOKIE);
-  const sessionUserId = verifySessionToken(sessionToken);
+  const sessionUserId = verifySessionToken(sessionToken, "store");
   if (!sessionUserId) return new NextResponse(null, { status: 401 });
 
   const db = await getStoreDb();

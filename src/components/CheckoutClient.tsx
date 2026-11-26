@@ -156,7 +156,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
     setCheckoutBusy(true);
     try {
       const idempotencyKey = `checkout_${product.id}_${Date.now()}`;
-      const { order, reservedUntil, payfastUrl, starsInvoiceUrl } = await vantaApi.checkout({
+      const { order, payfastUrl, starsInvoiceUrl, canUploadProof } = await vantaApi.checkout({
         productId: product.id,
         quantity: 1,
         paymentMethod,
@@ -193,8 +193,27 @@ export function CheckoutClient({ productId }: { productId: number }) {
         return;
       }
 
+      // EFT: send the file the form collected. Without this the proof stayed
+      // in React state and admins approved bank transfers with no evidence.
+      let proofStatus = "";
+      if (paymentMethod === "eft" && proofFile) {
+        if (canUploadProof) {
+          const form = new FormData();
+          form.set("orderId", order.id);
+          form.set("file", proofFile);
+          const res = await fetch(`/api/store/checkout/${product.id}/proof`, {
+            method: "POST",
+            body: form,
+            credentials: "same-origin",
+          });
+          proofStatus = res.ok ? "" : "&proof=failed";
+        } else {
+          proofStatus = "&proof=sign-in-required";
+        }
+      }
+
       if (typeof window !== "undefined") {
-        window.location.href = `/store/orders/${order.id}`;
+        window.location.href = `/store/orders/${order.id}${proofStatus}`;
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Checkout failed.");

@@ -50,10 +50,6 @@ export default function AccountPage() {
   // input is ever added higher in the DOM.
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (account) fetchImages();
-  }, [account, id]);
-
   const fetchImages = async () => {
     try {
       const res = await fetch(`/api/accounts/${id}/images`);
@@ -65,6 +61,10 @@ export default function AccountPage() {
       // ignore — gallery fails silently
     }
   };
+
+  useEffect(() => {
+    if (account) fetchImages();
+  }, [account, id]);
 
 
   if (!account) {

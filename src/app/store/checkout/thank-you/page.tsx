@@ -3,15 +3,17 @@ import Link from "next/link";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
+import { siteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl()),
   title: "Thank You — VANTA GARAGE",
   description: "Your CPM2 vehicle order has been confirmed. Thank you for shopping at VANTA GARAGE.",
   openGraph: {
     title: "Thank You — VANTA GARAGE",
     description: "Your CPM2 vehicle order has been confirmed.",
     type: "website",
-    url: "https://cpm2-bay.vercel.app/store/checkout/thank-you",
+    url: "/store/checkout/thank-you",
     images: [
       {
         url: "/og-image.svg",

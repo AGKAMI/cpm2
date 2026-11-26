@@ -688,7 +688,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
           </form>
         )}
         {categories.length === 0 ? (
-          <p className="text-xs text-muted-foreground">No categories yet. Click "Add Category" to create one.</p>
+          <p className="text-xs text-muted-foreground">No categories yet. Click “Add Category” to create one.</p>
         ) : (
           <div className="grid grid-cols-1 gap-3">
             {categories.map((cat) => {
@@ -1152,7 +1152,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
               <label className="custom-checkbox">
                 <input type="checkbox" id="is-sale" checked={form.isSale} onChange={(e) => handleChange("isSale", e.target.checked)} />
                 <div className="checkmark"></div>
-                <span className="text-base font-bold text-foreground">Show "Sale" badge</span>
+                <span className="text-base font-bold text-foreground">Show “Sale” badge</span>
               </label>
             </Field>
             <Field label="Published">
@@ -1463,7 +1463,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
                         <label className="custom-checkbox">
                           <input type="checkbox" checked={form.isSale} onChange={(e) => handleChange("isSale", e.target.checked)} />
                           <div className="checkmark"></div>
-                          <span className="text-base font-bold text-foreground">Show "Sale" badge</span>
+                          <span className="text-base font-bold text-foreground">Show “Sale” badge</span>
                         </label>
                       </Field>
                       <Field label="Published">
@@ -1497,6 +1497,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
               }
               return (
                 <ProductListItem
+                  key={p.id}
                   p={p}
                   categories={categories}
                   onEdit={() => selectProduct(p)}

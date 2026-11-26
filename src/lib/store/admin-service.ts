@@ -6,7 +6,13 @@
 
 import { getStoreDb } from "../store-db.ts";
 import { assertTelegramAuth } from "../telegram";
-import { consoleOwnerEmail, currentUserId } from "../auth.ts";
+import {
+  SESSION_COOKIE,
+  consoleOwnerEmail,
+  currentUserId,
+  readRequestCookie,
+  verifySessionToken,
+} from "../auth.ts";
 import { getUserById } from "../service-turso.ts";
 
 export type AdminRecord = {
@@ -180,7 +186,11 @@ export async function resolveAdminStatus(
 
   // Web session fallback: a customer logged in via email/password whose
   // account has a linked Telegram identity resolves through that identity.
-  const sessionUserId = currentUserId(request);
+  // Storefront sessions are store-scoped; a console session is not a customer.
+  const sessionUserId = verifySessionToken(
+    readRequestCookie(request, SESSION_COOKIE),
+    "store",
+  );
   if (sessionUserId) {
     const db = await getStoreDb();
     const identity = await db.execute({

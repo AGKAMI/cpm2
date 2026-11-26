@@ -9,7 +9,8 @@ import { fail, ok, readJson } from "@/lib/route";
 import { assertTelegramAuth } from "@/lib/telegram";
 import { getCustomerByPlatformIdentity, linkPlatformIdentity } from "@/lib/store/customers";
 import { NextResponse } from "next/server";
-import { createSessionToken, sessionCookieOptions, currentUserId } from "@/lib/auth";
+import { createSessionToken, sessionCookieOptions } from "@/lib/auth";
+import { currentStoreUserId } from "@/lib/store/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
     // Session-aware: a customer logged in via email/password attaches this
     // Telegram identity to their EXISTING account instead of creating or
     // switching to the Telegram-linked customer.
-    const sessionUserId = currentUserId(request);
+    const sessionUserId = currentStoreUserId(request);
     if (sessionUserId) {
       if (existing && existing.customer.id !== sessionUserId) {
         return NextResponse.json(

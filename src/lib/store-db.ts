@@ -740,6 +740,38 @@ export async function runStoreMigrations(storeArg?: TursoHttpClient): Promise<vo
   } catch {
     // Seed already applied — safe to ignore
   }
+
+  // Payment settlement and stock deduction must be ONE database operation.
+  // A trigger fires inside the same UPDATE that flips payment_state to
+  // verified, so a stock shortfall aborts the whole statement and the order
+  // stays payable/retryable. Doing the deduction in application code left a
+  // window where the order was verified but inventory was untouched.
+  await store.execute({
+    sql: `CREATE TRIGGER IF NOT EXISTS vanta_payment_deducts_stock
+      AFTER UPDATE OF payment_state ON vanta_orders
+      WHEN NEW.payment_state = 'verified' AND OLD.payment_state <> 'verified'
+      BEGIN
+        SELECT CASE
+          WHEN EXISTS (SELECT 1 FROM vanta_inventory WHERE product_id = NEW.product_id)
+               AND NOT EXISTS (
+                 SELECT 1 FROM vanta_inventory
+                  WHERE product_id = NEW.product_id
+                    AND reserved_quantity >= NEW.quantity
+                    AND stock_quantity >= NEW.quantity
+               )
+          THEN RAISE(ABORT, 'insufficient stock to confirm payment')
+        END;
+        UPDATE vanta_inventory
+           SET stock_quantity = stock_quantity - NEW.quantity,
+               reserved_quantity = reserved_quantity - NEW.quantity,
+               version = version + 1,
+               updated_at = NEW.updated_at
+         WHERE product_id = NEW.product_id
+           AND reserved_quantity >= NEW.quantity
+           AND stock_quantity >= NEW.quantity;
+      END`,
+    args: [],
+  });
 }
 
 export async function closeStoreDb(): Promise<void> {

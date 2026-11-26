@@ -26,6 +26,7 @@ import { getProduct } from "@/lib/store/products";
 import { buildPayFastCheckoutUrl } from "@/lib/store/payfast";
 import { createStarsInvoiceLink, starsForCents } from "@/lib/store/stars";
 import { discountedPriceCents } from "@/lib/store/pricing";
+import { siteUrl } from "@/lib/site";
 import type { Customer } from "@/lib/store-types";
 
 const checkoutSchema = z.object({
@@ -52,30 +53,36 @@ async function resolveBuyer(
   playerId: string,
   inGameName: string,
   paymentMethod: "eft" | "payfast" | "stars",
-): Promise<Customer> {
+): Promise<{ customer: Customer; created: boolean }> {
   // Telegram auth is only required for Stars payments, which happen inside
   // Telegram and need the user linked. EFT / PayFast are web flows identified
   // by Player ID — no Telegram signature needed.
-  let telegramUserId: number | null = null;
   if (paymentMethod === "stars") {
-    telegramUserId = await assertTelegramAuth(request);
+    const telegramUserId = await assertTelegramAuth(request);
     if (telegramUserId !== null) {
       const linked = await getCustomerByPlatformIdentity("telegram", String(telegramUserId));
-      if (linked) return linked.customer;
+      if (linked) return { customer: linked.customer, created: false };
       const created = await createCustomer({ inGameName, playerId });
       await linkPlatformIdentity(created.id, "telegram", String(telegramUserId), "");
-      return created;
+      return { customer: created, created: true };
     }
     // Stars with no valid Telegram identity -> can't proceed.
     throw new ApiError(401, "TELEGRAM_AUTH_INVALID", "Telegram signature did not verify — reopen the console from Telegram and try again.");
   }
-  return (await getCustomerByPlayerId(playerId)) ?? await createCustomer({ inGameName, playerId });
+  const existing = await getCustomerByPlayerId(playerId);
+  if (existing) return { customer: existing, created: false };
+  return { customer: await createCustomer({ inGameName, playerId }), created: true };
 }
 
 export async function POST(request: Request) {
   try {
     const body = checkoutSchema.parse(await readJson(request));
-    const customer = await resolveBuyer(request, body.playerId.trim(), body.inGameName.trim(), body.paymentMethod);
+    const { customer, created: newCustomer } = await resolveBuyer(
+      request,
+      body.playerId.trim(),
+      body.inGameName.trim(),
+      body.paymentMethod,
+    );
 
     const product = await getProduct(body.productId);
     if (!product) {
@@ -105,12 +112,16 @@ export async function POST(request: Request) {
 
     let payfastUrl: string | null = null;
     let starsInvoiceUrl: string | null = null;
+    const origin = siteUrl();
     if (body.paymentMethod === "payfast") {
+      // Use the FINAL order amount — createOrder() may replace the base price
+      // with a configured price in the buyer's currency. Charging the old
+      // amount here made the webhook's amount check reject every payment.
       const pf = buildPayFastCheckoutUrl(
-        { ...result.order, amountCents } as import("@/lib/store-types").Order,
-        `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://cpm2-bay.vercel.app"}/store/orders/${result.order.id}`,
-        `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://cpm2-bay.vercel.app"}/store/orders/${result.order.id}?cancelled=1`,
-        `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://cpm2-bay.vercel.app"}/api/store/payments/payfast/webhook`,
+        result.order,
+        `${origin}/store/orders/${result.order.id}`,
+        `${origin}/store/orders/${result.order.id}?cancelled=1`,
+        `${origin}/api/store/payments/payfast/webhook`,
         product.name,
       );
       if (pf.configured) {
@@ -124,22 +135,27 @@ export async function POST(request: Request) {
         title: `VANTA GARAGE — ${product.name}`.slice(0, 32),
         description: `In-game delivery to ${body.inGameName.trim()} (${body.playerId.trim()})`.slice(0, 255),
         payload: String(result.order.id),
-        starAmount: starsForCents(amountCents),
+        starAmount: starsForCents(result.order.amountCents),
       });
     }
 
-    // A completed checkout IS the identity proof for a web guest: the buyer
-    // paid (PayFast/Stars) as this customer. Mint a store-scoped session so
-    // their order history reads back without a guessable playerId query
-    // param — that param used to be the only gate on /orders reads. EFT skips
-    // this (no payment proof yet); the EFT reviewer approves first.
+    // Only a NEWLY created guest gets a session: that customer has no order
+    // history to steal and needs the session to read their order and (for EFT)
+    // upload proof. Reusing an existing customer by guessable playerId must
+    // NOT mint a session — that was the old account-takeover path. Returning
+    // buyers sign in with email/password or open the store from Telegram.
+    const existingSession = verifySessionToken(
+      readRequestCookie(request, SESSION_COOKIE),
+      "store",
+    );
     const response = ok({
       order: result.order,
       reservedUntil: result.reservedUntil,
       payfastUrl,
       starsInvoiceUrl,
+      canUploadProof: newCustomer || existingSession === result.order.customerId,
     }, 201);
-    if (!verifySessionToken(readRequestCookie(request, SESSION_COOKIE), "store")) {
+    if (!existingSession && newCustomer) {
       response.cookies.set(
         SESSION_COOKIE,
         createSessionToken(result.order.customerId, "store"),

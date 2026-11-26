@@ -42,7 +42,7 @@ export function WhatsAppOrder({ orderId }: { orderId?: string }) {
     return (
       <section className="panel rounded-xl border border-border p-6 text-center">
         <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-2">WhatsApp Order</h3>
-        <p className="text-sm text-ink-soft mb-4">Send ".vanta" on WhatsApp to place an order.</p>
+        <p className="text-sm text-ink-soft mb-4">Send “.vanta” on WhatsApp to place an order.</p>
         <Link href="https://wa.me/?text=VANTA%20GARAGE%20ORDER" className="w-full h-10 rounded-lg border border-gold bg-gold text-ink font-bold text-sm uppercase tracking-[0.1em]">
           Start WhatsApp Order
         </Link>

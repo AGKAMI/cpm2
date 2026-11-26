@@ -8,6 +8,12 @@
       "maxDuration": 30
     }
   },
+  "crons": [
+    {
+      "path": "/api/store/internal/cron",
+      "schedule": "*/5 * * * *"
+    }
+  ],
   "env": {
     "VERCEL_FORCE_NO_BUILD_CACHE": "1"
   }

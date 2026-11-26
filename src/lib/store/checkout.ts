@@ -4,7 +4,7 @@
  */
 
 import { getStoreDb } from "../store-db.ts";
-import { reserveStock, releaseStock, confirmStockDeduction, getInventory, createInventory, getProduct } from "./products.ts";
+import { reserveStock, releaseStock, getInventory, createInventory, getProduct } from "./products.ts";
 import type { Order, OrderState, PaymentState, DeliveryState } from "../store-types.ts";
 import { ApiError } from "../api.ts";
 import { scheduleSuspiciousDetection } from "./suspicious.ts";
@@ -96,11 +96,12 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   // the per-currency prices in vanta_pricing were never used at checkout, so
   // a customer with a different currency pref was charged the ZAR amount and
   // mislabelled as ZAR.
-  const targetCurrency = (input.currency || product.currency || "ZAR").toUpperCase();
+  const baseCurrency = (product.currency || "ZAR").toUpperCase();
+  const targetCurrency = (input.currency || baseCurrency).toUpperCase();
   let amountCents = input.amountCents;
   let currency = targetCurrency;
   let exchangeRate: number | null = null;
-  if (targetCurrency !== (product.currency || "ZAR").toUpperCase()) {
+  if (targetCurrency !== baseCurrency) {
     const { getProductPrices } = await import("./pricing-service.ts");
     const row = (await getProductPrices(product.id)).find(
       (r) => r.currency.toUpperCase() === targetCurrency && r.priceCents > 0,
@@ -108,10 +109,12 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     if (row) {
       amountCents = row.priceCents * input.quantity;
       exchangeRate = row.exchangeRate;
+    } else {
+      // No configured price in the buyer's currency: charge the base price
+      // and label it with the base currency. Labelling ZAR cents as USD/GBP
+      // would quietly charge the wrong amount.
+      currency = baseCurrency;
     }
-    // No configured price for this currency: fall back to the base price but
-    // keep the buyer's currency label honest rather than silently charging
-    // the base amount under the wrong label.
   }
 
   const reservedUntil = new Date(Date.now() + RESERVATION_MINUTES * 60 * 1000).toISOString();
@@ -210,18 +213,28 @@ export async function confirmPayment(orderId: string): Promise<void> {
   if (!order) throw new Error("Order not found");
   if (order.paymentState === "verified") return; // idempotent (fast path)
 
-  // ONE-SHOT + RACE-FREE: only the caller that flips payment_state performs the
-  // deduction. PayFast retries the ITN and the admin can double-click Verify —
-  // either way the second caller finds the flip already done and returns. The
-  // previous read-then-deduct pattern let two callers that both read 'pending'
-  // each run confirmStockDeduction, selling the same units twice.
-  const flipped = await db.execute({
-    sql: `UPDATE vanta_orders
-          SET payment_state = 'verified', updated_at = ?
-          WHERE id = ?
-            AND payment_state NOT IN ('verified', 'rejected', 'expired')`,
-    args: [nowIso(), orderId],
-  });
+  // ONE-SHOT + ATOMIC: the conditional flip is the only write. The database
+  // trigger installed in store-db.ts deducts reserved stock inside this same
+  // UPDATE (and aborts it when the counters cannot cover the deduction), so an
+  // order can never end up verified without its stock being spent. Retries and
+  // double-clicks see an already-verified row and return early.
+  let flipped;
+  try {
+    flipped = await db.execute({
+      sql: `UPDATE vanta_orders
+            SET payment_state = 'verified', updated_at = ?
+            WHERE id = ?
+              AND payment_state NOT IN ('verified', 'rejected', 'expired')`,
+      args: [nowIso(), orderId],
+    });
+  } catch (err) {
+    if (String(err).includes("insufficient stock")) {
+      throw new Error(
+        `Inventory could not cover the deduction for product ${order.productId} (qty ${order.quantity}) — the order stays pending for manual review.`,
+      );
+    }
+    throw err;
+  }
   if (flipped.affectedRowCount === 0) {
     // Lost the race or already terminal — re-read to decide which.
     const fresh = await getOrder(orderId);
@@ -229,21 +242,13 @@ export async function confirmPayment(orderId: string): Promise<void> {
     throw new Error("Payment was rejected or expired; reinstate the order before verifying");
   }
 
-  const inventory = await getInventory(order.productId);
-  if (inventory) {
-    const deducted = await confirmStockDeduction(order.productId, order.quantity);
-    // confirmStockDeduction now refuses rather than clamping when the counters
-    // cannot cover the deduction. Reaching that state means inventory no longer
-    // reflects reality, so verifying the order would hand over stock that was
-    // never subtracted — surface it instead of marking a paid order complete.
-    if (!deducted) {
-      throw new Error(
-        `Inventory could not cover the deduction for product ${order.productId} (qty ${order.quantity}) — the order was left unverified for manual review.`
-      );
-    }
-  }
-
   await updateOrderState(orderId, "payment_confirmed");
+
+  // Fraud checks run after a real settlement, once per order: confirmPayment
+  // is the shared path for PayFast, Stars and manual verification.
+  await scheduleSuspiciousDetection().catch((err) => {
+    console.error("Could not schedule suspicious-activity check:", err);
+  });
 }
 
 export async function expireReservation(orderId: string): Promise<void> {

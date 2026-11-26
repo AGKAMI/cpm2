@@ -15,7 +15,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { readJson } from "@/lib/route";
 import { telegramBotToken } from "@/lib/telegram";
 import { getStoreDb } from "@/lib/store-db";
-import { currentUserId } from "@/lib/auth";
+import { currentStoreUserId } from "@/lib/store/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const sessionUserId = currentUserId(request);
+    const sessionUserId = currentStoreUserId(request);
     if (!sessionUserId || sessionUserId !== customerId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "You must be logged in to link a Telegram ID." } },

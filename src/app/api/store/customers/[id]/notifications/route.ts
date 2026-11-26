@@ -14,7 +14,7 @@ export async function GET(
 
   // Verify authentication via session cookie
   const sessionToken = readRequestCookie(request, SESSION_COOKIE);
-  const sessionUserId = verifySessionToken(sessionToken);
+  const sessionUserId = verifySessionToken(sessionToken, "store");
 
   if (!sessionUserId || sessionUserId !== customerId) {
     return NextResponse.json(
@@ -59,7 +59,7 @@ export async function POST(
 
   // Verify authentication via session cookie
   const sessionToken = readRequestCookie(request, SESSION_COOKIE);
-  const sessionUserId = verifySessionToken(sessionToken);
+  const sessionUserId = verifySessionToken(sessionToken, "store");
 
   if (!sessionUserId || sessionUserId !== customerId) {
     return NextResponse.json(

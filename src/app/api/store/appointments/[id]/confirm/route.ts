@@ -15,7 +15,7 @@ export async function POST(
   const { id } = await params;
 
   const sessionToken = readRequestCookie(request, SESSION_COOKIE);
-  const sessionUserId = verifySessionToken(sessionToken);
+  const sessionUserId = verifySessionToken(sessionToken, "store");
 
   if (!sessionUserId) {
     return fail({ status: 401, body: { error: { code: "UNAUTHORIZED", message: "Not authorized" } } });
@@ -26,7 +26,7 @@ export async function POST(
 
     // Verify the appointment belongs to this customer's order
     const result = await db.execute({
-      sql: `SELECT a.id, a.customer_confirmed, a.scheduled_for,
+      sql: `SELECT a.id, a.customer_confirmed, a.scheduled_at,
                    o.customer_id, o.payment_state, o.delivery_state
             FROM vanta_appointments a
             JOIN vanta_orders o ON a.order_id = o.id

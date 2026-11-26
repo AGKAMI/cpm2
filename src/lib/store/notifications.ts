@@ -7,6 +7,7 @@
 import { getStoreDb } from "@/lib/store-db";
 import { telegramBotToken } from "@/lib/telegram";
 import { getOrder } from "@/lib/store/checkout";
+import { siteUrl } from "@/lib/site";
 
 export type OrderEvent =
   | "payment_verified"
@@ -45,7 +46,7 @@ const VANTA_WHATSAPP_WEBHOOK_URL = process.env.VANTA_WHATSAPP_WEBHOOK_URL || "";
 const VANTA_WHATSAPP_WEBHOOK_SECRET = process.env.VANTA_WHATSAPP_WEBHOOK_SECRET || "";
 
 /** Canonical origin for links inside notifications (order deep links). */
-const SITE_ORIGIN = process.env.NEXT_PUBLIC_SITE_URL ?? "https://cpm2-bay.vercel.app";
+const SITE_ORIGIN = siteUrl();
 
 export async function broadcastToWhatsAppBot(text: string, imageUrl?: string): Promise<void> {
   if (!VANTA_WHATSAPP_WEBHOOK_URL) {

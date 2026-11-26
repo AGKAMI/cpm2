@@ -13,10 +13,10 @@ export default function NotFound() {
       <PageHeading folio="404" title="Page not found" backHref="/store" />
       <section className="panel rounded-xl border border-border p-10 text-center">
         <h2 className="text-2xl font-bold text-foreground mb-2">
-          That page doesn't exist
+          That page doesn&apos;t exist
         </h2>
         <p className="text-muted-foreground mb-6">
-          The vehicle or page you're looking for isn't here. It may have been
+          The vehicle or page you&apos;re looking for isn&apos;t here. It may have been
           removed or the link may be broken.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">

@@ -11,7 +11,8 @@ import { fail, readJson } from "@/lib/route";
 import { telegramBotToken } from "@/lib/telegram";
 import { getCustomerByPlatformIdentity } from "@/lib/store/customers";
 import { NextResponse } from "next/server";
-import { createSessionToken, sessionCookieOptions, currentUserId } from "@/lib/auth";
+import { createSessionToken, sessionCookieOptions } from "@/lib/auth";
+import { currentStoreUserId } from "@/lib/store/auth";
 import { getStoreDb } from "@/lib/store-db";
 
 export const dynamic = "force-dynamic";
@@ -128,7 +129,7 @@ export async function POST(request: Request) {
     // is minted for another customer's account (that was the takeover), and a
     // session may not move an identity that belongs to a different customer.
     const existing = await getCustomerByPlatformIdentity("telegram", telegramUserId);
-    const sessionUserId = currentUserId(request);
+    const sessionUserId = currentStoreUserId(request);
     if (existing) {
       if (sessionUserId && existing.customer.id === sessionUserId) {
         if (token) await sendVerificationDm(token, telegramUserId, sessionUserId);

@@ -24,7 +24,7 @@ const {
   readRequestCookie,
 } = await import("../src/lib/auth.ts");
 import { scryptHash, scryptCompare } from "../src/lib/auth.ts";
-const { resetKeyCache } = await import("../src/lib/crypto.ts");
+const { resetKeyCache, getKey } = await import("../src/lib/crypto.ts");
 
 describe("auth · session tokens", () => {
   it("round-trips a fresh token", () => {
@@ -182,6 +182,27 @@ describe("auth · reveal consent", () => {
     assert.equal(https.secure, true);
     assert.equal(https.sameSite, "none");
     assert.equal(https.maxAge, REVEAL_CONSENT_MAX_AGE_SECONDS);
+  });
+});
+
+describe("auth · encryption key", () => {
+  it("fails closed in production instead of inventing a per-cold-start key", () => {
+    const savedKey = process.env.CPM2_ENCRYPTION_KEY;
+    const savedPath = process.env.CPM2_KEY_PATH;
+    const savedVercel = process.env.VERCEL;
+    delete process.env.CPM2_ENCRYPTION_KEY;
+    process.env.CPM2_KEY_PATH = path.join(tmp, "no-key-here");
+    process.env.VERCEL = "1";
+    resetKeyCache();
+    try {
+      assert.throws(() => getKey(), /CPM2_ENCRYPTION_KEY is required/);
+    } finally {
+      if (savedKey) process.env.CPM2_ENCRYPTION_KEY = savedKey;
+      if (savedPath) process.env.CPM2_KEY_PATH = savedPath;
+      if (savedVercel) process.env.VERCEL = savedVercel;
+      else delete process.env.VERCEL;
+      resetKeyCache();
+    }
   });
 });
 

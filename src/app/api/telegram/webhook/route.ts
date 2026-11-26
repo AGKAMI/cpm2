@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { readJson } from "@/lib/route";
 import { telegramBotToken } from "@/lib/telegram";
 import { getStoreDb } from "@/lib/store-db";
-import { linkPlatformIdentity } from "@/lib/store/customers";
+import { getCustomerByPlatformIdentity, linkPlatformIdentity } from "@/lib/store/customers";
 import { confirmPayment, getOrder } from "@/lib/store/checkout";
 import { constantTimeEquals } from "@/lib/auth";
 import { recordPayment } from "@/lib/store/payments";
@@ -125,14 +125,28 @@ export async function POST(request: NextRequest) {
 
         if (result.rows.length > 0) {
           const row = result.rows[0];
+          // Proof of possession: only the Telegram id the DM was sent to may
+          // confirm it. Inline keyboards can be forwarded, and callback_data
+          // ids are sequential — without this a third party could claim the
+          // link. The generated verification_code is not exposed in the DM.
+          if (String(from?.id ?? "") !== String(row.telegram_user_id)) {
+            await sendFollowup(token, chatId, "⚠️ This verification belongs to a different Telegram account.");
+            return NextResponse.json({ ok: true });
+          }
           const now = new Date();
           if (String(row.status) === "pending" && new Date(String(row.expires_at)) > now) {
+            // Never steal an id that has since been bound to another customer.
+            const holder = await getCustomerByPlatformIdentity("telegram", String(row.telegram_user_id));
+            if (holder && holder.customer.id !== Number(row.customer_id)) {
+              await sendFollowup(token, chatId, "⚠️ This Telegram ID is already linked to another store account.");
+              return NextResponse.json({ ok: true });
+            }
+
             await db.execute({
               sql: `UPDATE vanta_telegram_verifications SET status = 'confirmed', confirmed_at = ? WHERE id = ?`,
               args: [now.toISOString(), verificationId],
             });
 
-            // Perform the actual link (relinkable — replaces any existing binding)
             const customerId = Number(row.customer_id);
             await linkPlatformIdentity(customerId, "telegram", String(row.telegram_user_id), "");
 
@@ -146,6 +160,17 @@ export async function POST(request: NextRequest) {
       } else if (data && data.startsWith(noPrefix)) {
         const verificationId = Number(data.slice(noPrefix.length));
         const db = await getStoreDb();
+        const pending = await db.execute({
+          sql: `SELECT telegram_user_id FROM vanta_telegram_verifications WHERE id = ?`,
+          args: [verificationId],
+        });
+        if (
+          pending.rows.length === 0 ||
+          String(pending.rows[0].telegram_user_id) !== String(from?.id ?? "")
+        ) {
+          await sendFollowup(token, chatId, "⚠️ This verification belongs to a different Telegram account.");
+          return NextResponse.json({ ok: true });
+        }
 
         await db.execute({
           sql: `UPDATE vanta_telegram_verifications SET status = 'rejected' WHERE id = ?`,

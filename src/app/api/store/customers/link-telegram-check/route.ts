@@ -8,13 +8,13 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getStoreDb } from "@/lib/store-db";
-import { currentUserId } from "@/lib/auth";
+import { currentStoreUserId } from "@/lib/store/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
-    const sessionUserId = currentUserId(request);
+    const sessionUserId = currentStoreUserId(request);
     if (!sessionUserId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "You must be logged in." } },

@@ -194,7 +194,7 @@ export const vantaApi = {
     return request<{ order: VantaOrder }>(url);
   },
   checkout: (body: unknown) =>
-    request<{ order: VantaOrder; reservedUntil: string; payfastUrl: string | null; starsInvoiceUrl: string | null }>("/checkout", {
+    request<{ order: VantaOrder; reservedUntil: string; payfastUrl: string | null; starsInvoiceUrl: string | null; canUploadProof: boolean }>("/checkout", {
       method: "POST",
       body: JSON.stringify(body),
     }),

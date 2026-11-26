@@ -18,6 +18,15 @@ const notificationSchema = z.object({
 
 export const dynamic = "force-dynamic";
 
+/** Telegram parse_mode HTML escaping for operator-entered content. */
+function escapeHtml(raw: string): string {
+  return raw
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 export async function POST(request: Request) {
   try {
     await requireStoreAdmin(request);
@@ -47,7 +56,9 @@ export async function POST(request: Request) {
     }
 
     const chatId = Number(identity.rows[0].platform_user_id);
-    const text = `<b>${body.title}</b>\n\n${body.message}`;
+    // Escape BEFORE interpolation: this goes to Telegram with parse_mode
+    // HTML, so a < or > from the form breaks the message (or injects tags).
+    const text = `<b>${escapeHtml(body.title)}</b>\n\n${escapeHtml(body.message)}`;
 
     const sent = await sendNotification(chatId, text);
     if (!sent) {

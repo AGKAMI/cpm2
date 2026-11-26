@@ -1,3 +1,4 @@
+import { sweepExpiredReservationsThrottled } from "@/lib/store/jobs";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { GameSectionList, resolveSection } from "@/components/GameSectionList";
@@ -29,6 +30,10 @@ export default async function Cpm2SectionPage({
   const products = (await enrichProductsWithCovers(
     await listProducts({ onlyPublished: true }).catch(() => []),
   ).catch(() => []));
+  // Expire stale reservations on real traffic (throttled to once/60s
+  // process-wide, idempotent per order). The queue/cron path never ran it.
+  void sweepExpiredReservationsThrottled();
+
   return (
     <StoreShell>
       <GameSectionList game="cpm2" section={key} products={products} />

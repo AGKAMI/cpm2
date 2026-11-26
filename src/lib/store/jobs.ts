@@ -77,16 +77,23 @@ export async function enqueueJob(input: {
   return id;
 }
 
-/** Claim the next due pending job for processing. Returns null if none due. */
+/** Claim the next due job for processing. Returns null if none due.
+ *
+ *  'failed' jobs with a due next_run_at are RETRIES: failJob() already wrote
+ *  the exponential backoff schedule, but this query only ever looked at
+ *  status = 'pending', so a failed job — and the whole backoff / dead-letter
+ *  ladder behind it — was unreachable. A failed job whose retry time has come
+ *  is claimable exactly like a pending one. */
 export async function claimJob(): Promise<Job | null> {
   const db = await getStoreDb();
   const now = nowIso();
   const result = await db.execute({
     sql: `SELECT * FROM vanta_jobs
-          WHERE status = 'pending' AND next_run_at <= ?
+          WHERE (status = 'pending' OR (status = 'failed' AND next_run_at <= ?))
+            AND next_run_at <= ?
           ORDER BY next_run_at ASC
           LIMIT 1`,
-    args: [now],
+    args: [now, now],
   });
   if (result.rows.length === 0) return null;
   const job = rowToJob(result.rows[0]);
@@ -144,7 +151,7 @@ export async function listDueJobs(limit = 50): Promise<Job[]> {
   const now = nowIso();
   const result = await db.execute({
     sql: `SELECT * FROM vanta_jobs
-          WHERE status = 'pending' AND next_run_at <= ?
+          WHERE (status = 'pending' OR status = 'failed') AND next_run_at <= ?
           ORDER BY next_run_at ASC
           LIMIT ?`,
     args: [now, limit],
@@ -173,6 +180,41 @@ export async function requeueJob(jobId: number): Promise<void> {
     sql: `UPDATE vanta_jobs SET status = 'pending', attempts = 0, next_run_at = ?, updated_at = ?, error = NULL WHERE id = ? AND status = 'dead_letter'`,
     args: [now, now, jobId],
   });
+}
+
+/**
+ * Release stock for expired reservations — the sweep that makes the 60-minute
+ * reservation actually mean something.
+ *
+ * The job queue alone never ran this: no code enqueued expire_reservation
+ * jobs and no cron was configured, so listExpiredReservations() had no
+ * callers and abandoned checkouts held inventory forever (the exact hole the
+ * reservation was built to close — and it starves live stock).
+ *
+ * This runs directly (not through the queue) and is throttled to one run per
+ * minute across ALL instances via the durable rate-limit table, so it can be
+ * called from ordinary storefront traffic — no cron plan required. Idempotent
+ * per order: expireReservation is terminal-state guarded, so overlapping runs
+ * and double calls are safe.
+ */
+export async function sweepExpiredReservations(): Promise<{ expired: number }> {
+  const { listExpiredReservations, expireReservation } = await import("./checkout.ts");
+  const expired = await listExpiredReservations();
+  for (const order of expired) {
+    await expireReservation(order.id);
+  }
+  return { expired: expired.length };
+}
+
+/** Throttled wrapper for hot paths — one sweep per 60s process-wide. */
+export async function sweepExpiredReservationsThrottled(): Promise<{ expired: number; skipped: boolean }> {
+  // The durable rate-limit table doubles as the throttle marker: one sweep per
+  // 60s across ALL instances (serverless memory would be per-invocation).
+  const { checkDurableRateLimit } = await import("../rate-limit.ts");
+  const throttled = await checkDurableRateLimit("sweep:reservations", 1, 60_000);
+  if (throttled) return { expired: 0, skipped: true };
+  const result = await sweepExpiredReservations();
+  return { expired: result.expired, skipped: false };
 }
 
 /** Process all due jobs. Called by the internal jobs route. */

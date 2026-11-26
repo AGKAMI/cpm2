@@ -7,6 +7,7 @@ import { getStoreDb } from "../store-db.ts";
 import { reserveStock, releaseStock, confirmStockDeduction, getInventory, createInventory, getProduct } from "./products.ts";
 import type { Order, OrderState, PaymentState, DeliveryState } from "../store-types.ts";
 import { ApiError } from "../api.ts";
+import { scheduleSuspiciousDetection } from "./suspicious.ts";
 
 /** Stock reservation window in minutes. Exported so tests assert the real
  *  value instead of a private copy that can drift from production. */
@@ -89,21 +90,46 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     throw new ApiError(400, "INSUFFICIENT_STOCK", "Insufficient stock available.");
   }
 
+  // Multi-currency: charge in the BUYER's currency when a price row for it
+  // exists, and record the exchange rate that produced it. The old path
+  // always inserted exchange_rate = NULL with the product's base currency —
+  // the per-currency prices in vanta_pricing were never used at checkout, so
+  // a customer with a different currency pref was charged the ZAR amount and
+  // mislabelled as ZAR.
+  const targetCurrency = (input.currency || product.currency || "ZAR").toUpperCase();
+  let amountCents = input.amountCents;
+  let currency = targetCurrency;
+  let exchangeRate: number | null = null;
+  if (targetCurrency !== (product.currency || "ZAR").toUpperCase()) {
+    const { getProductPrices } = await import("./pricing-service.ts");
+    const row = (await getProductPrices(product.id)).find(
+      (r) => r.currency.toUpperCase() === targetCurrency && r.priceCents > 0,
+    );
+    if (row) {
+      amountCents = row.priceCents * input.quantity;
+      exchangeRate = row.exchangeRate;
+    }
+    // No configured price for this currency: fall back to the base price but
+    // keep the buyer's currency label honest rather than silently charging
+    // the base amount under the wrong label.
+  }
+
   const reservedUntil = new Date(Date.now() + RESERVATION_MINUTES * 60 * 1000).toISOString();
   const id = orderId();
   const now = nowIso();
 
   await db.execute({
   sql: `INSERT INTO vanta_orders (id, customer_id, product_id, product_name, quantity, order_state, payment_state, delivery_state, amount_cents, currency, exchange_rate, reserved_until, payment_method, player_id, in_game_name, idempotency_key, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, 'awaiting_payment', 'pending', 'unscheduled', ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)`,
+        VALUES (?, ?, ?, ?, ?, 'awaiting_payment', 'pending', 'unscheduled', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   args: [
     id,
     input.customerId,
     input.productId,
     product.name,
     input.quantity,
-    input.amountCents,
-    input.currency,
+    amountCents,
+    currency,
+    exchangeRate,
     reservedUntil,
     input.paymentMethod,
     input.playerId,

@@ -94,7 +94,9 @@ export async function POST(request: Request) {
       productId: body.productId,
       quantity: body.quantity,
       amountCents,
-      currency: product.currency,
+      // The BUYER's currency pref (createOrder resolves the per-currency
+      // price + exchange rate; the product's base is only the fallback).
+      currency: customer.currencyPref || product.currency,
       paymentMethod: body.paymentMethod,
       playerId: body.playerId.trim(),
       inGameName: body.inGameName.trim(),

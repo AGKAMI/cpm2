@@ -56,13 +56,13 @@ const translations: TranslationDictionary = {
     zu: "IKhekhouthi",
   },
   "store.payment_confirmed": {
-    en: "Payment confirmed — your order is being processed",
+    en: "Payment confirmed. Your order is being processed.",
     af: "Betaling bevestig — jou bestelling word verwerk",
     xh: "Uphando lwabiwo-mali luqinisekisiwe — i-order yakho iya kwenziwa",
     zu: "Inhloso yamalami iyqinisekile — i-oder yakho iyakhiwa",
   },
   "store.payment_failed": {
-    en: "Payment failed — please try again",
+    en: "Payment failed. Please try again.",
     af: "Betaling misluk — probeer asseblief weer",
     xh: "Uphando lwabiwo-mali luphilile — musa ukuphela, attemptsi futhi",
     zu: "Inhloso yamalami iyaphikiswa —cele futhi",
@@ -74,7 +74,7 @@ const translations: TranslationDictionary = {
     zu: "Ithiye engenamfuno isebenza kudala",
   },
   "store.rate_limited": {
-    en: "Too many requests — please slow down",
+    en: "Too many requests. Please slow down.",
     af: "Te veel versoeke — mos asseblief stadig",
     xh: "Iipharmisithezi ezinengqondo — musa ukuphela, iyaphuma kancinci",
     zu: "Ipendu ziphezulu — celani ukubamba",

@@ -383,7 +383,7 @@ export function ProductPageClient({
               </div>
               <p className="mt-2 text-[11px] text-ink-soft">
                 {loyaltyStars >= LOYALTY_THRESHOLD_STARS
-                  ? "Unlocked — you have lifetime free access."
+                  ? "Unlocked. You have lifetime free access."
                   : `${Math.max(0, LOYALTY_THRESHOLD_STARS - loyaltyStars)} more stars to unlock lifetime free access.`}
               </p>
             </section>

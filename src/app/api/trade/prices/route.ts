@@ -5,18 +5,19 @@ import { parseCarCode } from "@/lib/http";
 import { fail, ok, readJson } from "@/lib/route";
 import { deleteTradePrice, listTradePrices, setTradePrice } from "@/lib/trade-store-turso";
 import { tradePriceSetSchema } from "@/lib/validation";
-import { rateLimited } from "@/lib/auth";
+import { trustedClientIp } from "@/lib/auth";
+import { checkDurableRateLimit } from "@/lib/rate-limit";
+import { isSignedOwnerSession } from "@/lib/store/admin-service";
 
 export const dynamic = "force-dynamic";
 
 /** The editable price book for one game (`?game=cpm2`). */
 export async function GET(request: Request) {
   try {
-    const ip =
-      request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-      request.headers.get("x-real-ip") ||
-      "local";
-    if (rateLimited(`trade:prices:${ip}`)) {
+    // Platform-attested IP + durable counter (the first XFF entry is
+    // client-writable, and serverless instances share no memory).
+    const ip = trustedClientIp(request);
+    if (await checkDurableRateLimit(`trade:prices:${ip}`, 60, 60_000)) {
       return NextResponse.json(
         { error: { code: "AUTH_SLOW_DOWN", message: "Too many attempts - wait a minute and try again." } },
         { status: 429 },
@@ -32,14 +33,19 @@ export async function GET(request: Request) {
   }
 }
 
-/** Upsert one car's price entry. */
+/** Upsert one car's price entry. OWNER ONLY: the price book drives every
+ *  trade valuation, and a plain console session (any logged-in player) used
+ *  to be enough to rewrite it. */
 export async function PUT(request: Request) {
   try {
-    const ip =
-      request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-      request.headers.get("x-real-ip") ||
-      "local";
-    if (rateLimited(`trade:prices:${ip}`)) {
+    if (!(await isSignedOwnerSession(request))) {
+      return NextResponse.json(
+        { error: { code: "NOT_OWNER", message: "Only the owner can change the price book." } },
+        { status: 403 },
+      );
+    }
+    const ip = trustedClientIp(request);
+    if (await checkDurableRateLimit(`trade:prices:${ip}`, 20, 60_000)) {
       return NextResponse.json(
         { error: { code: "AUTH_SLOW_DOWN", message: "Too many attempts - wait a minute and try again." } },
         { status: 429 },
@@ -55,11 +61,15 @@ export async function PUT(request: Request) {
 /** Forget one car's price (`?game=cpm2&code=13`). */
 export async function DELETE(request: Request) {
   try {
-    const ip =
-      request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-      request.headers.get("x-real-ip") ||
-      "local";
-    if (rateLimited(`trade:prices:${ip}`)) {
+    // Owner only, same as PUT — deleting a valuation is a write.
+    if (!(await isSignedOwnerSession(request))) {
+      return NextResponse.json(
+        { error: { code: "NOT_OWNER", message: "Only the owner can change the price book." } },
+        { status: 403 },
+      );
+    }
+    const ip = trustedClientIp(request);
+    if (await checkDurableRateLimit(`trade:prices:${ip}`, 20, 60_000)) {
       return NextResponse.json(
         { error: { code: "AUTH_SLOW_DOWN", message: "Too many attempts - wait a minute and try again." } },
         { status: 429 },

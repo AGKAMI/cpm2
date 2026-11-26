@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { fail, readJson } from "@/lib/route";
 import {
   SESSION_COOKIE,
+  constantTimeEquals,
   createRevealConsentToken,
   rateLimited,
   revealCookieOptions,
@@ -50,7 +51,8 @@ export async function POST(request: Request) {
     const appPassword = process.env.APP_PASSWORD;
     const given = password.trim();
     const expected = appPassword ? appPassword.trim() : "";
-    if (!appPassword || given !== expected) {
+    // Constant-time — a plain !== leaks the match position through timing.
+    if (!appPassword || !constantTimeEquals(given, expected)) {
       return NextResponse.json(
         { error: { code: "AUTH_INVALID", message: "Wrong console password." } },
         { status: 401 },

@@ -26,7 +26,8 @@ export async function POST(
 
     // Verify the appointment belongs to this customer's order
     const result = await db.execute({
-      sql: `SELECT a.id, a.customer_confirmed, o.customer_id
+      sql: `SELECT a.id, a.customer_confirmed, a.scheduled_for,
+                   o.customer_id, o.payment_state, o.delivery_state
             FROM vanta_appointments a
             JOIN vanta_orders o ON a.order_id = o.id
             WHERE a.id = ?`,
@@ -44,6 +45,24 @@ export async function POST(
 
     if (Number(row.customer_confirmed ?? 0) === 1) {
       return fail({ status: 400, body: { error: { code: "ALREADY_CONFIRMED", message: "Already confirmed" } } });
+    }
+
+    // Confirm is a DELIVERY-RECEIPT action, not a payment shortcut: the order
+    // must be paid and actually out for delivery. Without these guards a
+    // customer could POST confirm on their own unpaid order and march it to
+    // 'completed'.
+    if (String(row.payment_state) !== "verified") {
+      return fail({
+        status: 409,
+        body: { error: { code: "PAYMENT_NOT_VERIFIED", message: "Payment is not verified yet — the delivery cannot be confirmed." } },
+      });
+    }
+    const deliveryState = String(row.delivery_state);
+    if (deliveryState !== "scheduled" && deliveryState !== "in_progress") {
+      return fail({
+        status: 409,
+        body: { error: { code: "NO_ACTIVE_DELIVERY", message: "There is no active delivery on this order to confirm." } },
+      });
     }
 
     await db.execute({

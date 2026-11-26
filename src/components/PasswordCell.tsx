@@ -105,7 +105,7 @@ export function PasswordCell({ accountId }: { accountId: number }) {
     } catch (err) {
       setConsentError(
         err instanceof ApiRequestError && err.code === "AUTH_INVALID"
-          ? "Wrong console password — try again."
+          ? "Wrong console password. Try again."
           : err instanceof Error
             ? err.message
             : "Could not unlock stored passwords.",

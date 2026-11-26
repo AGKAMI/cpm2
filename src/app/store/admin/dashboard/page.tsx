@@ -189,7 +189,7 @@ export default function AdminDashboardPage() {
             label="Rejected Payments"
             value={String(stats.rejectedPayments)}
             severity={stats.rejectedPayments > 0 ? "high" : "ok"}
-            description="EFT payments rejected — review proof"
+            description="EFT payments rejected: review proof"
           />
           <StatusCard
             label="Low Stock"

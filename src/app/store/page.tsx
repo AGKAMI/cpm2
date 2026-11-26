@@ -1,3 +1,4 @@
+import { sweepExpiredReservationsThrottled } from "@/lib/store/jobs";
 import { Metadata } from "next";
 import { Suspense } from "react";
 import { StoreHub } from "@/components/StoreHub";
@@ -22,6 +23,10 @@ async function StoreContent() {
     listProducts({ onlyPublished: true }),
     listCategories(),
   ]);
+  // Expire stale reservations on real traffic (throttled to once/60s
+  // process-wide, idempotent per order). The queue/cron path never ran it.
+  void sweepExpiredReservationsThrottled();
+
   return (
     <StoreShell>
       <StoreHub products={products} categories={categories} />

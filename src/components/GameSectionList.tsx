@@ -53,7 +53,7 @@ const SECTION_META: Record<SectionKey, { title: string; blurb: string }> = {
   cars: { title: "Cars", blurb: "The car catalogue for this game." },
   services: {
     title: "Services",
-    blurb: "Work done on your account — injections, callipers, headlights and more.",
+    blurb: "Work done on your account: injections, callipers, headlights and more.",
   },
 };
 

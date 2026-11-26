@@ -614,7 +614,7 @@ export default function AdminPage() {
     const handleProductDelete = async (id: number) => {
       if (
         !window.confirm(
-          "Hide this product? It will be unpublished and marked out of stock. Order history is kept — re-publish it any time from this list.",
+          "Hide this product? It will be unpublished and marked out of stock. Order history is kept; re-publish it any time from this list.",
         )
       )
         return;
@@ -1378,7 +1378,7 @@ export default function AdminPage() {
               className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
             />
           </Field>
-<Field label="Discount (%)" htmlFor="discount" error={productErrors.discountPercent} hint="0 = no discount. 0-90 — the storefront shows the sale price against the original.">
+<Field label="Discount (%)" htmlFor="discount" error={productErrors.discountPercent} hint="0 = no discount. 0-90 shows the sale price against the original.">
             <input
               id="discount"
               type="number"

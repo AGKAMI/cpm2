@@ -326,7 +326,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
               <input type="radio" name="paymentMethod" value="stars" checked={paymentMethod === "stars"} onChange={() => setPaymentMethod("stars")} className="accent-primary" />
               <div className="flex-1">
                 <div className="flex items-center gap-1.5 text-xs font-medium text-foreground"><StarIcon className="w-3.5 h-3.5" />Telegram Stars</div>
-                <div className="text-[10px] text-muted-foreground">Pay in-app with your Stars balance — instant, no card.{product ? ` About ${approxStarsForCents(totalCents)} Stars.` : ""}</div>
+                <div className="text-[10px] text-muted-foreground">Pay in-app with your Stars balance, instantly and without a card.{product ? ` About ${approxStarsForCents(totalCents)} Stars.` : ""}</div>
               </div>
             </label>
 </div>

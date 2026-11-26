@@ -3,6 +3,8 @@ import { fail, readJson } from "@/lib/route";
 import { ApiError } from "@/lib/api";
 import {
   SESSION_COOKIE,
+  consoleOwnerEmail,
+  constantTimeEquals,
   createSessionToken,
   rateLimited,
   sessionCookieOptions,
@@ -68,8 +70,11 @@ export async function POST(request: Request) {
       const appPassword = process.env.APP_PASSWORD;
       const given = password.trim();
       const expected = appPassword ? appPassword.trim() : "";
-      if (appPassword && given === expected) {
-        const owner = await getUserByEmail("ojuniormaluleke@gmail.com");
+      // Constant-time compare, and the owner identity from env (it used to be
+      // a source literal here too).
+      if (appPassword && constantTimeEquals(given, expected)) {
+        const ownerEmail = consoleOwnerEmail();
+        const owner = ownerEmail ? await getUserByEmail(ownerEmail) : null;
         if (!owner) {
           return NextResponse.json(
             { error: { code: "OWNER_NOT_FOUND", message: "Console owner account not found. Register first." } },

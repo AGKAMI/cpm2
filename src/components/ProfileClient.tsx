@@ -300,7 +300,7 @@ export function ProfileClient({
       setSuccess("Logged out.");
     } catch {
       setError("Logout failed.");
-      toast.error("Logout failed", "Could not log out — try again.");
+      toast.error("Logout failed", "Could not log out. Try again.");
     } finally {
       setSaving(false);
     }
@@ -366,8 +366,8 @@ export function ProfileClient({
 
       setSuccess(
         data.isOwner
-          ? "Quick login — owner access enabled."
-          : "Quick login — admin access enabled."
+          ? "Quick login: owner access enabled."
+          : "Quick login: admin access enabled."
       );
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Quick login failed.";
@@ -823,7 +823,7 @@ export function ProfileClient({
               </div>
             </div>
             <p className={`mt-2 text-xs ${isActive ? "text-racing font-medium" : "text-muted-foreground"}`}>
-              {isActive ? "Active buyer" : "No orders yet — browse the catalogue"}
+              {isActive ? "Active buyer" : "No orders yet. Browse the catalogue"}
             </p>
           </div>
           <div className="space-y-3">

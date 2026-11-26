@@ -2,18 +2,19 @@ import { NextResponse } from "next/server";
 import { getTradeRates, setTradeRates } from "@/lib/trade-store-turso";
 import { fail, ok, readJson } from "@/lib/route";
 import { tradeRatesSchema } from "@/lib/validation";
-import { rateLimited } from "@/lib/auth";
+import { trustedClientIp } from "@/lib/auth";
+import { checkDurableRateLimit } from "@/lib/rate-limit";
+import { isSignedOwnerSession } from "@/lib/store/admin-service";
 
 export const dynamic = "force-dynamic";
 
 /** The real-money conversion rates behind every trade valuation. */
 export async function GET(request: Request) {
   try {
-    const ip =
-      request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-      request.headers.get("x-real-ip") ||
-      "local";
-    if (rateLimited(`trade:rates:${ip}`)) {
+    // Platform-attested IP + durable counter (the first XFF entry is
+    // client-writable, and serverless instances share no memory).
+    const ip = trustedClientIp(request);
+    if (await checkDurableRateLimit(`trade:rates:${ip}`, 60, 60_000)) {
       return NextResponse.json(
         { error: { code: "AUTH_SLOW_DOWN", message: "Too many attempts - wait a minute and try again." } },
         { status: 429 },
@@ -25,13 +26,18 @@ export async function GET(request: Request) {
   }
 }
 
+/** OWNER ONLY: these rates are the real-money conversion behind every
+ *  valuation; any console session used to be able to rewrite them. */
 export async function PUT(request: Request) {
   try {
-    const ip =
-      request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-      request.headers.get("x-real-ip") ||
-      "local";
-    if (rateLimited(`trade:rates:${ip}`)) {
+    if (!(await isSignedOwnerSession(request))) {
+      return NextResponse.json(
+        { error: { code: "NOT_OWNER", message: "Only the owner can change the rates." } },
+        { status: 403 },
+      );
+    }
+    const ip = trustedClientIp(request);
+    if (await checkDurableRateLimit(`trade:rates:${ip}`, 20, 60_000)) {
       return NextResponse.json(
         { error: { code: "AUTH_SLOW_DOWN", message: "Too many attempts - wait a minute and try again." } },
         { status: 429 },

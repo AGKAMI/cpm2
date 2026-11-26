@@ -210,6 +210,8 @@ export type Order = {
   playerId: string;
   inGameName: string;
   appointmentId: string | null;
+  /** Uploaded EFT proof of payment (the durable uploads URL), when attached. */
+  eftProofUrl?: string | null;
   /** What was bought, snapshotted at order time. Orders outlive products:
       a deleted or renamed product must never blank out purchase history. */
   productName?: string | null;

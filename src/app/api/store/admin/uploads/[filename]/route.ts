@@ -30,9 +30,13 @@ export async function GET(
       filename.includes("/") ||
       filename.includes("\\") ||
       filename.includes("..") ||
-      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(png|jpe?g|gif|webp)$/i.test(
-        filename,
-      )
+      // An optional descriptive prefix before the uuid (e.g. the EFT proof
+            // uploads name themselves eft-proof-<uuid>.jpg). The traversal guards
+            // above (no /, no \, no ..) still hold; this only widens the name shape
+            // saveUpload can produce.
+            !/^(?:[a-z0-9][a-z0-9-]*-)?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(png|jpe?g|gif|webp)$/i.test(
+              filename,
+            )
     ) {
       return fail({
         status: 400,

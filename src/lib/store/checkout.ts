@@ -417,6 +417,7 @@ function rowToOrder(row: Record<string, unknown>): Order {
     playerId: String(row.player_id ?? ""),
     inGameName: String(row.in_game_name ?? ""),
     appointmentId: row.appointment_id === null ? null : String(row.appointment_id),
+    eftProofUrl: row.eft_proof_url === null || row.eft_proof_url === undefined ? null : String(row.eft_proof_url),
     productName: row.product_name === null || row.product_name === undefined ? null : String(row.product_name),
     createdAt: String(row.created_at ?? ""),
     updatedAt: String(row.updated_at ?? ""),

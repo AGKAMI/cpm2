@@ -380,6 +380,8 @@ export type VantaOrder = {
   playerId: string;
   inGameName: string;
   appointmentId: string | null;
+  /** Uploaded EFT proof of payment (durable uploads URL), when attached. */
+  eftProofUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 };

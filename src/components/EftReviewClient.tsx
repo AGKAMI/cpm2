@@ -341,6 +341,32 @@ function EftOrderCard({
         <span className="text-foreground">{order.inGameName}</span>
       </div>
 
+      {/* The customer's EFT proof of payment. Admins used to verify bank
+          transfers with no evidence because nothing ever displayed it. */}
+      {isEft && order.eftProofUrl ? (
+        <a
+          href={order.eftProofUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="mb-3 block overflow-hidden rounded-lg border border-border"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={order.eftProofUrl}
+            alt={`EFT proof for order #${order.id.slice(-8)}`}
+            className="h-32 w-full object-cover"
+            loading="lazy"
+          />
+          <span className="block border-t border-border px-3 py-2 text-[10px] uppercase tracking-[0.15em] text-primary">
+            View proof of payment ↗
+          </span>
+        </a>
+      ) : isEft ? (
+        <p className="mb-3 rounded-lg border border-dashed border-border px-3 py-2 text-[11px] text-muted-foreground">
+          No proof of payment uploaded yet — the customer can attach one from their order page.
+        </p>
+      ) : null}
+
       {/* Action buttons */}
       <div className="grid grid-cols-2 gap-2 mb-3">
         {awaiting && (

@@ -267,7 +267,8 @@ export function StoreShell({ children, dock }: StoreShellProps) {
 
                 <Link
                   href="/store"
-                  className="flex min-w-0 items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  aria-label="Vanta Garage - store home"
+                  className="flex min-h-11 min-w-0 items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <Image
                     src="/kami-vanta-logo-no-wings.png"

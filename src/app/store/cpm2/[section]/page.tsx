@@ -14,7 +14,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { section } = await params;
   const key = resolveSection(section);
-  return { title: `${key ? key : "CPM 2"} — CPM STORE` };
+  return { title: `${key ? key : "CPM 2"} - CPM STORE` };
 }
 
 export default async function Cpm2SectionPage({

@@ -163,8 +163,9 @@ export default function LoginPage() {
         <Button type="submit" variant="primary"  className="mt-6 w-full justify-center" disabled={busy || !password}>
           {busy ? "Unlocking…" : "Unlock"}
         </Button>
-        <p className="mt-4 text-[11px] text-center text-ink-soft">
-          Not KAMI? <a href="/auth" className="underline underline-offset-4 hover:text-racing transition-colors">Player sign in →</a>
+        <p className="mt-4 flex flex-wrap items-center justify-center gap-x-1.5 text-xs text-center text-ink-soft">
+          <span>Not KAMI?</span>
+          <a href="/auth" className="inline-flex min-h-8 items-center underline underline-offset-4 hover:text-racing transition-colors">Player sign in →</a>
         </p>
       </form>
     </Overlay>

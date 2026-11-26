@@ -5,10 +5,10 @@ import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 
 export const metadata: Metadata = {
-  title: "Thank You — VANTA GARAGE",
+  title: "Thank You - VANTA GARAGE",
   description: "Your CPM2 vehicle order has been confirmed. Thank you for shopping at VANTA GARAGE.",
   openGraph: {
-    title: "Thank You — VANTA GARAGE",
+    title: "Thank You - VANTA GARAGE",
     description: "Your CPM2 vehicle order has been confirmed.",
     type: "website",
     url: "https://cpm2-bay.vercel.app/store/checkout/thank-you",
@@ -17,13 +17,13 @@ export const metadata: Metadata = {
         url: "/og-image.svg",
         width: 1200,
         height: 630,
-        alt: "Thank You — VANTA GARAGE",
+        alt: "Thank You - VANTA GARAGE",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Thank You — VANTA GARAGE",
+    title: "Thank You - VANTA GARAGE",
     description: "Your CPM2 vehicle order has been confirmed.",
     images: ["/og-image.svg"],
   },

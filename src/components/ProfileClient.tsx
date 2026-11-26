@@ -8,6 +8,7 @@ import { StarIcon } from "@/components/StarIcon";
 import { approxStarsForCents } from "@/lib/store/pricing";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
+import { BackButton } from "@/components/ui/BackLink";
 
 import { Field, TextInput } from "@/components/ui/Field";
 import { ThemeGallery } from "@/components/ThemeGallery";
@@ -1202,13 +1203,11 @@ export function ProfileClient({
                 </div>
                 <div className="vanta-auth-texture" aria-hidden="true" />
               </form>
-              <button
-                type="button"
-                onClick={() => setAuthView(null)}
-                className="mt-4 self-center cursor-pointer text-[11px] font-bold uppercase tracking-[0.18em] text-ink-soft transition-colors hover:text-foreground"
-              >
-                ← Back
-              </button>
+              <BackButton
+                              label="Back"
+                              onClick={() => setAuthView(null)}
+                              className="mt-4 self-center"
+                            />
             </div>
           )}
         </section>
@@ -1290,7 +1289,7 @@ export function ProfileClient({
               </p>
               <Link
                 href="/store/support"
-                className="mt-2 inline-block text-[11px] font-bold uppercase tracking-[0.16em] text-primary hover:underline"
+                className="mt-2 inline-flex min-h-8 items-center text-xs font-bold uppercase tracking-[0.16em] text-primary hover:underline"
               >
                 Top up
               </Link>

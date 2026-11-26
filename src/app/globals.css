@@ -1898,20 +1898,21 @@ html {
   position: relative;
   overflow: hidden;
 }
+/* Same escape-proof sweep as the role tags: the pseudo's box is pinned to
+   the badge (inset: 0) and only its background travels, so the glare can
+   never paint outside the badge even if a build serves stale CSS. */
 .vanta-card-badge::before {
   content: "";
   position: absolute;
-  top: 0; left: -100%; width: 100%; height: 100%;
+  inset: 0;
   background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%);
-  animation: tagShine 3s infinite linear;
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: tagShineSweep 3s linear infinite;
   pointer-events: none;
   z-index: 1;
 }
-@keyframes tagShine {
-  0% { left: -100%; }
-  20% { left: 100%; }
-  100% { left: 100%; }
-}
+
 /* Each tag type gets its own metallic tint — never the same colour.
    New = green, Featured = blue, Sale = red, One of One (exclusive) = purple. */
 .vanta-card-badge.new {

@@ -11,6 +11,7 @@ import { ActivityFeed } from "@/components/ActivityFeed";
 import { GaragePanel } from "@/components/GaragePanel";
 import { TrophyCabinet } from "@/components/TrophyCabinet";
 import { PageHeading } from "@/components/PageHeading";
+import { BackLink } from "@/components/ui/BackLink";
 import { Button } from "@/components/ui/Button";
 import { Uploader } from "@/components/ui/Uploader";
 import { useToast } from "@/components/ui/Toaster";
@@ -73,7 +74,7 @@ export default function AccountPage() {
     if (fleet.loading) {
       return (
         <div className="panel rounded-[20px] px-6 py-16 text-center">
-          <p className="num text-[11px] uppercase tracking-[0.2em] text-ink-faint">loading accountâ€¦</p>
+          <p className="num text-[11px] uppercase tracking-[0.2em] text-ink-faint">loading account…</p>
         </div>
       );
     }
@@ -85,9 +86,9 @@ export default function AccountPage() {
         <p className="mt-2 text-sm text-ink-faint">
           It may have been archived away, or the link is stale.
         </p>
-        <Link href="/fleet" className="num mt-5 inline-block text-[11px] text-racing hover:underline underline-link">
-          ← back to the fleet
-        </Link>
+        <div className="mt-5">
+          <BackLink href="/fleet" label="Back to fleet" />
+        </div>
       </div>
     );
   }
@@ -206,9 +207,7 @@ export default function AccountPage() {
       />
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <Link href="/fleet" className="num text-[10px] text-ink-faint hover:text-racing">
-            ← fleet
-          </Link>
+          <BackLink href="/fleet" label="Fleet" />
           <div className="mt-2 flex items-center gap-2">
             <span className="plate">
               <span className="plate-text num text-[13px]">{account.email}</span>

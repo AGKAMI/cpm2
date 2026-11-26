@@ -6,6 +6,7 @@
 import { Metadata } from "next";
 import type { ReactNode } from "react";
 import { getStoreDb } from "@/lib/store-db.ts";
+import { BackLink } from "@/components/ui/BackLink";
 
 const LEGAL_DOCS: Record<string, { title: string; version: string; body: ReactNode }> = {
   terms: {
@@ -365,7 +366,7 @@ export async function generateMetadata({ params }: { params: Promise<{ doc: stri
   const { doc: docSlug } = await params;
   const doc = LEGAL_DOCS[docSlug];
   return {
-    title: doc ? `${doc.title} — VANTA GARAGE` : "Legal — VANTA GARAGE",
+    title: doc ? `${doc.title} - VANTA GARAGE` : "Legal - VANTA GARAGE",
   };
 }
 
@@ -386,9 +387,7 @@ export default async function LegalPage({ params }: { params: Promise<{ doc: str
   return (
     <div className="p-8 max-w-2xl mx-auto">
       <nav className="mb-8">
-        <a href="/store" className="text-[11px] text-primary hover:underline underline-link">
-          ← Back to store
-        </a>
+        <BackLink href="/store" label="Back to store" />
       </nav>
       <h1 className="text-2xl font-bold text-foreground mb-2">{doc.title}</h1>
       <p className="text-[10px] text-muted-foreground mb-6">

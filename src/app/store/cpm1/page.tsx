@@ -4,7 +4,7 @@ import { GameHubShell } from "@/components/GameHubShell";
 import { StoreShell } from "@/components/StoreShell";
 
 export const metadata: Metadata = {
-  title: "CPM 1 — CPM STORE",
+  title: "CPM 1 - CPM STORE",
   description: "CPM1 accounts, car catalogue and services.",
 };
 

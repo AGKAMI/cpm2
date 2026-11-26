@@ -63,7 +63,7 @@ async function resolveBuyer(
       return created;
     }
     // Stars with no valid Telegram identity -> can't proceed.
-    throw new ApiError(401, "TELEGRAM_AUTH_INVALID", "Telegram signature did not verify — reopen the console from Telegram and try again.");
+    throw new ApiError(401, "TELEGRAM_AUTH_INVALID", "Telegram signature did not verify. Reopen the console from Telegram and try again.");
   }
   return (await getCustomerByPlayerId(playerId)) ?? await createCustomer({ inGameName, playerId });
 }
@@ -125,7 +125,7 @@ export async function POST(request: Request) {
         `▸ Order: ${orders[0].id}\n` +
         `▸ ${formatPrice(orders[0].amountCents, orders[0].currency)}\n` +
         `▸ Player: ${inGameName} (${playerId})\n\n` +
-        `⚠ Verify payment and arrange delivery.`;
+        `Verify payment and arrange delivery.`;
       await Promise.all(
         admins.map((a) =>
           sendNotification(Number(a.telegramUserId), message),

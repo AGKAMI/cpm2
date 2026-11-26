@@ -4,7 +4,7 @@ import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 
 export const metadata = {
-  title: "Page not found — VANTA GARAGE",
+  title: "Page not found - VANTA GARAGE",
 };
 
 export default function NotFound() {

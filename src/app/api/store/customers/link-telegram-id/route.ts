@@ -60,7 +60,7 @@ Someone is trying to link Telegram ID <code>${telegramUserId}</code> to a VANTA 
 
 <b>If this is NOT YOU:</b> Click "No, it's not me" to reject. Your Telegram ID will NOT be linked to any account, and no action will be taken against you.
 
-⚠️ <b>This verification expires in 2 minutes.</b> If you do nothing, the link request will expire automatically.
+<b>This verification expires in 2 minutes.</b> If you do nothing, the link request will expire automatically.
     `.trim();
 
   try {
@@ -184,7 +184,7 @@ export async function POST(request: Request) {
       customerId,
       verificationPending: true,
       message:
-        "Check your Telegram — confirm the 'Yes, it's me' button in the DM from the VANTA GARAGE bot to finish linking. The link expires in 2 minutes.",
+        "Check your Telegram, then confirm the 'Yes, it's me' button in the DM from the VANTA GARAGE bot to finish linking. The link expires in 2 minutes.",
     });
     setSessionCookie(response, customerId, request);
     return response;

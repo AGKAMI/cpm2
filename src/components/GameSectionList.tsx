@@ -8,6 +8,7 @@
  */
 
 import Link from "next/link";
+import { BackLink } from "@/components/ui/BackLink";
 import type { VantaProduct } from "@/lib/store/client";
 import { formatPrice } from "@/lib/store/client";
 import { approxStarsForCents } from "@/lib/store/pricing";
@@ -72,12 +73,7 @@ export function GameSectionList({
   return (
     <div className="mx-auto w-full max-w-3xl px-4 pb-24">
       <header className="py-6">
-        <Link
-          href={`/store/${game}`}
-          className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-soft hover:text-foreground"
-        >
-          ← {game === "cpm1" ? "CPM 1" : "CPM 2"}
-        </Link>
+        <BackLink href={`/store/${game}`} label={game === "cpm1" ? "CPM 1" : "CPM 2"} className="mb-3" />
         <h1 className="mt-3 text-2xl font-bold text-foreground">{meta.title}</h1>
         <p className="mt-1 text-[12px] text-ink-faint">{meta.blurb}</p>
       </header>

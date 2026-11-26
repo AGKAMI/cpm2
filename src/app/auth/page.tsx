@@ -174,7 +174,7 @@ export default function AuthPage() {
           <button
             type="button"
             onClick={() => setMode(mode === "signin" ? "register" : "signin")}
-            className="num text-[12px] underline underline-offset-4 hover:text-racing transition-colors"
+            className="num inline-flex min-h-8 items-center text-xs underline underline-offset-4 hover:text-racing transition-colors"
           >
             {mode === "signin" ? "Don't have an account? Create one" : "Already have an account? Sign in"}
           </button>
@@ -183,7 +183,7 @@ export default function AuthPage() {
         <div className="mt-6 flex items-center justify-center gap-3">
           <a
             href="/login"
-            className="num text-[11px] text-ink-faint hover:text-ink transition-colors underline underline-offset-4"
+            className="num inline-flex min-h-8 items-center text-xs text-ink-faint hover:text-ink transition-colors underline underline-offset-4"
           >
             Console lock screen
           </a>

@@ -46,17 +46,23 @@ function telegramInitData(): string {
   return clientInitData();
 }
 
-/**
- * Web guests identify themselves by the player id captured at checkout
- * (Telegram identities are linked server-side and don't need this).
- */
-function guestPlayerId(): string | null {
-  if (typeof window === "undefined" || telegramInitData()) return null;
-  const pid = window.localStorage.getItem("vanta_player_id");
-  return pid && pid.trim() ? pid.trim() : null;
+/** A checkout returns one signed capability per order. It is stored against
+ *  the order id so Orders and proof uploads can authenticate the buyer without
+ *  turning a guessable player id into a customer-wide session. */
+const ORDER_ACCESS_PREFIX = "vanta_order_access_";
+
+export function rememberOrderAccess(orderId: string, token: string): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(`${ORDER_ACCESS_PREFIX}${orderId}`, token);
+}
+
+export function getOrderAccessToken(orderId: string): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(`${ORDER_ACCESS_PREFIX}${orderId}`);
 }
 
 const TELEGRAM_INIT_DATA_HEADER = "X-Telegram-Init-Data";
+const ORDER_ACCESS_HEADER = "x-order-access";
 
 export async function request<T>(
   path: string,
@@ -181,20 +187,15 @@ export const vantaApi = {
       request<{ deleted: boolean }>(`/admin/products?id=${id}`, {
         method: "DELETE",
       }),
-  orders: () => {
-    let url = "/orders";
-    const pid = guestPlayerId();
-    if (pid) url += `?playerId=${encodeURIComponent(pid)}`;
-    return request<{ orders: VantaOrder[] }>(url);
-  },
+  orders: () => request<{ orders: VantaOrder[] }>("/orders"),
   order: (id: string) => {
-    let url = `/orders?id=${encodeURIComponent(id)}`;
-    const pid = guestPlayerId();
-    if (pid) url += `&playerId=${encodeURIComponent(pid)}`;
-    return request<{ order: VantaOrder }>(url);
+    const token = getOrderAccessToken(id);
+    return request<{ order: VantaOrder }>(`/orders?id=${encodeURIComponent(id)}`, {
+      headers: token ? { [ORDER_ACCESS_HEADER]: token } : undefined,
+    });
   },
   checkout: (body: unknown) =>
-    request<{ order: VantaOrder; reservedUntil: string; payfastUrl: string | null; starsInvoiceUrl: string | null; canUploadProof: boolean }>("/checkout", {
+    request<{ order: VantaOrder; reservedUntil: string; payfastUrl: string | null; starsInvoiceUrl: string | null; canUploadProof: boolean; orderAccessToken: string }>("/checkout", {
       method: "POST",
       body: JSON.stringify(body),
     }),
@@ -215,7 +216,7 @@ export const vantaApi = {
       method: "DELETE",
     }),
   cartCheckout: (body: { playerId: string; inGameName: string; paymentMethod?: "payfast" | "eft" | "stars" }) =>
-    request<{ orders: VantaOrder[]; orderIds: string[]; subtotalCents: number; currency: string; itemCount: number }>("/cart/checkout", {
+    request<{ orders: VantaOrder[]; orderIds: string[]; orderAccessTokens: Array<{ orderId: string; token: string }>; subtotalCents: number; currency: string; itemCount: number }>("/cart/checkout", {
       method: "POST",
       body: JSON.stringify(body),
     }),
@@ -288,8 +289,10 @@ export type VantaProduct = {
   game?: "cpm1" | "cpm2";
   /** What kind of thing is being sold — a car or a game account. */
   kind?: "car" | "account" | "service";
-  /** Stars price, quoted with the configured STARS_ZAR_PER_STAR by the API. */
+  /** Stars price for the effective (discount + promotion) price, quoted by the API. */
   starsPrice?: number;
+  /** Stars price for the promotion price when a live promotion is attached. */
+  promoStarsPrice?: number | null;
   /** The live product promotion, when one is attached to this product. */
   promo?: {
     id: number;

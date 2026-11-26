@@ -7,7 +7,7 @@ import { createHash } from "node:crypto";
 import type { Order } from "../store-types";
 import { getStoreDb } from "../store-db.ts";
 import { rowToPayment, getPaymentsForOrder } from "./payments.ts";
-import { updatePaymentState, updateOrderState, getOrder } from "./checkout.ts";
+import { confirmPayment, getOrder } from "./checkout.ts";
 import { recordPayment } from "./payments.ts";
 import { ledgerEntry } from "./ledger.ts";
 import { notifyCustomer } from "./notifications.ts";
@@ -115,8 +115,12 @@ export async function retryWebhook(paymentId: string): Promise<void> {
             currency: payment.currency,
             status: "verified",
           });
-          await updatePaymentState(payment.orderId, "verified");
-          await updateOrderState(payment.orderId, "payment_confirmed");
+          // The shared settlement path: the same conditional state flip,
+          // atomic stock deduction trigger and fraud scheduling used by the
+          // PayFast ITN and Telegram Stars webhooks. Writing payment_state
+          // directly here used to mark the order paid without spending the
+          // reserved stock.
+          await confirmPayment(payment.orderId);
           await ledgerEntry({
             orderId: payment.orderId,
             type: "payment",

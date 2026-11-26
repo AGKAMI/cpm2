@@ -3,8 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { vantaApi, formatPrice, type VantaProduct } from "@/lib/store/client";
-import { discountSavingsCents, approxStarsForCents } from "@/lib/store/pricing";
+import { vantaApi, formatPrice, rememberOrderAccess, type VantaProduct } from "@/lib/store/client";
+import { effectiveUnitPriceCents, approxStarsForCents } from "@/lib/store/pricing";
 import { StoreShell } from "@/components/StoreShell";
 import { Button } from "@/components/ui/Button";
 import { CheckoutSkeleton } from "@/components/skeleton";
@@ -87,11 +87,15 @@ export function CheckoutClient({ productId }: { productId: number }) {
   }, [playerId]);
 
   const subtotal = product?.basePriceCents ?? 0;
-  // The product's own discount (0 when none) — no more fake R25 line.
-  const discountCents = product ? discountSavingsCents(product.basePriceCents, product.discountPercent) : 0;
+  // Same price math the checkout APIs use: product discount + live promotion.
+  const sellingCents = product ? effectiveUnitPriceCents(product, product.promo) : 0;
+  const discountCents = Math.max(0, subtotal - sellingCents);
   const deliveryFeeCents = 0;
-  const totalCents = Math.max(0, subtotal - discountCents + deliveryFeeCents);
+  const totalCents = sellingCents + deliveryFeeCents;
   const onSale = discountCents > 0;
+  const discountLabel = product?.promo?.discountPercent
+    ? `Sale + promotion (${product.discountPercent}% + ${product.promo.discountPercent}%)`
+    : `Discount (${product?.discountPercent ?? 0}%)`;
 
   // Validation helpers
   const validatePlayerId = (pid: string): string | null => {
@@ -156,7 +160,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
     setCheckoutBusy(true);
     try {
       const idempotencyKey = `checkout_${product.id}_${Date.now()}`;
-      const { order, payfastUrl, starsInvoiceUrl, canUploadProof } = await vantaApi.checkout({
+      const { order, payfastUrl, starsInvoiceUrl, canUploadProof, orderAccessToken } = await vantaApi.checkout({
         productId: product.id,
         quantity: 1,
         paymentMethod,
@@ -164,6 +168,10 @@ export function CheckoutClient({ productId }: { productId: number }) {
         inGameName: inGameName.trim(),
         idempotencyKey,
       });
+
+      // Keep the order-scoped capability before any redirect (PayFast/Stars
+      // return to the order page in this same browser).
+      rememberOrderAccess(order.id, orderAccessToken);
 
       if (payfastUrl) {
         if (typeof window !== "undefined") {
@@ -270,7 +278,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
           )}
           <span className="num text-xl font-semibold text-primary">{formatPrice(totalCents, product.currency)}</span>
           {onSale && (
-            <span className="num text-[10px] font-bold uppercase tracking-[0.14em] text-ok">Save {formatPrice(discountCents, product.currency)} · {product.discountPercent}% off</span>
+            <span className="num text-[10px] font-bold uppercase tracking-[0.14em] text-ok">Save {formatPrice(discountCents, product.currency)}</span>
           )}
         </div>
       </section>
@@ -345,7 +353,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
               <input type="radio" name="paymentMethod" value="stars" checked={paymentMethod === "stars"} onChange={() => setPaymentMethod("stars")} className="accent-primary" />
               <div className="flex-1">
                 <div className="flex items-center gap-1.5 text-xs font-medium text-foreground"><StarIcon className="w-3.5 h-3.5" />Telegram Stars</div>
-                <div className="text-[10px] text-muted-foreground">Pay in-app with your Stars balance, instantly and without a card.{product ? ` About ${product.starsPrice ?? approxStarsForCents(totalCents)} Stars.` : ""}</div>
+                <div className="text-[10px] text-muted-foreground">Pay in-app with your Stars balance, instantly and without a card.{product ? ` About ${product.promoStarsPrice ?? product.starsPrice ?? approxStarsForCents(totalCents)} Stars.` : ""}</div>
               </div>
             </label>
 </div>
@@ -480,7 +488,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
             </div>
             {onSale && (
               <div className="flex justify-between text-[11px]">
-                <span className="text-muted-foreground">Discount ({product.discountPercent}%)</span>
+                <span className="text-muted-foreground">{discountLabel}</span>
                 <span className="text-ok">-{formatPrice(discountCents, product.currency)}</span>
               </div>
             )}
@@ -493,7 +501,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
                 <span>Telegram Stars (≈)</span>
                 <span className="flex items-center gap-1 text-primary">
                   <StarIcon className="w-4 h-4" />
-                  {approxStarsForCents(totalCents)}
+                  {product?.promoStarsPrice ?? product?.starsPrice ?? approxStarsForCents(totalCents)}
                 </span>
               </div>
             )}

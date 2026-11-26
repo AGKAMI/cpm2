@@ -38,8 +38,16 @@ type ProfileData = {
  * Host header, never a fetch of our own API.
  */
 async function resolveProfileData(request: Request): Promise<ProfileData> {
-  const adminStatus = await resolveAdminStatus(request);
-  const role: "owner" | "admin" | "customer" = adminStatus.role ?? "customer";
+  // resolveAdminStatus throws on a stale/forged initData header. A valid web
+  // session must still render the profile in that case, so degrade to the
+  // signed-out role instead of throwing before the session lookup below.
+  let adminStatus: Awaited<ReturnType<typeof resolveAdminStatus>> | null = null;
+  try {
+    adminStatus = await resolveAdminStatus(request);
+  } catch {
+    adminStatus = null;
+  }
+  const role: "owner" | "admin" | "customer" = adminStatus?.role ?? "customer";
 
   // 1. Try session cookie (web login)
   const sessionToken = readRequestCookie(request, SESSION_COOKIE);

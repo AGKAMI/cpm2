@@ -15,6 +15,8 @@ const {
   SESSION_MAX_AGE_SECONDS,
   createSessionToken,
   verifySessionToken,
+  createOrderAccessToken,
+  verifyOrderAccessToken,
   rateLimited,
   sessionCookieOptions,
   REVEAL_CONSENT_MAX_AGE_SECONDS,
@@ -182,6 +184,21 @@ describe("auth · reveal consent", () => {
     assert.equal(https.secure, true);
     assert.equal(https.sameSite, "none");
     assert.equal(https.maxAge, REVEAL_CONSENT_MAX_AGE_SECONDS);
+  });
+});
+
+describe("auth · order access capability", () => {
+  it("opens only the order it was minted for", () => {
+    const token = createOrderAccessToken("VNT_1_abc123", 7);
+    assert.equal(verifyOrderAccessToken(token, "VNT_1_abc123", 7), true);
+    assert.equal(verifyOrderAccessToken(token, "VNT_2_def456", 7), false);
+    assert.equal(verifyOrderAccessToken(token, "VNT_1_abc123", 8), false);
+    assert.equal(verifyOrderAccessToken(undefined, "VNT_1_abc123", 7), false);
+  });
+
+  it("refuses a token past its expiry", () => {
+    const token = createOrderAccessToken("VNT_1_abc123", 7, Date.now() - 31 * 24 * 60 * 60 * 1000);
+    assert.equal(verifyOrderAccessToken(token, "VNT_1_abc123", 7), false);
   });
 });
 

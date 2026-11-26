@@ -134,13 +134,13 @@ export function GameSectionList({
                         ? "Sold out"
                         : p.promoPriceCents != null
                           ? `${formatPrice(p.promoPriceCents, p.currency)}${
-                              approxStarsForCents(p.promoPriceCents)
-                                ? ` (${approxStarsForCents(p.promoPriceCents)} stars)`
+                              (p.promoStarsPrice ?? approxStarsForCents(p.promoPriceCents))
+                                ? ` (${p.promoStarsPrice ?? approxStarsForCents(p.promoPriceCents)} stars)`
                                 : ""
                             }`
                           : `${formatPrice(p.basePriceCents, p.currency)}${
-                              approxStarsForCents(p.basePriceCents)
-                                ? ` (${approxStarsForCents(p.basePriceCents)} stars)`
+                              (p.starsPrice ?? approxStarsForCents(p.basePriceCents))
+                                ? ` (${p.starsPrice ?? approxStarsForCents(p.basePriceCents)} stars)`
                                 : ""
                             }`}
                     </span>

@@ -2,7 +2,7 @@
 
 import { notFound } from "next/navigation";
 import { useEffect, useState } from "react";
-import { vantaApi, formatPrice, type VantaOrder } from "@/lib/store/client";
+import { vantaApi, formatPrice, getOrderAccessToken, type VantaOrder } from "@/lib/store/client";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
@@ -28,10 +28,12 @@ export function OrderPageClient({ orderId }: { orderId: string }) {
       const form = new FormData();
       form.set("orderId", order.id);
       form.set("file", proofFile);
+      const token = getOrderAccessToken(order.id);
       const res = await fetch(`/api/store/checkout/${order.productId}/proof`, {
         method: "POST",
         body: form,
         credentials: "same-origin",
+        headers: token ? { "x-order-access": token } : undefined,
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;

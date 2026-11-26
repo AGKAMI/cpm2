@@ -19,6 +19,7 @@ const { RESERVATION_MINUTES, orderId } = await import(
   "../src/lib/store/checkout.ts"
 );
 const { VANTA_SCHEMA } = await import("../src/lib/store-schema.ts");
+const { effectiveUnitPriceCents } = await import("../src/lib/store/pricing.ts");
 
 /**
  * Pull the accepted values out of a SQL CHECK clause —
@@ -218,5 +219,19 @@ describe("site origin", () => {
       if (saved) process.env.NEXT_PUBLIC_SITE_URL = saved;
       else delete process.env.NEXT_PUBLIC_SITE_URL;
     }
+  });
+});
+
+describe("vanta · effective price", () => {
+  it("stacks the product sale and a live promotion once", () => {
+    const product = { basePriceCents: 100000, discountPercent: 10 };
+    assert.equal(effectiveUnitPriceCents(product, null), 90000);
+    assert.equal(effectiveUnitPriceCents(product, { discountPercent: 20 }), 72000);
+  });
+
+  it("ignores a zero or missing promotion", () => {
+    const product = { basePriceCents: 50000, discountPercent: 0 };
+    assert.equal(effectiveUnitPriceCents(product), 50000);
+    assert.equal(effectiveUnitPriceCents(product, { discountPercent: 0 }), 50000);
   });
 });

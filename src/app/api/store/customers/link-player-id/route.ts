@@ -9,7 +9,8 @@
 
 import { fail, ok, readJson } from "@/lib/route";
 import { createCustomer, getCustomerByPlayerId } from "@/lib/store/customers";
-import { rateLimited } from "@/lib/auth";
+import { trustedClientIp } from "@/lib/auth";
+import { checkDurableRateLimit } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -20,11 +21,8 @@ export async function POST(request: Request) {
     // initData), but an unauthenticated caller could otherwise create customer
     // rows at will and probe whether a given playerId is already linked.
     // Proven on prod before this guard: a bare POST created customer #28.
-    const ip =
-      request.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-      request.headers.get("x-real-ip") ??
-      "unknown";
-    if (rateLimited(`link-player-id:${ip}`)) {
+    const ip = trustedClientIp(request);
+    if (await checkDurableRateLimit(`link-player-id:${ip}`, 20, 60_000)) {
       return NextResponse.json(
         { error: { code: "RATE_LIMITED", message: "Too many attempts - wait a minute and try again." } },
         { status: 429 },

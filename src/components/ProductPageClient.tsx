@@ -140,8 +140,8 @@ export function ProductPageClient({
         folio="01"
         title={product.name}
         meta={`${formatPrice(product.basePriceCents, product.currency)}${
-          approxStarsForCents(product.basePriceCents)
-            ? ` (${approxStarsForCents(product.basePriceCents)} stars)`
+          (product.promoStarsPrice ?? product.starsPrice ?? approxStarsForCents(product.basePriceCents))
+            ? ` (${product.promoStarsPrice ?? product.starsPrice ?? approxStarsForCents(product.basePriceCents)} stars)`
             : ""
         }`}
         backHref="/store"
@@ -244,7 +244,7 @@ export function ProductPageClient({
                 <span className="text-2xl font-bold text-primary">
                   {formatPrice(displayPriceCents, product.currency)}
                 </span>
-                <span className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-sm font-bold text-foreground tabular-nums" title="Telegram Stars"><StarIcon className="w-4 h-4" />{approxStarsForCents(displayPriceCents)}</span>
+                <span className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-sm font-bold text-foreground tabular-nums" title="Telegram Stars"><StarIcon className="w-4 h-4" />{product.promoStarsPrice ?? product.starsPrice ?? approxStarsForCents(displayPriceCents)}</span>
                 {product.promo && (
                   <span className="promo-pill" style={{ ["--pill-hue" as string]: product.promo.pillColor }}>
                     Promoted

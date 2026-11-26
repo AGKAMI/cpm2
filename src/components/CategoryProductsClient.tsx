@@ -41,7 +41,7 @@ export function CategoryProductsClient({
              2-up on phones (like the reference store), scaling to 5 on wide. */
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
             {products.map((p) => {
-              const stars = approxStarsForCents(p.basePriceCents);
+              const stars = p.promoStarsPrice ?? p.starsPrice ?? approxStarsForCents(p.basePriceCents);
               const soldOut = p.stockQuantity === 0;
               return (
                 <article

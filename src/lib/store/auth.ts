@@ -10,7 +10,12 @@
 
 import { ApiError } from "../api.ts";
 import { assertTelegramAuth } from "../telegram";
-import { readRequestCookie, verifySessionToken, SESSION_COOKIE } from "../auth";
+import {
+  readRequestCookie,
+  verifySessionToken,
+  verifyOrderAccessToken,
+  SESSION_COOKIE,
+} from "../auth";
 import { getCustomer, getCustomerByPlatformIdentity } from "./customers";
 import type { Customer, PlatformIdentity } from "../store-types";
 
@@ -26,7 +31,21 @@ export type StoreCustomer = {
   identity: PlatformIdentity | null;
 };
 
- export async function getStoreCustomer(request: Request): Promise<StoreCustomer | null> {
+ /**
+ * Read access to ONE order: either a full store session for that customer, or
+ * the signed per-order capability returned at checkout. Never a player id or
+ * a console token.
+ */
+export function canAccessOrder(
+  request: Request,
+  order: { id: string; customerId: number },
+): boolean {
+  const viewer = currentStoreUserId(request);
+  if (viewer === order.customerId) return true;
+  return verifyOrderAccessToken(request.headers.get("x-order-access") ?? undefined, order.id, order.customerId);
+}
+
+export async function getStoreCustomer(request: Request): Promise<StoreCustomer | null> {
   // Telegram auth is optional here — the caller (checkout) decides whether it's
   // required based on payment method. Stars needs it; EFT/PayFast don't.
   //

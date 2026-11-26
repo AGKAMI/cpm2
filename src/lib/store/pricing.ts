@@ -15,6 +15,21 @@ export function discountSavingsCents(basePriceCents: number, discountPercent: nu
   return basePriceCents - discountedPriceCents(basePriceCents, discountPercent);
 }
 
+/**
+ * The actual unit price after BOTH discounts: the product's own sale first,
+ * then a live product promotion. Display, single checkout and cart checkout
+ * all call this so the advertised price is the price that gets charged.
+ */
+export function effectiveUnitPriceCents(
+  product: { basePriceCents: number; discountPercent: number },
+  promo?: { discountPercent: number } | null,
+): number {
+  const afterProductDiscount = discountedPriceCents(product.basePriceCents, product.discountPercent);
+  return promo && promo.discountPercent > 0
+    ? discountedPriceCents(afterProductDiscount, promo.discountPercent)
+    : afterProductDiscount;
+}
+
 /** Approximate Stars for a ZAR amount (whole Stars, ≥1). Client-side display
  *  only — the invoice is always created server-side with the same math. */
 export function approxStarsForCents(cents: number, zarPerStar?: number): number {

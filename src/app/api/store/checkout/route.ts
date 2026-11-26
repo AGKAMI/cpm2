@@ -5,13 +5,7 @@
  */
 
 import { fail, ok, readJson } from "@/lib/route";
-import {
-  createSessionToken,
-  readRequestCookie,
-  SESSION_COOKIE,
-  sessionCookieOptions,
-  verifySessionToken,
-} from "@/lib/auth";
+import { createOrderAccessToken } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
 import { z } from "zod";
 import { assertTelegramAuth } from "@/lib/telegram";
@@ -22,10 +16,10 @@ import {
   linkPlatformIdentity,
 } from "@/lib/store/customers";
 import { createOrder } from "@/lib/store/checkout";
-import { getProduct } from "@/lib/store/products";
+import { getProduct, productPromotionMap } from "@/lib/store/products";
 import { buildPayFastCheckoutUrl } from "@/lib/store/payfast";
 import { createStarsInvoiceLink, starsForCents } from "@/lib/store/stars";
-import { discountedPriceCents } from "@/lib/store/pricing";
+import { effectiveUnitPriceCents } from "@/lib/store/pricing";
 import { siteUrl } from "@/lib/site";
 import type { Customer } from "@/lib/store-types";
 
@@ -53,7 +47,7 @@ async function resolveBuyer(
   playerId: string,
   inGameName: string,
   paymentMethod: "eft" | "payfast" | "stars",
-): Promise<{ customer: Customer; created: boolean }> {
+): Promise<Customer> {
   // Telegram auth is only required for Stars payments, which happen inside
   // Telegram and need the user linked. EFT / PayFast are web flows identified
   // by Player ID — no Telegram signature needed.
@@ -61,23 +55,21 @@ async function resolveBuyer(
     const telegramUserId = await assertTelegramAuth(request);
     if (telegramUserId !== null) {
       const linked = await getCustomerByPlatformIdentity("telegram", String(telegramUserId));
-      if (linked) return { customer: linked.customer, created: false };
+      if (linked) return linked.customer;
       const created = await createCustomer({ inGameName, playerId });
       await linkPlatformIdentity(created.id, "telegram", String(telegramUserId), "");
-      return { customer: created, created: true };
+      return created;
     }
     // Stars with no valid Telegram identity -> can't proceed.
     throw new ApiError(401, "TELEGRAM_AUTH_INVALID", "Telegram signature did not verify — reopen the console from Telegram and try again.");
   }
-  const existing = await getCustomerByPlayerId(playerId);
-  if (existing) return { customer: existing, created: false };
-  return { customer: await createCustomer({ inGameName, playerId }), created: true };
+  return (await getCustomerByPlayerId(playerId)) ?? await createCustomer({ inGameName, playerId });
 }
 
 export async function POST(request: Request) {
   try {
     const body = checkoutSchema.parse(await readJson(request));
-    const { customer, created: newCustomer } = await resolveBuyer(
+    const customer = await resolveBuyer(
       request,
       body.playerId.trim(),
       body.inGameName.trim(),
@@ -92,8 +84,12 @@ export async function POST(request: Request) {
       throw new ApiError(400, "product_unpublished", "That vehicle isn't available for purchase.");
     }
 
-    // Charge the sale price when the product carries a discount
-    const unitCents = discountedPriceCents(product.basePriceCents, product.discountPercent);
+    // Charge the price the storefront advertised: product sale first, then a
+    // live product promotion attached to this product. Display and checkout
+    // share effectiveUnitPriceCents so the buyer is never charged more than
+    // the price they were shown.
+    const promos = await productPromotionMap(product.game);
+    const unitCents = effectiveUnitPriceCents(product, promos.get(product.id));
     const amountCents = unitCents * body.quantity;
 
     const result = await createOrder({
@@ -139,30 +135,19 @@ export async function POST(request: Request) {
       });
     }
 
-    // Only a NEWLY created guest gets a session: that customer has no order
-    // history to steal and needs the session to read their order and (for EFT)
-    // upload proof. Reusing an existing customer by guessable playerId must
-    // NOT mint a session — that was the old account-takeover path. Returning
-    // buyers sign in with email/password or open the store from Telegram.
-    const existingSession = verifySessionToken(
-      readRequestCookie(request, SESSION_COOKIE),
-      "store",
-    );
-    const response = ok({
+    // A per-order capability replaces the old customer-wide guest session.
+    // It lets a web buyer (new or returning, by player id) read THIS order and
+    // attach EFT proof without granting profile/cart/other-order access. A
+    // guessable player id can no longer be traded for a store session.
+    const orderAccessToken = createOrderAccessToken(result.order.id, result.order.customerId);
+    return ok({
       order: result.order,
       reservedUntil: result.reservedUntil,
       payfastUrl,
       starsInvoiceUrl,
-      canUploadProof: newCustomer || existingSession === result.order.customerId,
+      canUploadProof: true,
+      orderAccessToken,
     }, 201);
-    if (!existingSession && newCustomer) {
-      response.cookies.set(
-        SESSION_COOKIE,
-        createSessionToken(result.order.customerId, "store"),
-        sessionCookieOptions(request),
-      );
-    }
-    return response;
   } catch (err) {
     return fail(err);
   }

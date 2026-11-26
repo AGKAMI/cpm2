@@ -630,7 +630,7 @@ const ProductCard = React.memo(
                     title="Telegram Stars"
                   >
                     <StarIcon className="w-4 h-4" />
-                    {approxStarsForCents(hasDiscount(product) ? discountedPriceCents(product.basePriceCents, product.discountPercent) : product.basePriceCents)}
+                    {product.promoStarsPrice ?? product.starsPrice ?? approxStarsForCents(hasDiscount(product) ? discountedPriceCents(product.basePriceCents, product.discountPercent) : product.basePriceCents)}
                   </span>
                   {variant === "standard" && <CartAddButton product={product} />}
                 </div>

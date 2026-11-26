@@ -4,10 +4,11 @@ import {
   SESSION_COOKIE,
   constantTimeEquals,
   createRevealConsentToken,
-  rateLimited,
   revealCookieOptions,
+  trustedClientIp,
   verifySessionToken,
 } from "@/lib/auth";
+import { checkDurableRateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -20,11 +21,10 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(request: Request) {
   try {
-    const ip =
-      request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-      request.headers.get("x-real-ip") ||
-      "local";
-    if (rateLimited(`reveal-consent:${ip}`)) {
+    // Platform-attested IP + durable counter: a client-writable XFF entry and
+    // per-process memory let an attacker rotate past this gate on serverless.
+    const ip = trustedClientIp(request);
+    if (await checkDurableRateLimit(`reveal-consent:${ip}`, 10, 60_000)) {
       return NextResponse.json(
         { error: { code: "AUTH_SLOW_DOWN", message: "Too many attempts - wait a minute and try again." } },
         { status: 429 },
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
       .map((part) => part.trim())
       .find((part) => part.startsWith(`${SESSION_COOKIE}=`))
       ?.slice(SESSION_COOKIE.length + 1);
-    const userId = verifySessionToken(cookie ? decodeURIComponent(cookie) : undefined);
+    const userId = verifySessionToken(cookie ? decodeURIComponent(cookie) : undefined, "console");
     if (!userId) {
       return NextResponse.json(
         { error: { code: "AUTH_REQUIRED", message: "Sign in to use the console." } },

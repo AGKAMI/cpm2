@@ -10,6 +10,7 @@
  */
 
 import { fail, ok, readJson } from "@/lib/route";
+import { createOrderAccessToken } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
 import { z } from "zod";
 import { assertTelegramAuth } from "@/lib/telegram";
@@ -20,8 +21,8 @@ import {
   linkPlatformIdentity,
 } from "@/lib/store/customers";
 import { createOrder } from "@/lib/store/checkout";
-import { discountedPriceCents } from "@/lib/store/pricing";
-import { getProduct } from "@/lib/store/products";
+import { effectiveUnitPriceCents } from "@/lib/store/pricing";
+import { getProduct, productPromotionMap } from "@/lib/store/products";
 import { getCart, clearCart } from "@/lib/store/cart";
 import { getStoreCustomer } from "@/lib/store/auth";
 import type { Customer } from "@/lib/store-types";
@@ -88,6 +89,14 @@ export async function POST(request: Request) {
     const playerId = body.playerId.trim();
     const inGameName = body.inGameName.trim();
     const orders = [];
+    // Promotions are game-scoped; a cart item carries no game column, so load
+    // both maps once and look the product up by id. This is the same price the
+    // single-product checkout and the catalogue card quote.
+    const [cpm1Promos, cpm2Promos] = await Promise.all([
+      productPromotionMap("cpm1"),
+      productPromotionMap("cpm2"),
+    ]);
+    const promoFor = (productId: number) => cpm1Promos.get(productId) ?? cpm2Promos.get(productId);
 
     for (const item of cart.items) {
       const idempotencyKey = `cart_${customer.id}_${item.productId}_${item.quantity}`;
@@ -95,10 +104,9 @@ export async function POST(request: Request) {
         customerId: customer.id,
         productId: item.productId,
         quantity: item.quantity,
-        // The cart must charge the sale price, same as the single-product
-        // checkout below. Charging basePriceCents here overcharged every
-        // discounted vehicle bought through the cart.
-        amountCents: discountedPriceCents(item.basePriceCents, item.discountPercent) * item.quantity,
+        // Product sale + any live promotion, exactly like single checkout and
+        // the price shown on the card.
+        amountCents: effectiveUnitPriceCents(item, promoFor(item.productId)) * item.quantity,
         currency: item.currency,
         paymentMethod: body.paymentMethod,
         playerId,
@@ -134,13 +142,17 @@ export async function POST(request: Request) {
     }
 
     const subtotalCents = cart.items.reduce(
-      (sum, i) => sum + discountedPriceCents(i.basePriceCents, i.discountPercent) * i.quantity,
+      (sum, i) => sum + effectiveUnitPriceCents(i, promoFor(i.productId)) * i.quantity,
       0,
     );
 
     return ok({
       orders,
       orderIds: orders.map((o) => o.id),
+      orderAccessTokens: orders.map((o) => ({
+        orderId: o.id,
+        token: createOrderAccessToken(o.id, o.customerId),
+      })),
       subtotalCents,
       currency: cart.currency,
       itemCount: cart.items.length,

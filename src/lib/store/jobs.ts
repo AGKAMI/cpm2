@@ -218,12 +218,15 @@ export async function sweepExpiredReservationsThrottled(): Promise<{ expired: nu
 }
 
 /** Process all due jobs. Called by the internal jobs route. */
-export async function processJobs(): Promise<{ processed: number; failed: number }> {
+export async function processJobs(limit = 50): Promise<{ processed: number; failed: number }> {
+  // A cron invocation must not run until the serverless timeout when a large
+  // backlog builds up. One pass claims at most `limit` jobs; unclaimed jobs
+  // stay due for the next run.
+  const maxJobs = Math.max(1, Math.min(Math.trunc(limit) || 50, 500));
   let processed = 0;
   let failed = 0;
 
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
+  while (processed + failed < maxJobs) {
     const job = await claimJob();
     if (!job) break;
 

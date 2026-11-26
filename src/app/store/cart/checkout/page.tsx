@@ -16,7 +16,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
-import { vantaApi } from "@/lib/store/client";
+import { vantaApi, rememberOrderAccess } from "@/lib/store/client";
 import { StarIcon } from "@/components/StarIcon";
 
 export default function CartCheckoutPage() {
@@ -55,11 +55,19 @@ export default function CartCheckoutPage() {
         inGameName: name,
         paymentMethod,
       });
-      // Clear any lingering local cart marker and go to orders.
+      // Keep one capability per order from this bulk checkout, then open the
+      // first order. The orders LIST remains account/Telegram-only because a
+      // per-order capability must not become a whole-history credential.
       if (typeof window !== "undefined") {
+        for (const item of res.orderAccessTokens ?? []) {
+          rememberOrderAccess(item.orderId, item.token);
+        }
         window.localStorage.removeItem("vanta_bulk_cart");
       }
-      window.location.href = `/store/orders?cart=1&subtotal=${res.subtotalCents ?? 0}`;
+      const first = res.orderIds?.[0];
+      window.location.href = first
+        ? `/store/orders/${encodeURIComponent(first)}?cart=1`
+        : `/store/orders?cart=1&subtotal=${res.subtotalCents ?? 0}`;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Bulk checkout failed. Try again.");
     } finally {

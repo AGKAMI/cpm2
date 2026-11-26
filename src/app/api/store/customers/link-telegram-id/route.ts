@@ -3,15 +3,15 @@
  * POST /api/store/customers/link-telegram-id
  * Body: { telegramId: string }
  *
- * Links a manually-entered Telegram ID to a customer record.
+ * Links a manually-entered Telegram ID to the SIGNED-IN customer record.
  * Used when opening the store in a web browser (no Telegram WebApp initData).
+ * A store session is required; this route never creates one.
  */
 
 import { fail, readJson } from "@/lib/route";
+import { NextResponse } from "next/server";
 import { telegramBotToken } from "@/lib/telegram";
 import { getCustomerByPlatformIdentity } from "@/lib/store/customers";
-import { NextResponse } from "next/server";
-import { createSessionToken, sessionCookieOptions } from "@/lib/auth";
 import { currentStoreUserId } from "@/lib/store/auth";
 import { getStoreDb } from "@/lib/store-db";
 
@@ -24,11 +24,6 @@ function makeCode(length = 8): string {
   let code = "";
   for (let i = 0; i < length; i += 1) code += chars[Math.floor(Math.random() * chars.length)];
   return code;
-}
-
-function setSessionCookie(response: NextResponse, customerId: number, request: Request) {
-  const token = createSessionToken(customerId, "store");
-  response.cookies.set("cpm2_session", token, sessionCookieOptions(request));
 }
 
 /** Send the Yes/No verification DM to the claimed Telegram id. The actual
@@ -55,9 +50,9 @@ async function sendVerificationDm(
   const text = `
 🚨 <b>VANTA GARAGE — Link Verification</b> 🚨
 
-Someone is trying to link Telegram ID <code>${telegramUserId}</code> to a VANTA GARAGE store account on the web.
+Store account #${customerId} is asking to link Telegram ID <code>${telegramUserId}</code> to its VANTA GARAGE profile.
 
-<b>If this is YOU:</b> Click "Yes, it's me" below to confirm the link.
+<b>If this is YOU:</b> Click "Yes, it's me" below to confirm the link to account #${customerId}.
 
 <b>If this is NOT YOU:</b> Click "No, it's not me" to reject. Your Telegram ID will NOT be linked to any account, and no action will be taken against you.
 
@@ -102,45 +97,29 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verify the Telegram ID exists via Telegram's Bot API (getUser).
-    // Advisory only — never blocks linking on Telegram API failure
-    // (bad token, rate limit, network, etc.). On success, grab the real
-    // Telegram username for the customer's display name.
     const token = telegramBotToken();
-    let tgDisplayName: string | null = null;
-    if (token) {
-      try {
-        const tgRes = await fetch(
-          `https://api.telegram.org/bot${token}/getUser?user_id=${encodeURIComponent(telegramUserId)}`,
-        );
-        const tgData = await tgRes.json();
-        if (tgData.ok && tgData.result) {
-          const { username, first_name, last_name } = tgData.result;
-          tgDisplayName =
-            username ?? first_name ?? last_name ?? `tg_${telegramUserId}`;
-        }
-      } catch {
-        // Network error — proceed to link anyway.
-      }
+
+    // Identity check FIRST. This route used to let an anonymous caller enter
+    // ANY Telegram id, create a customer and receive a store session before
+    // the DM was confirmed. If the victim clicked "Yes", their Telegram id was
+    // bound to the attacker's customer, whose session then read the victim's
+    // future orders. Only a signed-in customer may start a link, and no
+    // session is issued here.
+    const sessionUserId = currentStoreUserId(request);
+    if (!sessionUserId) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "AUTH_REQUIRED",
+            message: "Sign in to your store account before linking a Telegram ID.",
+          },
+        },
+        { status: 401 },
+      );
     }
 
-    // Already linked to SOMEONE — the caller may only be told "already yours"
-    // when the session IS that customer. Anything else is refused: no session
-    // is minted for another customer's account (that was the takeover), and a
-    // session may not move an identity that belongs to a different customer.
     const existing = await getCustomerByPlatformIdentity("telegram", telegramUserId);
-    const sessionUserId = currentStoreUserId(request);
-    if (existing) {
-      if (sessionUserId && existing.customer.id === sessionUserId) {
-        if (token) await sendVerificationDm(token, telegramUserId, sessionUserId);
-        const response = NextResponse.json({
-          customerId: sessionUserId,
-          verificationPending: true,
-          message: "Telegram is already linked to this account.",
-        });
-        setSessionCookie(response, sessionUserId, request);
-        return response;
-      }
+    if (existing && existing.customer.id !== sessionUserId) {
       return NextResponse.json(
         {
           error: {
@@ -160,35 +139,16 @@ export async function POST(request: Request) {
       );
     }
 
-    // Unlinked id — the only way to attach it is the DM proof.
-    let customerId: number;
-    const db = await getStoreDb();
+    // Unlinked id — the only way to attach it is the DM proof, sent to the
+    // account that is already signed in.
+    await sendVerificationDm(token, telegramUserId, sessionUserId);
 
-    if (sessionUserId) {
-      customerId = sessionUserId;
-    } else {
-      // Sessionless callers get a guest customer of their OWN — never the
-      // account that already owns (or will own) this Telegram id. The
-      // identity itself stays unattached until the DM confirmation.
-      const now = new Date().toISOString();
-      const created = await db.execute({
-        sql: `INSERT INTO vanta_customers (in_game_name, player_id, currency_pref, created_at, updated_at)
-              VALUES (?, '', 'ZAR', ?, ?)`,
-        args: [tgDisplayName ?? `tg_${telegramUserId}`, now, now],
-      });
-      customerId = Number(created.lastInsertRowid);
-    }
-
-    await sendVerificationDm(token, telegramUserId, customerId);
-
-    const response = NextResponse.json({
-      customerId,
+    return NextResponse.json({
+      customerId: sessionUserId,
       verificationPending: true,
       message:
         "Check your Telegram — confirm the 'Yes, it's me' button in the DM from the VANTA GARAGE bot to finish linking. The link expires in 2 minutes.",
     });
-    setSessionCookie(response, customerId, request);
-    return response;
   } catch (err) {
     return fail(err);
   }

@@ -19,7 +19,7 @@
 
 import crypto from "node:crypto";
 import { fail, ok } from "@/lib/route";
-import { getStoreCustomer } from "@/lib/store/auth";
+import { canAccessOrder } from "@/lib/store/auth";
 import { getStoreDb } from "@/lib/store-db";
 import { getOrder } from "@/lib/store/checkout";
 import { contentTypeForFilename, saveUpload, uploadsMaxBytes } from "@/lib/store/uploads";
@@ -31,19 +31,6 @@ const ALLOWED_EXT = /\.(png|jpe?g|webp|gif)$/i;
 
 export async function POST(request: Request) {
   try {
-    const buyer = await getStoreCustomer(request);
-    if (!buyer) {
-      return fail({
-        status: 401,
-        body: {
-          error: {
-            code: "not_authenticated",
-            message: "Sign in (or open the store from Telegram) to upload proof.",
-          },
-        },
-      });
-    }
-
     const form = await request.formData();
     const orderId = String(form.get("orderId") ?? "");
     const file = form.get("file");
@@ -79,8 +66,18 @@ export async function POST(request: Request) {
         body: { error: { code: "order_not_found", message: "Order not found." } },
       });
     }
-    if (order.customerId !== buyer.customer.id) {
-      return fail({ status: 403, body: { error: { code: "forbidden", message: "Not your order." } } });
+    // The checkout capability is an accepted proof of ownership for web
+    // guests; a full store session works too. A player id never does.
+    if (!canAccessOrder(request, order)) {
+      return fail({
+        status: 403,
+        body: {
+          error: {
+            code: "forbidden",
+            message: "Open this order from your checkout confirmation, or sign in to your store account.",
+          },
+        },
+      });
     }
     if (order.paymentMethod !== "eft") {
       return fail({

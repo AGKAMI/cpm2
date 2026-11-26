@@ -312,26 +312,35 @@
   border-color: #7a7466;
 }
 
-/* Add shine-sweep to role tags */
+/* Role tags — the shine is a BACKGROUND-POSITION sweep, not a moving
+   pseudo-element. The ::after box is pinned to the tag's own box
+   (inset: 0) and only its background travels, so the glare physically
+   cannot paint outside the tag — no reliance on overflow clipping,
+   which failed on the deployed build (the sweep escaped past the
+   tag's right edge). */
 .role-owner,
 .role-admin,
 .role-customer {
   position: relative;
   overflow: hidden;
+  isolation: isolate;
 }
 .role-owner::after,
 .role-admin::after,
 .role-customer::after {
   content: "";
   position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
+  inset: 0;
+  border-radius: inherit;
   background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.45) 50%, transparent 100%);
-  animation: promotionShine 3s infinite linear;
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: roleShineSweep 3s linear infinite;
   pointer-events: none;
-  border-radius: 1rem;
+}
+@keyframes roleShineSweep {
+  0% { background-position: -100% 0; }
+  55%, 100% { background-position: 200% 0; }
 }
 [data-theme="paper"] .role-owner {
   background: linear-gradient(

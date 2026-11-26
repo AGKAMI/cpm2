@@ -689,7 +689,7 @@ export function ProfileClient({
             </div>
             {customer && (
               <span
-                className={`absolute -bottom-2 left-1/2 -translate-x-1/2 z-10 overflow-hidden rounded-2xl px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] border-2 ${
+                className={`absolute bottom-0 left-1/2 z-10 -translate-x-1/2 translate-y-1/2 overflow-hidden rounded-2xl px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] border-2 ${
                   (customer.role ?? "customer") === "owner"
                     ? "role-owner border-background"
                     : (customer.role ?? "customer") === "admin"

@@ -228,6 +228,29 @@ export async function runStoreMigrations(storeArg?: TursoHttpClient): Promise<vo
     }
   }
 
+  // Migration: one stock truth. Products without an inventory row get one
+  // seeded from their own stock_quantity (display and checkout previously
+  // read different tables — a card could show sold-out while the checkout
+  // reserved a unit, or vice versa), and the product column is collapsed to
+  // the available number the card now displays. Idempotent.
+  await store.execute({
+    sql: `INSERT INTO vanta_inventory (product_id, stock_quantity, reserved_quantity, version, updated_at)
+          SELECT id, stock_quantity, 0, 1, ?
+          FROM vanta_products
+          WHERE id NOT IN (SELECT product_id FROM vanta_inventory)`,
+    args: [new Date().toISOString()],
+  });
+  await store.execute({
+    sql: `UPDATE vanta_products
+          SET stock_quantity = (
+                SELECT i.stock_quantity - i.reserved_quantity
+                FROM vanta_inventory i WHERE i.product_id = vanta_products.id
+              ),
+              updated_at = ?
+          WHERE id IN (SELECT product_id FROM vanta_inventory)`,
+    args: [new Date().toISOString()],
+  });
+
   // Migration: add eft_proof_url to vanta_orders (for EFT payment proof uploads)
   try {
     await store.execute({

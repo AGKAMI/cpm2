@@ -221,6 +221,15 @@ export async function createProduct(input: ProductInput): Promise<Product> {
   const id = result.lastInsertRowid;
   if (id === null) throw new Error("Product insert returned no id");
   return rowToProduct({ id, category_id: input.categoryId ?? null, cpm2_car_code: input.cpm2CarCode ?? null, kind: input.kind ?? "car", game: input.game ?? "cpm2", name: input.name.trim(), description: input.description ?? "", base_price_cents: input.basePriceCents ?? 0, image_url: null, discount_percent: input.discountPercent ?? 0, currency: input.currency ?? "ZAR", stock_quantity: input.stockQuantity ?? 0, initial_stock: input.stockInitial ?? input.stockQuantity ?? 0, availability_state: input.availabilityState ?? "available", exclusivity: input.exclusivity ?? "standard", is_featured: input.isFeatured ? 1 : 0, is_new: input.isNew ? 1 : 0, is_sale: input.isSale ? 1 : 0, is_published: input.isPublished ? 1 : 0, air_suspension: input.airSuspension ? 1 : 0, unlocked_bodykits: input.unlockedBodykits ? 1 : 0, version: 1, spec_hp: input.specHp ?? null, spec_top_speed: input.specTopSpeed ?? null, spec_zero_hundred: input.specZeroHundred ?? null, spec_drive: input.specDrive ?? null, created_at: now, updated_at: now });
+  // Seed the inventory ledger at creation so the card and the checkout read
+  // the same stock from the product's first minute on the shelf.
+  await db.execute({
+    sql: `INSERT INTO vanta_inventory (product_id, stock_quantity, reserved_quantity, version, updated_at)
+          VALUES (?, ?, 0, 1, ?)
+          ON CONFLICT(product_id) DO UPDATE SET stock_quantity = excluded.stock_quantity, updated_at = excluded.updated_at`,
+    args: [id, input.stockQuantity ?? 0, now],
+  });
+  return rowToProduct({ id, category_id: input.categoryId ?? null, cpm2_car_code: input.cpm2CarCode ?? null, kind: input.kind ?? "car", game: input.game ?? "cpm2", name: input.name.trim(), description: input.description ?? "", base_price_cents: input.basePriceCents ?? 0, image_url: null, discount_percent: input.discountPercent ?? 0, currency: input.currency ?? "ZAR", stock_quantity: input.stockQuantity ?? 0, initial_stock: input.stockInitial ?? input.stockQuantity ?? 0, availability_state: input.availabilityState ?? "available", exclusivity: input.exclusivity ?? "standard", is_featured: input.isFeatured ? 1 : 0, is_new: input.isNew ? 1 : 0, is_sale: input.isSale ? 1 : 0, is_published: input.isPublished ? 1 : 0, air_suspension: input.airSuspension ? 1 : 0, unlocked_bodykits: input.unlockedBodykits ? 1 : 0, version: 1, spec_hp: input.specHp ?? null, spec_top_speed: input.specTopSpeed ?? null, spec_zero_hundred: input.specZeroHundred ?? null, spec_drive: input.specDrive ?? null, created_at: now, updated_at: now });
 }
 
 export async function getProduct(id: number): Promise<Product | null> {
@@ -232,7 +241,8 @@ export async function getProduct(id: number): Promise<Product | null> {
     args: [id],
   });
   if (result.rows.length === 0) return null;
-  return rowToProduct(result.rows[0]);
+  const product = rowToProduct(result.rows[0]);
+  return { ...product, stockQuantity: await availableStock(product.id, product.stockQuantity) };
 }
 
 /**
@@ -329,6 +339,38 @@ export async function enrichProductsWithCovers<
   });
 }
 
+/**
+ * Available stock per product, from the ONE truth the checkout reserves
+ * against: vanta_inventory (stock_quantity - reserved_quantity). The card
+ * and the buy button must read this number, not vanta_products.stock_quantity
+ * — those two columns drift (a sold-out card sitting on a reservable unit is
+ * exactly that drift) and any disagreement sells what the card says is gone.
+ * A product with no inventory row falls back to its own stock_quantity,
+ * which is what createOrder seeds the row from on first checkout.
+ */
+async function availableStockMap(productIds: number[]): Promise<Map<number, number>> {
+  const map = new Map<number, number>();
+  if (productIds.length === 0) return map;
+  const db = await getStoreDb();
+  const result = await db.execute({
+    sql: `SELECT product_id, stock_quantity - reserved_quantity AS available
+          FROM vanta_inventory
+          WHERE product_id IN (${productIds.map(() => "?").join(",")})`,
+    args: productIds,
+  });
+  for (const row of result.rows) {
+    map.set(Number(row.product_id), Number(row.available ?? 0));
+  }
+  return map;
+}
+
+/** The stock number a card/page must display for one product. */
+async function availableStock(productId: number, fallback: number): Promise<number> {
+  const map = await availableStockMap([productId]);
+  const available = map.get(productId);
+  return available === undefined ? fallback : available;
+}
+
 export async function listProducts({ onlyPublished = true, featuredOnly = false, game }: { onlyPublished?: boolean; featuredOnly?: boolean; game?: ProductGame } = {}): Promise<Product[]> {
   // Expire "New" tags on products older than 3 days (auto-tag: new products
   // get the tag at creation, it is removed automatically after 3 days).
@@ -350,7 +392,12 @@ export async function listProducts({ onlyPublished = true, featuredOnly = false,
   }
   sql += ` ORDER BY is_featured DESC, created_at DESC`;
   const result = await db.execute({ sql, args });
-  return result.rows.map(rowToProduct);
+  const products = result.rows.map(rowToProduct);
+  const available = await availableStockMap(products.map((p) => p.id));
+  return products.map((p) => {
+    const stock = available.get(p.id);
+    return stock === undefined ? p : { ...p, stockQuantity: stock };
+  });
 }
 
 /**
@@ -406,9 +453,19 @@ export async function searchProducts(query: string): Promise<Product[]> {
 
 export async function updateProductStock(productId: number, stockQuantity: number): Promise<void> {
   const db = await getStoreDb();
+  const now = new Date().toISOString();
   await db.execute({
     sql: `UPDATE vanta_products SET stock_quantity = ?, updated_at = ? WHERE id = ?`,
-    args: [stockQuantity, new Date().toISOString(), productId],
+    args: [stockQuantity, now, productId],
+  });
+  // The card reads the inventory ledger — an edit that only touched the
+  // product column left the card showing a number the checkout would not
+  // honour. Upsert so both columns move together.
+  await db.execute({
+    sql: `INSERT INTO vanta_inventory (product_id, stock_quantity, reserved_quantity, version, updated_at)
+          VALUES (?, ?, 0, 1, ?)
+          ON CONFLICT(product_id) DO UPDATE SET stock_quantity = excluded.stock_quantity, version = version + 1, updated_at = excluded.updated_at`,
+    args: [productId, stockQuantity, now],
   });
 }
 

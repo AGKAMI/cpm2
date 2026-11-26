@@ -67,6 +67,50 @@ export function buildPayFastCheckoutUrl(
   return { url: `${baseUrl}?${qs}`, configured: true };
 }
 
+/**
+ * Wallet top-up checkout — the same PayFast EFT flow the product checkout
+ * uses, but the item is store credit. custom_str1 carries "W-<txnId>" so the
+ * ITN webhook routes the payment to the wallet ledger instead of an order.
+ */
+export function buildPayFastTopupUrl(input: {
+  txnId: string;
+  amountCents: number;
+  returnUrl: string;
+  cancelUrl: string;
+  notifyUrl: string;
+}): { url: string; configured: boolean } {
+  if (!isPayFastConfigured()) {
+    return { url: "", configured: false };
+  }
+
+  const params: Record<string, string> = {
+    merchant_id: PAYFAST_MERCHANT_ID,
+    merchant_key: PAYFAST_MERCHANT_KEY,
+    return_url: input.returnUrl,
+    cancel_url: input.cancelUrl,
+    notify_url: input.notifyUrl,
+    amount: (input.amountCents / 100).toFixed(2),
+    item_name: "VANTA GARAGE - Wallet top-up",
+    item_description: `Store credit top-up (txn ${input.txnId})`,
+    custom_str1: `W-${input.txnId}`,
+    name_first: "VANTA",
+    name_last: "Customer",
+    email_address: "checkout@vanta-garage.local",
+  };
+
+  const sortedKeys = Object.keys(params).sort();
+  const dataString = sortedKeys.map((k) => `${k}=${params[k]}`).join("&");
+  const signature = createHash("md5")
+    .update(`${dataString}${PAYFAST_PASSPHRASE}`)
+    .digest("hex");
+
+  const qs = Object.entries({ ...params, signature })
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join("&");
+
+  return { url: `${getPayFastBaseUrl()}?${qs}`, configured: true };
+}
+
 export function getPayFastBaseUrl(): string {
   return process.env.PAYFAST_BASE_URL ?? PAYFAST_BASE;
 }

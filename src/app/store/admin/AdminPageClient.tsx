@@ -633,6 +633,9 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
         <Link href="/store/admin/eft" className="inline-flex items-center gap-2 px-4 py-2 text-[9px] uppercase tracking-[0.15em] whitespace-nowrap cursor-pointer font-bold border-2 border-primary bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
           EFT Review
         </Link>
+        <Link href="/store/admin/wallet" className="inline-flex items-center gap-2 px-4 py-2 text-[9px] uppercase tracking-[0.15em] whitespace-nowrap cursor-pointer font-bold border-2 border-primary bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+          Wallet
+        </Link>
         <Button variant="outline" onClick={() => router.push("/store")} size="sm">
           Back to store
         </Button>

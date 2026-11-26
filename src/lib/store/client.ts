@@ -133,6 +133,26 @@ export const vantaApi = {
     return request<{ products: VantaProduct[]; total: number }>(url);
   },
   categories: () => request<{ categories: VantaCategory[] }>("/categories"),
+  wallet: () =>
+    request<{
+      wallet: { balanceCents: number; currency: string };
+      transactions: {
+        id: string;
+        customerId: string;
+        type: string;
+        amountCents: number;
+        balanceAfterCents: number;
+        status: string;
+        reference: string | null;
+        note: string | null;
+        createdAt: string;
+      }[];
+    }>("/wallet"),
+  topUpWallet: (body: { amountCents: number }) =>
+    request<{ redirectUrl: string; txnId: string }>("/wallet/topup", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   createCategory: (body: { name: string; slug: string; description?: string; sortOrder?: number; imageUrl?: string; game?: "cpm1" | "cpm2" }) =>
     request<{ category: VantaCategory }>("/admin/categories", {
       method: "POST",
@@ -194,7 +214,14 @@ export const vantaApi = {
     return request<{ order: VantaOrder }>(url);
   },
   checkout: (body: unknown) =>
-    request<{ order: VantaOrder; reservedUntil: string; payfastUrl: string | null; starsInvoiceUrl: string | null }>("/checkout", {
+    request<{
+      order: VantaOrder;
+      reservedUntil: string;
+      payfastUrl: string | null;
+      starsInvoiceUrl: string | null;
+      walletPaid?: boolean;
+      walletBalanceCents?: number | null;
+    }>("/checkout", {
       method: "POST",
       body: JSON.stringify(body),
     }),

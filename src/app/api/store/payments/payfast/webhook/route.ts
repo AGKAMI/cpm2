@@ -11,6 +11,7 @@ import { confirmPayment, getOrder, rejectPayment } from "@/lib/store/checkout";
 import { recordPayment } from "@/lib/store/payments";
 import { ledgerEntry } from "@/lib/store/ledger";
 import { notifyCustomer } from "@/lib/store/notifications";
+import { creditWallet, failPendingTxn, getPendingTopup } from "@/lib/store/wallet";
 
 const PAYFAST_MERCHANT_ID = process.env.PAYFAST_MERCHANT_ID;
 const PAYFAST_MERCHANT_KEY = process.env.PAYFAST_MERCHANT_KEY;
@@ -69,6 +70,38 @@ export async function POST(request: Request) {
     ) {
       return fail(new Error("Invalid PayFast signature"));
     }
+
+    // ---- Wallet top-up ITN ------------------------------------------------
+    // custom_str1 "W-<txnId>" marks a store-credit purchase: credit the
+    // ledger instead of confirming a product order. Same signature check and
+    // same amount-must-match rule as an order ITN; a replay finds the
+    // reference already completed and credits nothing.
+    const customRef = body.custom_str1 || body.m_payment_id || "";
+    if (customRef.startsWith("W-")) {
+      const txnId = customRef.slice(2);
+      const pending = await getPendingTopup(txnId);
+      if (!pending) return ok({ received: true }); // unknown or already handled
+      const amountCents = Math.round(Number(body.amount_gross ?? 0) * 100);
+      if (body.payment_status === "COMPLETED") {
+        if (amountCents !== pending.txn.amountCents) {
+          await failPendingTxn(txnId);
+          throw new Error(
+            `Top-up amount mismatch: webhook ${amountCents}¢ ≠ pending ${pending.txn.amountCents}¢ (txn ${txnId})`,
+          );
+        }
+        await creditWallet({
+          customerId: pending.txn.customerId,
+          amountCents: pending.txn.amountCents,
+          type: "topup",
+          reference: `payfast-${body.m_payment_id ?? txnId}`,
+          note: "Wallet top-up (PayFast)",
+        });
+      } else {
+        await failPendingTxn(txnId);
+      }
+      return ok({ received: true });
+    }
+    // ---- Order ITN ---------------------------------------------------------
 
     const orderId = body.custom_str1 || body.m_payment_id;
     if (!orderId) {

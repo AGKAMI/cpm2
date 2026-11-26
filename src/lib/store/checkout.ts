@@ -29,7 +29,7 @@ export type CreateOrderInput = {
   quantity: number;
   amountCents: number;
   currency: string;
-  paymentMethod: "payfast" | "eft" | "stars";
+  paymentMethod: "payfast" | "eft" | "stars" | "wallet";
   playerId: string;
   inGameName: string;
   idempotencyKey: string;

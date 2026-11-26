@@ -21,7 +21,8 @@ import {
   createCustomer,
   linkPlatformIdentity,
 } from "@/lib/store/customers";
-import { createOrder } from "@/lib/store/checkout";
+import { confirmPayment, createOrder, expireReservation } from "@/lib/store/checkout";
+import { creditWallet, debitWallet } from "@/lib/store/wallet";
 import { getProduct } from "@/lib/store/products";
 import { buildPayFastCheckoutUrl } from "@/lib/store/payfast";
 import { createStarsInvoiceLink, starsForCents } from "@/lib/store/stars";
@@ -31,7 +32,7 @@ import type { Customer } from "@/lib/store-types";
 const checkoutSchema = z.object({
   productId: z.coerce.number().int().positive(),
   quantity: z.coerce.number().int().min(1).default(1),
-  paymentMethod: z.enum(["payfast", "eft", "stars"]),
+  paymentMethod: z.enum(["payfast", "eft", "stars", "wallet"]),
   playerId: z.string().min(1, "Player ID is required"),
   inGameName: z.string().min(1, "In-game name is required"),
   idempotencyKey: z.string().min(1),
@@ -51,14 +52,14 @@ async function resolveBuyer(
   request: Request,
   playerId: string,
   inGameName: string,
-  paymentMethod: "eft" | "payfast" | "stars",
+  paymentMethod: "eft" | "payfast" | "stars" | "wallet",
 ): Promise<Customer> {
-  // Telegram auth is only required for Stars payments, which happen inside
-  // Telegram and need the user linked. EFT / PayFast are web flows identified
-  // by Player ID — no Telegram signature needed.
-  let telegramUserId: number | null = null;
-  if (paymentMethod === "stars") {
-    telegramUserId = await assertTelegramAuth(request);
+  // Telegram auth is REQUIRED for Stars (an in-Telegram payment) and for
+  // wallet (store credit lives on the linked customer's account, so a
+  // player-id guest could never have a balance). EFT / PayFast are web flows
+  // identified by Player ID — no Telegram signature needed.
+  if (paymentMethod === "stars" || paymentMethod === "wallet") {
+    const telegramUserId = await assertTelegramAuth(request);
     if (telegramUserId !== null) {
       const linked = await getCustomerByPlatformIdentity("telegram", String(telegramUserId));
       if (linked) return linked.customer;
@@ -66,8 +67,13 @@ async function resolveBuyer(
       await linkPlatformIdentity(created.id, "telegram", String(telegramUserId), "");
       return created;
     }
-    // Stars with no valid Telegram identity -> can't proceed.
-    throw new ApiError(401, "TELEGRAM_AUTH_INVALID", "Telegram signature did not verify — reopen the console from Telegram and try again.");
+    throw new ApiError(
+      401,
+      "TELEGRAM_AUTH_INVALID",
+      paymentMethod === "wallet"
+        ? "Paying with wallet needs your Telegram account — reopen the store from Telegram and try again."
+        : "Telegram signature did not verify — reopen the console from Telegram and try again.",
+    );
   }
   return (await getCustomerByPlayerId(playerId)) ?? await createCustomer({ inGameName, playerId });
 }
@@ -128,6 +134,51 @@ export async function POST(request: Request) {
       });
     }
 
+    // ---- Wallet: pay with in-app credits -----------------------------------
+    // Debit first (the conditional UPDATE only succeeds while the balance
+    // covers the order), then the shared race-safe confirmPayment flips the
+    // order and deducts stock. A failure anywhere down the line refunds the
+    // debit, so a customer is never charged for an order they didn't get.
+    let walletPaid = false;
+    let walletBalanceAfter: number | null = null;
+    if (body.paymentMethod === "wallet") {
+      const debit = await debitWallet({
+        customerId: result.order.customerId,
+        amountCents,
+        type: "order_payment",
+        reference: String(result.order.id),
+        note: `Order ${result.order.id} — ${product.name}`,
+      });
+      if (!debit.ok) {
+        await expireReservation(result.order.id);
+        return fail({
+          status: 400,
+          body: {
+            error: {
+              code: "insufficient_wallet_balance",
+              message: "Your wallet balance is too low for this order. Top up and try again.",
+            },
+          },
+        });
+      }
+      walletBalanceAfter = debit.balanceCents;
+      try {
+        await confirmPayment(String(result.order.id));
+        walletPaid = true;
+      } catch (err) {
+        // Pay the customer back — the order did not go through.
+        await creditWallet({
+          customerId: result.order.customerId,
+          amountCents,
+          type: "refund",
+          reference: `refund-${result.order.id}`,
+          note: `Refund — order ${result.order.id} could not be confirmed`,
+        });
+        await expireReservation(result.order.id);
+        throw err;
+      }
+    }
+
     // A completed checkout IS the identity proof for a web guest: the buyer
     // paid (PayFast/Stars) as this customer. Mint a store-scoped session so
     // their order history reads back without a guessable playerId query
@@ -138,6 +189,8 @@ export async function POST(request: Request) {
       reservedUntil: result.reservedUntil,
       payfastUrl,
       starsInvoiceUrl,
+      walletPaid,
+      walletBalanceCents: walletBalanceAfter,
     }, 201);
     if (!verifySessionToken(readRequestCookie(request, SESSION_COOKIE), "store")) {
       response.cookies.set(

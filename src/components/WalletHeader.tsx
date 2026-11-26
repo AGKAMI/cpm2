@@ -47,6 +47,9 @@ export function WalletHeader() {
     authed?: boolean;
   } | null>(null);
   const [hidden, setHidden] = useState(false);
+  // The REAL wallet balance (store credit). null = unknown/not signed in;
+  // the card renders an honest em dash instead of the old hardcoded 0.00.
+  const [walletCents, setWalletCents] = useState<number | null>(null);
   // "Logged in on X" — where this session actually runs. Read after mount so
   // SSR stays hydration-safe.
   const [platform, setPlatform] = useState<Platform | null>(null);
@@ -71,6 +74,15 @@ export function WalletHeader() {
       })
       .catch(() => {
         /* non-fatal */
+      });
+    vantaApi
+      .wallet()
+      .then((data) => {
+        if (!live) return;
+        setWalletCents(data.wallet.balanceCents);
+      })
+      .catch(() => {
+        if (live) setWalletCents(null);
       });
     return () => {
       live = false;
@@ -142,21 +154,25 @@ export function WalletHeader() {
         <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
           <div className="flex items-baseline gap-3">
             <span className="text-4xl font-bold tabular-nums text-foreground">
-              {hidden ? "••••" : "0.00"}
+              {hidden
+                ? "••••"
+                : walletCents === null
+                  ? "—"
+                  : (walletCents / 100).toFixed(2)}
             </span>
             <span className="text-xs font-bold uppercase tracking-[0.16em] text-ink-soft">ZAR</span>
           </div>
-          {/* Until a stored wallet exists, top-ups are a support request */}
+          {/* A real top-up flow: buy credits via PayFast, spend them at checkout */}
           <Link
-            href="/store/support"
+            href="/store/wallet"
             className="rounded-full bg-gold px-5 py-3 text-xs font-bold uppercase tracking-[0.16em] text-[#14100a] transition-[filter] hover:brightness-110"
           >
             + Add funds
           </Link>
         </div>
         <p className="mt-3 text-[11px] text-ink-faint">
-          No wallet yet — payments run per order (EFT, card or Telegram Stars). Ask support to
-          load balance and it lands here.
+          Store credit — buy it once with EFT, spend it at checkout like any other payment
+          method. Per-order payments (EFT, card, Telegram Stars) still work.
         </p>
       </div>
       )}

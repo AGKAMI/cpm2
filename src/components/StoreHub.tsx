@@ -338,12 +338,12 @@ export function StoreHub({ products }: StoreHubData) {
                         Promoted
                       </span>
                     </div>
-                    <div className="aspect-video w-full overflow-hidden border-b border-border">
+                    <div className="aspect-[4/5] w-full overflow-hidden border-b border-border bg-secondary">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={p.coverUrl ?? ""}
                         alt={p.name}
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-contain"
                         loading="lazy"
                       />
                     </div>

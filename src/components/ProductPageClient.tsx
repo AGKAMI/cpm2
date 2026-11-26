@@ -149,26 +149,49 @@ export function ProductPageClient({
 
       {/* Hero image carousel */}
       <section className="mb-6 px-4">
+        // object-contain in a 16:9 frame shows the product's art in FULL —
+        // the old fixed tall frame + object-cover cropped the poster's sides.
         <div
           ref={carouselRef}
-          className="relative h-[500px] sm:h-[640px] rounded-[28px] overflow-hidden border border-border bg-background"
+          className="relative aspect-video rounded-[28px] overflow-hidden border border-border bg-secondary"
         >
           <div
             className="flex transition-transform duration-500 ease-in-out"
             style={{ transform: `translateX(${translateX}px)` }}
           >
+            {media.length === 0 && (
+              // No media rows for this product: show its cover when it has
+              // one, else an honest placeholder — never a silent empty box.
+              <div className="relative w-full shrink-0 h-full">
+                {product.coverUrl ? (
+                  <Image
+                    src={product.coverUrl}
+                    alt={product.name}
+                    className={`h-full w-full object-contain ${product.stockQuantity === 0 ? "out-of-stock-media" : ""}`}
+                    width={1200}
+                    height={1500}
+                    sizes="(max-width: 768px) 100vw, 900px"
+                    style={{ objectFit: "contain" }}
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-secondary text-2xl font-bold text-ink-faint">
+                    {product.name.charAt(0)}
+                  </div>
+                )}
+              </div>
+            )}
             {media.map((m, i) => (
               <div key={i} className="relative w-full shrink-0 h-full">
                 <Image
                   src={m.publicUrl}
                   alt={product.name}
-                  className={`h-full w-full object-cover ${product.stockQuantity === 0 ? "out-of-stock-media" : ""}`}
+                  className={`h-full w-full object-contain ${product.stockQuantity === 0 ? "out-of-stock-media" : ""}`}
                   loading={i === 0 ? "eager" : "lazy"}
                   priority={i === 0}
                   width={1200}
                   height={1500}
                   sizes="(max-width: 768px) 100vw, 900px"
-                  style={{ objectFit: "cover" }}
+                  style={{ objectFit: "contain" }}
                 />
               </div>
             ))}

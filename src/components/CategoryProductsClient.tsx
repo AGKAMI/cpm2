@@ -50,13 +50,13 @@ export function CategoryProductsClient({
                 >
                   <Link
                     href={`/store/products/${p.id}`}
-                    className="block aspect-[4/3] overflow-hidden border-b border-border bg-secondary"
+                    className="block aspect-[4/5] overflow-hidden border-b border-border bg-secondary"
                   >
                     {p.coverUrl ? (
                       <img
                         src={p.coverUrl}
                         alt={p.name}
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-contain"
                         loading="lazy"
                       />
                     ) : (

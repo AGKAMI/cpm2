@@ -45,16 +45,16 @@ export function ProductGallery({ productId }: { productId: number }) {
   return (
     <div className="grid gap-6 lg:grid-cols-3">
       {/* Main image */}
-      <div className="relative aspect-[4/3] rounded-xl border border-border bg-background overflow-hidden shadow-lg">
+      <div className="relative aspect-[4/5] rounded-xl border border-border bg-secondary overflow-hidden shadow-lg">
         <Image
           src={(activeMedia || media[0]?.publicUrl) || ""}
           alt={product.name}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-contain"
           loading="eager"
           priority
           width={800}
           height={600}
-          style={{ objectFit: "cover" }}
+          style={{ objectFit: "contain" }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
         {/* Corner tags */}

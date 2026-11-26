@@ -129,10 +129,11 @@ export function GameSectionList({
                       </span>
                     </div>
                   )}
-                  <div className="relative aspect-video w-full overflow-hidden border-b border-border bg-secondary">
+                  <div className="relative aspect-[4/5] w-full overflow-hidden border-b border-border bg-secondary">
                     {/* Only products whose image renders reach this list. */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={p.coverUrl ?? ""} alt={p.name} className="h-full w-full object-cover" />
+                    {/* object-contain: the whole poster shows, never cropped */}
+                    <img src={p.coverUrl ?? ""} alt={p.name} className="h-full w-full object-contain" />
                     {soldOut && (
                       <div
                         aria-hidden

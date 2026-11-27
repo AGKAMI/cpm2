@@ -21,6 +21,54 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
+describe("api route auth gates", () => {
+  // Every mutating store API route must pass through one of the known gates.
+  // The console API (accounts/auth/trade) is gated by src/proxy.ts instead.
+  // This locks the class of bug where POST /api/store/media/[productId]
+  // shipped documented "admin only" with no check at all.
+  const GATE_TOKENS = [
+    "requireStoreAdmin",
+    "requireStoreCustomer",
+    "getStoreCustomer",
+    "canAccessOrder",
+    "assertTelegramAuth",
+    "verifyTelegramInitData",
+    "verifySessionToken",
+    "currentStoreUserId",
+    "resolveAdminStatus",
+    "checkDurableRateLimit",
+    "payfastSignature",
+    "CRON_SECRET",
+    "BOT_TOKEN",
+    "WEBHOOK_SECRET",
+    "timingSafeEqual",
+  ];
+  // Intentionally public, each with its own mitigation noted:
+  const PUBLIC_WRITES = new Map<string, string>([
+    ["store/auth/login/route.ts", "credential check + durable rate limit inside the service"],
+    ["store/auth/register/route.ts", "account creation, validated + rate limited"],
+    ["store/auth/logout/route.ts", "clears the caller's own session cookie only"],
+    ["store/telegram/webhook/route.ts", "Telegram secret-token header verified in the handler"],
+    ["store/customers/link-telegram/route.ts", "verification-code flow; the code is the credential"],
+    ["store/customers/link-whatsapp/route.ts", "verification-code flow; the code is the credential"],
+  ]);
+
+  it("every mutating /api/store route references an auth gate", () => {
+    const apiDir = join(appDir, "api");
+    const routes = walk(apiDir).filter((f) => f.endsWith("route.ts"));
+    const offenders: string[] = [];
+    for (const file of routes) {
+      const rel = file.slice(apiDir.length + 1).replace(/\\/g, "/");
+      if (!rel.startsWith("store/")) continue; // console API: proxy-gated
+      const src = readFileSync(file, "utf8");
+      if (!/export async function (POST|PUT|PATCH|DELETE)/.test(src)) continue;
+      if (PUBLIC_WRITES.has(rel)) continue;
+      if (!GATE_TOKENS.some((token) => src.includes(token))) offenders.push(rel);
+    }
+    assert.deepEqual(offenders, [], `mutating store routes with no auth gate: ${offenders.join(", ")}`);
+  });
+});
+
 describe("app structure", () => {
   it("every page route has a sibling loading.tsx skeleton", () => {
     const pages = walk(appDir).filter((f) => f.endsWith("page.tsx"));

@@ -162,6 +162,7 @@ export function ProfileClient({
   }
 
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const verifyPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     let alive = true;

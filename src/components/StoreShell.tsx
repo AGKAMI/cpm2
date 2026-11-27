@@ -52,9 +52,6 @@ export function StoreShell({ children, dock }: StoreShellProps) {
   const pathname = usePathname();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isOwner, setIsOwner] = useState<boolean | null>(null);
-  const [profile, setProfile] = useState<{ photoUrl?: string; displayName?: string; username?: string } | null>(null);
-  const [customerLoggedIn, setCustomerLoggedIn] = useState<boolean>(false);
-  const [loaded, setLoaded] = useState<boolean>(true);
   const { mode: themeMode, setMode: setThemeMode } = useTheme();
 
   // localStorage must NEVER be read during render: the server can't see it,
@@ -87,7 +84,9 @@ export function StoreShell({ children, dock }: StoreShellProps) {
     return window.Telegram.WebApp?.initData ?? "";
   };
 
-  // Combined admin + profile status check.
+  // Admin/owner status check (drives the dock). The profile fetch that used
+  // to ride along here fed the deleted per-page header — nothing renders it
+  // anymore, so the request is gone too: one less call on every store page.
   const refreshStatus = async () => {
     const initData = await getTelegramInitData();
     const headers: HeadersInit = {};
@@ -110,18 +109,6 @@ export function StoreShell({ children, dock }: StoreShellProps) {
       // Keep last-known state.
     }
 
-    try {
-      const data = await vantaApi.profile();
-      if (data.telegramUser) {
-        setProfile({
-          photoUrl: data.telegramUser.photoUrl,
-          displayName: data.telegramUser.displayName,
-          username: data.telegramUser.username,
-        });
-      }
-    } catch {
-      // Profile fetch is non-fatal.
-    }
   };
 
   // Mount + focus + storage: refresh status once, no polling.
@@ -145,19 +132,6 @@ export function StoreShell({ children, dock }: StoreShellProps) {
     return () => clearInterval(t);
   }, [isAdmin, isOwner]);
 
-  // Customer login state via localStorage.
-  useEffect(() => {
-    const checkLogin = () => {
-      if (typeof window !== "undefined") {
-        setCustomerLoggedIn(
-          Boolean(localStorage.getItem("vanta_customer_id")),
-        );
-      }
-    };
-    checkLogin();
-    window.addEventListener("storage", checkLogin);
-    return () => window.removeEventListener("storage", checkLogin);
-  }, []);
 
   // Re-check admin when session flag appears (other tab via storage event,
   // same tab via the explicit vanta-admin-session event from admin login).

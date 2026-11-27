@@ -190,6 +190,12 @@ export const vantaApi = {
       request<{ deleted: boolean }>(`/admin/products?id=${id}`, {
         method: "DELETE",
       }),
+    /** Permanent delete — the API refuses (409) when orders reference the
+     *  product; those can only be hidden. */
+    deleteProductPermanently: (id: number) =>
+      request<{ deleted: boolean; permanent: boolean }>(`/admin/products?id=${id}&permanent=1`, {
+        method: "DELETE",
+      }),
   orders: () => request<{ orders: VantaOrder[] }>("/orders"),
   order: (id: string) => {
     const token = getOrderAccessToken(id);

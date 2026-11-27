@@ -487,6 +487,57 @@ export async function updateProduct(
   return getProduct(productId);
 }
 
+/** How many orders reference this product. Orders snapshot the product name
+ *  at purchase time, but their product_id column is NOT NULL with no cascade —
+ *  it is the one hard link that makes permanent deletion unsafe. */
+export async function countProductOrders(productId: number): Promise<number> {
+  const db = await getStoreDb();
+  const { rows } = await db.execute({
+    sql: `SELECT COUNT(*) AS n FROM vanta_orders WHERE product_id = ?`,
+    args: [productId],
+  });
+  return Number(rows[0]?.n ?? 0);
+}
+
+export type PermanentDeleteResult =
+  | { deleted: true }
+  | { deleted: false; reason: "has_orders"; orderCount: number }
+  | { deleted: false; reason: "not_found" };
+
+/**
+ * Permanently remove a product. Refused when any order references it —
+ * order history (payments, EFT review, delivery) must outlive the catalogue,
+ * so ordered products can only ever be hidden. Child rows are cleared
+ * explicitly (not just via FK cascades, which depend on the connection's
+ * foreign_keys pragma): media, inventory, pricing, wishlist and cart rows
+ * go with the product; promotions and account units keep their rows with
+ * the product link nulled, matching their ON DELETE SET NULL schema.
+ */
+export async function deleteProductPermanently(productId: number): Promise<PermanentDeleteResult> {
+  const product = await getProduct(productId);
+  if (!product) return { deleted: false, reason: "not_found" };
+
+  const orderCount = await countProductOrders(productId);
+  if (orderCount > 0) return { deleted: false, reason: "has_orders", orderCount };
+
+  const db = await getStoreDb();
+  const clear: Array<{ sql: string; args: unknown[] }> = [
+    { sql: `DELETE FROM vanta_product_media WHERE product_id = ?`, args: [productId] },
+    { sql: `DELETE FROM vanta_inventory WHERE product_id = ?`, args: [productId] },
+    { sql: `DELETE FROM vanta_pricing WHERE product_id = ?`, args: [productId] },
+    { sql: `DELETE FROM vanta_wishlist WHERE product_id = ?`, args: [productId] },
+    { sql: `DELETE FROM vanta_cart_items WHERE product_id = ?`, args: [productId] },
+    { sql: `UPDATE vanta_promotions SET product_id = NULL WHERE product_id = ?`, args: [productId] },
+    { sql: `UPDATE vanta_account_units SET product_id = NULL WHERE product_id = ?`, args: [productId] },
+    { sql: `UPDATE vanta_notifications SET related_product_id = NULL WHERE related_product_id = ?`, args: [productId] },
+    { sql: `DELETE FROM vanta_products WHERE id = ?`, args: [productId] },
+  ];
+  for (const stmt of clear) {
+    await db.execute(stmt);
+  }
+  return { deleted: true };
+}
+
 export async function createInventory(productId: number, stockQuantity: number): Promise<Inventory> {
   const db = await getStoreDb();
   const now = new Date().toISOString();

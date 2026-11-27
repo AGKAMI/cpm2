@@ -697,10 +697,9 @@ export default function AdminPage() {
       }
     };
 
-    // Products always had a delete route and a client method but no control
-    // anywhere in the UI — nothing called vantaApi.deleteProduct, so a product
-    // could never be removed once created. The API soft-deletes (unpublish +
-    // unavailable + stock 0) to protect order history, so say "hide".
+    // The DELETE route soft-deletes (unpublish + unavailable + stock 0) to
+    // protect order history, so this control honestly says "hide". A real
+    // permanent delete lives next to it (handleProductPermanentDelete).
     const handleProductDelete = async (id: number) => {
       if (
         !window.confirm(
@@ -712,6 +711,26 @@ export default function AdminPage() {
       try {
         await vantaApi.deleteProduct(id);
         setMsg("Product hidden from the store.");
+        await load();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to delete product.");
+      }
+    };
+
+    // Permanent delete: gone from the catalogue for good, media/cart/
+    // wishlist rows with it. The API refuses when orders reference the
+    // product — those can only be hidden, and the error says so plainly.
+    const handleProductPermanentDelete = async (p: VantaProduct) => {
+      if (
+        !window.confirm(
+          `Permanently delete "${p.name}"? This cannot be undone. If any order references it, the delete will be refused and you can hide it instead.`,
+        )
+      )
+        return;
+      setError(null);
+      try {
+        await vantaApi.deleteProductPermanently(p.id);
+        setMsg("Product permanently deleted.");
         await load();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to delete product.");
@@ -795,7 +814,7 @@ export default function AdminPage() {
                         {([
                           { key: "categories", label: "Categories", hint: "Create, rename and organise store categories.", count: categories.length, unit: categories.length === 1 ? "category" : "categories" },
                           { key: "promotions", label: "Promotions", hint: "Percentage, fixed-amount and flash drop campaigns.", count: promotions.length, unit: promotions.length === 1 ? "promotion" : "promotions" },
-                          { key: "catalogue", label: "Catalogue", hint: "Hide, edit, price and stock.", count: products.length, unit: products.length === 1 ? "product" : "products" },
+                          { key: "catalogue", label: "Catalogue", hint: "Edit, hide or delete. Price and stock.", count: products.length, unit: products.length === 1 ? "product" : "products" },
                         ] as const).map((card) => (
                           <button
                             key={card.key}
@@ -1925,6 +1944,15 @@ export default function AdminPage() {
                             className="border-destructive/60 text-destructive hover:bg-destructive/10"
                           >
                             Hide
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => void handleProductPermanentDelete(p)}
+                            aria-label={`Permanently delete ${p.name}`}
+                            className="border-destructive bg-destructive/10 font-bold text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                          >
+                            Delete
                           </Button>
                           </div>
                         </div>

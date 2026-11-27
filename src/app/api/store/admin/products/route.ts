@@ -14,6 +14,7 @@ import { getStoreDb } from "@/lib/store-db";
 import {
   createProduct,
   createMedia,
+  deleteProductPermanently,
   getProduct,
   listProducts,
   updateProduct,
@@ -259,6 +260,27 @@ export async function DELETE(request: Request) {
     const product = await getProduct(Number(id));
     if (!product) {
       return fail({ status: 404, body: { error: { code: "not_found", message: "Product not found." } } });
+    }
+    // Permanent delete (?permanent=1): removes the product and its child
+    // rows for good. Refused with 409 when orders reference the product —
+    // order history must outlive the catalogue, so those stay hide-only.
+    if (url.searchParams.get("permanent") === "1") {
+      const result = await deleteProductPermanently(Number(id));
+      if (!result.deleted && result.reason === "has_orders") {
+        return fail({
+          status: 409,
+          body: {
+            error: {
+              code: "product_has_orders",
+              message: `This product has ${result.orderCount} order${result.orderCount === 1 ? "" : "s"} attached, so it can't be permanently deleted. Hide it instead — order history stays intact.`,
+            },
+          },
+        });
+      }
+      if (!result.deleted) {
+        return fail({ status: 404, body: { error: { code: "not_found", message: "Product not found." } } });
+      }
+      return ok({ deleted: true, permanent: true });
     }
     // Soft delete: unpublish and mark as deleted (protects order history references)
     // In future, we can add a deletedAt column for true soft delete

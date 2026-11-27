@@ -144,12 +144,10 @@ export default function ConfigPage() {
             <ConfigRow
               key={entry.key}
               entry={entry}
-              isEditing={editingKey === entry.key}
               onEdit={() => {
                 setEditingKey(entry.key);
                 setEditValue(entry.value);
               }}
-              onSave={(value) => saveConfig(entry.key, value)}
               onDelete={deleteConfig}
             />
           ))}
@@ -182,15 +180,11 @@ export default function ConfigPage() {
 
 function ConfigRow({
   entry,
-  isEditing,
   onEdit,
-  onSave,
   onDelete,
 }: {
   entry: ConfigEntry;
-  isEditing: boolean;
   onEdit: () => void;
-  onSave: (value: string) => void;
   onDelete: (key: string) => void;
 }) {
   const updatedDisplay = entry.updatedAt ? new Date(entry.updatedAt).toLocaleDateString() : "—";
@@ -209,35 +203,23 @@ function ConfigRow({
           {entry.type}{entry.isSensitive ? " • sensitive" : ""}
         </span>
       </div>
-      {isEditing ? (
-        <div className="flex gap-2">
-          <TextInput
-            value={entry.value}
-            onChange={(e) => onSave(e.target.value)}
-            className="flex-1"
-          />
-          <Button variant="outline" size="sm" onClick={() => onSave(entry.value)}>
-            Save
+      {/* The row itself never edits inline: this used to render a second,
+          broken editor next to ModalEdit (controlled by the saved value,
+          saving on every keystroke, Cancel re-opening). Edit opens the
+          modal below, which is the one correctly wired editor. */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-foreground break-all">
+          {entry.isSensitive ? "••••••••" : entry.value}
+        </p>
+        <div className="flex gap-1">
+          <Button variant="outline" size="sm" onClick={onEdit}>
+            Edit
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => onEdit()}>
-            Cancel
+          <Button variant="outline" size="sm" onClick={() => onDelete(entry.key)}>
+            Delete
           </Button>
         </div>
-      ) : (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-foreground break-all">
-            {entry.isSensitive ? "••••••••" : entry.value}
-          </p>
-          <div className="flex gap-1">
-            <Button variant="outline" size="sm" onClick={onEdit}>
-              Edit
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => onDelete(entry.key)}>
-              Delete
-            </Button>
-          </div>
-        </div>
-      )}
+      </div>
       <p className="text-[10px] text-muted-foreground mt-1">
         Updated {updatedDisplay}
       </p>

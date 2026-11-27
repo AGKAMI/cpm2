@@ -418,6 +418,19 @@ export async function runStoreMigrations(storeArg?: TursoHttpClient): Promise<vo
     // Column already exists — safe to ignore
   }
 
+  // Migration: vanta_appointments.updated_at. Two writers (delivery-evidence
+  // updates and the customer confirm route) set it, but the original DDL
+  // never declared it — every second evidence upload and every customer
+  // delivery confirmation died with "no such column".
+  try {
+    await store.execute({
+      sql: `ALTER TABLE vanta_appointments ADD COLUMN updated_at TEXT`,
+      args: [],
+    });
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
   // Migration: add last_seen to vanta_admins (admin online/offline presence).
   try {
     await store.execute({

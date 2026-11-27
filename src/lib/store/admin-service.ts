@@ -89,8 +89,8 @@ export async function addAdmin(
   });
   if (existing.rows.length > 0) {
     await db.execute({
-      sql: `UPDATE vanta_admins SET is_active = 1, role = 'admin', added_by = ?, added_at = ? WHERE telegram_user_id = ?`,
-      args: [addedBy, now, telegramUserId],
+      sql: `UPDATE vanta_admins SET is_active = 1, role = 'admin', telegram_username = ?, nickname = ?, added_by = ?, added_at = ? WHERE telegram_user_id = ?`,
+      args: [telegramUsername, nickname, addedBy, now, telegramUserId],
     });
     return rowToAdmin({
       id: Number(existing.rows[0].id),
@@ -114,6 +114,7 @@ export async function addAdmin(
     id,
     telegram_user_id: telegramUserId,
     telegram_username: telegramUsername,
+    nickname,
     role: "admin",
     added_by: addedBy,
     added_at: now,

@@ -323,7 +323,8 @@ CREATE TABLE IF NOT EXISTS vanta_appointments (
   delivery_evidence TEXT,
   customer_confirmed INTEGER NOT NULL DEFAULT 0,
   missed_count    INTEGER NOT NULL DEFAULT 0,
-  created_at      TEXT    NOT NULL
+  created_at      TEXT    NOT NULL,
+  updated_at      TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_vanta_platform_identities_platform_user

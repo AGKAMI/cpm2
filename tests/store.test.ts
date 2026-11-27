@@ -266,6 +266,13 @@ describe("fresh schema · order product snapshot", () => {
     assert.match(createTableBlock("vanta_orders"), /product_name\s+TEXT/);
     assert.doesNotMatch(createTableBlock("vanta_customers"), /product_name/);
   });
+
+  it("declares updated_at on appointments (two writers set it)", () => {
+    // setDeliveryEvidence and the delivery-confirm route both UPDATE
+    // vanta_appointments.updated_at; the column missing from the DDL made
+    // every second evidence upload and every customer confirmation fail.
+    assert.match(createTableBlock("vanta_appointments"), /updated_at\s+TEXT/);
+  });
 });
 
 describe("payfast · shared signature", () => {

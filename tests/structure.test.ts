@@ -22,7 +22,6 @@ function walk(dir: string, out: string[] = []): string[] {
 }
 
 describe("api route auth gates", () => {
-  // Every mutating store API route must pass through one of the known gates.
   // The console API (accounts/auth/trade) is gated by src/proxy.ts instead.
   // This locks the class of bug where POST /api/store/media/[productId]
   // shipped documented "admin only" with no check at all.
@@ -66,6 +65,19 @@ describe("api route auth gates", () => {
       if (!GATE_TOKENS.some((token) => src.includes(token))) offenders.push(rel);
     }
     assert.deepEqual(offenders, [], `mutating store routes with no auth gate: ${offenders.join(", ")}`);
+  });
+});
+
+describe("store page/API contract", () => {
+  it("the appointments page's GET endpoint exists", () => {
+    // The page fetches GET /api/store/appointments; the route only ever
+    // had POST, so the page silently showed "No upcoming deliveries".
+    const route = readFileSync(
+      join(appDir, "api", "store", "appointments", "route.ts"),
+      "utf8",
+    );
+    assert.match(route, /export async function GET/);
+    assert.match(route, /export async function POST/);
   });
 });
 

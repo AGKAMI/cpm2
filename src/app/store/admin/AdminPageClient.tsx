@@ -824,7 +824,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
                     setPromotionConverterError("Failed to read image file.");
                   }
                 }} />
-                <div onClick={() => promoFileInputRef.current?.click()} className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${promotionConverterFile ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}>
+                <div onClick={() => promoFileInputRef.current?.click()} className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${promotionConverterFile ? "border-emerald-500 text-emerald-400 bg-emerald-500/10" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}>
                   {promotionConverterFile ? (
                     <>
                       <span className="text-xs font-bold text-emerald-500">✓</span>
@@ -928,7 +928,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
                               setPromotionConverterError("Failed to read image file.");
                             }
                           }} />
-                          <div onClick={() => promoFileInputRef.current?.click()} className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${promotionConverterFile ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}>
+                          <div onClick={() => promoFileInputRef.current?.click()} className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${promotionConverterFile ? "border-emerald-500 text-emerald-400 bg-emerald-500/10" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}>
                             {promotionConverterFile ? (
                               <>
                                 <span className="text-xs font-bold text-emerald-500">✓</span>
@@ -1047,7 +1047,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
                     setProductConverterUploading(false);
                   }
                 }} />
-                <div onClick={() => fileInputRef.current?.click()} className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${productConverterUploading ? "border-amber-500 text-amber-500 bg-amber-50" : productConverterFile ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}>
+                <div onClick={() => fileInputRef.current?.click()} className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${productConverterUploading ? "border-amber-500 text-amber-400 bg-amber-500/10" : productConverterFile ? "border-emerald-500 text-emerald-400 bg-emerald-500/10" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}>
                   {productConverterUploading ? (
                     <>
                       <span className="text-xs font-bold animate-pulse">⟳</span>
@@ -1345,8 +1345,8 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
                               {KIND_SHORT[p.kind ?? "car"]}
                             </span>
                           </td>
-                          <td className="px-3 py-2 font-medium text-foreground">
-                            <span className="line-clamp-1">{p.name}</span>
+                          <td className="px-3 py-2 font-medium text-foreground min-w-[140px]">
+                            <span className="line-clamp-2">{p.name}</span>
                             {p.promoPriceCents != null && (
                               <span className="ml-2 promo-pill" style={{ ["--pill-hue" as string]: p.promo?.pillColor ?? "#d4af4f" }}>
                                 Promoted
@@ -1417,7 +1417,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
                               setProductConverterError("Failed to read image file.");
                             }
                           }} />
-                          <div onClick={() => fileInputRef.current?.click()} className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${productConverterUploading ? "border-amber-500 text-amber-500 bg-amber-50" : productConverterFile ? "border-emerald-500 text-emerald-500 bg-emerald-50" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}>
+                          <div onClick={() => fileInputRef.current?.click()} className={`flex items-center gap-2 w-full border border-input rounded-md bg-background px-3 py-2 text-sm ${productConverterUploading ? "border-amber-500 text-amber-400 bg-amber-500/10" : productConverterFile ? "border-emerald-500 text-emerald-400 bg-emerald-500/10" : "border-border text-foreground hover:border-primary transition-colors"} cursor-pointer`}>
                             {productConverterUploading ? (
                               <>
                                 <span className="text-xs font-bold animate-pulse">⟳</span>

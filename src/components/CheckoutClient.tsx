@@ -277,7 +277,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
           )}
         </div>
         <h2 className="text-sm font-medium text-foreground mb-1">{product.name}</h2>
-        <p className="text-[11px] text-muted-foreground mb-3">Custom · Purple · Coupe</p>
+        
         <div className="flex items-baseline gap-2 flex-wrap">
           {onSale && (
             <span className="num text-sm text-muted-foreground line-through">{formatPrice(product.basePriceCents, product.currency)}</span>
@@ -375,7 +375,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
               <div className="flex flex-col gap-3">
                 <Uploader
                   id="checkout-proof-upload"
-                  accept=".png,.jpg,.jpeg,.pdf"
+                  accept=".png,.jpg,.jpeg,.webp"
                   error={attempted && !proofFileName}
                   fileName={proofFileName || null}
                   label="Click to upload proof of payment"
@@ -388,11 +388,11 @@ export function CheckoutClient({ productId }: { productId: number }) {
                 {proofFileName && (
                   <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
                     <span className="num">{proofFileName}</span>
-                    <span>PNG, JPG or PDF · Max 5MB</span>
+                    <span>PNG, JPG or WEBP · Max 5MB</span>
                   </div>
                 )}
                 {!proofFileName && (
-                  <p className="text-[10px] text-muted-foreground">PNG, JPG or PDF · Max 5MB</p>
+                  <p className="text-[10px] text-muted-foreground">PNG, JPG or WEBP · Max 5MB</p>
                 )}
                 {proofError && (
                   <p className="text-[10px] text-destructive mt-1">{proofError}</p>

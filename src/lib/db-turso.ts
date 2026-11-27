@@ -387,6 +387,12 @@ export async function createTursoClient(): Promise<TursoHttpClient> {
 
     return client;
   })();
+  g.__cpm2TursoHttp.catch(() => {
+    // A failed boot (transient network, config not yet injected) must not
+    // poison the process: drop the rejected promise so the next caller
+    // retries instead of re-throwing the same error forever.
+    g.__cpm2TursoHttp = undefined;
+  });
   return g.__cpm2TursoHttp;
 }
 

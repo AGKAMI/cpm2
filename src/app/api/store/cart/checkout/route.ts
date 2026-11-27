@@ -99,14 +99,16 @@ export async function POST(request: Request) {
     const playerId = normalizedPlayerId;
     const inGameName = body.inGameName.trim();
     const orders = [];
-    // Promotions are game-scoped; a cart item carries no game column, so load
-    // both maps once and look the product up by id. This is the same price the
-    // single-product checkout and the catalogue card quote.
+    // Promotions are game-scoped; each cart item now carries its product's
+    // game, so consult that game's map exactly like the single-product
+    // checkout does. (Consulting cpm1 first could apply a CPM1-scoped promo
+    // to a CPM2 product the storefront never discounted.)
     const [cpm1Promos, cpm2Promos] = await Promise.all([
       productPromotionMap("cpm1"),
       productPromotionMap("cpm2"),
     ]);
-    const promoFor = (productId: number) => cpm1Promos.get(productId) ?? cpm2Promos.get(productId);
+    const promoFor = (item: { productId: number; game: string }) =>
+      (item.game === "cpm1" ? cpm1Promos : cpm2Promos).get(item.productId);
 
     for (const item of cart.items) {
       // Include the cart row's last update so adding the same product again
@@ -119,7 +121,7 @@ export async function POST(request: Request) {
         quantity: item.quantity,
         // Product sale + any live promotion, exactly like single checkout and
         // the price shown on the card.
-        amountCents: effectiveUnitPriceCents(item, promoFor(item.productId)) * item.quantity,
+        amountCents: effectiveUnitPriceCents(item, promoFor(item)) * item.quantity,
         currency: item.currency,
         paymentMethod: body.paymentMethod,
         playerId,
@@ -155,7 +157,7 @@ export async function POST(request: Request) {
     }
 
     const subtotalCents = cart.items.reduce(
-      (sum, i) => sum + effectiveUnitPriceCents(i, promoFor(i.productId)) * i.quantity,
+      (sum, i) => sum + effectiveUnitPriceCents(i, promoFor(i)) * i.quantity,
       0,
     );
 

@@ -20,6 +20,9 @@ export type CartItem = {
   stockQuantity: number;
   quantity: number;
   exclusivity: string;
+  /** The product's own game — promotions are game-scoped, so checkout must
+   *  consult this game's map, never "cpm1 first". */
+  game: string;
   addedAt: string;
   updatedAt: string;
   /** Effective promotional unit price when a live promotion is attached. */
@@ -68,6 +71,7 @@ export async function getCart(customerId: number): Promise<CartSummary> {
     stockQuantity: Number(row.stock_quantity ?? 0),
     quantity: Math.max(1, Number(row.quantity ?? 1)),
     exclusivity: String(row.exclusivity ?? "standard"),
+    game: String(row.game ?? "cpm2"),
     addedAt: String(row.created_at ?? ""),
     updatedAt: String(row.updated_at ?? row.created_at ?? ""),
     // Same live promotion the checkout charges. Without this the cart showed

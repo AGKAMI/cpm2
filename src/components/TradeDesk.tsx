@@ -165,7 +165,7 @@ export function TradeDesk({ game = "cpm2" }: { game?: GameType }) {
         ) : (
           <ul className="flex flex-col gap-1.5">
             {side.cars.map(({ code, qty }, index) => {
-              const car = carByCode(code, "cpm2");
+              const car = carByCode(code, game);
               const entry = prices.get(code);
               const unpriced = !entry;
               return (
@@ -284,7 +284,7 @@ export function TradeDesk({ game = "cpm2" }: { game?: GameType }) {
             <circle cx="12" cy="12" r="9" />
             <path d="M5 12h14M12 5v14" />
           </svg>
-          <span className="label-caps text-[14px] font-bold tracking-wider">CPM2 · Trade Calculator</span>
+          <span className="label-caps text-[14px] font-bold tracking-wider">{game.toUpperCase()} · Trade Calculator</span>
         </div>
       </div>
 

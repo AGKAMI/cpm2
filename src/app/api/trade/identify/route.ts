@@ -16,14 +16,17 @@ export const dynamic = "force-dynamic";
 const GEMINI_ENDPOINT =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
-const PROMPT = `This is a screenshot from Car Parking Multiplayer 2 (CPM2), a mobile car game.
+function promptFor(game: "cpm1" | "cpm2"): string {
+  const gameName = game === "cpm1" ? "Car Parking Multiplayer (CPM1)" : "Car Parking Multiplayer 2 (CPM2)";
+  const label = game.toUpperCase();
+  return `This is a screenshot from ${gameName}, a mobile car game.
 Identify the highlighted/centred car - not background traffic or UI icons.
 Reply with JSON only: {"carName": "<the car's exact displayed name>"}.
 Rules:
-- Use the name exactly as it appears in CPM2 (make + model + generation, e.g. "VOLKSWAGEN GOLF MK7 GTI", not "MK2" or "MK6").
+- Use the name exactly as it appears in ${label} (make + model + generation, e.g. "VOLKSWAGEN GOLF MK7 GTI", not "MK2" or "MK6").
 - Do not invent generations or trims not shown.
-- CPM2 has a Golf MK7 GTI (code 113) and a Golf MK2 GTI (code 157) - nothing in between.
-- If several cars are visible, pick the most prominent one.`;
+${game === "cpm2" ? "- CPM2 has a Golf MK7 GTI (code 113) and a Golf MK2 GTI (code 157) - nothing in between.\n" : ""}- If several cars are visible, pick the most prominent one.`;
+}
 
 type GeminiResponse = {
   candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
@@ -62,7 +65,7 @@ export async function POST(request: Request) {
           contents: [
             {
               parts: [
-                { text: PROMPT },
+                { text: promptFor(input.game) },
                 { inline_data: { mime_type: input.mimeType, data: input.imageBase64 } },
               ],
             },
@@ -103,7 +106,7 @@ export async function POST(request: Request) {
       throw new ApiError(502, "GEMINI_FAILED", "Gemini could not read a car name from that screenshot.");
     }
 
-    return ok({ carName, matches: matchCarName(carName, "cpm2", 6) });
+    return ok({ carName, matches: matchCarName(carName, input.game, 6) });
   } catch (err) {
     return fail(err);
   }

@@ -94,6 +94,7 @@ export function TradeCarPickerModal({
       const result = await api.identifyCar({
         imageBase64: dataUrl.split(",")[1] ?? "",
         mimeType: file.type,
+        game,
       });
       setGeminiName(result.carName);
       setMatches(result.matches);
@@ -155,7 +156,7 @@ export function TradeCarPickerModal({
       open={open}
       onClose={handleClose}
       title="Add a car to the deal"
-      subtitle="Search the CPM2 catalog, or let Gemini read a screenshot - you confirm the match either way."
+      subtitle={`Search the ${game.toUpperCase()} catalog, or let Gemini read a screenshot - you confirm the match either way.`}
       width="max-w-2xl"
       footer={
         scanning
@@ -196,7 +197,7 @@ export function TradeCarPickerModal({
           <>
             <div>
               <label htmlFor="trade-car-search" className="label-caps">
-                Search the CPM2 catalog
+                Search the {game.toUpperCase()} catalog
               </label>
               <div className="relative mt-1.5">
                 <svg
@@ -222,7 +223,7 @@ export function TradeCarPickerModal({
                 />
               </div>
               <p className="num mt-1.5 text-[10px] text-ink-faint">
-                {results.length} of {catalogSize} CPM2 codes
+                {results.length} of {catalogSize} {game.toUpperCase()} codes
               </p>
             </div>
 

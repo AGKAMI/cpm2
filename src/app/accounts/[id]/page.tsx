@@ -11,6 +11,7 @@ import { ActivityFeed } from "@/components/ActivityFeed";
 import { GaragePanel } from "@/components/GaragePanel";
 import { TrophyCabinet } from "@/components/TrophyCabinet";
 import { PageHeading } from "@/components/PageHeading";
+import { ImageLightbox } from "@/components/ImageLightbox";
 import { Button } from "@/components/ui/Button";
 import { Uploader } from "@/components/ui/Uploader";
 import { useToast } from "@/components/ui/Toaster";
@@ -45,6 +46,9 @@ export default function AccountPage() {
     uploadedAt: string;
   }>>([]);
   const [uploading, setUploading] = useState(false);
+  // In-app image viewer: tapping a photo opens it here (swipe/arrows to
+  // move between photos) instead of kicking out to a new browser tab.
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   // Direct ref to this section's file input — the button used to find it with
   // a document-wide querySelector, which silently breaks if any other file
   // input is ever added higher in the DOM.
@@ -311,19 +315,25 @@ export default function AccountPage() {
         </div>
       ) : (
         <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {images.map((img) => (
+          {images.map((img, index) => (
             <div
               key={img.id}
               className="relative rounded-[16px] overflow-hidden border border-ink bg-background"
             >
-              <img
-                src={img.imageUrl}
-                alt="Account image"
-                className="w-full h-32 object-cover cursor-pointer"
-                onClick={() => window.open(img.imageUrl, "_blank")}
-              />
+              <button
+                type="button"
+                onClick={() => setViewerIndex(index)}
+                aria-label={`View image ${index + 1} of ${images.length}`}
+                className="block w-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-racing"
+              >
+                <img
+                  src={img.imageUrl}
+                  alt="Account image"
+                  className="w-full h-32 object-cover"
+                />
+              </button>
               {img.isCover && (
-                <span className="absolute top-2 left-2 bg-ink px-1.5 py-0.5 rounded text-[10px] font-bold text-background">
+                <span className="pointer-events-none absolute top-2 left-2 bg-ink px-1.5 py-0.5 rounded text-[10px] font-bold text-background">
                   Cover
                 </span>
               )}
@@ -352,6 +362,17 @@ export default function AccountPage() {
         </div>
       )}
     </section>
+
+    <ImageLightbox
+      images={images.map((img) => ({
+        src: img.imageUrl,
+        alt: "Account image",
+        badge: img.isCover ? "Cover" : undefined,
+      }))}
+      index={viewerIndex}
+      onClose={() => setViewerIndex(null)}
+      onIndexChange={setViewerIndex}
+    />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <section className="panel rounded-[20px] p-5 lg:col-span-2 min-w-0">

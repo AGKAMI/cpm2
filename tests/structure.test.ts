@@ -81,6 +81,19 @@ describe("store page/API contract", () => {
   });
 });
 
+describe("store page/API contract", () => {
+  it("the profile credentials endpoint exists", () => {
+    // ProfileClient has always PATCHed /api/store/auth/credentials; the
+    // route never existed, so credential changes 404'd silently.
+    const route = readFileSync(
+      join(appDir, "api", "store", "auth", "credentials", "route.ts"),
+      "utf8",
+    );
+    assert.match(route, /export async function PATCH/);
+    assert.match(route, /getStoreCustomer/);
+  });
+});
+
 describe("app structure", () => {
   it("every page route has a sibling loading.tsx skeleton", () => {
     const pages = walk(appDir).filter((f) => f.endsWith("page.tsx"));

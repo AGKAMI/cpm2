@@ -172,6 +172,7 @@ export function ProfileClient({
     return () => {
       alive = false;
       if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+      if (verifyPollRef.current) clearInterval(verifyPollRef.current);
     };
   }, []);
 
@@ -496,12 +497,20 @@ export function ProfileClient({
       const data = await res.json();
       setVerificationId(data.verificationId);
       setVerificationStage("sending");
-      // Start polling after a short delay
+      // Start polling after a short delay. The id is passed explicitly —
+      // reading the `verificationId` state here would capture the
+      // pre-setState (null) value, so the first poll used to silently
+      // no-op and the link was never confirmed no matter what the user
+      // tapped in Telegram.
       setTimeout(() => {
         setVerificationStage("pending");
         setVerificationCountdown(120);
         startCountdown();
-        pollLinkVerification();
+        void pollLinkVerification(data.verificationId);
+        if (verifyPollRef.current) clearInterval(verifyPollRef.current);
+        verifyPollRef.current = setInterval(() => {
+          void pollLinkVerification(data.verificationId);
+        }, 3000);
       }, 1500);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to start verification.";
@@ -512,10 +521,17 @@ export function ProfileClient({
     }
   };
 
-  const pollLinkVerification = async () => {
-    if (!verificationId) return;
+  const stopVerifyPoll = () => {
+    if (verifyPollRef.current) {
+      clearInterval(verifyPollRef.current);
+      verifyPollRef.current = null;
+    }
+  };
+
+  const pollLinkVerification = async (id: number) => {
+    if (!id) return;
     try {
-      const res = await fetch(`/api/store/customers/link-telegram-check?verificationId=${verificationId}`, {
+      const res = await fetch(`/api/store/customers/link-telegram-check?verificationId=${id}`, {
         credentials: "include",
       });
       if (!res.ok) return;
@@ -523,6 +539,7 @@ export function ProfileClient({
       if (data.status === "confirmed") {
         setVerificationStage("confirmed");
         if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+        stopVerifyPoll();
         setLinkTelegramOpen(false);
         setTelegramIdInput("");
         setLinkPreview(null);
@@ -532,6 +549,7 @@ export function ProfileClient({
       } else if (data.status === "rejected" || data.status === "expired") {
         setVerificationStage(data.status);
         if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+        stopVerifyPoll();
       }
     } catch {
       // Non-fatal, keep polling
@@ -555,6 +573,7 @@ export function ProfileClient({
   const cancelLinkVerification = () => {
     if (pollTimerRef.current) clearInterval(pollTimerRef.current);
     pollTimerRef.current = null;
+    stopVerifyPoll();
     setVerificationStage("input");
     setVerificationId(null);
     setLinkPreview(null);

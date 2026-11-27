@@ -55,7 +55,7 @@ export default function AdminDeliveriesPage() {
   async function verifyDelivery(appointmentId: string) {
     if (!window.confirm("Mark this delivery as verified?")) return;
     try {
-      const res = await fetch(`/api/store/admin/orders/${appointmentId}/delivery-evidence`, {
+      const res = await fetch(`/api/store/admin/appointments/${appointmentId}/verify`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

@@ -94,6 +94,36 @@ describe("store page/API contract", () => {
   });
 });
 
+describe("store page/API contract", () => {
+  it("the admin deliveries verify endpoint exists", () => {
+    // The deliveries page verifies by APPOINTMENT id; it used to POST it
+    // at the order delivery-evidence route (order id + evidence body),
+    // so verifying a delivery could only ever 400/404.
+    const route = readFileSync(
+      join(appDir, "api", "store", "admin", "appointments", "[id]", "verify", "route.ts"),
+      "utf8",
+    );
+    assert.match(route, /export async function POST/);
+    assert.match(route, /requireStoreAdmin/);
+    const page = readFileSync(
+      join(appDir, "store", "admin", "deliveries", "page.tsx"),
+      "utf8",
+    );
+    assert.ok(page.includes("/api/store/admin/appointments/${appointmentId}/verify"));
+  });
+
+  it("admin dashboard alert links target real pages", () => {
+    // payment_rejected alerts carry an order id; there is no
+    // /store/admin/orders/[id] page — the order page is /store/orders/[id].
+    const page = readFileSync(
+      join(appDir, "store", "admin", "dashboard", "page.tsx"),
+      "utf8",
+    );
+    assert.ok(!page.includes("/store/admin/orders/"));
+    assert.ok(page.includes("/store/orders/${selectedAlert.entityId}"));
+  });
+});
+
 describe("app structure", () => {
   it("every page route has a sibling loading.tsx skeleton", () => {
     const pages = walk(appDir).filter((f) => f.endsWith("page.tsx"));

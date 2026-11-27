@@ -223,7 +223,7 @@ export default function AdminDashboardPage() {
                 Dismiss
               </Button>
               {selectedAlert.type === "payment_rejected" && (
-                <Link href={`/store/admin/orders/${selectedAlert.entityId}`}>
+                <Link href={`/store/orders/${selectedAlert.entityId}`}>
                   <Button variant="primary">Review Order</Button>
                 </Link>
               )}

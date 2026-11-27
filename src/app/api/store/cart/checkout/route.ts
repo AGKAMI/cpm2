@@ -86,6 +86,16 @@ export async function POST(request: Request) {
         "Cart checkout currently supports EFT only. Check out PayFast items one at a time.",
       );
     }
+    // Stars settle one invoice per order inside Telegram; this route never
+    // returns an invoice URL, so a Stars "checkout" here created unpaid
+    // orders with no way to pay them. Refuse it like multi-item PayFast.
+    if (body.paymentMethod === "stars") {
+      throw new ApiError(
+        400,
+        "STARS_CART_UNSUPPORTED",
+        "Telegram Stars is one vehicle at a time. Check out Stars items from their product page.",
+      );
+    }
     // PayFast and Stars settle in ZAR; an order labelled in another currency
     // would be charged at a ZAR rate while its audit trail says otherwise.
     if (body.paymentMethod !== "eft" && cart.items.some((i) => (i.currency || "ZAR").toUpperCase() !== "ZAR")) {

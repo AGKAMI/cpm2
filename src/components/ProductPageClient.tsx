@@ -321,16 +321,27 @@ export function ProductPageClient({
                 inline and collapses to line-height (21px), so the 48px Button
                 overflows its own clickable box and the hit area misses the
                 visible button. */}
-            <Link href={`/store/checkout/${product.id}`} className="block w-full">
+            {product.stockQuantity === 0 ? (
               <Button
                 variant="primary"
                 className="w-full h-12 text-lg font-bold"
                 style={{ backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }}
-                disabled={product.stockQuantity === 0 || checkoutBusy}
+                disabled
               >
-                {checkoutBusy ? "Processing…" : product.stockQuantity === 0 ? "Sold out" : "Buy now"}
+                Sold out
               </Button>
-            </Link>
+            ) : (
+              <Link href={`/store/checkout/${product.id}`} className="block w-full">
+                <Button
+                  variant="primary"
+                  className="w-full h-12 text-lg font-bold"
+                  style={{ backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }}
+                  disabled={checkoutBusy}
+                >
+                  {checkoutBusy ? "Processing…" : "Buy now"}
+                </Button>
+              </Link>
+            )}
             <button
               type="button"
               onClick={(e) => {

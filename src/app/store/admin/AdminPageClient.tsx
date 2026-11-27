@@ -32,6 +32,18 @@ type AdminPageClientProps = {
   promotions: VantaPromotion[];
 };
 
+/** Product type labels — the admin speaks in cars / mods / accounts. */
+const KIND_LABELS: Record<"car" | "service" | "account", string> = {
+  car: "Car",
+  service: "Mod / service",
+  account: "Account",
+};
+const KIND_SHORT: Record<"car" | "service" | "account", string> = {
+  car: "CAR",
+  service: "MOD",
+  account: "ACC",
+};
+
 type ProductForm = {
   cpm2CarCode: string;
   imageUrl: string;
@@ -48,6 +60,9 @@ type ProductForm = {
   isPublished: boolean;
   categoryId: string;
   game: "cpm2" | "cpm1";
+  /** Product TYPE — car / service (a mod) / account. Sits alongside the game
+   *  so the catalogue can group by both, exactly like the storefront does. */
+  kind: "car" | "service" | "account";
 };
 
 const EMPTY_FORM: ProductForm = {
@@ -66,6 +81,7 @@ const EMPTY_FORM: ProductForm = {
   isPublished: true,
   categoryId: "",
   game: "cpm2",
+  kind: "car",
 };
 
 type CategoryForm = {
@@ -201,6 +217,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
   const [catalogueSearch, setCatalogueSearch] = useState("");
   const [catalogueCategory, setCatalogueCategory] = useState("");
   const [catalogueSort, setCatalogueSort] = useState("newest");
+  const [catalogueKind, setCatalogueKind] = useState("");
   const [showPromotionForm, setShowPromotionForm] = useState(false);
   const [editingPromotionId, setEditingPromotionId] = useState<number | null>(null);
   const [promotionForm, setPromotionForm] = useState<PromotionForm>(EMPTY_PROMOTION_FORM);
@@ -216,6 +233,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
       if (catalogueGame === "cpm1" && p.game !== "cpm1") return false;
       if (catalogueGame === "cpm2" && p.game === "cpm1") return false;
       if (catalogueCategory && String(p.categoryId ?? "") !== catalogueCategory) return false;
+      if (catalogueKind && (p.kind ?? "car") !== catalogueKind) return false;
       if (q && !(`${p.name} #${p.id}`.toLowerCase().includes(q))) return false;
       return true;
     });
@@ -359,6 +377,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
       isPublished: p.isPublished,
       categoryId: String(p.categoryId ?? ""),
       game: p.game === "cpm1" ? "cpm1" : "cpm2",
+      kind: p.kind ?? "car",
     });
     setEditingId(p.id);
     setInlineEditingId(p.id);
@@ -413,6 +432,8 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
         isSale: form.isSale,
         isPublished: form.isPublished,
         categoryId: v.categoryId ? Number(v.categoryId) : undefined,
+        game: form.game,
+        kind: form.kind,
       };
       if (editingId) {
         await vantaApi.updateProduct(editingId, body);
@@ -1070,6 +1091,18 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
                 <option value="cpm1">CPM1 Catalogue</option>
               </select>
             </Field>
+            <Field label="Type" hint="Car (a vehicle), Mod / service (an install or unlock), or Account (a login for resale)">
+              <select
+                id="product-kind"
+                value={form.kind}
+                onChange={(e) => handleChange("kind", e.target.value as "car" | "service" | "account")}
+                className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
+              >
+                <option value="car">Car</option>
+                <option value="service">Mod / service</option>
+                <option value="account">Account</option>
+              </select>
+            </Field>
             <Field label="Car (CPM2 catalog)" error={productErrors.cpm2CarCode} hint={carLocked ? "Locked - car codes are set once at creation and cannot be changed" : editingId !== null ? "No car linked yet - pick one; the code locks once set" : "Pick a car from the catalog - it auto-fills the name below, then you can edit it"}>
               {carLocked ? (
                 <select id="cpm2-car-code" disabled defaultValue={form.cpm2CarCode} aria-readonly="true" className="w-full border border-input bg-secondary px-3 py-2 rounded-md text-sm text-foreground cursor-not-allowed">
@@ -1237,6 +1270,17 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
                   ))}
                 </select>
                 <select
+                  value={catalogueKind}
+                  onChange={(e) => setCatalogueKind(e.target.value)}
+                  className="border border-input bg-background px-3 py-1.5 rounded-md text-sm"
+                  aria-label="Filter by product type"
+                >
+                  <option value="">All types</option>
+                  <option value="car">Cars</option>
+                  <option value="service">Mods / services</option>
+                  <option value="account">Accounts</option>
+                </select>
+                <select
                   value={catalogueSort}
                   onChange={(e) => setCatalogueSort(e.target.value)}
                   className="border border-input bg-background px-3 py-1.5 rounded-md text-sm"
@@ -1249,6 +1293,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
                   <option value="stock_asc">Stock ↑</option>
                   <option value="stock_desc">Stock ↓</option>
                   <option value="category">Category</option>
+                  <option value="category">Category</option>
                 </select>
               </div>
               {/* The catalogue table itself — click a row to edit */}
@@ -1258,6 +1303,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
                     <tr>
                       <th className="px-3 py-2">#</th>
                       <th className="px-3 py-2">Game</th>
+                      <th className="px-3 py-2">Type</th>
                       <th className="px-3 py-2">Name</th>
                       <th className="px-3 py-2">Category</th>
                       <th className="px-3 py-2 text-right">Price</th>
@@ -1292,6 +1338,11 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
                               p.game === "cpm1" ? "bg-blue-500/15 text-blue-400" : "bg-emerald-500/15 text-emerald-400"
                             }`}>
                               {p.game === "cpm1" ? "CPM1" : "CPM2"}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2">
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-secondary text-muted-foreground" title={KIND_LABELS[p.kind ?? "car"]}>
+                              {KIND_SHORT[p.kind ?? "car"]}
                             </span>
                           </td>
                           <td className="px-3 py-2 font-medium text-foreground">

@@ -12,6 +12,12 @@ export async function GET(request: NextRequest) {
   const sessionUserId = verifySessionToken(sessionToken, "store");
   if (!sessionUserId) return new NextResponse(null, { status: 401 });
 
+  // The link-preview renders the CLAIMED Telegram id's photo before the
+  // link is confirmed, so it passes `?v=<telegram user id>`. Accept that —
+  // but only when it IS the caller's own linked Telegram id. Without this
+  // check any signed-in customer could swap ?v= for anyone else's id and
+  // harvest their profile photo (and confirm the id is on the platform).
+  const requested = new URL(request.url).searchParams.get("v");
   const db = await getStoreDb();
   const identity = await db.execute({
     sql: `SELECT platform_user_id FROM vanta_platform_identities WHERE platform = 'telegram' AND customer_id = ? LIMIT 1`,
@@ -19,7 +25,12 @@ export async function GET(request: NextRequest) {
   });
   if (identity.rows.length === 0) return new NextResponse(null, { status: 404 });
 
-  const url = await fetchTelegramPhotoUrl(Number(identity.rows[0].platform_user_id));
+  const linkedId = String(identity.rows[0].platform_user_id);
+  if (requested && requested !== linkedId) {
+    return new NextResponse(null, { status: 403 });
+  }
+
+  const url = await fetchTelegramPhotoUrl(Number(linkedId));
   if (!url) return new NextResponse(null, { status: 404 });
 
   const photo = await fetch(url);

@@ -1486,10 +1486,39 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
                       <Field label="Stock" error={productErrors.stockQuantity} hint={editingId === null ? "Locked at 1 for new products" : "How many available - set to 0 to mark out of stock"}>
                         <input type="number" min={editingId === null ? 1 : 0} value={editingId === null ? "1" : form.stockQuantity} onChange={editingId === null ? undefined : (e) => handleChange("stockQuantity", e.target.value)} readOnly={editingId === null} className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground" />
                       </Field>
+                      <Field label="Store" hint="Move this product between the CPM1 catalogue and the CPM2 garage">
+                        <select
+                          id="inline-product-game"
+                          value={form.game}
+                          onChange={(e) => {
+                            const g = e.target.value === "cpm1" ? "cpm1" : "cpm2";
+                            handleChange("game", g);
+                            // a category from the other store must not ride along
+                            const cat = categories.find((c) => c.id === Number(form.categoryId));
+                            if (cat && (cat.game ?? "cpm2") !== g) handleChange("categoryId", "");
+                          }}
+                          className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
+                        >
+                          <option value="cpm2">CPM2 Garage</option>
+                          <option value="cpm1">CPM1 Catalogue</option>
+                        </select>
+                      </Field>
+                      <Field label="Type" hint="Car / Mod-service / Account">
+                        <select
+                          id="inline-product-kind"
+                          value={form.kind}
+                          onChange={(e) => handleChange("kind", e.target.value as "car" | "service" | "account")}
+                          className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
+                        >
+                          <option value="car">Car</option>
+                          <option value="service">Mod / service</option>
+                          <option value="account">Account</option>
+                        </select>
+                      </Field>
                       <Field label="Category" hint={categories.length === 0 ? "No categories yet - add some via the Categories tab" : "Select a category"}>
                         <select value={form.categoryId} onChange={(e) => handleChange("categoryId", e.target.value)} className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground">
                           <option value="">Select a category</option>
-                          {categories.map((cat) => <option key={cat.id} value={String(cat.id)}>{cat.name}</option>)}
+                          {categories.filter((c) => (c.game ?? "cpm2") === form.game).map((cat) => <option key={cat.id} value={String(cat.id)}>{cat.name}</option>)}
                         </select>
                       </Field>
                       <Field label="Air suspension install">

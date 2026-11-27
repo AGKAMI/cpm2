@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { type ReactNode, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { WalletHeader } from "./WalletHeader";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Dock } from "@/components/ui/dock";
@@ -219,7 +220,12 @@ export function StoreShell({ children, dock }: StoreShellProps) {
             }
             style={{ backgroundColor: "var(--background)" }}
           >
-            {homeHeader ? (
+            {/* The store home shows the wallet-style header (greeting card +
+                balance) — owned HERE, in the one global header, so a header
+                change applies to every page. Pages never render their own. */}
+            {!homeHeader && pathname === "/store" ? (
+              <WalletHeader />
+            ) : homeHeader ? (
               /* The HOME header persists on every store page except profile,
                  admin and owner: greeting + real profile + notifications. */
               <div className="flex items-center gap-3">

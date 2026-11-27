@@ -8,3 +8,13 @@ export { CartSkeleton } from "./CartSkeleton";
 export { DashboardSkeleton } from "./DashboardSkeleton";
 export { SettingsSkeleton, ProfileSkeleton, AccountsSkeleton } from "./ProfileSkeleton";
 export { AdminSkeleton } from "./AdminSkeleton";
+export {
+  AdminWalletSkeleton,
+  AdminPromotionsSkeleton,
+  AdminDashboardSkeleton,
+  AdminEftSkeleton,
+  AdminSupportSkeleton,
+  AdminAnalyticsSkeleton,
+  AdminDeliveriesSkeleton,
+  AdminAccountsSkeleton,
+} from "./AdminSubSkeletons";

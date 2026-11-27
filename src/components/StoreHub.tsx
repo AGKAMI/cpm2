@@ -19,7 +19,6 @@ import { useRouter } from "next/navigation";
 import type { VantaProduct, VantaCategory } from "@/lib/store/client";
 import { formatPrice } from "@/lib/store/client";
 import { approxStarsForCents } from "@/lib/store/pricing";
-import { WalletHeader } from "@/components/WalletHeader";
 import { Modal } from "@/components/ui/Modal";
 
 /** The hub is NOT a shop window, so it does not take StoreHomeData -- it needs
@@ -294,7 +293,6 @@ export function StoreHub({ products }: StoreHubData) {
       {/* ---------- identity ---------- */}
 
       {/* ---------- wallet-style header (reference layout) ---------- */}
-      <WalletHeader />
 
       {/* ---------- game picker ---------- */}
       <nav aria-label="Browse" className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">

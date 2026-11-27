@@ -12,6 +12,7 @@ import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 import { request } from "@/lib/store/client";
+import { AdminWalletSkeleton } from "@/components/skeleton";
 
 type BalanceRow = {
   customerId: string;
@@ -109,6 +110,15 @@ export default function AdminWalletPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  if (loading) {
+    return (
+      <StoreShell>
+        <PageHeading folio="AD" title="Admin - Wallet" backHref="/store/admin" />
+        <AdminWalletSkeleton />
+      </StoreShell>
+    );
   }
 
   return (
@@ -217,9 +227,7 @@ export default function AdminWalletPage() {
               </Button>
             </form>
           </div>
-          {loading ? (
-            <p className="mt-3 text-xs text-muted-foreground">Loading…</p>
-          ) : balances.length === 0 ? (
+          {balances.length === 0 ? (
             <p className="mt-3 text-xs text-muted-foreground">No wallets yet.</p>
           ) : (
             <ul className="mt-3 divide-y divide-border">

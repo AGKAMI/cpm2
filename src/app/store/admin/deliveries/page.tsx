@@ -9,6 +9,7 @@
 
 import { useEffect, useState } from "react";
 import { StoreShell } from "@/components/StoreShell";
+import { AdminDeliveriesSkeleton } from "@/components/skeleton";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 
@@ -70,7 +71,7 @@ export default function AdminDeliveriesPage() {
     return (
       <StoreShell>
         <PageHeading folio="AD" title="Admin Deliveries" backHref="/store/admin/dashboard" />
-        <p className="text-muted-foreground">Loading deliveries…</p>
+        <AdminDeliveriesSkeleton />
       </StoreShell>
     );
   }

@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { StoreShell } from "@/components/StoreShell";
+import { AdminDashboardSkeleton } from "@/components/skeleton";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
@@ -88,7 +89,7 @@ export default function AdminDashboardPage() {
     return (
       <StoreShell>
         <PageHeading folio="AD" title="Admin Dashboard" />
-        <p className="text-muted-foreground">Loading dashboard…</p>
+        <AdminDashboardSkeleton />
       </StoreShell>
     );
   }

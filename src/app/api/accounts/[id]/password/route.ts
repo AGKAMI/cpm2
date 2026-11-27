@@ -1,4 +1,5 @@
 import { revealPassword } from "@/lib/service-turso";
+import { resolveFleetUser } from "@/lib/fleet-identity";
 import { fail, ok, parseId } from "@/lib/route";
 import {
   REVEAL_CONSENT_COOKIE,
@@ -13,7 +14,8 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(request: Request, context: RouteContext) {
   try {
-    const userId = currentUserId(request);
+    const identity = await resolveFleetUser(request);
+    const userId = identity?.userId;
     const consent = readRequestCookie(request, REVEAL_CONSENT_COOKIE);
     if (!verifyRevealConsentToken(consent)) {
       return new Response(

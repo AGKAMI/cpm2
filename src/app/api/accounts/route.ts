@@ -1,12 +1,13 @@
 import { createAccount, fleetStats, listAccounts } from "@/lib/service-turso";
 import { fail, ok, readJson } from "@/lib/route";
-import { currentUserId } from "@/lib/auth";
+import { resolveFleetUser } from "@/lib/fleet-identity";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
-    const userId = currentUserId(request);
+    const identity = await resolveFleetUser(request);
+    const userId = identity?.userId;
     const url = new URL(request.url);
     const archivedParam = url.searchParams.get("archived");
     const archived = archivedParam === "include" ? "include" : archivedParam === "true" ? "only" : "exclude";
@@ -19,8 +20,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const userId = currentUserId(request);
-    const account = await createAccount(await readJson(request), userId);
+    const identity = await resolveFleetUser(request);
+    const account = await createAccount(await readJson(request), identity?.userId);
     return ok({ account }, 201);
   } catch (err) {
     return fail(err);

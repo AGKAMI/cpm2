@@ -4,7 +4,7 @@
  */
 
 import { fail, ok } from "@/lib/route";
-import { currentUserId } from "@/lib/auth";
+import { resolveFleetUser } from "@/lib/fleet-identity";
 import { parseId } from "@/lib/http";
 import {
   addAccountImages,
@@ -23,7 +23,8 @@ export async function GET(
   context: RouteContext,
 ) {
   try {
-    const userId = currentUserId(request);
+    const identity = await resolveFleetUser(request);
+    const userId = identity?.userId;
     const { id } = await context.params;
     const accountId = parseId(id);
     // Pass the identity: listAccountImages is ownership-checked and returns
@@ -42,7 +43,8 @@ export async function POST(
   context: RouteContext,
 ) {
   try {
-    const userId = currentUserId(request);
+    const identity = await resolveFleetUser(request);
+    const userId = identity?.userId;
     const { id } = await context.params;
     const accountId = parseId(id);
 

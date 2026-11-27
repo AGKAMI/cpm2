@@ -22,7 +22,9 @@ export async function GET(request: Request) {
     if (value === null) {
       return fail({ status: 404, body: { error: { code: "not_found", message: "Config key not found." } } });
     }
-    return ok({ key: value.key, value: value.value, type: value.type, isSensitive: value.isSensitive });
+    // updatedAt rides along: the admin config UI shows "Updated …" per key
+    // and read an empty string (rendering "Invalid Date") without it.
+    return ok({ key: value.key, value: value.value, type: value.type, isSensitive: value.isSensitive, updatedAt: value.updatedAt });
   } catch (err) {
     return fail(err);
   }

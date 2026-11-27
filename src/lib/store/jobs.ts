@@ -35,7 +35,14 @@ function rowToJob(row: Record<string, unknown>): Job {
   return {
     id: Number(row.id),
     type: (row.type ?? "expire_reservation") as JobType,
-    payload: row.payload === null || row.payload === undefined ? {} : JSON.parse(String(row.payload ?? "{}")),
+    payload: (() => {
+      // A malformed payload row must not crash every claim attempt forever.
+      try {
+        return row.payload === null || row.payload === undefined ? {} : JSON.parse(String(row.payload ?? "{}"));
+      } catch {
+        return {};
+      }
+    })(),
     status: (row.status ?? "pending") as Job["status"],
     attempts: Number(row.attempts ?? 0),
     maxAttempts: Number(row.max_attempts ?? 3),
@@ -97,10 +104,13 @@ export async function claimJob(): Promise<Job | null> {
   });
   if (result.rows.length === 0) return null;
   const job = rowToJob(result.rows[0]);
-  await db.execute({
-    sql: `UPDATE vanta_jobs SET status = 'processing', updated_at = ? WHERE id = ?`,
+  // Atomic claim: the UPDATE only lands while the row is still claimable,
+  // so two processors racing the same SELECT can't both take the job.
+  const claimed = await db.execute({
+    sql: `UPDATE vanta_jobs SET status = 'processing', updated_at = ? WHERE id = ? AND status IN ('pending', 'failed')`,
     args: [now, job.id],
   });
+  if ((claimed.affectedRowCount ?? 0) === 0) return null; // lost the race
   return { ...job, status: "processing" };
 }
 

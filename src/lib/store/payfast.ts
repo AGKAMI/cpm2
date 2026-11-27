@@ -36,19 +36,22 @@ export function buildPayFastCheckoutUrl(
 
   const amountZar = (order.amountCents / 100).toFixed(2);
 
+  // Field order is part of the signature: PayFast signs the pairs in the
+  // order its docs describe them (merchant, customer, transaction), so
+  // this object is constructed in exactly that order — do not reorder.
   const params: Record<string, string> = {
     merchant_id: PAYFAST_MERCHANT_ID,
     merchant_key: PAYFAST_MERCHANT_KEY,
     return_url: returnUrl,
     cancel_url: cancelUrl,
     notify_url: notifyUrl,
+    name_first: "VANTA",
+    name_last: "Customer",
+    email_address: "checkout@vanta-garage.local",
     amount: amountZar,
     item_name: itemName ?? `VANTA GARAGE - #${order.productId}`,
     item_description: `Player: ${order.playerId} - ${order.inGameName}`,
     custom_str1: order.id,
-    name_first: "VANTA",
-    name_last: "Customer",
-    email_address: "checkout@vanta-garage.local",
   };
 
   const signature = payfastSignature(params, PAYFAST_PASSPHRASE);

@@ -64,10 +64,13 @@ export async function updateCustomer(id: number, updates: { inGameName?: string;
   if (updates.playerId !== undefined) { fields.push("player_id = ?"); args.push(updates.playerId.trim()); }
   if (updates.currencyPref !== undefined) { fields.push("currency_pref = ?"); args.push(updates.currencyPref); }
   if (fields.length === 0) return getCustomer(id);
-  args.push(id);
+  // Argument order must match placeholder order: SET values first, the
+  // WHERE id last. The id used to be pushed before updated_at, so the
+  // timestamp landed in the WHERE clause and updates matched zero rows.
   const now = new Date().toISOString();
   fields.push("updated_at = ?");
   args.push(now);
+  args.push(id);
   const result = await db.execute({
     sql: `UPDATE vanta_customers SET ${fields.join(", ")} WHERE id = ?`,
     args,

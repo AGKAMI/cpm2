@@ -269,20 +269,29 @@ describe("fresh schema · order product snapshot", () => {
 });
 
 describe("payfast · shared signature", () => {
-  it("sorts fields, appends the passphrase, and excludes the signature field", async () => {
+  it("follows the official algorithm: given order, urlencoded, &passphrase=", async () => {
     const { payfastSignature } = await import("../src/lib/store/payfast-signature.ts");
+    const { createHash } = await import("node:crypto");
+    // The docs' own example shape (merchant details then transaction
+    // details); spaces encode as '+', and the passphrase is appended as a
+    // named pair — not sorted, not concatenated bare.
     assert.equal(
-      payfastSignature({ b: "2", signature: "ignore-me", a: "1" }, "passphrase"),
-      "f6c9f84f59819204ca1a97b71b838131",
+      payfastSignature(
+        { merchant_id: "10000100", merchant_key: "46f0cd694581a", amount: "100.00", item_name: "Test Product" },
+        "jt7NOE43FZPn",
+      ),
+      createHash("md5")
+        .update("merchant_id=10000100&merchant_key=46f0cd694581a&amount=100.00&item_name=Test+Product&passphrase=jt7NOE43FZPn")
+        .digest("hex"),
     );
   });
 
-  it("keeps empty fields in the signed string", async () => {
+  it("preserves field order (never sorts) and skips blanks + the signature field", async () => {
     const { payfastSignature } = await import("../src/lib/store/payfast-signature.ts");
     const { createHash } = await import("node:crypto");
     assert.equal(
-      payfastSignature({ b: "2", a: "" }, "secret"),
-      createHash("md5").update("a=&b=2secret").digest("hex"),
+      payfastSignature({ b: "2", signature: "ignore-me", empty: "", a: "1" }, "secret"),
+      createHash("md5").update("b=2&a=1&passphrase=secret").digest("hex"),
     );
   });
 });

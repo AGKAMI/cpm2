@@ -410,8 +410,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           }}
           onSubmit={async (payload: Record<string, unknown>) => {
             if (editing) {
-              await fleet.updateAccount(editing.id, payload);
-              return true;
+              return fleet.updateAccount(editing.id, payload);
             }
             const created = await fleet.createAccount(payload);
             return created !== null;

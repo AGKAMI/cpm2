@@ -58,8 +58,10 @@ export const dynamic = "force-dynamic";
  * silently create a product linked to no car. Returns a fail response or null.
  * Only enforced when the field is present (PUT partial updates keep the old code).
  */
-async function invalidCarCode(cpm2CarCode: number | undefined) {
+async function invalidCarCode(cpm2CarCode: number | undefined, game?: string) {
   if (cpm2CarCode === undefined) return null;
+  // CPM1 products carry CPM1 catalog codes — the CPM2 table must not judge them.
+  if (game === "cpm1") return null;
   const store = await getStoreDb();
   const result = await store.execute({
     sql: `SELECT code FROM vanta_cpm2_cars WHERE code = ?`,
@@ -148,7 +150,7 @@ export async function POST(request: Request) {
   try {
     await requireStoreAdmin(request);
     const body = productSchema.parse(await readJson(request));
-    const badCode = await invalidCarCode(body.cpm2CarCode);
+    const badCode = await invalidCarCode(body.cpm2CarCode, body.game);
     if (badCode) return badCode;
     const input: ProductInput = {
           cpm2CarCode: body.cpm2CarCode,
@@ -196,9 +198,9 @@ export async function PUT(request: Request) {
     }
     // Allow partial updates (e.g. publish toggle only sends isPublished)
     const body = parseProvidedFields(productSchema, await readJson(request));
-    const badCode = await invalidCarCode(body.cpm2CarCode);
-    if (badCode) return badCode;
     const product = await getProduct(Number(id));
+    const badCode = await invalidCarCode(body.cpm2CarCode, body.game ?? product?.game);
+    if (badCode) return badCode;
     if (!product) {
       return fail({ status: 404, body: { error: { code: "not_found", message: "Product not found." } } });
     }

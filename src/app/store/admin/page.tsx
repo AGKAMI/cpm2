@@ -373,6 +373,16 @@ export default function AdminPage() {
     setShowProductForm(true);
   };
 
+  // The form renders above the catalogue list; without this, tapping Edit
+  // on a row far down the page opened the form off-screen and looked like
+  // nothing happened. Bring it to the admin.
+  const productFormRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (showProductForm) {
+      productFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [showProductForm, editingId]);
+
   const resetCategoryForm = () => {
       setCategoryForm(EMPTY_CATEGORY_FORM);
       setShowCategoryForm(false);
@@ -435,8 +445,9 @@ export default function AdminPage() {
         return;
       }
       // Catalog guard (mirrors the server-side check): a typed/hand-edited code
-      // that isn't a real CPM2 catalog car never reaches the API.
-      if (form.cpm2CarCode && !carByCode(Number(form.cpm2CarCode), "cpm2")) {
+      // that isn't a real CPM2 catalog car never reaches the API. CPM2 only —
+      // a CPM1 product's code belongs to the CPM1 catalog, not this one.
+      if (form.game === "cpm2" && form.cpm2CarCode && !carByCode(Number(form.cpm2CarCode), "cpm2")) {
         toast.error("Invalid car code.", "Pick a car from the catalog search.");
         setSaving(false);
         return;
@@ -451,7 +462,9 @@ export default function AdminPage() {
       try {
         const body = {
           game: v.game,
-          cpm2CarCode: v.cpm2CarCode ? Number(v.cpm2CarCode) : undefined,
+          // The code column is CPM2's catalog identity; never send a CPM1
+          // product's own-game code through the CPM2 validation path.
+          cpm2CarCode: v.game === "cpm2" && v.cpm2CarCode ? Number(v.cpm2CarCode) : undefined,
           imageUrl: v.imageUrl || undefined,
           name: v.name,
           description: v.description || undefined,
@@ -1395,7 +1408,7 @@ export default function AdminPage() {
 
       {/* Create / Edit form - always shown when toggled */}
                         {showProductForm && (
-                    <section className="admin-section panel rounded-xl border border-border p-6 mb-8">
+                    <section ref={productFormRef} className="admin-section panel scroll-mt-24 rounded-xl border border-border p-6 mb-8">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="admin-section-title">
                           {editingId ? "Edit product" : "Add product"}

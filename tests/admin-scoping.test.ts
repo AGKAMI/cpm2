@@ -80,6 +80,22 @@ describe("admin form validation · game identity", () => {
     assert.equal(bad.ok, false);
   });
 
+  it("product form edits products with no car code and real-world prices", () => {
+    // Accounts/mods/CPM1 products have no CPM2 car code ("No car code" in
+    // the catalogue) — requiring one made them impossible to edit at all.
+    const noCode = validateProductForm({ ...validProduct, cpm2CarCode: "" });
+    assert.ok(noCode.ok);
+    const cpm1 = validateProductForm({ ...validProduct, game: "cpm1", cpm2CarCode: "" });
+    assert.ok(cpm1.ok);
+    // Cars/accounts sell above R200; the form cap must mirror the API cap.
+    const priced = validateProductForm({ ...validProduct, basePriceCents: "450.00" });
+    assert.ok(priced.ok);
+    const tooBig = validateProductForm({ ...validProduct, basePriceCents: "100001" });
+    assert.equal(tooBig.ok, false);
+    const badCode = validateProductForm({ ...validProduct, cpm2CarCode: "abc" });
+    assert.equal(badCode.ok, false);
+  });
+
   it("promotion form requires game + attached product + pill hue", () => {
     const parsed = validatePromotionForm(validPromotion);
     assert.ok(parsed.ok);

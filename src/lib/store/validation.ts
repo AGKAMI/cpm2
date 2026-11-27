@@ -25,11 +25,14 @@ export const productFormSchema = z.object({
   // A product's game identity is mandatory: the admin catalogue separates the
   // two games and storefront listings only show products in their own game.
   game: z.enum(["cpm1", "cpm2"], { error: "Pick a game." }).default("cpm2"),
+  // Optional: accounts, services, mods and CPM1 products legitimately have
+  // no CPM2 car code. Requiring one here made every such product impossible
+  // to edit — the form could never pass validation on save.
   cpm2CarCode: z
-    .string({ error: "Car code is required." })
+    .string()
     .trim()
-    .min(1, { error: "Pick a car from the CPM2 catalog." })
-    .refine((v) => /^\d+$/.test(v), { error: "Car code must be a number." }),
+    .optional()
+    .refine((v) => !v || /^\d+$/.test(v), { error: "Car code must be a number." }),
   name: z
     .string({ error: "Name is required." })
     .trim()
@@ -38,7 +41,9 @@ export const productFormSchema = z.object({
   description: z
     .string()
     .trim()
-    .max(500, { error: "Description must be 500 characters or fewer." })
+    // Existing catalogue copy runs longer than 500 chars; a tight cap here
+    // made those products fail validation the moment they were edited.
+    .max(2000, { error: "Description must be 2000 characters or fewer." })
     .optional(),
   basePriceCents: z
     .string({ error: "Price is required." })
@@ -48,7 +53,9 @@ export const productFormSchema = z.object({
       error: "Enter a valid price (e.g. 60.00).",
     })
     .refine((v) => parseFloat(v) > 0, { error: "Price must be greater than 0." })
-    .refine((v) => parseFloat(v) <= 200, { error: "Price cannot exceed R200." }),
+    // Mirrors the API cap (10_000_000 cents). The old R200 cap rejected
+    // every legitimately-priced car/account when editing.
+    .refine((v) => parseFloat(v) <= 100000, { error: "Price cannot exceed R100 000." }),
   currency: z
     .string({ error: "Currency is required." })
     .trim()

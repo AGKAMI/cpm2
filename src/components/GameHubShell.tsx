@@ -79,7 +79,8 @@ export function GameHubShell({
 }) {
   return (
     <div className="mx-auto w-full max-w-3xl px-4 pb-24">
-      <header className="py-6">
+      {/* Page title block — NOT a <header>: the app header lives only in StoreShell. */}
+      <div className="py-6">
         <Link
           href="/store"
           className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-soft hover:text-foreground"
@@ -88,7 +89,7 @@ export function GameHubShell({
         </Link>
         <h1 className="mt-3 text-2xl font-bold text-foreground">{title}</h1>
         <p className="mt-1 text-[12px] leading-relaxed text-ink-faint">{blurb}</p>
-      </header>
+      </div>
 
       <nav aria-label={title} className="grid gap-3 sm:grid-cols-2">
         {sections.map((s) => {

@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
+import { AdminFormSkeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Field";
 
@@ -109,7 +110,7 @@ export default function ConfigPage() {
     return (
       <StoreShell>
         <PageHeading folio="CF" title="Store Configuration" backHref="/store/admin" />
-        <p className="text-muted-foreground">Loading config…</p>
+        <AdminFormSkeleton />
       </StoreShell>
     );
   }

@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
+import { OwnerSkeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Field";
 import { vantaApi, type VantaAdminRecord } from "@/lib/store/client";
@@ -141,7 +142,8 @@ export default function OwnerPage() {
   if (loading)
     return (
       <StoreShell>
-        <p className="text-muted-foreground">Loading owner dashboard…</p>
+        <PageHeading folio="OW" title="Owner Dashboard" backHref="/store/admin" />
+        <OwnerSkeleton />
       </StoreShell>
     );
 

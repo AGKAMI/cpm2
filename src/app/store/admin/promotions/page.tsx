@@ -13,6 +13,7 @@
 import { useEffect, useState } from "react";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
+import { AdminListSkeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/Button";
 
 type Promotion = {
@@ -187,7 +188,7 @@ export default function AdminPromotionsPage() {
     return (
       <StoreShell>
         <PageHeading folio="AP" title="Promotions" backHref="/store/admin" />
-        <p className="text-muted-foreground">Loading promotions…</p>
+        <AdminListSkeleton />
       </StoreShell>
     );
   }

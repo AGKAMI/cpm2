@@ -5,6 +5,7 @@ import Link from "next/link";
 import { vantaApi, formatPrice, type VantaOrder } from "@/lib/store/client";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
+import { AdminListSkeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Field, TextInput } from "@/components/ui/Field";
@@ -152,14 +153,8 @@ export function EftReviewClient() {
   if (loading)
     return (
       <StoreShell>
-        <div className="space-y-3" aria-hidden="true">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="panel rounded-xl border border-border p-4">
-              <div className="h-2 w-24 rounded-sm bg-background mb-3 animate-pulse" />
-              <div className="h-3 w-32 rounded-sm bg-background animate-pulse" />
-            </div>
-          ))}
-        </div>
+        <PageHeading folio="05" title="EFT Review" backHref="/store/admin" />
+        <AdminListSkeleton rows={4} />
       </StoreShell>
     );
 

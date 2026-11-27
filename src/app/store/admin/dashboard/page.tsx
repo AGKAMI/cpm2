@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
+import { AdminStatsSkeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { vantaApi, formatPrice } from "@/lib/store/client";
@@ -88,7 +89,7 @@ export default function AdminDashboardPage() {
     return (
       <StoreShell>
         <PageHeading folio="AD" title="Admin Dashboard" />
-        <p className="text-muted-foreground">Loading dashboard…</p>
+        <AdminStatsSkeleton />
       </StoreShell>
     );
   }

@@ -233,6 +233,9 @@ export default function AdminPage() {
   // Catalogue browsing: game separation, search, category and explicit sort.
   // The admin has hundreds of listings; a flat unordered list is unusable.
   const [catalogueGame, setCatalogueGame] = useState<GameFilter>("all");
+  // Entering the catalogue asks WHICH game first — no product list renders
+  // until the admin picks CPM 1, CPM 2 or both. `null` = not chosen yet.
+  const [catalogueGamePicked, setCatalogueGamePicked] = useState(false);
   const [catalogueSearch, setCatalogueSearch] = useState("");
   const [catalogueCategory, setCatalogueCategory] = useState("");
   const [catalogueSort, setCatalogueSort] = useState("newest");
@@ -779,7 +782,10 @@ export default function AdminPage() {
                     {adminView ? (
                       <button
                         type="button"
-                        onClick={() => setAdminView(null)}
+                        onClick={() => {
+                          setAdminView(null);
+                          setCatalogueGamePicked(false);
+                        }}
                         className="mb-4 inline-flex items-center gap-2 px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] cursor-pointer rounded-lg border-2 border-border bg-secondary text-foreground hover:border-gold transition-colors"
                       >
                         <span aria-hidden="true">&#8592;</span> All sections
@@ -1752,7 +1758,41 @@ export default function AdminPage() {
                             )}
 
                             {/* Product list */}
-                    {adminView === "catalogue" && (
+                    {adminView === "catalogue" && !catalogueGamePicked && (
+                            <section className="admin-section panel rounded-xl border border-border p-4">
+                              <h3 className="admin-section-title mb-2">Which catalogue?</h3>
+                              <p className="mb-4 text-xs text-muted-foreground">
+                                Pick the game whose catalogue you want to customise — the two games are never mixed.
+                              </p>
+                              <div className="grid gap-3 sm:grid-cols-3">
+                                {([
+                                  { key: "cpm1", label: "CPM 1", count: products.filter((p) => p.game === "cpm1").length },
+                                  { key: "cpm2", label: "CPM 2", count: products.filter((p) => p.game !== "cpm1").length },
+                                  { key: "all", label: "Both games", count: products.length },
+                                ] as const).map((g) => (
+                                  <button
+                                    key={g.key}
+                                    type="button"
+                                    onClick={() => {
+                                      setCatalogueGame(g.key);
+                                      setCatalogueCategory("");
+                                      setCatalogueGamePicked(true);
+                                    }}
+                                    className="group cursor-pointer rounded-2xl border-2 border-border bg-background p-5 text-left transition-[border-color,transform] duration-150 hover:border-gold active:scale-[0.99]"
+                                  >
+                                    <span className="admin-section-title block">{g.label}</span>
+                                    <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                                      {g.count} {g.count === 1 ? "product" : "products"}
+                                    </span>
+                                    <span className="mt-3 inline-block text-[10px] font-bold uppercase tracking-[0.16em] text-gold opacity-0 transition-opacity group-hover:opacity-100">
+                                      Open &#8594;
+                                    </span>
+                                  </button>
+                                ))}
+                              </div>
+                            </section>
+                            )}
+                    {adminView === "catalogue" && catalogueGamePicked && (
                             <section className="admin-section panel rounded-xl border border-border p-4">
                               <div className="flex items-baseline justify-between mb-4">
                                 <h3 className="admin-section-title">Catalogue</h3>
@@ -1770,6 +1810,14 @@ export default function AdminPage() {
                                   </Button>
                                 </div>
                               </div>
+                  <button
+                    type="button"
+                    onClick={() => setCatalogueGamePicked(false)}
+                    className="mb-4 inline-flex cursor-pointer items-center gap-2 rounded-lg border-2 border-border bg-secondary px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-foreground transition-colors hover:border-gold"
+                  >
+                    <span aria-hidden="true">&#8592;</span> Change game (
+                    {catalogueGame === "all" ? "Both games" : catalogueGame === "cpm1" ? "CPM 1" : "CPM 2"})
+                  </button>
                   {/* Filtering is client-side over the full admin catalogue so
                       hidden products stay manageable and the two games never
                       appear mixed together. */}

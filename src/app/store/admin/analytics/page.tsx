@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
+import { AdminStatsSkeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/Button";
 import { formatPrice } from "@/lib/store/client";
 
@@ -56,7 +57,7 @@ export default function AnalyticsPage() {
     return (
       <StoreShell>
         <PageHeading folio="AN" title="Analytics & Financial" backHref="/store/admin" />
-        <p className="text-muted-foreground">Loading analytics…</p>
+        <AdminStatsSkeleton />
       </StoreShell>
     );
   }

@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
+import { AdminListSkeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/Button";
 
 type Ticket = {
@@ -79,7 +80,7 @@ export default function AdminSupportPage() {
     return (
       <StoreShell>
         <PageHeading folio="AS" title="Admin Support" backHref="/store/admin" />
-        <p className="text-muted-foreground">Loading tickets…</p>
+        <AdminListSkeleton />
       </StoreShell>
     );
   }

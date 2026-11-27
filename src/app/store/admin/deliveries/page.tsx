@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
+import { AdminStatsSkeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/Button";
 
 type AdminAppointment = {
@@ -70,7 +71,7 @@ export default function AdminDeliveriesPage() {
     return (
       <StoreShell>
         <PageHeading folio="AD" title="Admin Deliveries" backHref="/store/admin/dashboard" />
-        <p className="text-muted-foreground">Loading deliveries…</p>
+        <AdminStatsSkeleton />
       </StoreShell>
     );
   }

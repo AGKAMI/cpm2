@@ -81,7 +81,8 @@ export function GameSectionList({
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 pb-24">
-      <header className="py-6">
+      {/* Page title block — NOT a <header>: the app header lives only in StoreShell. */}
+      <div className="py-6">
         <Link
           href={`/store/${game}`}
           className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-soft hover:text-foreground"
@@ -90,7 +91,7 @@ export function GameSectionList({
         </Link>
         <h1 className="mt-3 text-2xl font-bold text-foreground">{meta.title}</h1>
         <p className="mt-1 text-[12px] text-ink-faint">{meta.blurb}</p>
-      </header>
+      </div>
 
       {categories.length > 0 && (
         <nav aria-label="Categories" className="mb-4 flex flex-wrap gap-2">

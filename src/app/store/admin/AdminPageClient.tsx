@@ -13,6 +13,7 @@ import { formatPrice, type VantaProduct, type VantaCategory, type VantaPromotion
 import { vantaApi } from "@/lib/store/client";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
+import { AdminSkeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Field";
 import { Toast } from "@/components/ui/Toast";
@@ -632,7 +633,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
     return (
       <StoreShell>
         <PageHeading folio="AD" title="Admin - Product Manager" backHref="/store" />
-        <div className="p-4 text-center text-muted-foreground">Loading admin…</div>
+        <AdminSkeleton />
       </StoreShell>
     );
   }
@@ -681,17 +682,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
                 <option value="cpm1">CPM1 Catalogue</option>
               </select>
             </Field>
-  <Field label="Store" hint="Which catalogue this shelf belongs to">
-              <select
-                value={categoryForm.game}
-                onChange={(e) => handleCategoryChange("game", e.target.value === "cpm1" ? "cpm1" : "cpm2")}
-                className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm text-foreground"
-              >
-                <option value="cpm2">CPM2 Garage</option>
-                <option value="cpm1">CPM1 Catalogue</option>
-              </select>
-            </Field>
-                                  <Field label="Name" error={categoryErrors.name}>
+            <Field label="Name" error={categoryErrors.name}>
               <TextInput value={categoryForm.name} onChange={(e) => handleCategoryChange("name", e.target.value)} placeholder="e.g. Sports Cars" />
             </Field>
             <Field label="URL slug" error={categoryErrors.slug} hint="Auto-generated from category name">
@@ -1293,7 +1284,6 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
                   <option value="stock_asc">Stock ↑</option>
                   <option value="stock_desc">Stock ↓</option>
                   <option value="category">Category</option>
-                  <option value="category">Category</option>
                 </select>
               </div>
               {/* The catalogue table itself — click a row to edit */}
@@ -1314,7 +1304,7 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
                   <tbody>
                     {catalogueRows.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">
+                        <td colSpan={8} className="px-3 py-6 text-center text-muted-foreground">
                           No products match these filters.
                         </td>
                       </tr>

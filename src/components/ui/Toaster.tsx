@@ -85,7 +85,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={toast.id}
             role="status"
-            className={`cursor-default flex items-center justify-between w-full h-12 sm:h-14 rounded-lg px-[10px] ${
+            className={`pointer-events-auto cursor-default flex items-center justify-between w-full h-12 sm:h-14 rounded-lg px-[10px] ${
               toast.kind === "error" ? "bg-[#232531]" : "bg-[#1a1a20]"
             }`}
           >
@@ -100,6 +100,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 ) : null}
               </div>
             </div>
+            {/* The action (e.g. the archive toast's Undo) was accepted by
+                the API but never rendered — the button simply didn't exist. */}
+            {toast.action ? (
+              <button
+                type="button"
+                onClick={() => {
+                  toast.action?.onClick();
+                  remove(toast.id);
+                }}
+                className="pointer-events-auto shrink-0 cursor-pointer rounded-md px-2 py-1 font-semibold text-[#d4af4f] transition-colors hover:bg-white/10"
+              >
+                {toast.action.label}
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={() => remove(toast.id)}

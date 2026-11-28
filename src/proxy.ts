@@ -90,6 +90,18 @@ export async function proxy(request: NextRequest) {
   if (pathname.startsWith("/api/store/")) {
     return NextResponse.next();
   }
+  // The fleet ledger carries its own identity gate (resolveFleetUser:
+  // Telegram-first, then the console session, then the owner fallback), so
+  // it must not be blocked at the proxy — inside the Telegram mini app there
+  // is no console cookie and every fleet call used to 401 here before the
+  // route could resolve who the caller is.
+  if (
+    pathname.startsWith("/api/accounts") ||
+    pathname.startsWith("/api/cars") ||
+    pathname.startsWith("/api/events")
+  ) {
+    return NextResponse.next();
+  }
 
   // --- Per-user gate ---
   // Only a CONSOLE-scoped session opens the console; a store-customer token

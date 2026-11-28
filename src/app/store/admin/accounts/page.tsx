@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 
 import { useCallback, useEffect, useState } from "react";
 import { StoreShell } from "@/components/StoreShell";
+import { AdminAccountsSkeleton } from "@/components/skeleton";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
@@ -81,7 +82,8 @@ buyer2@mail.com | another-pass | full garage
 - An email with no | is an email-only login`;
 
 export default function AccountImportPage() {
-  const [products, setProducts] = useState<Product[]>([]);
+  // null = the first load is still in flight (the skeleton shows until then)
+  const [products, setProducts] = useState<Product[] | null>(null);
   const [productId, setProductId] = useState<number | null>(null);
   const [game, setGame] = useState<"cpm1" | "cpm2">("cpm2");
   const [block, setBlock] = useState("");
@@ -164,6 +166,15 @@ export default function AccountImportPage() {
   }
 
   const preview = previewBlock(block);
+
+  if (products === null) {
+    return (
+      <StoreShell>
+        <PageHeading folio="AD" title="Admin - Accounts" backHref="/store/admin" />
+        <AdminAccountsSkeleton />
+      </StoreShell>
+    );
+  }
 
   return (
     <StoreShell>

@@ -6,7 +6,7 @@
  */
 
 import { fail, ok } from "@/lib/route";
-import { currentUserId } from "@/lib/auth";
+import { resolveFleetUser } from "@/lib/fleet-identity";
 import { parseId } from "@/lib/http";
 import { readFile } from "fs/promises";
 import { existsSync } from "fs";
@@ -29,6 +29,8 @@ export async function GET(
   context: RouteContext,
 ) {
   try {
+    const identity = await resolveFleetUser(request);
+    const userId = identity?.userId;
     const { id, imageId } = await context.params;
     const accountId = parseId(id);
     const url = new URL(request.url);
@@ -41,7 +43,7 @@ export async function GET(
     const isFilename = imageId.includes(".");
     // The caller's identity: listAccountImages is ownership-checked, and the
     // binary-serving path below skips a separate check — this is the gate.
-    const images = await listAccountImages(accountId, currentUserId(request));
+    const images = await listAccountImages(accountId, userId);
     const image = isFilename
       ? images.find((img) => img.imageUrl.endsWith(`/${imageId}`))
       : images.find((img) => img.id === parseId(imageId));
@@ -120,7 +122,8 @@ export async function PATCH(
   context: RouteContext,
 ) {
   try {
-    const userId = currentUserId(request);
+    const identity = await resolveFleetUser(request);
+    const userId = identity?.userId;
     const { id, imageId } = await context.params;
     const accountId = parseId(id);
     const imgId = parseId(imageId);
@@ -150,7 +153,8 @@ export async function DELETE(
   context: RouteContext,
 ) {
   try {
-    const userId = currentUserId(request);
+    const identity = await resolveFleetUser(request);
+    const userId = identity?.userId;
     const { id, imageId } = await context.params;
     const accountId = parseId(id);
     const imgId = parseId(imageId);

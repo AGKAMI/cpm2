@@ -30,7 +30,7 @@ export default function TradePage() {
               role="tab"
               aria-selected={active}
               onClick={() => setGame(entry.id)}
-              className={`rounded-full border px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors ${
+              className={`inline-flex h-9 items-center rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.12em] transition-colors ${
                 active
                   ? "cursor-default border-racing bg-racing text-racing"
                   : "cursor-pointer border-border bg-background text-ink-faint hover:border-racing hover:text-racing"

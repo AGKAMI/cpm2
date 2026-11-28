@@ -113,9 +113,9 @@ Someone is trying to link Telegram ID <code>${telegramUserId}</code> to a VANTA 
 
 <b>If this is NOT YOU:</b> Click "No, it's not me" to reject. Your Telegram ID will NOT be linked to any account, and no action will be taken against you.
 
-⚠️ <b>This verification expires in 2 minutes.</b> If you do nothing, the link request will expire automatically.
+<b>This verification expires in 2 minutes.</b> If you do nothing, the link request will expire automatically.
 
-You received this because someone entered your Telegram ID on vanta-garage.store. If you never did this, simply ignore this message — the request will expire.
+You received this because someone entered your Telegram ID on vanta-garage.store. If you never did this, simply ignore this message. The request will expire.
     `.trim();
 
     const buttons = [

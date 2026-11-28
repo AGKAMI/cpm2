@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import AdminLoginForm from "./AdminLoginForm";
 
 export const metadata: Metadata = {
-  title: "Admin Login — VANTA GARAGE",
+  title: "Admin Login - VANTA GARAGE",
 };
 
 export const dynamic = "force-dynamic";

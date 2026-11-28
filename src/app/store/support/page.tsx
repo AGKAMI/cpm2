@@ -13,6 +13,7 @@ import { PageHeading } from "@/components/PageHeading";
 import { PanelListSkeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput, TextArea } from "@/components/ui/Field";
+import { telegramInitData } from "@/lib/store/client";
 
 type Ticket = {
   id: string;
@@ -50,11 +51,22 @@ export default function SupportPage() {
     loadTickets();
   }, []);
 
+  // Every other store call sends the Telegram initData; a raw fetch() without
+  // it is anonymous inside the mini app, which returned 401 for signed-in
+  // users ("Log in with Telegram" while they were already in Telegram).
+  function authHeaders(): HeadersInit {
+    const headers: Record<string, string> = {};
+    const initData = telegramInitData();
+    if (initData) headers["X-Telegram-Init-Data"] = initData;
+    return headers;
+  }
+
   async function loadTickets() {
     try {
       setLoading(true);
       const res = await fetch("/api/store/support/tickets", {
         credentials: "include",
+        headers: authHeaders(),
       });
       // A guest (no linked customer) has no tickets yet — that is an empty
       // list, not a failure. Only surface real errors.
@@ -86,11 +98,16 @@ export default function SupportPage() {
       const res = await fetch("/api/store/support/tickets", {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify({ category, description }),
       });
       if (res.status === 401) {
-        throw new Error("Log in with Telegram to open a support ticket.");
+        // Tell the truth about WHY: a Telegram session needs the mini app's
+        // initData (a stale header or a signed-out browser lands here), not a
+        // demand to "log in with Telegram" for someone already inside it.
+        throw new Error(
+          "Your session could not be verified. Reopen the store from Telegram, or sign in again.",
+        );
       }
       if (!res.ok) throw new Error("Failed to create ticket");
       const data = await res.json();

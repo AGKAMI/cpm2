@@ -64,6 +64,49 @@ export function buildPayFastCheckoutUrl(
   return { url: `${getPayFastCheckoutUrl()}?${qs}`, configured: true };
 }
 
+/**
+ * Wallet top-up checkout — the same PayFast EFT flow the product checkout
+ * uses, but the item is store credit. custom_str1 carries "W-<txnId>" so the
+ * ITN webhook routes the payment to the wallet ledger instead of an order.
+ */
+export function buildPayFastTopupUrl(input: {
+  txnId: string;
+  amountCents: number;
+  returnUrl: string;
+  cancelUrl: string;
+  notifyUrl: string;
+}): { url: string; configured: boolean } {
+  if (!isPayFastConfigured()) {
+    return { url: "", configured: false };
+  }
+
+  const params: Record<string, string> = {
+    merchant_id: PAYFAST_MERCHANT_ID,
+    merchant_key: PAYFAST_MERCHANT_KEY,
+    return_url: input.returnUrl,
+    cancel_url: input.cancelUrl,
+    notify_url: input.notifyUrl,
+    amount: (input.amountCents / 100).toFixed(2),
+    item_name: "VANTA GARAGE - Wallet top-up",
+    item_description: `Store credit top-up (txn ${input.txnId})`,
+    custom_str1: `W-${input.txnId}`,
+    name_first: "VANTA",
+    name_last: "Customer",
+    email_address: "checkout@vanta-garage.local",
+  };
+
+  // Official PayFast signature (given order, urlencoded, &passphrase=) —
+  // the shared helper, same as the order checkout. A sorted-keys/bare-
+  // passphrase MD5 (what this builder originally did) is rejected by
+  // PayFast, which would have broken every wallet top-up.
+  const signature = payfastSignature(params, PAYFAST_PASSPHRASE);
+
+  const qs = Object.entries({ ...params, signature })
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join("&");
+
+  return { url: `${getPayFastCheckoutUrl()}?${qs}`, configured: true };
+}
 
 /**
  * Retry a failed or pending webhook by re-verifying with PayFast.

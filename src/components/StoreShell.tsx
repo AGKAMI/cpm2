@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { type ReactNode, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { WalletHeader } from "./WalletHeader";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Dock } from "@/components/ui/dock";
@@ -11,6 +12,7 @@ import { LucideIcon } from "lucide-react";
 import { Home, List, ShoppingCart } from "lucide-react";
 
 import { NotificationBell } from "@/components/NotificationBell";
+import { HubIdentity } from "@/components/HubIdentity";
 import { FleetProvider } from "@/components/FleetProvider";
 import { vantaApi } from "@/lib/store/client";
 import { useTheme } from "@/hooks/useTheme";
@@ -52,6 +54,9 @@ export function StoreShell({ children, dock }: StoreShellProps) {
   const pathname = usePathname();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isOwner, setIsOwner] = useState<boolean | null>(null);
+  const [profile, setProfile] = useState<{ photoUrl?: string; displayName?: string; username?: string } | null>(null);
+  const [customerLoggedIn, setCustomerLoggedIn] = useState<boolean>(false);
+  const [loaded, setLoaded] = useState<boolean>(true);
   const { mode: themeMode, setMode: setThemeMode } = useTheme();
 
   // localStorage must NEVER be read during render: the server can't see it,
@@ -84,9 +89,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
     return window.Telegram.WebApp?.initData ?? "";
   };
 
-  // Admin/owner status check (drives the dock). The profile fetch that used
-  // to ride along here fed the deleted per-page header — nothing renders it
-  // anymore, so the request is gone too: one less call on every store page.
+  // Combined admin + profile status check.
   const refreshStatus = async () => {
     const initData = await getTelegramInitData();
     const headers: HeadersInit = {};
@@ -109,6 +112,18 @@ export function StoreShell({ children, dock }: StoreShellProps) {
       // Keep last-known state.
     }
 
+    try {
+      const data = await vantaApi.profile();
+      if (data.telegramUser) {
+        setProfile({
+          photoUrl: data.telegramUser.photoUrl,
+          displayName: data.telegramUser.displayName,
+          username: data.telegramUser.username,
+        });
+      }
+    } catch {
+      // Profile fetch is non-fatal.
+    }
   };
 
   // Mount + focus + storage: refresh status once, no polling.
@@ -132,6 +147,19 @@ export function StoreShell({ children, dock }: StoreShellProps) {
     return () => clearInterval(t);
   }, [isAdmin, isOwner]);
 
+  // Customer login state via localStorage.
+  useEffect(() => {
+    const checkLogin = () => {
+      if (typeof window !== "undefined") {
+        setCustomerLoggedIn(
+          Boolean(localStorage.getItem("vanta_customer_id")),
+        );
+      }
+    };
+    checkLogin();
+    window.addEventListener("storage", checkLogin);
+    return () => window.removeEventListener("storage", checkLogin);
+  }, []);
 
   // Re-check admin when session flag appears (other tab via storage event,
   // same tab via the explicit vanta-admin-session event from admin login).
@@ -170,18 +198,50 @@ export function StoreShell({ children, dock }: StoreShellProps) {
       return pathname === t.href || pathname.startsWith(`${t.href}/`);
     })?.key;
 
-  // ONE header for the whole store — no per-page variants. This header is
-  // the single source: edit it here and every store page changes at once.
-  // Page-specific identity (greeting, balance) is page CONTENT (e.g. the
-  // home hub's WalletHeader), never a second header.
+  // The home header persists everywhere EXCEPT profile / admin / owner — and
+  // the home itself, which shows the wallet-style header (greeting card +
+  // balance) instead of the plain one.
+  const homeHeader = !(
+    pathname === "/store" ||
+    pathname?.startsWith("/store/profile") ||
+    pathname?.startsWith("/store/admin") ||
+    pathname?.startsWith("/store/owner")
+  );
+
   return (
     <div className="relative min-h-screen bg-background">
       <FleetProvider>
         <>
           <header
-            className="sticky top-0 z-30 border-b border-border shadow-sm px-4 pt-3 pb-3 sm:px-6"
+            className={
+              homeHeader
+                ? "sticky top-0 z-30 border-b border-border px-4 pt-3 pb-3 sm:px-6"
+                : "sticky top-0 z-30 border-b border-border shadow-sm px-4 pt-3 pb-3 sm:px-6"
+            }
             style={{ backgroundColor: "var(--background)" }}
           >
+            {/* The store home shows the wallet-style header (greeting card +
+                balance) — owned HERE, in the one global header, so a header
+                change applies to every page. Pages never render their own. */}
+            {!homeHeader && pathname === "/store" ? (
+              <WalletHeader />
+            ) : homeHeader ? (
+              /* The HOME header persists on every store page except profile,
+                 admin and owner: greeting + real profile + notifications. */
+              <div className="flex items-center gap-3">
+                <HubIdentity />
+                <NotificationBell />
+                {/* Cart stays a HEADER action — it's only the bottom nav that
+                    drops it */}
+                <Link
+                  href="/store/cart"
+                  aria-label="Cart"
+                  className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-border bg-secondary text-foreground transition-colors hover:border-primary/60"
+                >
+                  <ShoppingCart className="h-5 w-5" />
+                </Link>
+              </div>
+            ) : (
             <div className="relative flex items-center justify-between gap-2">
               {/* LEFT — leave the store, then the brand */}
               <div className="flex items-center gap-2 shrink-0">
@@ -213,7 +273,8 @@ export function StoreShell({ children, dock }: StoreShellProps) {
 
                 <Link
                   href="/store"
-                  className="flex min-w-0 items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  aria-label="Vanta Garage - store home"
+                  className="flex min-h-11 min-w-0 items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <Image
                     src="/kami-vanta-logo-no-wings.png"
@@ -284,6 +345,7 @@ export function StoreShell({ children, dock }: StoreShellProps) {
               </Link>
             </div>
           </div>
+          )}
         </header>
         <main
           id="store-main"

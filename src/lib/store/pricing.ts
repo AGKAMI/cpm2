@@ -41,7 +41,7 @@ export function approxStarsForCents(cents: number, zarPerStar?: number): number 
   // used to be a second hardcoded 0.24 here, so setting the env made the
   // displayed quote and the charged invoice diverge. Stay pure for client
   // components — never read env in this module.
-  const rate = zarPerStar ?? 0.24;
+  const rate = zarPerStar ?? 0.36; // R36 : 100 Stars
   const exact = Math.ceil((cents / 100) / rate);
   return Math.max(5, Math.round(exact / 5) * 5);
 }

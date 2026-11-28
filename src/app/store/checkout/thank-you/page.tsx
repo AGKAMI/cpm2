@@ -6,11 +6,10 @@ import { Button } from "@/components/ui/Button";
 import { siteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl()),
-  title: "Thank You — VANTA GARAGE",
+  title: "Thank You - VANTA GARAGE",
   description: "Your CPM2 vehicle order has been confirmed. Thank you for shopping at VANTA GARAGE.",
   openGraph: {
-    title: "Thank You — VANTA GARAGE",
+    title: "Thank You - VANTA GARAGE",
     description: "Your CPM2 vehicle order has been confirmed.",
     type: "website",
     url: "/store/checkout/thank-you",
@@ -19,13 +18,13 @@ export const metadata: Metadata = {
         url: "/og-image.svg",
         width: 1200,
         height: 630,
-        alt: "Thank You — VANTA GARAGE",
+        alt: "Thank You - VANTA GARAGE",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Thank You — VANTA GARAGE",
+    title: "Thank You - VANTA GARAGE",
     description: "Your CPM2 vehicle order has been confirmed.",
     images: ["/og-image.svg"],
   },

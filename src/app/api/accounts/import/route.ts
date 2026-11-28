@@ -1,6 +1,6 @@
 import { importAccounts } from "@/lib/service-turso";
 import { fail, ok, readJson } from "@/lib/route";
-import { currentUserId } from "@/lib/auth";
+import { resolveFleetUser } from "@/lib/fleet-identity";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +11,8 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(request: Request) {
   try {
-    const userId = currentUserId(request);
+    const identity = await resolveFleetUser(request);
+    const userId = identity?.userId;
     const url = new URL(request.url);
     const requested = (url.searchParams.get("format") ?? "json").toLowerCase();
     const format = requested === "csv" ? "csv" : "json";

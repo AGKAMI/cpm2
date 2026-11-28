@@ -134,7 +134,7 @@ function formatMessage(event: OrderEvent, order: {
         `▸ ${order.productName}\n` +
         `▸ Order: ${order.id}\n` +
         `▸ ${formatPrice(order.amountCents, order.currency)}\n\n` +
-        `▶ Confirmed — being prepared for delivery.`
+        `▶ Confirmed. Being prepared for delivery.`
       );
 
     case "payment_rejected":
@@ -144,7 +144,7 @@ function formatMessage(event: OrderEvent, order: {
         `▸ ${order.productName}\n` +
         `▸ Order: ${order.id}\n` +
         `▸ ${order.reason || "Payment proof not valid or not received"}\n\n` +
-        `⚠ Stock released — try again or contact support.`
+        `▶ Stock released. Try again or contact support.`
       );
 
     case "payment_confirmed_payfast":
@@ -154,7 +154,7 @@ function formatMessage(event: OrderEvent, order: {
         `▸ ${order.productName}\n` +
         `▸ Order: ${order.id}\n` +
         `▸ ${formatPrice(order.amountCents, order.currency)}\n\n` +
-        `▶ Confirmed — being prepared for delivery.`
+        `▶ Confirmed. Being prepared for delivery.`
       );
 
     case "delivery_scheduled":
@@ -178,7 +178,7 @@ function formatMessage(event: OrderEvent, order: {
     case "order_cancelled":
       return (
         header("ORDER CANCELLED") +
-        `⚠ Order Cancelled ⚠\n` +
+        `✗ Order Cancelled ✗\n` +
         `▸ ${order.productName}\n` +
         `▸ Order: ${order.id}\n` +
         `▸ ${order.reason || "Payment expired or rejected"}\n\n` +

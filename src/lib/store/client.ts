@@ -42,7 +42,7 @@ import { clientInitData } from "../client-initdata";
 
 // In a desktop browser the official SDK empties window.Telegram.WebApp.initData,
 // so read the initData captured from the URL hash first (see client-initdata.ts).
-function telegramInitData(): string {
+export function telegramInitData(): string {
   return clientInitData();
 }
 
@@ -142,6 +142,26 @@ export const vantaApi = {
   adminProducts: () =>
     request<{ products: VantaProduct[]; total: number }>("/admin/products?full=1"),
   categories: () => request<{ categories: VantaCategory[] }>("/categories"),
+  wallet: () =>
+    request<{
+      wallet: { balanceCents: number; currency: string };
+      transactions: {
+        id: string;
+        customerId: string;
+        type: string;
+        amountCents: number;
+        balanceAfterCents: number;
+        status: string;
+        reference: string | null;
+        note: string | null;
+        createdAt: string;
+      }[];
+    }>("/wallet"),
+  topUpWallet: (body: { amountCents: number }) =>
+    request<{ redirectUrl: string; txnId: string }>("/wallet/topup", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   createCategory: (body: { name: string; slug: string; description?: string; sortOrder?: number; imageUrl?: string; game?: "cpm1" | "cpm2" }) =>
     request<{ category: VantaCategory }>("/admin/categories", {
       method: "POST",
@@ -204,7 +224,16 @@ export const vantaApi = {
     });
   },
   checkout: (body: unknown) =>
-    request<{ order: VantaOrder; reservedUntil: string; payfastUrl: string | null; starsInvoiceUrl: string | null; canUploadProof: boolean; orderAccessToken: string }>("/checkout", {
+    request<{
+      order: VantaOrder;
+      reservedUntil: string;
+      payfastUrl: string | null;
+      starsInvoiceUrl: string | null;
+      walletPaid?: boolean;
+      walletBalanceCents?: number | null;
+      canUploadProof: boolean;
+      orderAccessToken: string;
+    }>("/checkout", {
       method: "POST",
       body: JSON.stringify(body),
     }),

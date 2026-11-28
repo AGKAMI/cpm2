@@ -9,6 +9,7 @@
 
 import { useEffect, useState } from "react";
 import { StoreShell } from "@/components/StoreShell";
+import { AdminSupportSkeleton } from "@/components/skeleton";
 import { PageHeading } from "@/components/PageHeading";
 import { AdminListSkeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/Button";
@@ -80,7 +81,7 @@ export default function AdminSupportPage() {
     return (
       <StoreShell>
         <PageHeading folio="AS" title="Admin Support" backHref="/store/admin" />
-        <AdminListSkeleton />
+        <AdminSupportSkeleton />
       </StoreShell>
     );
   }

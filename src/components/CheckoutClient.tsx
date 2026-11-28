@@ -19,10 +19,27 @@ export function CheckoutClient({ productId }: { productId: number }) {
 
   const [playerId, setPlayerId] = useState("");
   const [inGameName, setInGameName] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"eft" | "payfast" | "stars">("eft");
+  const [paymentMethod, setPaymentMethod] = useState<"eft" | "payfast" | "stars" | "wallet">("eft");
+  // Store credit — shown as a payment option only when the balance covers the
+  // order total (null = unknown or signed out).
+  const [walletCents, setWalletCents] = useState<number | null>(null);
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofFileName, setProofFileName] = useState("");
   const [checkoutBusy, setCheckoutBusy] = useState(false);
+  useEffect(() => {
+    let live = true;
+    vantaApi
+      .wallet()
+      .then((data) => {
+        if (live) setWalletCents(data.wallet.balanceCents);
+      })
+      .catch(() => {
+        if (live) setWalletCents(null);
+      });
+    return () => {
+      live = false;
+    };
+  }, []);
   const [error, setError] = useState<string | null>(null);
   const [eftDetailsOpen, setEftDetailsOpen] = useState(false);
 
@@ -161,7 +178,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
     setCheckoutBusy(true);
     try {
       const idempotencyKey = `checkout_${product.id}_${Date.now()}`;
-      const { order, payfastUrl, starsInvoiceUrl, canUploadProof, orderAccessToken } = await vantaApi.checkout({
+      const { order, payfastUrl, starsInvoiceUrl, walletPaid, canUploadProof, orderAccessToken } = await vantaApi.checkout({
         productId: product.id,
         quantity: 1,
         paymentMethod,
@@ -173,6 +190,15 @@ export function CheckoutClient({ productId }: { productId: number }) {
       // Keep the order-scoped capability before any redirect (PayFast/Stars
       // return to the order page in this same browser).
       rememberOrderAccess(order.id, orderAccessToken);
+
+      // Wallet — the server debited and confirmed the order in-request, so
+      // there is no redirect: land straight on the paid order.
+      if (walletPaid) {
+        if (typeof window !== "undefined") {
+          window.location.href = `/store/orders/${order.id}?paid=wallet`;
+        }
+        return;
+      }
 
       if (payfastUrl) {
         if (typeof window !== "undefined") {
@@ -362,6 +388,17 @@ export function CheckoutClient({ productId }: { productId: number }) {
                 <div className="text-[10px] text-muted-foreground">Pay in-app with your Stars balance, instantly and without a card.{product ? ` About ${product.promoStarsPrice ?? product.starsPrice ?? approxStarsForCents(totalCents)} Stars.` : ""}</div>
               </div>
             </label>
+            {walletCents !== null && walletCents >= totalCents && (
+              <label className="flex items-center gap-3 cursor-pointer select-none p-3 rounded-md border border-border hover:border-primary hover:text-primary-foreground hover:border-primary transition-colors">
+                <input type="radio" name="paymentMethod" value="wallet" checked={paymentMethod === "wallet"} onChange={() => setPaymentMethod("wallet")} className="accent-primary" />
+                <div className="flex-1">
+                  <div className="text-xs font-medium text-foreground">Wallet balance</div>
+                  <div className="text-[10px] text-muted-foreground">
+                    Pay instantly with your store credit — R {(walletCents / 100).toFixed(2)} available.
+                  </div>
+                </div>
+              </label>
+            )}
 </div>
         </section>
 

@@ -35,7 +35,7 @@ export function ThemeGallery() {
                 type="button"
                 onClick={() => setMode(item.id)}
                 aria-pressed={active}
-                className={`cursor-pointer rounded-full px-3 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors ${
+                className={`inline-flex h-9 cursor-pointer items-center rounded-full px-3.5 font-sans text-xs font-semibold uppercase tracking-[0.12em] transition-colors ${
                   active
                     ? "bg-racing text-racing shadow-[inset_0_1px_0_inset-shadow]"
                     : "text-ink-faint hover:text-ink"

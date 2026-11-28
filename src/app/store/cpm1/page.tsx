@@ -5,7 +5,7 @@ import { StoreShell } from "@/components/StoreShell";
 import { listCategories } from "@/lib/store/products";
 
 export const metadata: Metadata = {
-  title: "CPM 1 — CPM STORE",
+  title: "CPM 1 - CPM STORE",
   description: "CPM1 accounts, car catalogue and services.",
 };
 

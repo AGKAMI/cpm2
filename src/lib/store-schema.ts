@@ -290,7 +290,7 @@ CREATE TABLE IF NOT EXISTS vanta_orders (
   currency           TEXT    NOT NULL DEFAULT 'ZAR',
   exchange_rate      REAL,
   reserved_until     TEXT,
-  payment_method     TEXT    NOT NULL DEFAULT 'eft' CHECK (payment_method IN ('payfast', 'eft', 'stars')),
+  payment_method     TEXT    NOT NULL DEFAULT 'eft' CHECK (payment_method IN ('payfast', 'eft', 'stars', 'wallet')),
   player_id          TEXT    NOT NULL DEFAULT '',
   in_game_name       TEXT    NOT NULL DEFAULT '',
   idempotency_key    TEXT    NOT NULL UNIQUE,
@@ -422,6 +422,38 @@ CREATE TABLE IF NOT EXISTS vanta_uploads (
 -- encryption key means the units are unusable, which is the intended trade for
 -- not storing plaintext buyer credentials.
 
+
+
+-- ---- Wallet: in-app credits bought up-front, spendable at checkout --------
+-- Balance is one row per customer. Every movement is an append-only ledger
+-- row (balance_after_cents is recorded per movement so history reconciles
+-- even if a later correction lands). A debit only ever runs through
+-- debitWallet's conditional UPDATE, so two concurrent spends can never both
+-- succeed against the same cents.
+CREATE TABLE IF NOT EXISTS vanta_wallet (
+  customer_id     INTEGER PRIMARY KEY,
+  balance_cents   INTEGER NOT NULL DEFAULT 0,
+  created_at      TEXT    NOT NULL,
+  updated_at      TEXT    NOT NULL
+);
+
+-- type: topup | order_payment | admin_credit | admin_debit | refund
+-- status: pending (a topup awaiting its PayFast ITN) | completed | failed
+CREATE TABLE IF NOT EXISTS vanta_wallet_txns (
+  id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id          INTEGER NOT NULL,
+  type                 TEXT    NOT NULL,
+  amount_cents         INTEGER NOT NULL,
+  balance_after_cents  INTEGER NOT NULL DEFAULT 0,
+  status               TEXT    NOT NULL DEFAULT 'pending',
+  reference            TEXT,
+  note                 TEXT,
+  created_at           TEXT    NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_vanta_wallet_txns_customer
+  ON vanta_wallet_txns (customer_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_vanta_wallet_txns_reference
+  ON vanta_wallet_txns (reference);
 
 ${VANTA_ACCOUNT_UNITS_DDL}
 

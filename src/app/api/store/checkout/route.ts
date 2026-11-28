@@ -15,7 +15,8 @@ import {
   createCustomer,
   linkPlatformIdentity,
 } from "@/lib/store/customers";
-import { createOrder } from "@/lib/store/checkout";
+import { confirmPayment, createOrder, expireReservation } from "@/lib/store/checkout";
+import { creditWallet, debitWallet } from "@/lib/store/wallet";
 import { getProduct, productPromotionMap } from "@/lib/store/products";
 import { buildPayFastCheckoutUrl } from "@/lib/store/payfast";
 import { createStarsInvoiceLink, starsForCents } from "@/lib/store/stars";
@@ -26,7 +27,7 @@ import type { Customer } from "@/lib/store-types";
 const checkoutSchema = z.object({
   productId: z.coerce.number().int().positive(),
   quantity: z.coerce.number().int().min(1).default(1),
-  paymentMethod: z.enum(["payfast", "eft", "stars"]),
+  paymentMethod: z.enum(["payfast", "eft", "stars", "wallet"]),
   playerId: z.string().min(1, "Player ID is required"),
   inGameName: z.string().min(1, "In-game name is required"),
   idempotencyKey: z.string().min(1),
@@ -46,12 +47,13 @@ async function resolveBuyer(
   request: Request,
   playerId: string,
   inGameName: string,
-  paymentMethod: "eft" | "payfast" | "stars",
+  paymentMethod: "eft" | "payfast" | "stars" | "wallet",
 ): Promise<Customer> {
-  // Telegram auth is only required for Stars payments, which happen inside
-  // Telegram and need the user linked. EFT / PayFast are web flows identified
-  // by Player ID — no Telegram signature needed.
-  if (paymentMethod === "stars") {
+  // Telegram auth is REQUIRED for Stars (an in-Telegram payment) and for
+  // wallet (store credit lives on the linked customer's account, so a
+  // player-id guest could never have a balance). EFT / PayFast are web flows
+  // identified by Player ID — no Telegram signature needed.
+  if (paymentMethod === "stars" || paymentMethod === "wallet") {
     const telegramUserId = await assertTelegramAuth(request);
     if (telegramUserId !== null) {
       const linked = await getCustomerByPlatformIdentity("telegram", String(telegramUserId));
@@ -60,8 +62,13 @@ async function resolveBuyer(
       await linkPlatformIdentity(created.id, "telegram", String(telegramUserId), "");
       return created;
     }
-    // Stars with no valid Telegram identity -> can't proceed.
-    throw new ApiError(401, "TELEGRAM_AUTH_INVALID", "Telegram signature did not verify — reopen the console from Telegram and try again.");
+    throw new ApiError(
+      401,
+      "TELEGRAM_AUTH_INVALID",
+      paymentMethod === "wallet"
+        ? "Paying with wallet needs your Telegram account — reopen the store from Telegram and try again."
+        : "Telegram signature did not verify — reopen the console from Telegram and try again.",
+    );
   }
   return (await getCustomerByPlayerId(playerId)) ?? await createCustomer({ inGameName, playerId });
 }
@@ -84,9 +91,11 @@ export async function POST(request: Request) {
     if (!product.isPublished) {
       throw new ApiError(400, "product_unpublished", "That vehicle isn't available for purchase.");
     }
-    // PayFast settles in ZAR and Telegram Stars prices from a ZAR-per-star
-    // rate. Letting a USD/GBP product through would charge its ZAR-denominated
-    // amount while labelling the order in the foreign currency.
+    // PayFast settles in ZAR, Telegram Stars price from a ZAR-per-star rate,
+    // and the wallet holds ZAR cents. Letting a USD/GBP product through one
+    // of those gateways would charge its ZAR-denominated amount while
+    // labelling the order in the foreign currency. EFT is a manual transfer
+    // the reviewer verifies, so it may settle in the buyer's currency.
     if (
       body.paymentMethod !== "eft" &&
       (product.currency || "ZAR").toUpperCase() !== "ZAR"
@@ -94,7 +103,7 @@ export async function POST(request: Request) {
       throw new ApiError(
         400,
         "UNSUPPORTED_GATEWAY_CURRENCY",
-        "Card and Stars payments are available in ZAR only. Choose EFT for this item.",
+        "Card, Stars and wallet payments are available in ZAR only. Choose EFT for this item.",
       );
     }
 
@@ -111,12 +120,12 @@ export async function POST(request: Request) {
       productId: body.productId,
       quantity: body.quantity,
       amountCents,
-      // PayFast, EFT and Telegram Stars all settle in the product's base
-      // currency here (ZAR). `currency_pref` is a LANGUAGE preference in this
-      // schema, not a payment currency — passing it here used to label an
-      // order "en"/"USD" while the gateway charged Rands, and the PayFast ITN
-      // check hardcodes ZAR.
-      currency: product.currency,
+      // Gateway methods settle in the product's base currency (gated to ZAR
+      // above): createOrder only re-prices when the target currency differs,
+      // and the wallet/PayFast/Stars amounts must match the debit/charge
+      // exactly. EFT may settle in the buyer's currency pref — createOrder
+      // resolves a configured per-currency price when one exists.
+      currency: body.paymentMethod === "eft" ? customer.currencyPref || product.currency : product.currency,
       paymentMethod: body.paymentMethod,
       playerId: normalizedPlayerId,
       inGameName: body.inGameName.trim(),
@@ -156,16 +165,68 @@ export async function POST(request: Request) {
       });
     }
 
+    // ---- Wallet: pay with in-app credits -----------------------------------
+    // Debit first (the conditional UPDATE only succeeds while the balance
+    // covers the order), then the shared race-safe confirmPayment flips the
+    // order and deducts stock. A failure anywhere down the line refunds the
+    // debit, so a customer is never charged for an order they didn't get.
+    // The debit uses the FINAL order amount — the same number every other
+    // gateway charges.
+    let walletPaid = false;
+    let walletBalanceAfter: number | null = null;
+    if (body.paymentMethod === "wallet") {
+      const chargeCents = result.order.amountCents;
+      const debit = await debitWallet({
+        customerId: result.order.customerId,
+        amountCents: chargeCents,
+        type: "order_payment",
+        reference: String(result.order.id),
+        note: `Order ${result.order.id} — ${product.name}`,
+      });
+      if (!debit.ok) {
+        await expireReservation(result.order.id);
+        return fail({
+          status: 400,
+          body: {
+            error: {
+              code: "insufficient_wallet_balance",
+              message: "Your wallet balance is too low for this order. Top up and try again.",
+            },
+          },
+        });
+      }
+      walletBalanceAfter = debit.balanceCents;
+      try {
+        await confirmPayment(String(result.order.id));
+        walletPaid = true;
+      } catch (err) {
+        // Pay the customer back — the order did not go through.
+        await creditWallet({
+          customerId: result.order.customerId,
+          amountCents: chargeCents,
+          type: "refund",
+          reference: `refund-${result.order.id}`,
+          note: `Refund — order ${result.order.id} could not be confirmed`,
+        });
+        await expireReservation(result.order.id);
+        throw err;
+      }
+    }
+
     // A per-order capability replaces the old customer-wide guest session.
     // It lets a web buyer (new or returning, by player id) read THIS order and
     // attach EFT proof without granting profile/cart/other-order access. A
-    // guessable player id can no longer be traded for a store session.
+    // guessable player id can no longer be traded for a store session — which
+    // is why no session cookie is minted here: creating an (unpaid) order is
+    // not identity proof.
     const orderAccessToken = createOrderAccessToken(result.order.id, result.order.customerId);
     return ok({
       order: result.order,
       reservedUntil: result.reservedUntil,
       payfastUrl,
       starsInvoiceUrl,
+      walletPaid,
+      walletBalanceCents: walletBalanceAfter,
       canUploadProof: true,
       orderAccessToken,
     }, 201);

@@ -174,6 +174,80 @@ export async function runStoreMigrations(storeArg?: TursoHttpClient): Promise<vo
     // Backfill already applied — safe to ignore
   }
 
+  // Migration: payment_method gains 'wallet' (store credit). SQLite cannot
+  // ALTER a CHECK constraint, so the table is rebuilt: create the wider
+  // table, copy, drop, rename. Guarded on the live constraint text so it
+  // runs exactly once no matter how many serverless instances boot.
+  const orderConstraint = await store.execute({
+    sql: `SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'vanta_orders'`,
+    args: [],
+  });
+  const ddl = String(orderConstraint.rows[0]?.sql ?? "");
+  if (ddl && !ddl.includes("'wallet'")) {
+    // The stored DDL quotes identifiers the way SQLite normalises them
+    // ("vanta_orders"), so the rename must tolerate quoting and IF NOT EXISTS.
+    const widened = ddl
+      .replace(
+        "CHECK (payment_method IN ('payfast', 'eft', 'stars'))",
+        "CHECK (payment_method IN ('payfast', 'eft', 'stars', 'wallet'))",
+      )
+      .replace(
+        /^CREATE TABLE\s+(IF NOT EXISTS\s+)?["'`]?vanta_orders["'`]?\s*/,
+        "CREATE TABLE vanta_orders_wallet_migration ",
+      );
+    if (!widened.startsWith("CREATE TABLE vanta_orders_wallet_migration ")) {
+      throw new Error(
+        "Wallet migration could not rebuild vanta_orders: unexpected CREATE TABLE prefix",
+      );
+    }
+    await store.execute({
+      sql: `DROP TABLE IF EXISTS vanta_orders_wallet_migration`,
+      args: [],
+    });
+    await store.execute({ sql: `${widened};`, args: [] });
+    await store.execute({
+      sql: `INSERT INTO vanta_orders_wallet_migration SELECT * FROM vanta_orders`,
+      args: [],
+    });
+    await store.execute({ sql: `DROP TABLE vanta_orders`, args: [] });
+    await store.execute({
+      sql: `ALTER TABLE vanta_orders_wallet_migration RENAME TO vanta_orders`,
+      args: [],
+    });
+    // The rebuild keeps the columns (and the UNIQUE autoindexes) but not the
+    // hand-written indexes — recreate the lookup ones.
+    for (const idx of [
+      `CREATE INDEX IF NOT EXISTS idx_vanta_orders_customer ON vanta_orders (customer_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_vanta_orders_payment_state ON vanta_orders (payment_state)`,
+      `CREATE INDEX IF NOT EXISTS idx_vanta_orders_created ON vanta_orders (created_at DESC)`,
+    ]) {
+      await store.execute({ sql: idx, args: [] });
+    }
+  }
+
+  // Migration: one stock truth. Products without an inventory row get one
+  // seeded from their own stock_quantity (display and checkout previously
+  // read different tables — a card could show sold-out while the checkout
+  // reserved a unit, or vice versa), and the product column is collapsed to
+  // the available number the card now displays. Idempotent.
+  await store.execute({
+    sql: `INSERT INTO vanta_inventory (product_id, stock_quantity, reserved_quantity, version, updated_at)
+          SELECT id, stock_quantity, 0, 1, ?
+          FROM vanta_products
+          WHERE id NOT IN (SELECT product_id FROM vanta_inventory)`,
+    args: [new Date().toISOString()],
+  });
+  await store.execute({
+    sql: `UPDATE vanta_products
+          SET stock_quantity = (
+                SELECT i.stock_quantity - i.reserved_quantity
+                FROM vanta_inventory i WHERE i.product_id = vanta_products.id
+              ),
+              updated_at = ?
+          WHERE id IN (SELECT product_id FROM vanta_inventory)`,
+    args: [new Date().toISOString()],
+  });
+
   // Migration: add eft_proof_url to vanta_orders (for EFT payment proof uploads)
   try {
     await store.execute({

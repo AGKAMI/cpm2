@@ -14,12 +14,12 @@
 
 import { telegramBotToken } from "../telegram.ts";
 
-/** ZAR per single Star. 1 Star ≈ $0.013; ZAR/USD ≈ 18 → ≈ R0.234.
- *  Tunable without a redeploy via STARS_ZAR_PER_STAR. */
+/** ZAR per single Star. The store's real-world ratio: R36 buys 100 Stars,
+ *  i.e. R0.36 per Star. Tunable without a redeploy via STARS_ZAR_PER_STAR. */
 export function zarPerStar(): number {
   const raw = process.env.STARS_ZAR_PER_STAR;
   const parsed = raw ? Number(raw) : NaN;
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0.24;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0.36;
 }
 
 /** Whole Stars to charge for a ZAR amount (in cents), always ≥ 1. */

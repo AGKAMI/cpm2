@@ -17,16 +17,14 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { VantaProduct, VantaCategory } from "@/lib/store/client";
-import { promotedProducts } from "@/lib/store/catalogue.ts";
-import { WalletHeader } from "@/components/WalletHeader";
+import { formatPrice } from "@/lib/store/client";
+import { approxStarsForCents } from "@/lib/store/pricing";
 import { Modal } from "@/components/ui/Modal";
 
 /** The hub is NOT a shop window, so it does not take StoreHomeData -- it needs
  *  the raw catalogue to derive its discovery shelves plus the promotions feed. */
 export type StoreHubData = {
   products: VantaProduct[];
-  /** The live product promotions keyed by product id (server-resolved). */
-  promoById: Map<number, StoreHubPromo>;
   categories: VantaCategory[];
 };
 
@@ -275,23 +273,17 @@ function SupportOptions({
   );
 }
 
-/** The live product promotion data the hub shelves render (pill + price). */
-export type StoreHubPromo = {
-  id: number;
-  discountPercent: number;
-  backgroundColor: string;
-  accentColor: string;
-  pillColor: string;
-  title: string;
-  game: "cpm1" | "cpm2";
-};
-
-export function StoreHub({ products, categories, promoById }: StoreHubData) {
-  // Derived shelves, not a second product grid: promotions come from LIVE
-  // product-attached promos (not the legacy is_sale flag), so creating a
-  // promotion updates this strip immediately without editing the product.
+export function StoreHub({ products, categories }: StoreHubData) {
+  // Derived shelves, not a second product grid: these are the "new additions"
+  // and "promotions" strips, capped so they never read as a shop window.
   const arrivals = products.filter((p) => p.isNew).slice(0, 4);
-  const promoted = promotedProducts(products, promoById);
+  const onSale = products.filter((p) => p.isSale).slice(0, 4);
+  // Full product cards for every product carrying a LIVE promotion — the
+  // homepage's Promoted shelf. Cover required (the listings' no-image rule),
+  // in stock, capped so the hub stays a hub.
+  const promoted = products
+    .filter((p) => p.promo && p.coverUrl && p.stockQuantity > 0)
+    .slice(0, 4);
   const router = useRouter();
   const [supportOpen, setSupportOpen] = useState(false);
 
@@ -301,7 +293,6 @@ export function StoreHub({ products, categories, promoById }: StoreHubData) {
       {/* ---------- identity ---------- */}
 
       {/* ---------- wallet-style header (reference layout) ---------- */}
-      <WalletHeader />
 
       {/* ---------- game picker ---------- */}
       <nav aria-label="Browse" className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -317,8 +308,8 @@ export function StoreHub({ products, categories, promoById }: StoreHubData) {
       </nav>
 
       {/* ---------- admin-created category shelves, scoped by game ----------
-          Only categories whose `game` matches reach this page (the server
-          passes both lists), so a CPM1 category can never appear here. */}
+          Only categories whose `game` matches reach this shelf (the server
+          passes both lists), so a CPM1 category can never appear as CPM2. */}
       {(["cpm2", "cpm1"] as const).map((game) => {
         const gameCategories = categories
           .filter((c) => (c.game ?? "cpm2") === game)
@@ -352,40 +343,106 @@ export function StoreHub({ products, categories, promoById }: StoreHubData) {
         );
       })}
 
-      {/* ---------- discovery shelves (NOT products) ---------- */}
+      {/* ---------- Promoted: FULL product cards, promo styling ---------- */}
       {promoted.length > 0 && (
         <Shelf
-          title="Promotions"
+          title="Promoted"
           actionHref="/store/cpm2/cars"
           actionLabel="Browse"
         >
+          <ul className="grid grid-cols-2 gap-3">
+            {promoted.map((p) => {
+              const promo = p.promo!;
+              const priceCents = p.promoPriceCents ?? p.basePriceCents;
+              return (
+                <li key={p.id}>
+                  <Link
+                    href={`/store/products/${p.id}`}
+                    className="promo-card flex h-full flex-col overflow-hidden rounded-xl border transition-colors hover:brightness-110"
+                    style={{
+                      background: `linear-gradient(160deg, ${promo.backgroundColor}, ${promo.accentColor}22)`,
+                      borderColor: promo.accentColor,
+                    }}
+                  >
+                    <div className="flex justify-center pt-1.5">
+                      <span
+                        className="promo-pill"
+                        style={{ ["--pill-hue" as string]: promo.pillColor }}
+                      >
+                        Promoted
+                      </span>
+                    </div>
+                    <div className="aspect-[4/5] w-full overflow-hidden border-b border-border bg-secondary">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={p.coverUrl ?? ""}
+                        alt={p.name}
+                        className="h-full w-full object-contain"
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className="flex flex-1 flex-col gap-1 p-2.5">
+                      <span className="line-clamp-2 text-[11px] font-bold leading-tight text-foreground">
+                        {p.name}
+                      </span>
+                      <span className="mt-auto text-[11px] font-bold tabular-nums text-foreground">
+                        {`${formatPrice(priceCents, p.currency)}${
+                          approxStarsForCents(priceCents)
+                            ? ` (${approxStarsForCents(priceCents)} stars)`
+                            : ""
+                        }`}
+                      </span>
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </Shelf>
+      )}
+
+      {/* ---------- discovery shelves (NOT products) ---------- */}
+      {onSale.length > 0 && (
+        <Shelf
+          title="Promotions"
+          actionHref="/store/cpm2/cars"
+          actionLabel="Manage"
+        >
           <ul className="grid gap-3 sm:grid-cols-2">
-            {promoted.map(({ product: p, promo, priceCents }) => (
-              <li key={p.id}>
-                <Link
-                  href={`/store/products/${p.id}`}
-                  className="promo-card flex items-center justify-between gap-3 rounded-2xl border bg-secondary px-4 py-3 text-xs text-foreground hover:brightness-110"
-                  style={{
-                    // Promotion's own primary/secondary colours, not the theme.
-                    background: `linear-gradient(160deg, ${promo.backgroundColor}, ${promo.accentColor}22)`,
-                    borderColor: promo.accentColor,
-                  }}
-                >
-                  <span className="truncate font-bold">
-                    <span
-                      className="promo-pill mr-2"
-                      style={{ ["--pill-hue" as string]: promo.pillColor }}
-                    >
-                      Promoted
+            {onSale.map((p) => {
+              const promo = p.promo ?? null;
+              const promoPrice = p.promoPriceCents ?? null;
+              return (
+                <li key={p.id}>
+                  <Link
+                    href={`/store/products/${p.id}`}
+                    className="flex items-center justify-between gap-3 rounded-2xl border bg-secondary px-4 py-3 text-xs text-foreground hover:border-primary/60"
+                    style={promo ? { borderColor: promo.accentColor } : undefined}
+                  >
+                    <span className="truncate font-bold">
+                      {promo && (
+                        <span
+                          className="promo-pill mr-2"
+                          style={{ ["--pill-hue" as string]: promo.pillColor }}
+                        >
+                          Promoted
+                        </span>
+                      )}
+                      {p.name}
                     </span>
-                    {p.name}
-                  </span>
-                  <span className="shrink-0 tabular-nums text-ok">
-                    R {(priceCents / 100).toFixed(2)}
-                  </span>
-                </Link>
-              </li>
-            ))}
+                    {promoPrice != null ? (
+                      <span className="shrink-0 tabular-nums text-ok">
+                        R {(promoPrice / 100).toFixed(2)}
+                      </span>
+                    ) : (
+                      <span className="shrink-0 text-[9px] font-bold uppercase tracking-[0.12em] text-ok">
+                        -{p.discountPercent}%
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </Shelf>
       )}

@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { StoreShell } from "@/components/StoreShell";
+import { AdminDashboardSkeleton } from "@/components/skeleton";
 import { PageHeading } from "@/components/PageHeading";
 import { AdminStatsSkeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/Button";
@@ -89,7 +90,7 @@ export default function AdminDashboardPage() {
     return (
       <StoreShell>
         <PageHeading folio="AD" title="Admin Dashboard" />
-        <AdminStatsSkeleton />
+        <AdminDashboardSkeleton />
       </StoreShell>
     );
   }

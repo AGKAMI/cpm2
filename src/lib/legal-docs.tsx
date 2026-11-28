@@ -5,6 +5,8 @@
  */
 
 import type { ReactNode } from "react";
+import Link from "next/link";
+import { BackLink } from "@/components/ui/BackLink";
 
 export type LegalDoc = { title: string; version: string; body: ReactNode };
 
@@ -29,9 +31,7 @@ export function LegalDocView({
   return (
     <div className="p-8 max-w-2xl mx-auto">
       <nav className="mb-8">
-        <a href={backHref} className="text-[11px] text-primary hover:underline underline-link">
-          ← {backLabel}
-        </a>
+        <BackLink href={backHref} label={backLabel} />
       </nav>
       <h1 className="text-2xl font-bold text-foreground mb-2">{doc.title}</h1>
       {/* No "last updated" date: the old pages rendered today's date here,
@@ -45,7 +45,7 @@ export function LegalDocView({
 export const LEGAL_DOCS: Record<string, LegalDoc> = {
   terms: {
     title: "Terms & Conditions",
-    version: "1.0",
+    version: "1.1",
     body: (
       <>
         <p>
@@ -86,14 +86,31 @@ export const LEGAL_DOCS: Record<string, LegalDoc> = {
           availability.
         </p>
         <h2 className="text-lg font-semibold text-foreground mt-6 mb-2">
-          5. Limitation of Liability
+          5. Refunds & Cancellation
+        </h2>
+        <p>
+          You can request a full refund or cancel at any time before the vehicle
+          is delivered in-game — message the store admin with your order number.
+          After in-game delivery the sale is final: digital vehicles cannot be
+          returned. Full details are in our{" "}
+          <Link href="/legal/refund" className="text-primary underline">
+            Refund Policy
+          </Link>{" "}
+          and{" "}
+          <Link href="/legal/cancellation" className="text-primary underline">
+            Cancellation Policy
+          </Link>
+          .
+        </p>
+        <h2 className="text-lg font-semibold text-foreground mt-6 mb-2">
+          6. Limitation of Liability
         </h2>
         <p>
           Vehicles are digital goods in CPM2. We are not responsible for
           in-game losses after delivery, account bans, or CPM2 server issues.
         </p>
         <h2 className="text-lg font-semibold text-foreground mt-6 mb-2">
-          6. Changes to These Terms
+          7. Changes to These Terms
         </h2>
         <p>
           We may update these terms from time to time. Major changes are

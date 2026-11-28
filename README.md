@@ -67,8 +67,8 @@ node scripts/telegram-bot.mjs status   # shows what is wired up
   clears one). Password attempts are rate-limited.
 - **A real bot backend** — `POST /api/telegram/webhook` (`src/app/api/telegram/webhook/route.ts`)
   receives Bot API updates: the link-verification callback gate, pre-checkout queries and payment
-  confirmations for store orders. It registers its own webhook on first call, so unlike the old
-  tracker there **is** a server component — it lives on the Vercel deployment, and
+  confirmations for store orders. The endpoint lives on the Vercel deployment;
+  `scripts/set-webhook-secret.mjs` registers it with Telegram and sets the shared secret, and
   `scripts/telegram-bot.mjs` only wires the ☰ menu button and reports status locally.
 
 ## VANTA GARAGE storefront (`/store`)
@@ -228,7 +228,6 @@ src/lib/db-turso.ts      Turso (libSQL) connection — undici keep-alive pool, s
 src/lib/store-db.ts      store DB client; applies the vanta_ schema + migrations idempotently
 src/lib/store-schema.ts  every vanta_ table DDL — the CHECK constraints tests/store.test.ts asserts
 src/lib/store/checkout.ts orders, 60-minute stock reservation, payment state machine, expiry sweep
-src/lib/store/orders.ts  order pipeline transitions (guarded server-side)
 src/lib/store/products.ts products, inventory, atomic reserveStock() oversell guard
 src/lib/store/payfast.ts PayFast checkout + MD5 signature
 src/lib/store/stars.ts   Telegram Stars → ZAR conversion
@@ -272,6 +271,8 @@ names without values. Vercel holds its own copies for the deployed storefront + 
 | `ACCOUNT_ENCRYPTION_KEY` | — | Key for delivered store account units — the app refuses to store credentials without it |
 | `CPM2_BCRYPT_ROUNDS` | `12` | Password-hashing cost |
 | `TELEGRAM_BOT_TOKEN` | — | Bot token — Mini App initData, the webhook and order notifications (`src/lib/telegram.ts`) |
+| `TELEGRAM_WEBHOOK_SECRET` | — | Required: Telegram sends it to `/api/telegram/webhook` (`x-telegram-bot-api-secret-token`); the webhook refuses all updates when unset. Set it with `node scripts/set-webhook-secret.mjs` |
+| `CRON_SECRET` | — | Required by `/api/store/internal/cron`; Vercel Cron sends it as `Authorization: Bearer …` |
 | `APP_PASSWORD` | — | The console password — gates the browser and reveal consent (`/api/auth/login`) |
 | `STORE_OWNER_EMAIL` | — | Owner email (`CONSOLE_OWNER_EMAIL` is accepted as an alias) |
 | `STORE_ADMIN_TELEGRAM_ID` | — | Telegram id allowed into `/store/owner` and `/store/admin` |
@@ -284,3 +285,16 @@ names without values. Vercel holds its own copies for the deployed storefront + 
 | `GEMINI_API_KEY` | — | Gemini screenshot identification on the trade desk |
 | `VANTA_WHATSAPP_WEBHOOK_URL` | — | WhatsApp bot notification webhook |
 | `VANTA_WHATSAPP_WEBHOOK_SECRET` | — | Shared secret for that webhook |
+
+### Payment settlement invariants
+
+- PayFast ITNs are accepted only when the signature **and** `merchant_id` match
+  the configured merchant and `amount_gross` matches the order exactly. All
+  three PayFast variables must be present, or checkout returns no payment URL.
+- PayFast, Telegram Stars and manual EFT verification all settle through the
+  same guarded state flip (`confirmPayment`) and the idempotent
+  `ensureSettlementRecords()` helper. A retry can repair a half-written
+  payment/ledger audit trail without double-counting it.
+- An order's reserved stock is released only by the caller that actually moves
+  the row into a terminal state, or by the expiry sweep. A failed order INSERT
+  compensates its own reservation immediately.

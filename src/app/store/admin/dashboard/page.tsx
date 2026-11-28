@@ -12,6 +12,7 @@ import Link from "next/link";
 import { StoreShell } from "@/components/StoreShell";
 import { AdminDashboardSkeleton } from "@/components/skeleton";
 import { PageHeading } from "@/components/PageHeading";
+import { AdminStatsSkeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { vantaApi, formatPrice } from "@/lib/store/client";
@@ -223,7 +224,7 @@ export default function AdminDashboardPage() {
                 Dismiss
               </Button>
               {selectedAlert.type === "payment_rejected" && (
-                <Link href={`/store/admin/orders/${selectedAlert.entityId}`}>
+                <Link href={`/store/orders/${selectedAlert.entityId}`}>
                   <Button variant="primary">Review Order</Button>
                 </Link>
               )}

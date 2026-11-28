@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { StoreShell } from "@/components/StoreShell";
 import { AdminSupportSkeleton } from "@/components/skeleton";
 import { PageHeading } from "@/components/PageHeading";
+import { AdminListSkeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/Button";
 
 type Ticket = {

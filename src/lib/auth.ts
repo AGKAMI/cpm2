@@ -180,6 +180,51 @@ function timingSafeEqualStrings(a: string, b: string): boolean {
   return crypto.timingSafeEqual(bufA, bufB);
 }
 
+// ------------------------------------------------------------ order access
+
+/**
+ * A signed, order-scoped capability for a guest who checked out without an
+ * account. It opens ONE order (and its proof upload), never the customer's
+ * profile, cart, other orders or the console. It is returned by checkout and
+ * kept in the browser's localStorage, not in a cookie, so a guessable player
+ * id cannot be exchanged for a customer-wide session.
+ */
+export const ORDER_ACCESS_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
+
+function orderAccessMac(payload: string): string {
+  return crypto
+    .createHmac("sha256", sessionKey())
+    .update(`order:${payload}`)
+    .digest("base64url");
+}
+
+export function createOrderAccessToken(orderId: string, customerId: number, now = Date.now()): string {
+  if (!orderId || !Number.isInteger(customerId) || customerId <= 0) {
+    throw new Error("An order access token needs an order id and a customer id");
+  }
+  const expiresAt = Math.floor(now / 1000) + ORDER_ACCESS_MAX_AGE_SECONDS;
+  const payload = `${orderId}.${customerId}.${expiresAt}`;
+  return `${payload}.${orderAccessMac(payload)}`;
+}
+
+export function verifyOrderAccessToken(
+  token: string | undefined,
+  orderId: string,
+  customerId: number,
+): boolean {
+  if (!token) return false;
+  const parts = token.split(".");
+  if (parts.length !== 4) return false;
+  const [tokenOrderId, customerPart, expiresPart, mac] = parts;
+  if (tokenOrderId !== orderId || Number(customerPart) !== customerId) return false;
+  const expiresAt = Number(expiresPart);
+  if (!Number.isInteger(expiresAt) || expiresAt * 1000 <= Date.now()) return false;
+  return timingSafeEqualStrings(
+    orderAccessMac(`${tokenOrderId}.${customerPart}.${expiresPart}`),
+    mac,
+  );
+}
+
 /**
  * Cookie attributes for the session. Telegram Web (an iframe) needs
  * `SameSite=None; Secure`, which we turn on whenever the request arrived over

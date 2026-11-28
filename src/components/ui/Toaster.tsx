@@ -29,17 +29,17 @@ const ToastContext = createContext<ToastApi | null>(null);
 const ICONS: Record<ToastKind, ReactNode> = {
   success: (
     <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
     </svg>
   ),
   error: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
     </svg>
   ),
   info: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-      <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" />
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M12 12a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" stroke="none" fill="currentColor" />
     </svg>
   ),
@@ -85,7 +85,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={toast.id}
             role="status"
-            className={`cursor-default flex items-center justify-between w-full h-12 sm:h-14 rounded-lg px-[10px] ${
+            className={`pointer-events-auto cursor-default flex items-center justify-between w-full h-12 sm:h-14 rounded-lg px-[10px] ${
               toast.kind === "error" ? "bg-[#232531]" : "bg-[#1a1a20]"
             }`}
           >
@@ -100,6 +100,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 ) : null}
               </div>
             </div>
+            {/* The action (e.g. the archive toast's Undo) was accepted by
+                the API but never rendered — the button simply didn't exist. */}
+            {toast.action ? (
+              <button
+                type="button"
+                onClick={() => {
+                  toast.action?.onClick();
+                  remove(toast.id);
+                }}
+                className="pointer-events-auto shrink-0 cursor-pointer rounded-md px-2 py-1 font-semibold text-[#d4af4f] transition-colors hover:bg-white/10"
+              >
+                {toast.action.label}
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={() => remove(toast.id)}
@@ -107,7 +121,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               className="text-gray-600 hover:bg-white/10 p-1 rounded-md transition-colors ease-linear"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true" className="w-6 h-6">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>

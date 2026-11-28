@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { StoreShell } from "@/components/StoreShell";
 import { AdminDeliveriesSkeleton } from "@/components/skeleton";
 import { PageHeading } from "@/components/PageHeading";
+import { AdminStatsSkeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/Button";
 
 type AdminAppointment = {
@@ -55,7 +56,7 @@ export default function AdminDeliveriesPage() {
   async function verifyDelivery(appointmentId: string) {
     if (!window.confirm("Mark this delivery as verified?")) return;
     try {
-      const res = await fetch(`/api/store/admin/orders/${appointmentId}/delivery-evidence`, {
+      const res = await fetch(`/api/store/admin/appointments/${appointmentId}/verify`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

@@ -8,13 +8,13 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getStoreDb } from "@/lib/store-db";
-import { currentUserId } from "@/lib/auth";
+import { currentStoreUserId } from "@/lib/store/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
-    const sessionUserId = currentUserId(request);
+    const sessionUserId = currentStoreUserId(request);
     if (!sessionUserId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "You must be logged in." } },
@@ -61,13 +61,31 @@ export async function GET(request: NextRequest) {
 
     // When confirmed, perform the actual link
     if (status === "confirmed") {
-      const { linkPlatformIdentity } = await import("@/lib/store/customers");
+      const { getCustomerByPlatformIdentity, linkPlatformIdentity } = await import("@/lib/store/customers");
+      const holder = await getCustomerByPlatformIdentity("telegram", String(row.telegram_user_id));
+      if (holder && holder.customer.id !== sessionUserId) {
+        return NextResponse.json(
+          { error: { code: "ALREADY_LINKED", message: "That Telegram ID is linked to another account." } },
+          { status: 409 },
+        );
+      }
       const already = await db.execute({
-        sql: `SELECT id FROM vanta_platform_identities WHERE platform = 'telegram' AND customer_id = ?`,
+        sql: `SELECT platform_user_id FROM vanta_platform_identities
+              WHERE platform = 'telegram' AND customer_id = ?`,
         args: [sessionUserId],
       });
       if (already.rows.length === 0) {
         await linkPlatformIdentity(sessionUserId, "telegram", String(row.telegram_user_id), "");
+      } else if (String(already.rows[0].platform_user_id) !== String(row.telegram_user_id)) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "DIFFERENT_TELEGRAM_LINKED",
+              message: "This account is already linked to a different Telegram ID.",
+            },
+          },
+          { status: 409 },
+        );
       }
       return NextResponse.json({
         status: "confirmed",

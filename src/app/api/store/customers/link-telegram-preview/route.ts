@@ -10,6 +10,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { readJson } from "@/lib/route";
+import { trustedClientIp } from "@/lib/auth";
+import { checkDurableRateLimit } from "@/lib/rate-limit";
 import { fetchTelegramUser, fetchTelegramPhotoUrl } from "@/lib/telegram";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +30,14 @@ function letterColor(telegramUserId: string): string {
 
 export async function POST(request: NextRequest) {
   try {
+    // Public by design (pre-verification profile preview), but unthrottled
+    // it lets anyone enumerate Telegram IDs and harvest usernames/photos.
+    if (await checkDurableRateLimit(`link-telegram-preview:${trustedClientIp(request)}`, 20, 60_000)) {
+      return NextResponse.json(
+        { error: { code: "RATE_LIMITED", message: "Too many lookups - wait a minute and try again." } },
+        { status: 429 },
+      );
+    }
     const body = (await readJson(request)) as { telegramId?: string };
     const telegramUserId = body.telegramId?.trim();
 

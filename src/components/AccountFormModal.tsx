@@ -285,7 +285,7 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
           <div className="flex flex-col gap-1.5">
             <span className="label-caps flex items-baseline justify-between gap-3">
               <span>New garage</span>
-              <span className="num text-[10px] text-ink-faint">+${LIMITS.NEW_GARAGE_SLOTS} slots</span>
+              <span className="num text-[10px] text-ink-faint">+{LIMITS.NEW_GARAGE_SLOTS} slots</span>
             </span>
             <button
               id="account-newGarage"
@@ -295,8 +295,8 @@ export function AccountFormModal({ open, account, onClose, onSubmit }: AccountFo
               className={`flex cursor-pointer items-center justify-between gap-3 rounded-[14px] border px-4 py-3 text-left transition-all duration-200 ease-out ${newGarage ? "border-racing bg-racing" : "border-border bg-background hover:border-primary hover:text-primary-foreground hover:border-primary"}`}
             >
               <span className="flex items-center gap-2">
-                <span className="block text-[12px] font-semibold text-foreground">${newGarage ? "Owned" : "Not owned"}</span>
-                <span className="num text-[10px] text-ink-faint">${LIMITS.NEW_GARAGE_PRICE} · ${LIMITS.NEW_GARAGE_SLOTS} extra slots</span>
+                <span className="block text-[12px] font-semibold text-foreground">{newGarage ? "Owned" : "Not owned"}</span>
+                <span className="num text-[10px] text-ink-faint">{LIMITS.NEW_GARAGE_PRICE} · {LIMITS.NEW_GARAGE_SLOTS} extra slots</span>
               </span>
               <span className={`grid h-6 w-6 shrink-0 rounded-full border ${newGarage ? "border-racing text-racing" : "border-ink text-ink-faint"}`} aria-hidden="true">
                 <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" vector-effect="non-scaling-stroke">

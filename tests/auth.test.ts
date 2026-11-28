@@ -15,6 +15,8 @@ const {
   SESSION_MAX_AGE_SECONDS,
   createSessionToken,
   verifySessionToken,
+  createOrderAccessToken,
+  verifyOrderAccessToken,
   rateLimited,
   sessionCookieOptions,
   REVEAL_CONSENT_MAX_AGE_SECONDS,
@@ -24,7 +26,7 @@ const {
   readRequestCookie,
 } = await import("../src/lib/auth.ts");
 import { scryptHash, scryptCompare } from "../src/lib/auth.ts";
-const { resetKeyCache } = await import("../src/lib/crypto.ts");
+const { resetKeyCache, getKey } = await import("../src/lib/crypto.ts");
 
 describe("auth · session tokens", () => {
   it("round-trips a fresh token", () => {
@@ -182,6 +184,42 @@ describe("auth · reveal consent", () => {
     assert.equal(https.secure, true);
     assert.equal(https.sameSite, "none");
     assert.equal(https.maxAge, REVEAL_CONSENT_MAX_AGE_SECONDS);
+  });
+});
+
+describe("auth · order access capability", () => {
+  it("opens only the order it was minted for", () => {
+    const token = createOrderAccessToken("VNT_1_abc123", 7);
+    assert.equal(verifyOrderAccessToken(token, "VNT_1_abc123", 7), true);
+    assert.equal(verifyOrderAccessToken(token, "VNT_2_def456", 7), false);
+    assert.equal(verifyOrderAccessToken(token, "VNT_1_abc123", 8), false);
+    assert.equal(verifyOrderAccessToken(undefined, "VNT_1_abc123", 7), false);
+  });
+
+  it("refuses a token past its expiry", () => {
+    const token = createOrderAccessToken("VNT_1_abc123", 7, Date.now() - 31 * 24 * 60 * 60 * 1000);
+    assert.equal(verifyOrderAccessToken(token, "VNT_1_abc123", 7), false);
+  });
+});
+
+describe("auth · encryption key", () => {
+  it("fails closed in production instead of inventing a per-cold-start key", () => {
+    const savedKey = process.env.CPM2_ENCRYPTION_KEY;
+    const savedPath = process.env.CPM2_KEY_PATH;
+    const savedVercel = process.env.VERCEL;
+    delete process.env.CPM2_ENCRYPTION_KEY;
+    process.env.CPM2_KEY_PATH = path.join(tmp, "no-key-here");
+    process.env.VERCEL = "1";
+    resetKeyCache();
+    try {
+      assert.throws(() => getKey(), /CPM2_ENCRYPTION_KEY is required/);
+    } finally {
+      if (savedKey) process.env.CPM2_ENCRYPTION_KEY = savedKey;
+      if (savedPath) process.env.CPM2_KEY_PATH = savedPath;
+      if (savedVercel) process.env.VERCEL = savedVercel;
+      else delete process.env.VERCEL;
+      resetKeyCache();
+    }
   });
 });
 

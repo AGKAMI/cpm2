@@ -19,6 +19,7 @@ const { RESERVATION_MINUTES, orderId } = await import(
   "../src/lib/store/checkout.ts"
 );
 const { VANTA_SCHEMA } = await import("../src/lib/store-schema.ts");
+const { effectiveUnitPriceCents } = await import("../src/lib/store/pricing.ts");
 
 /**
  * Pull the accepted values out of a SQL CHECK clause —
@@ -128,7 +129,9 @@ describe("vanta · inventory counters (oversell guard)", () => {
 });
 
 describe("vanta · order state machine (schema-enforced)", () => {
-  // The documented pipeline from src/lib/store/orders.ts.
+  // The order lifecycle mirrored by ORDER_LIFECYCLE in
+  // src/components/OrderProgress.tsx — the schema CHECK must accept
+  // every state the UI can render.
   const DOCUMENTED_PIPELINE = [
     "checkout_initiated",
     "awaiting_payment",
@@ -204,5 +207,115 @@ describe("vanta · exclusivity classes", () => {
     for (const e of ["standard", "limited_edition", "one_of_one"]) {
       assert.ok(EXCLUSIVITIES.includes(e), `${e} must be an accepted value`);
     }
+  });
+});
+
+describe("site origin", () => {
+  it("uses NEXT_PUBLIC_SITE_URL without a trailing slash", async () => {
+    const { siteUrl } = await import("../src/lib/site.ts");
+    const saved = process.env.NEXT_PUBLIC_SITE_URL;
+    process.env.NEXT_PUBLIC_SITE_URL = "https://shop.example.com/";
+    try {
+      assert.equal(siteUrl(), "https://shop.example.com");
+    } finally {
+      if (saved) process.env.NEXT_PUBLIC_SITE_URL = saved;
+      else delete process.env.NEXT_PUBLIC_SITE_URL;
+    }
+  });
+});
+
+describe("vanta · effective price", () => {
+  it("stacks the product sale and a live promotion once", () => {
+    const product = { basePriceCents: 100000, discountPercent: 10 };
+    assert.equal(effectiveUnitPriceCents(product, null), 90000);
+    assert.equal(effectiveUnitPriceCents(product, { discountPercent: 20 }), 72000);
+  });
+
+  it("ignores a zero or missing promotion", () => {
+    const product = { basePriceCents: 50000, discountPercent: 0 };
+    assert.equal(effectiveUnitPriceCents(product), 50000);
+    assert.equal(effectiveUnitPriceCents(product, { discountPercent: 0 }), 50000);
+  });
+});
+
+describe("payfast · base URL normalization", () => {
+  it("accepts either a bare origin or the checkout endpoint", async () => {
+    const saved = process.env.PAYFAST_BASE_URL;
+    const { getPayFastCheckoutUrl, getPayFastQueryUrl } = await import("../src/lib/store/payfast-url.ts");
+    try {
+      process.env.PAYFAST_BASE_URL = "https://sandbox.payfast.co.za";
+      assert.equal(getPayFastCheckoutUrl(), "https://sandbox.payfast.co.za/eng/process");
+      assert.equal(getPayFastQueryUrl(), "https://sandbox.payfast.co.za/eng/query_transactions");
+      process.env.PAYFAST_BASE_URL = "https://live.payfast.co.za/eng/process/";
+      assert.equal(getPayFastCheckoutUrl(), "https://live.payfast.co.za/eng/process");
+      assert.equal(getPayFastQueryUrl(), "https://live.payfast.co.za/eng/query_transactions");
+    } finally {
+      if (saved) process.env.PAYFAST_BASE_URL = saved;
+      else delete process.env.PAYFAST_BASE_URL;
+    }
+  });
+});
+
+describe("fresh schema · order product snapshot", () => {
+  function createTableBlock(table: string): string {
+    const start = VANTA_SCHEMA.indexOf(`CREATE TABLE IF NOT EXISTS ${table} (`);
+    assert.notEqual(start, -1, `${table} must be in the schema`);
+    const end = VANTA_SCHEMA.indexOf("\n);", start);
+    return VANTA_SCHEMA.slice(start, end);
+  }
+
+  it("declares product_name on orders, not on customers", () => {
+    assert.match(createTableBlock("vanta_orders"), /product_name\s+TEXT/);
+    assert.doesNotMatch(createTableBlock("vanta_customers"), /product_name/);
+  });
+
+  it("declares updated_at on appointments (two writers set it)", () => {
+    // setDeliveryEvidence and the delivery-confirm route both UPDATE
+    // vanta_appointments.updated_at; the column missing from the DDL made
+    // every second evidence upload and every customer confirmation fail.
+    assert.match(createTableBlock("vanta_appointments"), /updated_at\s+TEXT/);
+  });
+});
+
+describe("payfast · shared signature", () => {
+  it("follows the official algorithm: given order, urlencoded, &passphrase=", async () => {
+    const { payfastSignature } = await import("../src/lib/store/payfast-signature.ts");
+    const { createHash } = await import("node:crypto");
+    // The docs' own example shape (merchant details then transaction
+    // details); spaces encode as '+', and the passphrase is appended as a
+    // named pair — not sorted, not concatenated bare.
+    assert.equal(
+      payfastSignature(
+        { merchant_id: "10000100", merchant_key: "46f0cd694581a", amount: "100.00", item_name: "Test Product" },
+        "jt7NOE43FZPn",
+      ),
+      createHash("md5")
+        .update("merchant_id=10000100&merchant_key=46f0cd694581a&amount=100.00&item_name=Test+Product&passphrase=jt7NOE43FZPn")
+        .digest("hex"),
+    );
+  });
+
+  it("preserves field order (never sorts) and skips blanks + the signature field", async () => {
+    const { payfastSignature } = await import("../src/lib/store/payfast-signature.ts");
+    const { createHash } = await import("node:crypto");
+    assert.equal(
+      payfastSignature({ b: "2", signature: "ignore-me", empty: "", a: "1" }, "secret"),
+      createHash("md5").update("b=2&a=1&passphrase=secret").digest("hex"),
+    );
+  });
+});
+
+describe("admin partial updates", () => {
+  it("does not apply defaults for fields the caller omitted", async () => {
+    const { z } = await import("zod");
+    const { parseProvidedFields } = await import("../src/lib/parse-patch.ts");
+    const schema = z.object({
+      name: z.string(),
+      stock: z.number().default(1),
+      active: z.boolean().default(false),
+    });
+    assert.deepEqual(parseProvidedFields(schema, { active: true }), { active: true });
+    assert.deepEqual(parseProvidedFields(schema, { stock: 7 }), { stock: 7 });
+    assert.deepEqual(parseProvidedFields(schema, { name: "Car" }), { name: "Car" });
   });
 });

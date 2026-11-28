@@ -6,8 +6,8 @@
  */
 
 import { getStoreDb } from "../store-db.ts";
-import { getProduct, listCoverImageMap } from "./products.ts";
-import { discountedPriceCents } from "./pricing.ts";
+import { getInventory, getProduct, listCoverImageMap, productPromotionMap } from "./products.ts";
+import { effectiveUnitPriceCents } from "./pricing.ts";
 import { ApiError } from "../api.ts";
 
 export type CartItem = {
@@ -20,7 +20,13 @@ export type CartItem = {
   stockQuantity: number;
   quantity: number;
   exclusivity: string;
+  /** The product's own game — promotions are game-scoped, so checkout must
+   *  consult this game's map, never "cpm1 first". */
+  game: string;
   addedAt: string;
+  updatedAt: string;
+  /** Effective promotional unit price when a live promotion is attached. */
+  promoPriceCents: number | null;
 };
 
 export type CartSummary = {
@@ -36,9 +42,9 @@ export async function getCart(customerId: number): Promise<CartSummary> {
   const db = await getStoreDb();
   const result = await db.execute({
     sql: `
-      SELECT c.product_id, c.quantity, c.created_at,
+      SELECT c.product_id, c.quantity, c.created_at, c.updated_at,
              p.name, p.base_price_cents, p.currency, p.stock_quantity,
-             p.is_published, p.exclusivity, p.discount_percent
+             p.is_published, p.exclusivity, p.discount_percent, p.game
       FROM vanta_cart_items c
       JOIN vanta_products p ON c.product_id = p.id
       WHERE c.customer_id = ?
@@ -48,6 +54,13 @@ export async function getCart(customerId: number): Promise<CartSummary> {
   });
 
   const rows = result.rows;
+  const [cpm1Promos, cpm2Promos] = await Promise.all([
+    productPromotionMap("cpm1"),
+    productPromotionMap("cpm2"),
+  ]);
+  const promoFor = (row: Record<string, unknown>) =>
+    (String(row.game ?? "cpm2") === "cpm1" ? cpm1Promos : cpm2Promos).get(Number(row.product_id));
+
   let items: CartItem[] = rows.map((row) => ({
     productId: Number(row.product_id),
     name: String(row.name ?? ""),
@@ -58,7 +71,21 @@ export async function getCart(customerId: number): Promise<CartSummary> {
     stockQuantity: Number(row.stock_quantity ?? 0),
     quantity: Math.max(1, Number(row.quantity ?? 1)),
     exclusivity: String(row.exclusivity ?? "standard"),
+    game: String(row.game ?? "cpm2"),
     addedAt: String(row.created_at ?? ""),
+    updatedAt: String(row.updated_at ?? row.created_at ?? ""),
+    // Same live promotion the checkout charges. Without this the cart showed
+    // the sale price and then charged a lower promotional price.
+    promoPriceCents:
+      promoFor(row) && Number(promoFor(row)?.discountPercent ?? 0) > 0
+        ? effectiveUnitPriceCents(
+            {
+              basePriceCents: Number(row.base_price_cents ?? 0),
+              discountPercent: Number(row.discount_percent ?? 0),
+            },
+            promoFor(row),
+          )
+        : null,
   }));
 
   // One batched query for covers (same pattern as the store home page).
@@ -71,7 +98,14 @@ export async function getCart(customerId: number): Promise<CartSummary> {
   }
 
   const subtotalCents = items.reduce(
-    (sum, i) => sum + discountedPriceCents(i.basePriceCents, i.discountPercent) * i.quantity,
+    (sum, i) =>
+      sum +
+      (i.promoPriceCents ??
+        effectiveUnitPriceCents({
+          basePriceCents: i.basePriceCents,
+          discountPercent: i.discountPercent,
+        })) *
+        i.quantity,
     0,
   );
 
@@ -92,13 +126,19 @@ export async function addToCart(
   if (!product || !product.isPublished) {
     throw new ApiError(404, "PRODUCT_NOT_FOUND", "Product not found.");
   }
-  if (product.stockQuantity <= 0) {
+  // Use the inventory ledger, not the catalogue projection: units already
+  // held by other live checkouts are not available to add to a cart.
+  const inventory = await getInventory(productId);
+  const available = inventory
+    ? Math.max(0, inventory.stockQuantity - inventory.reservedQuantity)
+    : product.stockQuantity;
+  if (available <= 0) {
     throw new ApiError(400, "OUT_OF_STOCK", "This vehicle is sold out.");
   }
 
   const db = await getStoreDb();
   const now = new Date().toISOString();
-  const cap = Math.min(MAX_QTY_PER_PRODUCT, product.stockQuantity);
+  const cap = Math.min(MAX_QTY_PER_PRODUCT, available);
   const qty = Math.max(1, Math.min(quantity, cap));
 
   await db.execute({
@@ -125,11 +165,14 @@ export async function updateCartQuantity(
   if (quantity <= 0) {
     return removeFromCart(customerId, productId);
   }
-  const product = await getProduct(productId);
-  const capped = Math.max(
-    1,
-    Math.min(quantity, MAX_QTY_PER_PRODUCT, product?.stockQuantity ?? 1),
-  );
+  const [product, inventory] = await Promise.all([
+    getProduct(productId),
+    getInventory(productId),
+  ]);
+  const available = inventory
+    ? Math.max(0, inventory.stockQuantity - inventory.reservedQuantity)
+    : (product?.stockQuantity ?? 1);
+  const capped = Math.max(1, Math.min(quantity, MAX_QTY_PER_PRODUCT, available));
   const now = new Date().toISOString();
   const result = await db.execute({
     sql: `

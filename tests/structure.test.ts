@@ -1,0 +1,181 @@
+/**
+ * Structural regressions that must never come back:
+ * - every page route has its own loading.tsx skeleton (per-page loaders),
+ * - account photos never open in a new browser tab (in-app viewer only),
+ * - exactly one <header> per shell (the global header rule).
+ */
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+import { readdirSync, readFileSync, statSync, existsSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const appDir = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "app");
+
+function walk(dir: string, out: string[] = []): string[] {
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) walk(full, out);
+    else out.push(full);
+  }
+  return out;
+}
+
+describe("api route auth gates", () => {
+  // The console API (accounts/auth/trade) is gated by src/proxy.ts instead.
+  // This locks the class of bug where POST /api/store/media/[productId]
+  // shipped documented "admin only" with no check at all.
+  const GATE_TOKENS = [
+    "requireStoreAdmin",
+    "requireStoreCustomer",
+    "getStoreCustomer",
+    "canAccessOrder",
+    "assertTelegramAuth",
+    "verifyTelegramInitData",
+    "verifySessionToken",
+    "currentStoreUserId",
+    "resolveAdminStatus",
+    "checkDurableRateLimit",
+    "payfastSignature",
+    "CRON_SECRET",
+    "BOT_TOKEN",
+    "WEBHOOK_SECRET",
+    "timingSafeEqual",
+  ];
+  // Intentionally public, each with its own mitigation noted:
+  const PUBLIC_WRITES = new Map<string, string>([
+    ["store/auth/login/route.ts", "credential check + durable rate limit inside the service"],
+    ["store/auth/register/route.ts", "account creation, validated + rate limited"],
+    ["store/auth/logout/route.ts", "clears the caller's own session cookie only"],
+    ["store/telegram/webhook/route.ts", "Telegram secret-token header verified in the handler"],
+    ["store/customers/link-telegram/route.ts", "verification-code flow; the code is the credential"],
+    ["store/customers/link-whatsapp/route.ts", "verification-code flow; the code is the credential"],
+  ]);
+
+  it("every mutating /api/store route references an auth gate", () => {
+    const apiDir = join(appDir, "api");
+    const routes = walk(apiDir).filter((f) => f.endsWith("route.ts"));
+    const offenders: string[] = [];
+    for (const file of routes) {
+      const rel = file.slice(apiDir.length + 1).replace(/\\/g, "/");
+      if (!rel.startsWith("store/")) continue; // console API: proxy-gated
+      const src = readFileSync(file, "utf8");
+      if (!/export async function (POST|PUT|PATCH|DELETE)/.test(src)) continue;
+      if (PUBLIC_WRITES.has(rel)) continue;
+      if (!GATE_TOKENS.some((token) => src.includes(token))) offenders.push(rel);
+    }
+    assert.deepEqual(offenders, [], `mutating store routes with no auth gate: ${offenders.join(", ")}`);
+  });
+});
+
+describe("store page/API contract", () => {
+  it("the appointments page's GET endpoint exists", () => {
+    // The page fetches GET /api/store/appointments; the route only ever
+    // had POST, so the page silently showed "No upcoming deliveries".
+    const route = readFileSync(
+      join(appDir, "api", "store", "appointments", "route.ts"),
+      "utf8",
+    );
+    assert.match(route, /export async function GET/);
+    assert.match(route, /export async function POST/);
+  });
+});
+
+describe("store page/API contract", () => {
+  it("the profile credentials endpoint exists", () => {
+    // ProfileClient has always PATCHed /api/store/auth/credentials; the
+    // route never existed, so credential changes 404'd silently.
+    const route = readFileSync(
+      join(appDir, "api", "store", "auth", "credentials", "route.ts"),
+      "utf8",
+    );
+    assert.match(route, /export async function PATCH/);
+    assert.match(route, /getStoreCustomer/);
+  });
+});
+
+describe("store page/API contract", () => {
+  it("the admin deliveries verify endpoint exists", () => {
+    // The deliveries page verifies by APPOINTMENT id; it used to POST it
+    // at the order delivery-evidence route (order id + evidence body),
+    // so verifying a delivery could only ever 400/404.
+    const route = readFileSync(
+      join(appDir, "api", "store", "admin", "appointments", "[id]", "verify", "route.ts"),
+      "utf8",
+    );
+    assert.match(route, /export async function POST/);
+    assert.match(route, /requireStoreAdmin/);
+    const page = readFileSync(
+      join(appDir, "store", "admin", "deliveries", "page.tsx"),
+      "utf8",
+    );
+    assert.ok(page.includes("/api/store/admin/appointments/${appointmentId}/verify"));
+  });
+
+  it("admin dashboard alert links target real pages", () => {
+    // payment_rejected alerts carry an order id; there is no
+    // /store/admin/orders/[id] page — the order page is /store/orders/[id].
+    const page = readFileSync(
+      join(appDir, "store", "admin", "dashboard", "page.tsx"),
+      "utf8",
+    );
+    assert.ok(!page.includes("/store/admin/orders/"));
+    assert.ok(page.includes("/store/orders/${selectedAlert.entityId}"));
+  });
+});
+
+describe("legal documents", () => {
+  it("both legal routes render one shared source of truth", () => {
+    // Each route used to carry a full copy of every policy; the copies
+    // had already drifted (the /legal payment policy omitted Telegram
+    // Stars, the profile copy said "We will receive a confirmation").
+    for (const rel of [
+      join("legal", "[doc]", "page.tsx"),
+      join("store", "profile", "legal", "[doc]", "page.tsx"),
+    ]) {
+      const src = readFileSync(join(appDir, rel), "utf8");
+      assert.ok(src.includes("@/lib/legal-docs"), `${rel} must import the shared legal docs`);
+      assert.ok(!src.includes("const LEGAL_DOCS"), `${rel} must not carry its own copy of the policies`);
+    }
+    const shared = readFileSync(join(appDir, "..", "lib", "legal-docs.tsx"), "utf8");
+    for (const slug of ["terms", "privacy", "refund", "delivery", "payment", "cancellation", "appointment", "dispute"]) {
+      assert.ok(shared.includes(`${slug}: {`), `shared legal docs missing ${slug}`);
+    }
+  });
+});
+
+describe("app structure", () => {
+  it("every page route has a sibling loading.tsx skeleton", () => {
+    const pages = walk(appDir).filter((f) => f.endsWith("page.tsx"));
+    assert.ok(pages.length >= 40, `expected 40+ pages, found ${pages.length}`);
+    const missing = pages.filter((p) => !existsSync(join(dirname(p), "loading.tsx")));
+    assert.deepEqual(missing, [], `pages without loading.tsx: ${missing.join(", ")}`);
+  });
+
+  it("account images open in-app, never a new tab", () => {
+    const page = readFileSync(join(appDir, "accounts", "[id]", "page.tsx"), "utf8");
+    assert.ok(!page.includes("window.open"), "account page must not window.open images");
+    assert.ok(page.includes("ImageLightbox"), "account page must use the in-app viewer");
+  });
+
+  it("one global header per shell, none in page components", () => {
+    const storeShell = readFileSync(join(appDir, "..", "components", "StoreShell.tsx"), "utf8");
+    assert.equal((storeShell.match(/<header/g) ?? []).length, 1);
+    for (const name of ["GameHubShell.tsx", "GameSectionList.tsx", "StoreHub.tsx"]) {
+      const raw = readFileSync(join(appDir, "..", "components", name), "utf8");
+      // Strip comments first — an explanatory "NOT a <header>" note is not JSX.
+      const src = raw.replace(/\{\/\*[\s\S]*?\*\/\}/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+      assert.ok(!/<header[\s>]/.test(src), `${name} must not render its own <header>`);
+    }
+  });
+
+  it("no hard-coded light-slate skeleton fills remain", () => {
+    const globals = readFileSync(join(appDir, "globals.css"), "utf8");
+    assert.ok(globals.includes(".skel-block"), "theme-aware skeleton fill must exist");
+    const skelDir = join(appDir, "..", "components", "skeleton");
+    for (const file of readdirSync(skelDir)) {
+      const src = readFileSync(join(skelDir, file), "utf8");
+      assert.ok(!src.includes("#e2e8f0") && !src.includes("#f1f5f9"), `${file} hard-codes a light fill`);
+    }
+  });
+});

@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { ProductPageClient } from "@/components/ProductPageClient";
 import { CategoryProductsClient } from "@/components/CategoryProductsClient";
 import {
+  enrichProductsWithCovers,
   getProduct,
   listProducts,
   listCategories,
@@ -37,9 +38,13 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   const categories = await listCategories();
   const category = categories.find((c) => c.id === Number(id));
   if (category) {
-    const products = (await listProducts({ onlyPublished: true })).filter(
-      (p) => p.categoryId === category.id,
-    );
+    // Cover + live promotion enrichment: a promoted product must show its
+    // promo price/colours/pill on category shelves too, not just in game lists.
+    const products = (
+      await enrichProductsWithCovers(
+        await listProducts({ onlyPublished: true }),
+      )
+    ).filter((p) => p.categoryId === category.id && (p.game ?? "cpm2") === (category.game ?? "cpm2"));
     return (
       <CategoryProductsClient
         categoryName={category.name}

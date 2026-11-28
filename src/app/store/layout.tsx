@@ -1,15 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { JetBrains_Mono } from "next/font/google";
 import "@/app/globals.css";
 import { ToastProvider } from "@/components/ui/Toaster";
 import { DEFAULT_PALETTE, PALETTE_IDS } from "@/lib/themes";
-
-const mono = JetBrains_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-jetbrains-mono",
-  display: "swap",
-});
 
 // Theme is user-selectable everywhere now (profile → Appearance). The script
 // applies the saved theme before first paint; with nothing saved it falls

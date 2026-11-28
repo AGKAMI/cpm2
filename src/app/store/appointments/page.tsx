@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
+import { PanelListSkeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/Button";
 
 type Appointment = {
@@ -76,7 +77,7 @@ export default function AppointmentsPage() {
     return (
       <StoreShell>
         <PageHeading folio="AP" title="Appointments" backHref="/store/dashboard" />
-        <p className="text-muted-foreground">Loading appointments…</p>
+        <PanelListSkeleton />
       </StoreShell>
     );
   }

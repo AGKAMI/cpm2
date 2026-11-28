@@ -16,6 +16,9 @@ const categorySchema = z.object({
   description: z.string().optional(),
   sortOrder: z.coerce.number().int().nonnegative().optional(),
   imageUrl: z.string().optional(),
+  // Game scoping must be editable, not just set at creation: a category
+  // created in the wrong catalogue needs to move without deleting/recreating.
+  game: z.enum(["cpm1", "cpm2"]).optional(),
 });
 
 export const dynamic = "force-dynamic";

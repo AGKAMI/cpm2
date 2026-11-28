@@ -6,6 +6,7 @@
  */
 
 import Link from "next/link";
+import type { VantaCategory } from "@/lib/store/client";
 import { BackLink } from "@/components/ui/BackLink";
 
 export type GameSection = {
@@ -68,19 +69,23 @@ export function GameHubShell({
   title,
   blurb,
   sections,
+  categories = [],
 }: {
   game: "cpm1" | "cpm2";
   title: string;
   blurb: string;
   sections: GameSection[];
+  /** Already filtered to this game by the page — never show the other game's tree. */
+  categories?: VantaCategory[];
 }) {
   return (
     <div className="mx-auto w-full max-w-3xl px-4 pb-24">
-      <header className="py-6">
+      {/* Page title block — NOT a <header>: the app header lives only in StoreShell. */}
+      <div className="py-6">
         <BackLink href="/store" label="Store" className="mb-3" />
         <h1 className="mt-3 text-2xl font-bold text-foreground">{title}</h1>
         <p className="mt-1 text-[12px] leading-relaxed text-ink-faint">{blurb}</p>
-      </header>
+      </div>
 
       <nav aria-label={title} className="grid gap-3 sm:grid-cols-2">
         {sections.map((s) => {
@@ -92,6 +97,36 @@ export function GameHubShell({
           );
         })}
       </nav>
+
+      {/* Admin-created categories are the game's own shelves. They only
+          appear here when their `game` matches, and they link into that
+          game's listing with the category preselected. */}
+      {categories.length > 0 && (
+        <section className="mt-6">
+          <h2 className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-ink-soft">
+            Shop by category
+          </h2>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {categories.map((cat) => (
+              <Link
+                key={cat.id}
+                href={`/store/${game}/cars?category=${encodeURIComponent(cat.slug)}`}
+                className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-3 text-xs font-bold text-foreground transition-colors hover:border-primary/60"
+              >
+                {cat.imageUrl ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={cat.imageUrl}
+                    alt=""
+                    className="h-7 w-7 shrink-0 rounded-md object-cover"
+                  />
+                ) : null}
+                <span className="truncate">{cat.name}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

@@ -52,7 +52,11 @@ export async function GET(
         status: 200,
         headers: {
           "Content-Type": stored.contentType,
-          "Cache-Control": "public, max-age=31536000, immutable",
+          // Product media is public and immutable. EFT proofs are bank
+          // receipts: never let a shared/proxy cache keep them.
+          "Cache-Control": filename.startsWith("eft-proof-")
+            ? "private, no-store"
+            : "public, max-age=31536000, immutable",
         },
       });
     }
@@ -90,7 +94,9 @@ export async function GET(
       status: 200,
       headers: {
         "Content-Type": contentType,
-        "Cache-Control": "public, max-age=31536000, immutable",
+        "Cache-Control": filename.startsWith("eft-proof-")
+          ? "private, no-store"
+          : "public, max-age=31536000, immutable",
       },
     });
   } catch (err) {

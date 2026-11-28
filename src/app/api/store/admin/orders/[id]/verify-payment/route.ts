@@ -8,6 +8,7 @@
 import { fail, ok, readJson } from "@/lib/route";
 import { requireStoreAdmin } from "@/lib/store/auth";
 import { confirmPayment, getOrder } from "@/lib/store/checkout";
+import { ensureSettlementRecords } from "@/lib/store/settlement.ts";
 import { notifyCustomer } from "@/lib/store/notifications";
 import { z } from "zod";
 
@@ -49,7 +50,29 @@ export async function POST(
       });
     }
 
+    if (order.paymentState === "verified") {
+      // A prior request may have flipped payment_state and then died before
+      // the order-state write or the audit rows. Re-run the same repair path a
+      // retry is supposed to take instead of returning the stale state.
+      await confirmPayment(id);
+      await ensureSettlementRecords({
+        order,
+        provider: "eft",
+        providerRef: `manual:${id}`,
+      });
+      const repaired = (await getOrder(id)) ?? order;
+      return ok({ orderId: id, paymentState: "verified", orderState: repaired.orderState });
+    }
+
     await confirmPayment(id);
+    // Keep the payment + ledger record consistent with the other settlement
+    // paths (PayFast ITN and Telegram Stars), so refund/audit reporting can
+    // see how an EFT order was settled.
+    await ensureSettlementRecords({
+      order,
+      provider: "eft",
+      providerRef: `manual:${id}`,
+    });
     // Notify customer (fire-and-forget, don't block response)
     notifyCustomer(order.customerId, "payment_verified", {
       id: order.id,

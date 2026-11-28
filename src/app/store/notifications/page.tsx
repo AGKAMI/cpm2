@@ -10,6 +10,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
+import { NotificationsSkeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/Button";
 
 interface Notification {
@@ -100,7 +101,7 @@ export default function NotificationsPage() {
     return (
       <StoreShell>
         <PageHeading folio="NT" title="Notifications" />
-        <p className="text-xs text-muted-foreground">Loading…</p>
+        <NotificationsSkeleton />
       </StoreShell>
     );
   }

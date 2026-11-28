@@ -1322,7 +1322,10 @@ export async function addAccountImages(
     args,
   });
 
-  const firstId = Number(insert.lastInsertRowid);
+  // lastInsertRowid is the LAST row of a multi-row INSERT (SQLite
+  // semantics), and one statement assigns consecutive rowids — so the
+  // first inserted id is last minus (count - 1), not the rowid itself.
+  const firstId = Number(insert.lastInsertRowid) - (imageUrls.length - 1);
   const inserted: NewAccountImage[] = imageUrls.map((url, i) => ({
     id: firstId + i,
     accountId,

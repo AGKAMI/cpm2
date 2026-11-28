@@ -6,9 +6,10 @@ import {
   consoleOwnerEmail,
   constantTimeEquals,
   createSessionToken,
-  rateLimited,
   sessionCookieOptions,
+  trustedClientIp,
 } from "@/lib/auth";
+import { checkDurableRateLimit } from "@/lib/rate-limit";
 import { initDataUserId, telegramBotToken, verifyTelegramInitData } from "@/lib/telegram";
 import { bindUserTelegram, getUserByEmail, getUserByTelegramId, verifyUserCredentials } from "@/lib/service-turso";
 
@@ -26,11 +27,8 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(request: Request) {
   try {
-    const ip =
-      request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-      request.headers.get("x-real-ip") ||
-      "local";
-    if (rateLimited(`telegram:${ip}`)) {
+    const ip = trustedClientIp(request);
+    if (await checkDurableRateLimit(`telegram:${ip}`, 10, 60_000)) {
       return NextResponse.json(
         { error: { code: "AUTH_SLOW_DOWN", message: "Too many attempts - wait a minute and try again." } },
         { status: 429 },

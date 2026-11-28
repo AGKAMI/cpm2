@@ -28,9 +28,9 @@ export async function POST(request: Request) {
     }
 
     const body = (await readJson(request)) as { limit?: number };
-    const limit = body.limit ?? 50;
+    const limit = Number.isFinite(body.limit) ? Number(body.limit) : 50;
 
-    const result = await processJobs();
+    const result = await processJobs(limit);
 
     return ok({ processed: result.processed, failed: result.failed });
   } catch (err) {

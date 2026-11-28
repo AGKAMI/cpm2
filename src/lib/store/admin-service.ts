@@ -6,7 +6,13 @@
 
 import { getStoreDb } from "../store-db.ts";
 import { assertTelegramAuth } from "../telegram";
-import { consoleOwnerEmail, currentUserId } from "../auth.ts";
+import {
+  SESSION_COOKIE,
+  consoleOwnerEmail,
+  currentUserId,
+  readRequestCookie,
+  verifySessionToken,
+} from "../auth.ts";
 import { getUserById } from "../service-turso.ts";
 
 export type AdminRecord = {
@@ -83,8 +89,8 @@ export async function addAdmin(
   });
   if (existing.rows.length > 0) {
     await db.execute({
-      sql: `UPDATE vanta_admins SET is_active = 1, role = 'admin', added_by = ?, added_at = ? WHERE telegram_user_id = ?`,
-      args: [addedBy, now, telegramUserId],
+      sql: `UPDATE vanta_admins SET is_active = 1, role = 'admin', telegram_username = ?, nickname = ?, added_by = ?, added_at = ? WHERE telegram_user_id = ?`,
+      args: [telegramUsername, nickname, addedBy, now, telegramUserId],
     });
     return rowToAdmin({
       id: Number(existing.rows[0].id),
@@ -108,6 +114,7 @@ export async function addAdmin(
     id,
     telegram_user_id: telegramUserId,
     telegram_username: telegramUsername,
+    nickname,
     role: "admin",
     added_by: addedBy,
     added_at: now,
@@ -153,7 +160,17 @@ export async function resolveAdminStatus(
   telegramUserId: string | null;
   role: "owner" | "admin" | null;
 }> {
-  const telegramUserId = await assertTelegramAuth(request, options);
+  // A stale or forged initData header must degrade to "not a Telegram admin",
+  // not throw. assertTelegramAuth deliberately throws on a bad signature, and
+  // callers such as requireStoreAdmin would surface that as a 500 on every
+  // admin page instead of the correct 403/anonymous render. The signed web
+  // session below still gets a chance to resolve the caller.
+  let telegramUserId: number | null = null;
+  try {
+    telegramUserId = await assertTelegramAuth(request, options);
+  } catch {
+    telegramUserId = null;
+  }
   if (telegramUserId !== null) {
     const ownerIdRaw = process.env.STORE_ADMIN_TELEGRAM_ID ?? "";
     const ownerId = ownerIdRaw ? Number(ownerIdRaw) : null;
@@ -180,7 +197,11 @@ export async function resolveAdminStatus(
 
   // Web session fallback: a customer logged in via email/password whose
   // account has a linked Telegram identity resolves through that identity.
-  const sessionUserId = currentUserId(request);
+  // Storefront sessions are store-scoped; a console session is not a customer.
+  const sessionUserId = verifySessionToken(
+    readRequestCookie(request, SESSION_COOKIE),
+    "store",
+  );
   if (sessionUserId) {
     const db = await getStoreDb();
     const identity = await db.execute({

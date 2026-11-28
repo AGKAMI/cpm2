@@ -17,7 +17,7 @@ export async function GET(request: Request) {
       .map((part) => part.trim())
       .find((part) => part.startsWith(`${SESSION_COOKIE}=`))
       ?.slice(SESSION_COOKIE.length + 1);
-    const userId = verifySessionToken(cookie ? decodeURIComponent(cookie) : undefined);
+    const userId = verifySessionToken(cookie ? decodeURIComponent(cookie) : undefined, "console");
     if (!userId) {
       return NextResponse.json(
         { error: { code: "AUTH_REQUIRED", message: "Sign in to use the console." } },

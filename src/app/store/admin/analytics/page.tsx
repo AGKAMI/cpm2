@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { StoreShell } from "@/components/StoreShell";
 import { AdminAnalyticsSkeleton } from "@/components/skeleton";
 import { PageHeading } from "@/components/PageHeading";
+import { AdminStatsSkeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/Button";
 import { formatPrice } from "@/lib/store/client";
 

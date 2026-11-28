@@ -8,10 +8,11 @@
  */
 
 import Link from "next/link";
+import type { VantaCategory, VantaProduct } from "@/lib/store/client";
 import { BackLink } from "@/components/ui/BackLink";
-import type { VantaProduct } from "@/lib/store/client";
 import { formatPrice } from "@/lib/store/client";
 import { approxStarsForCents } from "@/lib/store/pricing";
+import { productsForCategory } from "@/lib/store/catalogue.ts";
 
 export type SectionKey = "accounts" | "cars" | "services";
 
@@ -62,21 +63,59 @@ export function GameSectionList({
   game,
   section,
   products,
+  categories = [],
+  activeCategorySlug,
 }: {
   game: "cpm1" | "cpm2";
   section: SectionKey;
   products: VantaProduct[];
+  /** Categories for THIS game only, supplied by the server page. */
+  categories?: VantaCategory[];
+  activeCategorySlug?: string;
 }) {
   const meta = SECTION_META[section];
-  const items = productsForSection(products, game, section);
+  const inSection = productsForSection(products, game, section);
+  const activeCategory = categories.find((c) => c.slug === activeCategorySlug);
+  const items = activeCategory
+    ? productsForCategory(inSection, activeCategory)
+    : inSection;
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 pb-24">
-      <header className="py-6">
+      {/* Page title block — NOT a <header>: the app header lives only in StoreShell. */}
+      <div className="py-6">
         <BackLink href={`/store/${game}`} label={game === "cpm1" ? "CPM 1" : "CPM 2"} className="mb-3" />
         <h1 className="mt-3 text-2xl font-bold text-foreground">{meta.title}</h1>
         <p className="mt-1 text-[12px] text-ink-faint">{meta.blurb}</p>
-      </header>
+      </div>
+
+      {categories.length > 0 && (
+        <nav aria-label="Categories" className="mb-4 flex flex-wrap gap-2">
+          <Link
+            href={`/store/${game}/${section}`}
+            className={`rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider ${
+              activeCategory
+                ? "border-border text-muted-foreground"
+                : "border-primary bg-primary/10 text-foreground"
+            }`}
+          >
+            All
+          </Link>
+          {categories.map((cat) => (
+            <Link
+              key={cat.id}
+              href={`/store/${game}/${section}?category=${encodeURIComponent(cat.slug)}`}
+              className={`rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider ${
+                activeCategorySlug === cat.slug
+                  ? "border-primary bg-primary/10 text-foreground"
+                  : "border-border text-muted-foreground hover:border-primary/60"
+              }`}
+            >
+              {cat.name}
+            </Link>
+          ))}
+        </nav>
+      )}
 
       {items.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-border px-4 py-10 text-center text-[12px] text-ink-faint">
@@ -156,13 +195,13 @@ export function GameSectionList({
                         ? "SOLD OUT"
                         : p.promoPriceCents != null
                           ? `${formatPrice(p.promoPriceCents, p.currency)}${
-                              approxStarsForCents(p.promoPriceCents)
-                                ? ` (${approxStarsForCents(p.promoPriceCents)} stars)`
+                              (p.promoStarsPrice ?? approxStarsForCents(p.promoPriceCents))
+                                ? ` (${p.promoStarsPrice ?? approxStarsForCents(p.promoPriceCents)} stars)`
                                 : ""
                             }`
                           : `${formatPrice(p.basePriceCents, p.currency)}${
-                              approxStarsForCents(p.basePriceCents)
-                                ? ` (${approxStarsForCents(p.basePriceCents)} stars)`
+                              (p.starsPrice ?? approxStarsForCents(p.basePriceCents))
+                                ? ` (${p.starsPrice ?? approxStarsForCents(p.basePriceCents)} stars)`
                                 : ""
                             }`}
                     </span>

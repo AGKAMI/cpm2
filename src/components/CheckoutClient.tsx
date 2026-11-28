@@ -3,8 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { vantaApi, formatPrice, type VantaProduct } from "@/lib/store/client";
-import { discountSavingsCents, approxStarsForCents } from "@/lib/store/pricing";
+import { vantaApi, formatPrice, getOrderAccessToken, rememberOrderAccess, type VantaProduct } from "@/lib/store/client";
+import { effectiveUnitPriceCents, approxStarsForCents } from "@/lib/store/pricing";
 import { StoreShell } from "@/components/StoreShell";
 import { Button } from "@/components/ui/Button";
 import { CheckoutSkeleton } from "@/components/skeleton";
@@ -96,7 +96,8 @@ export function CheckoutClient({ productId }: { productId: number }) {
   };
   }, []);
 
-  // Stash the guest player ID so Orders can scope by it.
+  // Stash the player ID as a convenience for later checkout forms. It is NOT
+  // used as identity/authorisation anywhere on the server.
   useEffect(() => {
     if (playerId.trim() && typeof window !== "undefined") {
       window.localStorage.setItem("vanta_player_id", playerId.trim());
@@ -104,11 +105,15 @@ export function CheckoutClient({ productId }: { productId: number }) {
   }, [playerId]);
 
   const subtotal = product?.basePriceCents ?? 0;
-  // The product's own discount (0 when none) — no more fake R25 line.
-  const discountCents = product ? discountSavingsCents(product.basePriceCents, product.discountPercent) : 0;
+  // Same price math the checkout APIs use: product discount + live promotion.
+  const sellingCents = product ? effectiveUnitPriceCents(product, product.promo) : 0;
+  const discountCents = Math.max(0, subtotal - sellingCents);
   const deliveryFeeCents = 0;
-  const totalCents = Math.max(0, subtotal - discountCents + deliveryFeeCents);
+  const totalCents = sellingCents + deliveryFeeCents;
   const onSale = discountCents > 0;
+  const discountLabel = product?.promo?.discountPercent
+    ? `Sale + promotion (${product.discountPercent}% + ${product.promo.discountPercent}%)`
+    : `Discount (${product?.discountPercent ?? 0}%)`;
 
   // Validation helpers
   const validatePlayerId = (pid: string): string | null => {
@@ -173,7 +178,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
     setCheckoutBusy(true);
     try {
       const idempotencyKey = `checkout_${product.id}_${Date.now()}`;
-      const { order, reservedUntil, payfastUrl, starsInvoiceUrl, walletPaid } = await vantaApi.checkout({
+      const { order, payfastUrl, starsInvoiceUrl, walletPaid, canUploadProof, orderAccessToken } = await vantaApi.checkout({
         productId: product.id,
         quantity: 1,
         paymentMethod,
@@ -181,6 +186,10 @@ export function CheckoutClient({ productId }: { productId: number }) {
         inGameName: inGameName.trim(),
         idempotencyKey,
       });
+
+      // Keep the order-scoped capability before any redirect (PayFast/Stars
+      // return to the order page in this same browser).
+      rememberOrderAccess(order.id, orderAccessToken);
 
       // Wallet — the server debited and confirmed the order in-request, so
       // there is no redirect: land straight on the paid order.
@@ -219,8 +228,32 @@ export function CheckoutClient({ productId }: { productId: number }) {
         return;
       }
 
+      // EFT: send the file the form collected. Without this the proof stayed
+      // in React state and admins approved bank transfers with no evidence.
+      let proofStatus = "";
+      if (paymentMethod === "eft" && proofFile) {
+        if (canUploadProof) {
+          const form = new FormData();
+          form.set("orderId", order.id);
+          form.set("file", proofFile);
+          // A web guest has no customer session. Send the signed capability
+          // returned by checkout, exactly as the order page does — otherwise
+          // canAccessOrder() refuses the very first proof upload with 403.
+          const token = getOrderAccessToken(order.id);
+          const res = await fetch(`/api/store/checkout/${product.id}/proof`, {
+            method: "POST",
+            body: form,
+            credentials: "same-origin",
+            headers: token ? { "x-order-access": token } : undefined,
+          });
+          proofStatus = res.ok ? "" : "&proof=failed";
+        } else {
+          proofStatus = "&proof=sign-in-required";
+        }
+      }
+
       if (typeof window !== "undefined") {
-        window.location.href = `/store/orders/${order.id}`;
+        window.location.href = `/store/orders/${order.id}${proofStatus}`;
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Checkout failed.");
@@ -249,12 +282,12 @@ export function CheckoutClient({ productId }: { productId: number }) {
       {/* Header */}
       <div className="flex items-center justify-between px-4 sm:px-6 mb-6">
         <Link href="/store" className="flex items-center gap-2 text-primary hover:underline underline-link cursor-pointer">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="w-4 h-4"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
           Back
         </Link>
         <h1 className="text-xl font-medium text-foreground">Checkout</h1>
         <Button variant="ghost" size="icon" aria-label="More options">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="w-4 h-4"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
         </Button>
       </div>
 
@@ -270,14 +303,14 @@ export function CheckoutClient({ productId }: { productId: number }) {
           )}
         </div>
         <h2 className="text-sm font-medium text-foreground mb-1">{product.name}</h2>
-        <p className="text-[11px] text-muted-foreground mb-3">Custom · Purple · Coupe</p>
+        
         <div className="flex items-baseline gap-2 flex-wrap">
           {onSale && (
             <span className="num text-sm text-muted-foreground line-through">{formatPrice(product.basePriceCents, product.currency)}</span>
           )}
           <span className="num text-xl font-semibold text-primary">{formatPrice(totalCents, product.currency)}</span>
           {onSale && (
-            <span className="num text-[10px] font-bold uppercase tracking-[0.14em] text-ok">Save {formatPrice(discountCents, product.currency)} · {product.discountPercent}% off</span>
+            <span className="num text-[10px] font-bold uppercase tracking-[0.14em] text-ok">Save {formatPrice(discountCents, product.currency)}</span>
           )}
         </div>
       </section>
@@ -352,7 +385,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
               <input type="radio" name="paymentMethod" value="stars" checked={paymentMethod === "stars"} onChange={() => setPaymentMethod("stars")} className="accent-primary" />
               <div className="flex-1">
                 <div className="flex items-center gap-1.5 text-xs font-medium text-foreground"><StarIcon className="w-3.5 h-3.5" />Telegram Stars</div>
-                <div className="text-[10px] text-muted-foreground">Pay in-app with your Stars balance, instantly and without a card.{product ? ` About ${product.starsPrice ?? approxStarsForCents(totalCents)} Stars.` : ""}</div>
+                <div className="text-[10px] text-muted-foreground">Pay in-app with your Stars balance, instantly and without a card.{product ? ` About ${product.promoStarsPrice ?? product.starsPrice ?? approxStarsForCents(totalCents)} Stars.` : ""}</div>
               </div>
             </label>
             {walletCents !== null && walletCents >= totalCents && (
@@ -379,7 +412,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
               <div className="flex flex-col gap-3">
                 <Uploader
                   id="checkout-proof-upload"
-                  accept=".png,.jpg,.jpeg,.pdf"
+                  accept=".png,.jpg,.jpeg,.webp"
                   error={attempted && !proofFileName}
                   fileName={proofFileName || null}
                   label="Click to upload proof of payment"
@@ -392,11 +425,11 @@ export function CheckoutClient({ productId }: { productId: number }) {
                 {proofFileName && (
                   <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
                     <span className="num">{proofFileName}</span>
-                    <span>PNG, JPG or PDF · Max 5MB</span>
+                    <span>PNG, JPG or WEBP · Max 5MB</span>
                   </div>
                 )}
                 {!proofFileName && (
-                  <p className="text-[10px] text-muted-foreground">PNG, JPG or PDF · Max 5MB</p>
+                  <p className="text-[10px] text-muted-foreground">PNG, JPG or WEBP · Max 5MB</p>
                 )}
                 {proofError && (
                   <p className="text-[10px] text-destructive mt-1">{proofError}</p>
@@ -437,7 +470,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
                         }}
                         aria-label="Copy account number"
                       >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="w-3 h-3"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                       </Button>
                     </div>
                   </div>
@@ -453,7 +486,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
                         }}
                         aria-label="Copy branch code"
                       >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="w-3 h-3"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                       </Button>
                     </div>
                   </div>
@@ -473,7 +506,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
                         }}
                         aria-label="Copy reference"
                       >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="w-3 h-3"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                       </Button>
                     </div>
                   </div>
@@ -498,7 +531,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
             </div>
             {onSale && (
               <div className="flex justify-between text-[11px]">
-                <span className="text-muted-foreground">Discount ({product.discountPercent}%)</span>
+                <span className="text-muted-foreground">{discountLabel}</span>
                 <span className="text-ok">-{formatPrice(discountCents, product.currency)}</span>
               </div>
             )}
@@ -511,7 +544,7 @@ export function CheckoutClient({ productId }: { productId: number }) {
                 <span>Telegram Stars (≈)</span>
                 <span className="flex items-center gap-1 text-primary">
                   <StarIcon className="w-4 h-4" />
-                  {approxStarsForCents(totalCents)}
+                  {product?.promoStarsPrice ?? product?.starsPrice ?? approxStarsForCents(totalCents)}
                 </span>
               </div>
             )}
@@ -534,9 +567,9 @@ export function CheckoutClient({ productId }: { productId: number }) {
       </form>
 
       <p className="mt-6 flex items-center justify-center gap-2 text-[10px] text-muted-foreground">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" className="w-3 h-3"><path d="M12 22s8-4 12-16v8"/><path d="M9 12H3v20h18v-20H9z"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3"><path d="M12 22s8-4 12-16v8"/><path d="M9 12H3v20h18v-20H9z"/></svg>
         Secure Checkout
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" className="w-3 h-3"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         256-bit SSL Encrypted
       </p>
     </StoreShell>

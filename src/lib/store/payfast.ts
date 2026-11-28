@@ -3,20 +3,21 @@
  * Builds the hosted PayFast checkout URL for an order.
  */
 
-import { createHash } from "node:crypto";
 import type { Order } from "../store-types";
 import { getStoreDb } from "../store-db.ts";
-import { rowToPayment, getPaymentsForOrder } from "./payments.ts";
-import { updatePaymentState, updateOrderState, getOrder } from "./checkout.ts";
-import { recordPayment } from "./payments.ts";
-import { ledgerEntry } from "./ledger.ts";
+import { rowToPayment } from "./payments.ts";
+import { confirmPayment, getOrder } from "./checkout.ts";
+import { ensureSettlementRecords } from "./settlement.ts";
 import { notifyCustomer } from "./notifications.ts";
+import { getPayFastCheckoutUrl, getPayFastQueryUrl } from "./payfast-url.ts";
+import { payfastSignature } from "./payfast-signature.ts";
+
+export { getPayFastBaseUrl, getPayFastCheckoutUrl, getPayFastQueryUrl } from "./payfast-url.ts";
 
 const PAYFAST_MERCHANT_ID = process.env.PAYFAST_MERCHANT_ID ?? "";
 const PAYFAST_MERCHANT_KEY = process.env.PAYFAST_MERCHANT_KEY ?? "";
 const PAYFAST_PASSPHRASE = process.env.PAYFAST_PASSPHRASE ?? "";
 
-const PAYFAST_BASE = "https://sandbox.payfast.co.za/eng/process"; // sandbox; flip to live via env
 
 export function isPayFastConfigured(): boolean {
   return Boolean(PAYFAST_MERCHANT_ID && PAYFAST_MERCHANT_KEY && PAYFAST_PASSPHRASE);
@@ -35,36 +36,32 @@ export function buildPayFastCheckoutUrl(
 
   const amountZar = (order.amountCents / 100).toFixed(2);
 
+  // Field order is part of the signature: PayFast signs the pairs in the
+  // order its docs describe them (merchant, customer, transaction), so
+  // this object is constructed in exactly that order — do not reorder.
   const params: Record<string, string> = {
     merchant_id: PAYFAST_MERCHANT_ID,
     merchant_key: PAYFAST_MERCHANT_KEY,
     return_url: returnUrl,
     cancel_url: cancelUrl,
     notify_url: notifyUrl,
+    name_first: "VANTA",
+    name_last: "Customer",
+    email_address: "checkout@vanta-garage.local",
     amount: amountZar,
     item_name: itemName ?? `VANTA GARAGE - #${order.productId}`,
     item_description: `Player: ${order.playerId} - ${order.inGameName}`,
     custom_str1: order.id,
-    name_first: "VANTA",
-    name_last: "Customer",
-    email_address: "checkout@vanta-garage.local",
   };
 
-  // PayFast signature: MD5 of sorted param string + passphrase
-  const sortedKeys = Object.keys(params).sort();
-  const dataString = sortedKeys.map((k) => `${k}=${params[k]}`).join("&");
-  // PayFast signature: MD5 of (sorted param string + passphrase)
-  const signature = createHash("md5")
-    .update(`${dataString}${PAYFAST_PASSPHRASE}`)
-    .digest("hex");
+  const signature = payfastSignature(params, PAYFAST_PASSPHRASE);
 
   const checkoutParams: Record<string, string> = { ...params, signature };
   const qs = Object.entries(checkoutParams)
     .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
     .join("&");
 
-  const baseUrl = getPayFastBaseUrl();
-  return { url: `${baseUrl}?${qs}`, configured: true };
+  return { url: `${getPayFastCheckoutUrl()}?${qs}`, configured: true };
 }
 
 /**
@@ -98,21 +95,17 @@ export function buildPayFastTopupUrl(input: {
     email_address: "checkout@vanta-garage.local",
   };
 
-  const sortedKeys = Object.keys(params).sort();
-  const dataString = sortedKeys.map((k) => `${k}=${params[k]}`).join("&");
-  const signature = createHash("md5")
-    .update(`${dataString}${PAYFAST_PASSPHRASE}`)
-    .digest("hex");
+  // Official PayFast signature (given order, urlencoded, &passphrase=) —
+  // the shared helper, same as the order checkout. A sorted-keys/bare-
+  // passphrase MD5 (what this builder originally did) is rejected by
+  // PayFast, which would have broken every wallet top-up.
+  const signature = payfastSignature(params, PAYFAST_PASSPHRASE);
 
   const qs = Object.entries({ ...params, signature })
     .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
     .join("&");
 
-  return { url: `${getPayFastBaseUrl()}?${qs}`, configured: true };
-}
-
-export function getPayFastBaseUrl(): string {
-  return process.env.PAYFAST_BASE_URL ?? PAYFAST_BASE;
+  return { url: `${getPayFastCheckoutUrl()}?${qs}`, configured: true };
 }
 
 /**
@@ -140,33 +133,27 @@ export async function retryWebhook(paymentId: string): Promise<void> {
       const pfQuery = await fetch(
         // The configured base URL, not the hardcoded sandbox — live
         // payments never recovered via retries with the sandbox endpoint.
-        `${getPayFastBaseUrl()}/eng/query_transactions?merchant_id=${encodeURIComponent(PAYFAST_MERCHANT_ID)}&merchant_key=${encodeURIComponent(PAYFAST_MERCHANT_KEY)}&payment_id=${encodeURIComponent(payment.providerRef)}`,
+        `${getPayFastQueryUrl()}?merchant_id=${encodeURIComponent(PAYFAST_MERCHANT_ID)}&merchant_key=${encodeURIComponent(PAYFAST_MERCHANT_KEY)}&payment_id=${encodeURIComponent(payment.providerRef)}`,
       );
       if (pfQuery.ok) {
         const text = await pfQuery.text();
         // PayFast returns key=value pairs separated by &
         const params: Record<string, string> = {};
         for (const pair of text.split("&")) {
-          const [k, v] = pair.split("=");
-          if (k && v !== undefined) params[k] = v;
+          const separator = pair.indexOf("=");
+          if (separator > 0) params[pair.slice(0, separator)] = pair.slice(separator + 1);
         }
         if (params.payment_status === "COMPLETED") {
-          await recordPayment({
-            orderId: payment.orderId,
+          // The shared settlement path: the same conditional state flip,
+          // atomic stock deduction trigger and idempotent bookkeeping used by
+          // the PayFast ITN and Telegram Stars webhooks. Writing payment_state
+          // directly here used to mark the order paid without spending the
+          // reserved stock.
+          await confirmPayment(payment.orderId);
+          await ensureSettlementRecords({
+            order,
             provider: "payfast",
             providerRef: payment.providerRef,
-            amountCents: payment.amountCents,
-            currency: payment.currency,
-            status: "verified",
-          });
-          await updatePaymentState(payment.orderId, "verified");
-          await updateOrderState(payment.orderId, "payment_confirmed");
-          await ledgerEntry({
-            orderId: payment.orderId,
-            type: "payment",
-            amountCents: payment.amountCents,
-            currency: payment.currency,
-            relatedPaymentId: payment.providerRef,
           });
           await notifyCustomer(order.customerId, "payment_confirmed_payfast", {
             id: order.id,

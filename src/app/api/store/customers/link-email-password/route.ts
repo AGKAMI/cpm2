@@ -134,12 +134,33 @@ export async function POST(request: Request) {
     const passwordHash = scryptHash(password);
     const now = new Date().toISOString();
 
-    // Upsert credentials
+    // Never reassign an existing login. A Telegram user can enter any email
+    // here; an unconditional upsert let them overwrite another customer's
+    // password_hash and take over that web account. If the email is already
+    // registered, only its OWN owner may change the password.
+    const existingLogin = await db.execute({
+      sql: `SELECT customer_id FROM vanta_customer_credentials WHERE email = ? COLLATE NOCASE LIMIT 1`,
+      args: [customerEmail],
+    });
+    if (
+      existingLogin.rows.length > 0 &&
+      Number(existingLogin.rows[0].customer_id) !== customerId
+    ) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "EMAIL_EXISTS",
+            message: "That email already belongs to another store account.",
+          },
+        },
+        { status: 409 },
+      );
+    }
+
     await db.execute({
       sql: `INSERT INTO vanta_customer_credentials (customer_id, email, password_hash, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?)
-            ON CONFLICT(email) DO UPDATE SET
-              customer_id = excluded.customer_id,
+            ON CONFLICT(email COLLATE NOCASE) DO UPDATE SET
               password_hash = excluded.password_hash,
               updated_at = excluded.updated_at`,
       args: [customerId, customerEmail, passwordHash, now, now],

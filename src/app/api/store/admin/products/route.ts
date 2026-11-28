@@ -7,13 +7,16 @@
  */
 
 import { fail, ok, readJson } from "@/lib/route";
+import { parseProvidedFields } from "@/lib/parse-patch.ts";
 import { saveUpload } from "@/lib/store/uploads";
 import { requireStoreAdmin } from "@/lib/store/auth";
 import { getStoreDb } from "@/lib/store-db";
 import {
   createProduct,
   createMedia,
+  deleteProductPermanently,
   getProduct,
+  listProducts,
   updateProduct,
 } from "@/lib/store/products";
 import type { ProductInput } from "@/lib/store-types";
@@ -55,8 +58,10 @@ export const dynamic = "force-dynamic";
  * silently create a product linked to no car. Returns a fail response or null.
  * Only enforced when the field is present (PUT partial updates keep the old code).
  */
-async function invalidCarCode(cpm2CarCode: number | undefined) {
+async function invalidCarCode(cpm2CarCode: number | undefined, game?: string) {
   if (cpm2CarCode === undefined) return null;
+  // CPM1 products carry CPM1 catalog codes — the CPM2 table must not judge them.
+  if (game === "cpm1") return null;
   const store = await getStoreDb();
   const result = await store.execute({
     sql: `SELECT code FROM vanta_cpm2_cars WHERE code = ?`,
@@ -105,6 +110,13 @@ async function persistDataUrlImage(dataUrl: string): Promise<string> {
 export async function GET(request: Request) {
   try {
     await requireStoreAdmin(request);
+    // Full rows for the admin catalogue manager: the public catalogue hides
+    // unpublished products, but admins must still be able to find, filter and
+    // re-publish them. The default minimal shape stays for existing pickers.
+    if (new URL(request.url).searchParams.get("full") === "1") {
+      const all = await listProducts({ onlyPublished: false });
+      return ok({ products: all, total: all.length });
+    }
     const store = await getStoreDb();
     const result = await store.execute({
       sql: `SELECT * FROM vanta_products ORDER BY id DESC`,
@@ -138,7 +150,7 @@ export async function POST(request: Request) {
   try {
     await requireStoreAdmin(request);
     const body = productSchema.parse(await readJson(request));
-    const badCode = await invalidCarCode(body.cpm2CarCode);
+    const badCode = await invalidCarCode(body.cpm2CarCode, body.game);
     if (badCode) return badCode;
     const input: ProductInput = {
           cpm2CarCode: body.cpm2CarCode,
@@ -185,10 +197,10 @@ export async function PUT(request: Request) {
       return fail({ status: 400, body: { error: { code: "missing_id", message: "Product id required." } } });
     }
     // Allow partial updates (e.g. publish toggle only sends isPublished)
-    const body = productSchema.partial().parse(await readJson(request));
-    const badCode = await invalidCarCode(body.cpm2CarCode);
-    if (badCode) return badCode;
+    const body = parseProvidedFields(productSchema, await readJson(request));
     const product = await getProduct(Number(id));
+    const badCode = await invalidCarCode(body.cpm2CarCode, body.game ?? product?.game);
+    if (badCode) return badCode;
     if (!product) {
       return fail({ status: 404, body: { error: { code: "not_found", message: "Product not found." } } });
     }
@@ -221,6 +233,7 @@ export async function PUT(request: Request) {
           stockQuantity: body.stockQuantity,
           availabilityState: body.availabilityState,
           exclusivity: body.exclusivity,
+          isFeatured: body.isFeatured,
           isSale: body.isSale,
           isPublished: body.isPublished,
           airSuspension: body.airSuspension,
@@ -250,42 +263,29 @@ export async function DELETE(request: Request) {
     if (!product) {
       return fail({ status: 404, body: { error: { code: "not_found", message: "Product not found." } } });
     }
-    // PERMANENT DELETE (?permanent=1): the row and its own data go away for
-    // real. Order history is a hard reference (vanta_orders.product_id is NOT
-    // NULL), so a product anyone has ordered can never be purged — that would
-    // break the order records. Hide (the default) stays the answer for those.
+    // Permanent delete (?permanent=1): removes the product and its child
+    // rows for good. Refused with 409 when orders reference the product —
+    // order history must outlive the catalogue, so those stay hide-only.
     if (url.searchParams.get("permanent") === "1") {
-      const db = await getStoreDb();
-      const ordered = await db.execute({
-        sql: `SELECT COUNT(*) AS n FROM vanta_orders WHERE product_id = ?`,
-        args: [Number(id)],
-      });
-      const orderCount = Number((ordered.rows[0] as { n: unknown }).n ?? 0);
-      if (orderCount > 0) {
+      const result = await deleteProductPermanently(Number(id));
+      if (!result.deleted && result.reason === "has_orders") {
         return fail({
           status: 409,
           body: {
             error: {
-              code: "PRODUCT_HAS_ORDERS",
-              message: `${product.name} has ${orderCount} order(s) in its history — deleting it would break those records. Hide it instead.`,
+              code: "product_has_orders",
+              message: `This product has ${result.orderCount} order${result.orderCount === 1 ? "" : "s"} attached, so it can't be permanently deleted. Hide it instead — order history stays intact.`,
             },
           },
         });
       }
-      // The product's own dependent data first, then the product itself.
-      for (const table of [
-        "vanta_inventory",
-        "vanta_pricing",
-        "vanta_product_media",
-        "vanta_account_units",
-      ]) {
-        await db.execute({ sql: `DELETE FROM ${table} WHERE product_id = ?`, args: [Number(id)] });
+      if (!result.deleted) {
+        return fail({ status: 404, body: { error: { code: "not_found", message: "Product not found." } } });
       }
-      await db.execute({ sql: `DELETE FROM vanta_products WHERE id = ?`, args: [Number(id)] });
       return ok({ deleted: true, permanent: true });
     }
-
-    // HIDE (default): unpublish and mark unavailable — order history intact.
+    // Soft delete: unpublish and mark as deleted (protects order history references)
+    // In future, we can add a deletedAt column for true soft delete
     const updated = await updateProduct(Number(id), {
       isPublished: false,
       availabilityState: "unavailable",
@@ -294,7 +294,7 @@ export async function DELETE(request: Request) {
     if (!updated) {
       return fail({ status: 404, body: { error: { code: "not_found", message: "Product not found." } } });
     }
-    return ok({ deleted: true, permanent: false, product: updated });
+    return ok({ deleted: true, product: updated });
   } catch (err) {
     return fail(err);
   }

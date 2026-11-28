@@ -31,7 +31,7 @@ type FleetContextValue = {
   refresh: (silent?: boolean) => Promise<void>;
   adjust: (account: AccountSummary, field: AdjustField, delta: number) => Promise<void>;
   createAccount: (payload: unknown) => Promise<AccountSummary | null>;
-  updateAccount: (id: number, payload: unknown) => Promise<void>;
+  updateAccount: (id: number, payload: unknown) => Promise<boolean>;
   archiveAccount: (account: AccountSummary) => Promise<void>;
   /** Permanent delete — the row and its data are destroyed, not archived. */
   purgeAccount: (account: AccountSummary) => Promise<void>;
@@ -228,8 +228,12 @@ export function FleetProvider({ children }: { children: ReactNode }) {
         if (!applyAccount(account)) setAccounts((current) => [account, ...current]);
         scheduleSync();
         toast.success("Saved", "Changes are written to the ledger.");
+        return true;
       } catch (err) {
         toast.error("Could not save", describe(err));
+        // Failure must reach the form: the shell used to report success
+        // unconditionally, closing the editor and discarding the input.
+        return false;
       }
     },
     [applyAccount, scheduleSync, toast],

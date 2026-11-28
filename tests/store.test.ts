@@ -129,7 +129,9 @@ describe("vanta · inventory counters (oversell guard)", () => {
 });
 
 describe("vanta · order state machine (schema-enforced)", () => {
-  // The documented pipeline from src/lib/store/orders.ts.
+  // The order lifecycle mirrored by ORDER_LIFECYCLE in
+  // src/components/OrderProgress.tsx — the schema CHECK must accept
+  // every state the UI can render.
   const DOCUMENTED_PIPELINE = [
     "checkout_initiated",
     "awaiting_payment",

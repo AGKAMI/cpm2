@@ -124,6 +124,26 @@ describe("store page/API contract", () => {
   });
 });
 
+describe("legal documents", () => {
+  it("both legal routes render one shared source of truth", () => {
+    // Each route used to carry a full copy of every policy; the copies
+    // had already drifted (the /legal payment policy omitted Telegram
+    // Stars, the profile copy said "We will receive a confirmation").
+    for (const rel of [
+      join("legal", "[doc]", "page.tsx"),
+      join("store", "profile", "legal", "[doc]", "page.tsx"),
+    ]) {
+      const src = readFileSync(join(appDir, rel), "utf8");
+      assert.ok(src.includes("@/lib/legal-docs"), `${rel} must import the shared legal docs`);
+      assert.ok(!src.includes("const LEGAL_DOCS"), `${rel} must not carry its own copy of the policies`);
+    }
+    const shared = readFileSync(join(appDir, "..", "lib", "legal-docs.tsx"), "utf8");
+    for (const slug of ["terms", "privacy", "refund", "delivery", "payment", "cancellation", "appointment", "dispute"]) {
+      assert.ok(shared.includes(`${slug}: {`), `shared legal docs missing ${slug}`);
+    }
+  });
+});
+
 describe("app structure", () => {
   it("every page route has a sibling loading.tsx skeleton", () => {
     const pages = walk(appDir).filter((f) => f.endsWith("page.tsx"));

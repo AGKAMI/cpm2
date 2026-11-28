@@ -49,10 +49,14 @@ export function OrderPageClient({ orderId }: { orderId: string }) {
 
   useEffect(() => {
     let alive = true;
+    let stopped = false;
     const load = async (showError = false) => {
       try {
         const { order: o } = await vantaApi.order(orderId);
-        if (alive) setOrder(o);
+        if (!alive) return;
+        setOrder(o);
+        // Terminal states never move again — stop polling for them.
+        if (["completed", "cancelled", "refunded"].includes(o.orderState)) stopped = true;
       } catch {
         if (showError) notFound();
       } finally {
@@ -62,13 +66,17 @@ export function OrderPageClient({ orderId }: { orderId: string }) {
     load(true);
     // Live progression: re-poll while the order is still moving so the bar
     // advances in real time (stop once it reaches a terminal state).
-    const t = setInterval(() => {
+    const timer = setInterval(() => {
+      if (stopped) {
+        clearInterval(timer);
+        return;
+      }
       if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
       void load(false);
     }, 15000);
     return () => {
       alive = false;
-      clearInterval(t);
+      clearInterval(timer);
     };
   }, [orderId]);
 
@@ -105,17 +113,17 @@ export function OrderPageClient({ orderId }: { orderId: string }) {
           <div className="flex flex-col gap-2">
             <div className="flex items-baseline gap-2">
               <span className="text-xs text-muted-foreground">Order</span>
-              <span className="text-sm text-foreground capitalize">{order.orderState.replace("_", " ")}</span>
+              <span className="text-sm text-foreground capitalize">{order.orderState.replace(/_/g, " ")}</span>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-xs text-muted-foreground">Payment</span>
               <span className={`text-sm font-medium ${order.paymentState === "verified" ? "text-primary" : "text-muted-foreground"}`}>
-                {order.paymentState.replace("_", " ")}
+                {order.paymentState.replace(/_/g, " ")}
               </span>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-xs text-muted-foreground">Delivery</span>
-              <span className={`text-sm text-foreground capitalize`}>{order.deliveryState.replace("_", " ")}</span>
+              <span className={`text-sm text-foreground capitalize`}>{order.deliveryState.replace(/_/g, " ")}</span>
             </div>
           </div>
           {order.reservedUntil && (

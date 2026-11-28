@@ -320,7 +320,7 @@ function EftOrderCard({
         <span
           className={`text-[10px] uppercase tracking-[0.15em] px-2 py-0.5 rounded border ${stateVariant}`}
         >
-          {order.paymentMethod.toUpperCase()} · {order.paymentState.replace("_", " ")}
+          {order.paymentMethod.toUpperCase()} · {order.paymentState.replace(/_/g, " ")}
         </span>
       </div>
 

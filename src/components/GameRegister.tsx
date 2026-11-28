@@ -356,6 +356,17 @@ export function GameRegister({ game }: { game: GameType }) {
             onDelete={(account) => {
               void shell
                 .confirm({
+                  title: "Delete this account for good?",
+                  message: `${account.email} is destroyed — cars, images and event history included. This cannot be undone. To keep the balances and restore later, archive instead.`,
+                  confirmLabel: "Delete permanently",
+                })
+                .then((ok) => {
+                  if (ok) void fleet.purgeAccount(account);
+                });
+            }}
+            onArchive={(account) => {
+              void shell
+                .confirm({
                   title: "Archive this account?",
                   message: `${account.email} is filed away with every balance intact. You can restore it from the archived view at any time.`,
                   confirmLabel: "Archive",

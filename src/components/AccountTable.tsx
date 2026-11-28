@@ -18,6 +18,7 @@ type AccountTableProps = {
   onEdit: (account: AccountSummary) => void;
   onBuySlot: (account: AccountSummary) => void;
   onDelete: (account: AccountSummary) => void;
+  onArchive?: (account: AccountSummary) => void;
   onRestore?: (account: AccountSummary) => void;
   onAdjust: (account: AccountSummary, field: "cash" | "coins" | "cars", delta: number) => void;
   mode?: "active" | "archived";
@@ -39,7 +40,8 @@ export function AccountTable({
   onEdit,
   onBuySlot,
   onDelete,
-  onRestore,
+    onArchive,
+    onRestore,
   onAdjust,
   mode = "active",
   selectable = false,
@@ -191,15 +193,26 @@ export function AccountTable({
                           }
                         />
                         <IconAction
-                          label="Archive account"
+                          label="Delete account permanently"
                           danger
                           onClick={() => onDelete(account)}
                           icon={
-                            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+                            <svg viewBox="0 0 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
                               <path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
                           }
                         />
+                        {onArchive && (
+                          <IconAction
+                            label="Archive account"
+                            onClick={() => onArchive(account)}
+                            icon={
+                              <svg viewBox="0 0 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+                                <path d="M3 7v13h18V7M3 7l2-3h14l2 3M9 12h6" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            }
+                          />
+                        )}
                       </>
                     )}
                   </div>
@@ -255,15 +268,26 @@ export function AccountTable({
                       }
                     />
                     <IconAction
-                      label="Archive account"
+                      label="Delete account permanently"
                       danger
                       onClick={() => onDelete(account)}
                       icon={
-                        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+                        <svg viewBox="0 0 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
                           <path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       }
                     />
+                    {onArchive && (
+                      <IconAction
+                        label="Archive account"
+                        onClick={() => onArchive(account)}
+                        icon={
+                          <svg viewBox="0 0 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+                            <path d="M3 7v13h18V7M3 7l2-3h14l2 3M9 12h6" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        }
+                      />
+                    )}
                   </>
                 )}
               </div>

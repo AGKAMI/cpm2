@@ -197,10 +197,11 @@ export const vantaApi = {
         method: "PUT",
         body: JSON.stringify({ isPublished: publish }),
       }),
-    deleteProduct: (id: number) =>
-      request<{ deleted: boolean }>(`/admin/products?id=${id}`, {
-        method: "DELETE",
-      }),
+    deleteProduct: (id: number, permanent = false) =>
+      request<{ deleted: boolean; permanent?: boolean }>(
+        `/admin/products?id=${id}${permanent ? "&permanent=1" : ""}`,
+        { method: "DELETE" },
+      ),
   orders: () => {
     let url = "/orders";
     const pid = guestPlayerId();

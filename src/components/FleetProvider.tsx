@@ -33,6 +33,8 @@ type FleetContextValue = {
   createAccount: (payload: unknown) => Promise<AccountSummary | null>;
   updateAccount: (id: number, payload: unknown) => Promise<void>;
   archiveAccount: (account: AccountSummary) => Promise<void>;
+  /** Permanent delete — the row and its data are destroyed, not archived. */
+  purgeAccount: (account: AccountSummary) => Promise<void>;
   restoreAccount: (account: AccountSummary) => Promise<void>;
   buySlots: (account: AccountSummary, count: number) => Promise<void>;
   importCsv: (csv: string) => Promise<ImportReport>;
@@ -264,6 +266,22 @@ export function FleetProvider({ children }: { children: ReactNode }) {
     [scheduleSync, toast],
   );
 
+  const purgeAccount = useCallback(
+    async (account: AccountSummary) => {
+      try {
+        await api.purge(account.id);
+        setAccounts((current) => current.filter((item) => item.id !== account.id));
+        setArchived((current) => current.filter((item) => item.id !== account.id));
+        setStats(computeFleetStats(accountsRef.current.filter((item) => item.id !== account.id)));
+        scheduleSync();
+        toast.success("Deleted", `${account.email} is gone — cars, images and history included.`);
+      } catch (err) {
+        toast.error("Could not delete", describe(err));
+      }
+    },
+    [scheduleSync, toast],
+  );
+
   const restoreAccount = useCallback(
     async (account: AccountSummary) => {
       try {
@@ -326,6 +344,7 @@ export function FleetProvider({ children }: { children: ReactNode }) {
       createAccount,
       updateAccount,
       archiveAccount,
+      purgeAccount,
       restoreAccount,
       buySlots,
       importCsv,

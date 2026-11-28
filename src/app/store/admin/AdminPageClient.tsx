@@ -1575,12 +1575,20 @@ export default function AdminPageClient({ products, categories, promotions }: Ad
                   onEdit={() => selectProduct(p)}
                   onPublish={(id, publish) => handlePublish(id, publish)}
                   onDelete={async (id, name) => {
-                    if (!window.confirm(`Delete "${name}"? This will unpublish and mark unavailable.`)) return;
+                    // DELETE MEANS DELETE: gone from the catalogue for real.
+                    // A product with order history can't be purged (the API
+                    // refuses with PRODUCT_HAS_ORDERS) — hide it instead.
+                    if (
+                      !window.confirm(
+                        `Delete "${name}" permanently? It is removed from the catalogue for good. If it has orders in its history, deleting is refused and you should hide it instead.`,
+                      )
+                    )
+                      return;
                     setError(null);
                     const scrollY = window.scrollY;
                     try {
-                      await vantaApi.deleteProduct(id);
-                      setMsg("Product deleted (unpublished & marked unavailable).");
+                      await vantaApi.deleteProduct(id, true);
+                      setMsg("Product deleted permanently.");
                       await load();
                       window.scrollTo(0, scrollY);
                       setSelectedProductId(null);

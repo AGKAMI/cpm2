@@ -108,6 +108,11 @@ export const api = {
     request<{ archived: { id: number; email: string } }>(`/api/accounts/${id}`, {
       method: "DELETE",
     }),
+  /** Permanent delete — destroys the row and its data, unlike archive. */
+  purge: (id: number) =>
+    request<{ purged: boolean; id: number; email: string }>(`/api/accounts/${id}/purge`, {
+      method: "DELETE",
+    }),
   restore: (id: number) =>
     request<{ account: AccountSummary }>(`/api/accounts/${id}/restore`, { method: "POST" }),
   importAccounts: (payload: unknown, format: "json" | "csv" = "json") =>

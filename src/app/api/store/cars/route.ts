@@ -17,16 +17,16 @@ export async function GET(request: NextRequest) {
       args: [],
     });
 
-    const cars = result.rows.map((row: any) => ({
+    const cars = result.rows.map((row: Record<string, unknown>) => ({
       code: Number(row.code),
       name: String(row.name),
       game: "cpm2",
     }));
 
     return ok({ cars });
-  } catch (err: any) {
+  } catch (err: unknown) {
     return NextResponse.json(
-      { error: { code: "SERVER_ERROR", message: err?.message || "Failed to load cars" } },
+      { error: { code: "SERVER_ERROR", message: err instanceof Error ? err.message : "Failed to load cars" } },
       { status: 500 }
     );
   }

@@ -10,6 +10,7 @@
  */
 
 import { fail, ok, readJson } from "@/lib/route";
+import { createOrderAccessToken } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
 import { z } from "zod";
 import { assertTelegramAuth } from "@/lib/telegram";
@@ -20,8 +21,8 @@ import {
   linkPlatformIdentity,
 } from "@/lib/store/customers";
 import { createOrder } from "@/lib/store/checkout";
-import { discountedPriceCents } from "@/lib/store/pricing";
-import { getProduct } from "@/lib/store/products";
+import { effectiveUnitPriceCents } from "@/lib/store/pricing";
+import { getProduct, productPromotionMap } from "@/lib/store/products";
 import { getCart, clearCart } from "@/lib/store/cart";
 import { getStoreCustomer } from "@/lib/store/auth";
 import type { Customer } from "@/lib/store-types";
@@ -71,7 +72,8 @@ async function resolveBuyer(
 export async function POST(request: Request) {
   try {
     const body = cartCheckoutSchema.parse(await readJson(request));
-    const customer = await resolveBuyer(request, body.playerId.trim(), body.inGameName.trim(), body.paymentMethod);
+    const normalizedPlayerId = body.playerId.trim().toUpperCase();
+    const customer = await resolveBuyer(request, normalizedPlayerId, body.inGameName.trim(), body.paymentMethod);
     const cart = await getCart(customer.id);
 
     if (cart.items.length === 0) {
@@ -84,21 +86,52 @@ export async function POST(request: Request) {
         "Cart checkout currently supports EFT only. Check out PayFast items one at a time.",
       );
     }
+    // Stars settle one invoice per order inside Telegram; this route never
+    // returns an invoice URL, so a Stars "checkout" here created unpaid
+    // orders with no way to pay them. Refuse it like multi-item PayFast.
+    if (body.paymentMethod === "stars") {
+      throw new ApiError(
+        400,
+        "STARS_CART_UNSUPPORTED",
+        "Telegram Stars is one vehicle at a time. Check out Stars items from their product page.",
+      );
+    }
+    // PayFast and Stars settle in ZAR; an order labelled in another currency
+    // would be charged at a ZAR rate while its audit trail says otherwise.
+    if (body.paymentMethod !== "eft" && cart.items.some((i) => (i.currency || "ZAR").toUpperCase() !== "ZAR")) {
+      throw new ApiError(
+        400,
+        "UNSUPPORTED_GATEWAY_CURRENCY",
+        "Card and Stars payments are available in ZAR only. Choose EFT for this cart.",
+      );
+    }
 
-    const playerId = body.playerId.trim();
+    const playerId = normalizedPlayerId;
     const inGameName = body.inGameName.trim();
     const orders = [];
+    // Promotions are game-scoped; each cart item now carries its product's
+    // game, so consult that game's map exactly like the single-product
+    // checkout does. (Consulting cpm1 first could apply a CPM1-scoped promo
+    // to a CPM2 product the storefront never discounted.)
+    const [cpm1Promos, cpm2Promos] = await Promise.all([
+      productPromotionMap("cpm1"),
+      productPromotionMap("cpm2"),
+    ]);
+    const promoFor = (item: { productId: number; game: string }) =>
+      (item.game === "cpm1" ? cpm1Promos : cpm2Promos).get(item.productId);
 
     for (const item of cart.items) {
-      const idempotencyKey = `cart_${customer.id}_${item.productId}_${item.quantity}`;
+      // Include the cart row's last update so adding the same product again
+      // later does not replay an old, already-paid order. A genuine retry of
+      // the unchanged cart still resolves to the same order.
+      const idempotencyKey = `cart_${customer.id}_${item.productId}_${item.quantity}_${item.updatedAt}`;
       const result = await createOrder({
         customerId: customer.id,
         productId: item.productId,
         quantity: item.quantity,
-        // The cart must charge the sale price, same as the single-product
-        // checkout below. Charging basePriceCents here overcharged every
-        // discounted vehicle bought through the cart.
-        amountCents: discountedPriceCents(item.basePriceCents, item.discountPercent) * item.quantity,
+        // Product sale + any live promotion, exactly like single checkout and
+        // the price shown on the card.
+        amountCents: effectiveUnitPriceCents(item, promoFor(item)) * item.quantity,
         currency: item.currency,
         paymentMethod: body.paymentMethod,
         playerId,
@@ -134,13 +167,17 @@ export async function POST(request: Request) {
     }
 
     const subtotalCents = cart.items.reduce(
-      (sum, i) => sum + discountedPriceCents(i.basePriceCents, i.discountPercent) * i.quantity,
+      (sum, i) => sum + effectiveUnitPriceCents(i, promoFor(i)) * i.quantity,
       0,
     );
 
     return ok({
       orders,
       orderIds: orders.map((o) => o.id),
+      orderAccessTokens: orders.map((o) => ({
+        orderId: o.id,
+        token: createOrderAccessToken(o.id, o.customerId),
+      })),
       subtotalCents,
       currency: cart.currency,
       itemCount: cart.items.length,

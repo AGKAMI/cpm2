@@ -170,7 +170,7 @@ export const api = {
     request<{ deleted: boolean }>(`/api/trade/prices?game=${game}&code=${code}`, {
       method: "DELETE",
     }),
-  identifyCar: (payload: { imageBase64: string; mimeType: string }) =>
+  identifyCar: (payload: { imageBase64: string; mimeType: string; game: GameType }) =>
     request<{ carName: string; matches: CarMatch[] }>(
       "/api/trade/identify",
       {

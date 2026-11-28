@@ -4,7 +4,7 @@
 
 import { fail, ok } from "@/lib/route";
 import { getStoreDb } from "@/lib/store-db";
-import { verifySessionToken, readRequestCookie, SESSION_COOKIE } from "@/lib/auth";
+import { getStoreCustomer } from "@/lib/store/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -14,8 +14,11 @@ export async function POST(
 ) {
   const { id } = await params;
 
-  const sessionToken = readRequestCookie(request, SESSION_COOKIE);
-  const sessionUserId = verifySessionToken(sessionToken);
+  // Either signed identity (Telegram initData or the web session) — this
+  // used to accept only the session cookie, so Telegram buyers could never
+  // confirm a delivery the app kept asking them to confirm.
+  const linked = await getStoreCustomer(request).catch(() => null);
+  const sessionUserId = linked?.customer.id;
 
   if (!sessionUserId) {
     return fail({ status: 401, body: { error: { code: "UNAUTHORIZED", message: "Not authorized" } } });
@@ -26,7 +29,7 @@ export async function POST(
 
     // Verify the appointment belongs to this customer's order
     const result = await db.execute({
-      sql: `SELECT a.id, a.customer_confirmed, a.scheduled_for,
+      sql: `SELECT a.id, a.customer_confirmed, a.scheduled_at,
                    o.customer_id, o.payment_state, o.delivery_state
             FROM vanta_appointments a
             JOIN vanta_orders o ON a.order_id = o.id

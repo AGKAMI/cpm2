@@ -29,12 +29,6 @@ function scopeFor(pathname: string | null | undefined): AppScope {
   return pathname?.startsWith("/store") ? "store" : "fleet";
 }
 
-let currentScope: AppScope = "fleet";
-
-function liveScope(): AppScope {
-  return typeof window === "undefined" ? currentScope : scopeFor(window.location.pathname);
-}
-
 function modeKey(scope: AppScope): string {
   return `${LEGACY_MODE_KEY}:${scope}`;
 }
@@ -48,12 +42,10 @@ const listeners = new Set<() => void>();
 let cached: ThemeState | null = null;
 
 /** Fallback palette for the route on screen: /store keeps the house VANTA
- *  identity, Fleet Ledger opens in Neon 2 TONE. Every useTheme() render
- *  refreshes this so module-level readers (readState/write) agree with the
- *  mounted route; a stored user choice always wins over either fallback. */
-let routeFallback: PaletteId = FLEET_DEFAULT_PALETTE;
-
-function fallbackFor(pathname: string | null): PaletteId {
+ *  identity, Fleet Ledger opens in Neon 2 TONE. The active route is passed
+ *  explicitly to the store readers instead of being cached in a module-level
+ *  variable during render; a stored user choice always wins. */
+function fallbackFor(pathname: string | null | undefined): PaletteId {
   return pathname?.startsWith("/store") ? DEFAULT_PALETTE : FLEET_DEFAULT_PALETTE;
 }
 
@@ -61,15 +53,14 @@ function serverStateFor(fallback: PaletteId): ThemeState {
   return fallback === DEFAULT_PALETTE ? SERVER_VANTA : SERVER_NEON;
 }
 
-function readState(): ThemeState {
-  if (typeof window === "undefined") return serverStateFor(routeFallback);
-  const scope = liveScope();
+function readState(scope: AppScope, fallback: PaletteId): ThemeState {
+  if (typeof window === "undefined") return serverStateFor(fallback);
   const storedMode =
     window.localStorage.getItem(modeKey(scope)) ?? window.localStorage.getItem(LEGACY_MODE_KEY);
   const mode: ThemeMode = storedMode === "paper" ? "paper" : "night";
   const storedPalette =
     window.localStorage.getItem(paletteKey(scope)) ?? window.localStorage.getItem(LEGACY_PALETTE_KEY);
-  const palette = isPaletteId(storedPalette) ? storedPalette : routeFallback;
+  const palette = isPaletteId(storedPalette) ? storedPalette : fallback;
   if (!cached || cached.mode !== mode || cached.palette !== palette) {
     cached = { mode, palette };
   }
@@ -89,8 +80,7 @@ function apply(state: ThemeState) {
   root.setAttribute("data-palette", state.palette);
 }
 
-function write(next: ThemeState) {
-  const scope = liveScope();
+function write(next: ThemeState, scope: AppScope) {
   window.localStorage.setItem(modeKey(scope), next.mode);
   window.localStorage.setItem(paletteKey(scope), next.palette);
   cached = next;
@@ -100,11 +90,12 @@ function write(next: ThemeState) {
 
 export function useTheme() {
   const pathname = usePathname();
+  const scope = scopeFor(pathname);
   const fallback = fallbackFor(pathname);
-  if (routeFallback !== fallback) routeFallback = fallback;
-  currentScope = scopeFor(pathname);
+  const read = useCallback(() => readState(scope, fallback), [scope, fallback]);
+  const server = useCallback(() => serverStateFor(fallback), [fallback]);
 
-  const state = useSyncExternalStore(subscribe, readState, () => serverStateFor(fallback));
+  const state = useSyncExternalStore(subscribe, read, server);
 
   useEffect(() => {
     apply(state);
@@ -114,7 +105,6 @@ export function useTheme() {
   // this app's own slot so each app keeps its own preference from now on.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const scope = liveScope();
     if (window.localStorage.getItem(modeKey(scope)) === null) {
       const legacy = window.localStorage.getItem(LEGACY_MODE_KEY);
       if (legacy) window.localStorage.setItem(modeKey(scope), legacy);
@@ -123,7 +113,7 @@ export function useTheme() {
       const legacy = window.localStorage.getItem(LEGACY_PALETTE_KEY);
       if (legacy) window.localStorage.setItem(paletteKey(scope), legacy);
     }
-  }, []);
+  }, [scope]);
 
   useEffect(() => {
     const onStorage = () => {
@@ -135,17 +125,17 @@ export function useTheme() {
   }, []);
 
   const setMode = useCallback((mode: ThemeMode) => {
-    write({ ...readState(), mode });
-  }, []);
+    write({ ...readState(scope, fallback), mode }, scope);
+  }, [scope, fallback]);
 
   const setPalette = useCallback((palette: PaletteId) => {
-    write({ ...readState(), palette });
-  }, []);
+    write({ ...readState(scope, fallback), palette }, scope);
+  }, [scope, fallback]);
 
   const toggleTheme = useCallback(() => {
-    const current = readState();
-    write({ ...current, mode: current.mode === "night" ? "paper" : "night" });
-  }, []);
+    const current = readState(scope, fallback);
+    write({ ...current, mode: current.mode === "night" ? "paper" : "night" }, scope);
+  }, [scope, fallback]);
 
   return {
     theme: state.mode,

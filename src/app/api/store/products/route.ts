@@ -10,7 +10,7 @@ import {
   listGalleryMap,
   listCoverImageMap,
 } from "@/lib/store/products";
-import { approxStarsForCents, discountedPriceCents, hasDiscount } from "@/lib/store/pricing";
+import { approxStarsForCents, effectiveUnitPriceCents } from "@/lib/store/pricing";
 import { zarPerStar } from "@/lib/store/stars";
 import { productPromotionMap } from "@/lib/store/products";
 
@@ -90,14 +90,9 @@ export async function GET(request: Request) {
         .filter((u): u is string => u !== null);
       const coverRaw = covers.get(p.id) ?? p.imageUrl ?? "";
       const coverUrl = absoluteImageUrl(coverRaw, origin);
-      const finalPrice = hasDiscount(p)
-        ? discountedPriceCents(p.basePriceCents, p.discountPercent)
-        : p.basePriceCents;
       const promo = promoFor(p);
-      const promoPriceCents =
-        promo && promo.discountPercent > 0
-          ? Math.round((finalPrice * (100 - promo.discountPercent)) / 100)
-          : null;
+      const effectivePrice = effectiveUnitPriceCents(p, promo);
+      const promoPriceCents = promo && promo.discountPercent > 0 ? effectivePrice : null;
       return {
         ...p,
         promo: promo ?? null,
@@ -106,7 +101,9 @@ export async function GET(request: Request) {
         galleryUrls: gallery.length > 0 ? gallery : coverUrl ? [coverUrl] : [],
         // Quote with the CONFIGURED rate (STARS_ZAR_PER_STAR), so the
         // catalogue, the invoice and the checkout hint all agree.
-        starsPrice: approxStarsForCents(finalPrice, zarPerStar()),
+        starsPrice: approxStarsForCents(effectivePrice, zarPerStar()),
+        promoStarsPrice:
+          promoPriceCents !== null ? approxStarsForCents(promoPriceCents, zarPerStar()) : null,
       };
     });
 

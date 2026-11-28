@@ -5,6 +5,7 @@
  */
 
 import { fail, ok, readJson } from "@/lib/route";
+import { requireStoreAdmin } from "@/lib/store/auth";
 import { createMedia, listMedia } from "@/lib/store/media-service";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +26,9 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    // Was documented "admin only" but never checked — anyone could attach
+    // arbitrary media URLs to any product's public gallery.
+    await requireStoreAdmin(request);
     const body = (await readJson(request)) as Record<string, unknown>;
     const productId = Number(body.productId as string);
     const provider = String(body.provider ?? "");

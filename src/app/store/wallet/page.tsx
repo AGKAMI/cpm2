@@ -74,7 +74,7 @@ function WalletPageInner() {
     setError(null);
     try {
       const res = await vantaApi.topUpWallet({ amountCents });
-      window.location.href = res.redirectUrl; // PayFast EFT, like checkout
+      window.location.assign(res.redirectUrl); // PayFast EFT, like checkout
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not start the top-up.");
       setStarting(null);

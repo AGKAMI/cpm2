@@ -451,6 +451,27 @@ export async function searchProducts(query: string): Promise<Product[]> {
   return result.rows.map(rowToProduct);
 }
 
+/**
+ * Catalogue stock is a projection of the inventory ledger. Admins set the
+ * catalogue number, but writing only vanta_products left the purchasable pool
+ * unchanged (and a later settlement silently overwrote the card stock again).
+ * Apply the edit to inventory too, never below reserved units.
+ */
+async function syncInventoryStock(productId: number, stockQuantity: number): Promise<void> {
+  const db = await getStoreDb();
+  const existing = await getInventory(productId);
+  if (!existing) {
+    await createInventory(productId, stockQuantity);
+    return;
+  }
+  await db.execute({
+    sql: `UPDATE vanta_inventory
+          SET stock_quantity = MAX(?, reserved_quantity), version = version + 1, updated_at = ?
+          WHERE product_id = ?`,
+    args: [stockQuantity, new Date().toISOString(), productId],
+  });
+}
+
 export async function updateProductStock(productId: number, stockQuantity: number): Promise<void> {
   const db = await getStoreDb();
   const now = new Date().toISOString();
@@ -467,6 +488,7 @@ export async function updateProductStock(productId: number, stockQuantity: numbe
           ON CONFLICT(product_id) DO UPDATE SET stock_quantity = excluded.stock_quantity, version = version + 1, updated_at = excluded.updated_at`,
     args: [productId, stockQuantity, now],
   });
+  await syncInventoryStock(productId, stockQuantity);
 }
 
 export async function updateProduct(
@@ -516,20 +538,78 @@ export async function updateProduct(
     sql: `UPDATE vanta_products SET ${fields.join(", ")} WHERE id = ?`,
     args,
   });
+  if (input.stockQuantity !== undefined) {
+    await syncInventoryStock(productId, input.stockQuantity);
+  }
   return getProduct(productId);
+}
+
+/** How many orders reference this product. Orders snapshot the product name
+ *  at purchase time, but their product_id column is NOT NULL with no cascade —
+ *  it is the one hard link that makes permanent deletion unsafe. */
+export async function countProductOrders(productId: number): Promise<number> {
+  const db = await getStoreDb();
+  const { rows } = await db.execute({
+    sql: `SELECT COUNT(*) AS n FROM vanta_orders WHERE product_id = ?`,
+    args: [productId],
+  });
+  return Number(rows[0]?.n ?? 0);
+}
+
+export type PermanentDeleteResult =
+  | { deleted: true }
+  | { deleted: false; reason: "has_orders"; orderCount: number }
+  | { deleted: false; reason: "not_found" };
+
+/**
+ * Permanently remove a product. Refused when any order references it —
+ * order history (payments, EFT review, delivery) must outlive the catalogue,
+ * so ordered products can only ever be hidden. Child rows are cleared
+ * explicitly (not just via FK cascades, which depend on the connection's
+ * foreign_keys pragma): media, inventory, pricing, wishlist and cart rows
+ * go with the product; promotions and account units keep their rows with
+ * the product link nulled, matching their ON DELETE SET NULL schema.
+ */
+export async function deleteProductPermanently(productId: number): Promise<PermanentDeleteResult> {
+  const product = await getProduct(productId);
+  if (!product) return { deleted: false, reason: "not_found" };
+
+  const orderCount = await countProductOrders(productId);
+  if (orderCount > 0) return { deleted: false, reason: "has_orders", orderCount };
+
+  const db = await getStoreDb();
+  const clear: Array<{ sql: string; args: unknown[] }> = [
+    { sql: `DELETE FROM vanta_product_media WHERE product_id = ?`, args: [productId] },
+    { sql: `DELETE FROM vanta_inventory WHERE product_id = ?`, args: [productId] },
+    { sql: `DELETE FROM vanta_pricing WHERE product_id = ?`, args: [productId] },
+    { sql: `DELETE FROM vanta_wishlist WHERE product_id = ?`, args: [productId] },
+    { sql: `DELETE FROM vanta_cart_items WHERE product_id = ?`, args: [productId] },
+    { sql: `UPDATE vanta_promotions SET product_id = NULL WHERE product_id = ?`, args: [productId] },
+    { sql: `UPDATE vanta_account_units SET product_id = NULL WHERE product_id = ?`, args: [productId] },
+    { sql: `UPDATE vanta_notifications SET related_product_id = NULL WHERE related_product_id = ?`, args: [productId] },
+    { sql: `DELETE FROM vanta_products WHERE id = ?`, args: [productId] },
+  ];
+  for (const stmt of clear) {
+    await db.execute(stmt);
+  }
+  return { deleted: true };
 }
 
 export async function createInventory(productId: number, stockQuantity: number): Promise<Inventory> {
   const db = await getStoreDb();
   const now = new Date().toISOString();
-  const result = await db.execute({
+  // Another checkout may have seeded this product between our read and this
+  // insert. The unique index on product_id makes that a no-op instead of a
+  // second row that splits the stock pool.
+  await db.execute({
     sql: `INSERT INTO vanta_inventory (product_id, stock_quantity, reserved_quantity, version, updated_at)
-          VALUES (?, ?, 0, 1, ?)`,
-    args: [productId, stockQuantity, now],
+          SELECT ?, ?, 0, 1, ?
+          WHERE NOT EXISTS (SELECT 1 FROM vanta_inventory WHERE product_id = ?)`,
+    args: [productId, stockQuantity, now, productId],
   });
-  const id = result.lastInsertRowid;
-  if (id === null) throw new Error("Inventory insert returned no id");
-  return rowToInventory({ id, product_id: productId, stock_quantity: stockQuantity, reserved_quantity: 0, version: 1, updated_at: now });
+  const inventory = await getInventory(productId);
+  if (!inventory) throw new Error("Inventory insert returned no row");
+  return inventory;
 }
 
 export async function getInventory(productId: number): Promise<Inventory | null> {

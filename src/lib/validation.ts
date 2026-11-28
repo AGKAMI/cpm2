@@ -282,6 +282,9 @@ export const tradeIdentifySchema = z.object({
   mimeType: z.enum(["image/png", "image/jpeg", "image/webp"], {
     error: "Screenshot must be a PNG, JPEG or WebP.",
   }),
+  // Car codes collide across games, so matches must be scoped to the game
+  // the desk is pricing. Optional only for older callers; the picker sends it.
+  game: z.enum(["cpm1", "cpm2"]).default("cpm2"),
 });
 
 export type TradeIdentifyInput = z.infer<typeof tradeIdentifySchema>;

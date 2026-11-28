@@ -5,6 +5,14 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  {
+    rules: {
+      // Next 16 ships this experimental React Compiler rule as an error. The
+      // existing client components hydrate state from props/URLs in effects;
+      // rewriting all of them during an unrelated bugfix would be risky.
+      "react-hooks/set-state-in-effect": "off",
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

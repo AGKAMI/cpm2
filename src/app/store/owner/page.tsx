@@ -12,10 +12,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
+import { OwnerSkeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Field";
 import { vantaApi, type VantaAdminRecord } from "@/lib/store/client";
-import { notifyAdminPromoted } from "@/lib/store/notifications";
 import { useToast } from "@/components/ui/Toaster";
 import { Toast } from "@/components/ui/Toast";
 import { StarIcon } from "@/components/StarIcon";
@@ -107,13 +107,11 @@ export default function OwnerPage() {
     setSaving(true);
     try {
       await vantaApi.createAdmin({ telegramUserId: newId.trim(), telegramUsername: "", nickname: newNickname.trim() });
-      // Notify the new admin via Telegram DM
-      try {
-        await notifyAdminPromoted(Number(newId.trim()), "the owner");
-        toast.success("Admin added.", "They’ve been notified via Telegram.");
-      } catch {
-        toast.success("Admin added.", "Could not send Telegram notification.");
-      }
+      // The promotion DM is sent server-side by POST /api/store/admin/admins.
+      // This page used to also call the server notification module directly
+      // from the browser, where the bot token can never exist — the DM it
+      // "sent" only ever threw into the fallback toast.
+      toast.success("Admin added.", "They’ve been notified via Telegram.");
       setNewId("");
       setNewNickname("");
       await loadAdmins();
@@ -141,7 +139,8 @@ export default function OwnerPage() {
   if (loading)
     return (
       <StoreShell>
-        <p className="text-muted-foreground">Loading owner dashboard…</p>
+        <PageHeading folio="OW" title="Owner Dashboard" backHref="/store/admin" />
+        <OwnerSkeleton />
       </StoreShell>
     );
 

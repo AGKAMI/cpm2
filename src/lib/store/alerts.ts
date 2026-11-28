@@ -143,13 +143,24 @@ export async function createFinancialAlert(input: {
   });
 }
 
-/** Send an alert notification (queues a send_alert job). */
+/**
+ * Deliver a queued alert: persist it as an alert row for the admin feed.
+ *
+ * This is the send_alert JOB HANDLER — it used to enqueue another
+ * send_alert job with the same payload, so processing one job spawned
+ * its own successor forever: an endless chain that never delivered
+ * anything and grew vanta_jobs without bound. Persisting the alert is
+ * the delivery the queue exists for.
+ */
 export async function sendAlert(payload: Record<string, unknown>): Promise<void> {
-  const { enqueueJob } = await import("./jobs.ts");
-  await enqueueJob({
-    type: "send_alert",
-    payload,
-    delayMs: 0,
-    maxAttempts: 3,
+  const type = (typeof payload.type === "string" ? payload.type : "failed_payment") as AlertType;
+  await createAlert({
+    type,
+    title: typeof payload.title === "string" && payload.title ? payload.title : "Alert",
+    message: typeof payload.message === "string" ? payload.message : "",
+    severity: (typeof payload.severity === "string" ? payload.severity : "medium") as Alert["severity"],
+    entityType: typeof payload.entityType === "string" ? payload.entityType : "",
+    entityId: typeof payload.entityId === "string" ? payload.entityId : null,
+    relatedOrderId: typeof payload.relatedOrderId === "string" ? payload.relatedOrderId : null,
   });
 }

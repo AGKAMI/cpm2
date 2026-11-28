@@ -51,12 +51,22 @@ export function getKey(): Buffer {
       cachedKey = key;
       return key;
     }
-  } catch {
-    // Read-only filesystem (Vercel serverless) or other IO error —
-    // fall through to an in-memory key. Sessions won't persist across
-    // cold starts but this avoids a 500 error.
+  } catch (err) {
+    // Only "the file is not there" may fall through. Permissions, corruption
+    // and transient IO errors must NOT silently switch to a fresh key — that
+    // makes every stored secret undecryptable and hides the real failure.
+    if (err instanceof SecretError) throw err;
+    throw new SecretError(`Could not read encryption key file ${file}: ${String(err)}`);
   }
 
+  const persistent = Boolean(process.env.VERCEL) || process.env.NODE_ENV === "production";
+  if (persistent) {
+    throw new SecretError(
+      "CPM2_ENCRYPTION_KEY is required on serverless/production deployments; an in-memory key cannot survive cold starts.",
+    );
+  }
+
+  // Local development only: generate a key once and persist it for reuse.
   const key = crypto.randomBytes(32);
   cachedKey = key;
   try {
@@ -65,9 +75,8 @@ export function getKey(): Buffer {
       encoding: "utf8",
       mode: 0o600,
     });
-  } catch {
-    // Read-only filesystem — key stays in memory only; sessions won't
-    // persist across cold starts but this avoids a 500 error.
+  } catch (err) {
+    throw new SecretError(`Could not persist the generated encryption key: ${String(err)}`);
   }
   return key;
 }

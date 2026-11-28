@@ -46,17 +46,23 @@ export function telegramInitData(): string {
   return clientInitData();
 }
 
-/**
- * Web guests identify themselves by the player id captured at checkout
- * (Telegram identities are linked server-side and don't need this).
- */
-function guestPlayerId(): string | null {
-  if (typeof window === "undefined" || telegramInitData()) return null;
-  const pid = window.localStorage.getItem("vanta_player_id");
-  return pid && pid.trim() ? pid.trim() : null;
+/** A checkout returns one signed capability per order. It is stored against
+ *  the order id so Orders and proof uploads can authenticate the buyer without
+ *  turning a guessable player id into a customer-wide session. */
+const ORDER_ACCESS_PREFIX = "vanta_order_access_";
+
+export function rememberOrderAccess(orderId: string, token: string): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(`${ORDER_ACCESS_PREFIX}${orderId}`, token);
+}
+
+export function getOrderAccessToken(orderId: string): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(`${ORDER_ACCESS_PREFIX}${orderId}`);
 }
 
 const TELEGRAM_INIT_DATA_HEADER = "X-Telegram-Init-Data";
+const ORDER_ACCESS_HEADER = "x-order-access";
 
 export async function request<T>(
   path: string,
@@ -132,6 +138,9 @@ export const vantaApi = {
     if (qs.toString()) url += `?${qs.toString()}`;
     return request<{ products: VantaProduct[]; total: number }>(url);
   },
+  /** Admin-only full catalogue, including hidden products. */
+  adminProducts: () =>
+    request<{ products: VantaProduct[]; total: number }>("/admin/products?full=1"),
   categories: () => request<{ categories: VantaCategory[] }>("/categories"),
   wallet: () =>
     request<{
@@ -201,17 +210,18 @@ export const vantaApi = {
       request<{ deleted: boolean }>(`/admin/products?id=${id}`, {
         method: "DELETE",
       }),
-  orders: () => {
-    let url = "/orders";
-    const pid = guestPlayerId();
-    if (pid) url += `?playerId=${encodeURIComponent(pid)}`;
-    return request<{ orders: VantaOrder[] }>(url);
-  },
+    /** Permanent delete — the API refuses (409) when orders reference the
+     *  product; those can only be hidden. */
+    deleteProductPermanently: (id: number) =>
+      request<{ deleted: boolean; permanent: boolean }>(`/admin/products?id=${id}&permanent=1`, {
+        method: "DELETE",
+      }),
+  orders: () => request<{ orders: VantaOrder[] }>("/orders"),
   order: (id: string) => {
-    let url = `/orders?id=${encodeURIComponent(id)}`;
-    const pid = guestPlayerId();
-    if (pid) url += `&playerId=${encodeURIComponent(pid)}`;
-    return request<{ order: VantaOrder }>(url);
+    const token = getOrderAccessToken(id);
+    return request<{ order: VantaOrder }>(`/orders?id=${encodeURIComponent(id)}`, {
+      headers: token ? { [ORDER_ACCESS_HEADER]: token } : undefined,
+    });
   },
   checkout: (body: unknown) =>
     request<{
@@ -221,6 +231,8 @@ export const vantaApi = {
       starsInvoiceUrl: string | null;
       walletPaid?: boolean;
       walletBalanceCents?: number | null;
+      canUploadProof: boolean;
+      orderAccessToken: string;
     }>("/checkout", {
       method: "POST",
       body: JSON.stringify(body),
@@ -242,7 +254,7 @@ export const vantaApi = {
       method: "DELETE",
     }),
   cartCheckout: (body: { playerId: string; inGameName: string; paymentMethod?: "payfast" | "eft" | "stars" }) =>
-    request<{ orders: VantaOrder[]; orderIds: string[]; subtotalCents: number; currency: string; itemCount: number }>("/cart/checkout", {
+    request<{ orders: VantaOrder[]; orderIds: string[]; orderAccessTokens: Array<{ orderId: string; token: string }>; subtotalCents: number; currency: string; itemCount: number }>("/cart/checkout", {
       method: "POST",
       body: JSON.stringify(body),
     }),
@@ -315,8 +327,10 @@ export type VantaProduct = {
   game?: "cpm1" | "cpm2";
   /** What kind of thing is being sold — a car or a game account. */
   kind?: "car" | "account" | "service";
-  /** Stars price, quoted with the configured STARS_ZAR_PER_STAR by the API. */
+  /** Stars price for the effective (discount + promotion) price, quoted by the API. */
   starsPrice?: number;
+  /** Stars price for the promotion price when a live promotion is attached. */
+  promoStarsPrice?: number | null;
   /** The live product promotion, when one is attached to this product. */
   promo?: {
     id: number;
@@ -388,6 +402,12 @@ export type VantaPromotion = {
   startDate: string | null;
   endDate: string | null;
   sortOrder: number;
+  /** null = legacy banner for both games; otherwise this catalogue only. */
+  game: "cpm1" | "cpm2" | null;
+  /** Product whose displayed price/card this promotion overrides. */
+  productId: number | null;
+  /** Hue of the (fixed-material, fixed-shine) Promoted pill. */
+  pillColor: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -437,6 +457,9 @@ export type CartItem = {
   quantity: number;
   exclusivity: string;
   addedAt: string;
+  updatedAt?: string;
+  /** Live promotional unit price included in subtotal and cart checkout. */
+  promoPriceCents?: number | null;
 };
 
 export type CartSummary = {

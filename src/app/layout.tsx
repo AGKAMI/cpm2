@@ -7,8 +7,6 @@ import { TelegramBridge } from "@/components/TelegramBridge";
 import { ToastProvider } from "@/components/ui/Toaster";
 import { DEFAULT_PALETTE, FLEET_DEFAULT_PALETTE, PALETTE_IDS } from "@/lib/themes";
 
-const mono = { variable: "" };
-
 // Nothing saved → Fleet Ledger opens in Neon 2 TONE; /store keeps the
 // house VANTA identity. Path-aware so the result is identical no matter
 // whether this script or the store layout's later script runs last.
@@ -35,11 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   // as a theme flash. Scoped to this one element — it suppresses the attribute
   // diff here and nothing else.
   return (
-    <html
-      lang="en"
-      className={`${mono.variable}`}
-      suppressHydrationWarning
-    >
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta
           name="viewport"
@@ -74,7 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       </head>
-      <body className={`min-h-screen antialiased bg-background ${mono.variable}`}>
+      <body className="min-h-screen antialiased bg-background">
         <Script
           src="https://telegram.org/js/telegram-web-app.js"
           strategy="beforeInteractive"

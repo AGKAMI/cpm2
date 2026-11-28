@@ -16,15 +16,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
-import { vantaApi } from "@/lib/store/client";
-import { StarIcon } from "@/components/StarIcon";
+import { vantaApi, rememberOrderAccess } from "@/lib/store/client";
 
 export default function CartCheckoutPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>("");
   const [playerId, setPlayerId] = useState("");
   const [inGameName, setInGameName] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"eft" | "stars">("eft");
+  const paymentMethod = "eft" as const;
   const autoFired = useRef(false);
 
   useEffect(() => {
@@ -55,17 +54,25 @@ export default function CartCheckoutPage() {
         inGameName: name,
         paymentMethod,
       });
-      // Clear any lingering local cart marker and go to orders.
+      // Keep one capability per order from this bulk checkout, then open the
+      // first order. The orders LIST remains account/Telegram-only because a
+      // per-order capability must not become a whole-history credential.
       if (typeof window !== "undefined") {
+        for (const item of res.orderAccessTokens ?? []) {
+          rememberOrderAccess(item.orderId, item.token);
+        }
         window.localStorage.removeItem("vanta_bulk_cart");
       }
-      window.location.href = `/store/orders?cart=1&subtotal=${res.subtotalCents ?? 0}`;
+      const first = res.orderIds?.[0];
+      window.location.href = first
+        ? `/store/orders/${encodeURIComponent(first)}?cart=1`
+        : `/store/orders?cart=1&subtotal=${res.subtotalCents ?? 0}`;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Bulk checkout failed. Try again.");
     } finally {
       setBusy(false);
     }
-  }, [playerId, inGameName]);
+  }, [playerId, inGameName, paymentMethod]);
 
   useEffect(() => {
     // Only auto-submit when landed here from the cart page (marker set). Wait
@@ -105,33 +112,10 @@ export default function CartCheckoutPage() {
               Submit every vehicle in your cart as one order. Each vehicle is
               reserved and paid for separately.
             </p>
-            <div className="flex items-center justify-between gap-3 mb-6">
-              <span className="text-xs font-medium text-muted-foreground">Pay with</span>
-              <div className="flex gap-2">
-                <label className="flex items-center gap-2 cursor-pointer p-2 rounded-md border border-border hover:border-primary">
-                  <input
-                    type="radio"
-                    name="bulkPayment"
-                    value="eft"
-                    checked={paymentMethod === "eft"}
-                    onChange={() => setPaymentMethod("eft")}
-                    className="accent-primary"
-                  />
-                  EFT
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer p-2 rounded-md border border-border hover:border-primary">
-                  <input
-                    type="radio"
-                    name="bulkPayment"
-                    value="stars"
-                    checked={paymentMethod === "stars"}
-                    onChange={() => setPaymentMethod("stars")}
-                    className="accent-primary"
-                  />
-                  <span className="flex items-center gap-1.5"><StarIcon className="w-3.5 h-3.5" />Telegram Stars</span>
-                </label>
-              </div>
-            </div>
+            <p className="text-[11px] text-muted-foreground mb-6">
+              Bulk checkout is EFT only — Telegram Stars and card payments are
+              one vehicle at a time from each product page.
+            </p>
             <Button
               variant="primary"
               onClick={submit}

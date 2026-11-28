@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
+import { PanelListSkeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput, TextArea } from "@/components/ui/Field";
 import { telegramInitData } from "@/lib/store/client";
@@ -125,7 +126,7 @@ export default function SupportPage() {
     return (
       <StoreShell>
         <PageHeading folio="SP" title="Support" backHref="/store" />
-        <p className="text-muted-foreground">Loading your tickets…</p>
+        <PanelListSkeleton />
       </StoreShell>
     );
   }

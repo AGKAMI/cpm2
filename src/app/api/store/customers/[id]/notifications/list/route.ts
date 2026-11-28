@@ -18,7 +18,7 @@ export async function GET(
   const customerId = Number(id);
 
   const sessionToken = readRequestCookie(request, SESSION_COOKIE);
-  const sessionUserId = verifySessionToken(sessionToken);
+  const sessionUserId = verifySessionToken(sessionToken, "store");
 
   if (!sessionUserId || sessionUserId !== customerId) {
     return NextResponse.json(

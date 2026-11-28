@@ -28,11 +28,9 @@ export function CarPickerModal({
   const [error, setError] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Reset search when the modal opens.
-  if (open) {
-    setQuery("");
-    setError(null);
-  }
+  // No reset-on-open needed: GaragePanel mounts this component only while
+  // the picker is open, so state starts fresh each time. (A render-time
+  // setQuery("") here used to wipe every keystroke the user typed.)
 
   // Filter the catalog client-side by game. ~208 rows, trivial cost.
   const matches = searchCars(query, 50, garage.game as "cpm1" | "cpm2");
@@ -45,8 +43,11 @@ export function CarPickerModal({
       setError(null);
       setAdding(car.code);
       try {
-        await api.addCar(accountId, { carCode: car.code });
-        onGarage(garage);
+        const result = await api.addCar(accountId, { carCode: car.code });
+        // The response carries the fresh garage — echoing the stale prop
+        // here left the panel showing the pre-add garage, so the new car
+        // never appeared and a second tap hit the duplicate error.
+        onGarage(result.garage);
         setQuery("");
       } catch (err) {
         const message =

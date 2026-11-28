@@ -3,6 +3,7 @@ import Link from "next/link";
 import { StoreShell } from "@/components/StoreShell";
 import { PageHeading } from "@/components/PageHeading";
 import { Button } from "@/components/ui/Button";
+import { siteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Thank You - VANTA GARAGE",
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
     title: "Thank You - VANTA GARAGE",
     description: "Your CPM2 vehicle order has been confirmed.",
     type: "website",
-    url: "https://cpm2-bay.vercel.app/store/checkout/thank-you",
+    url: "/store/checkout/thank-you",
     images: [
       {
         url: "/og-image.svg",
@@ -41,9 +42,9 @@ export default function ThankYouPage() {
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
             className="w-6 h-6 text-primary"
           >
             <polyline points="20 6 9 17 4 12" />

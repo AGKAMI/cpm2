@@ -16,6 +16,39 @@ const appointmentSchema = z.object({
 
 export const dynamic = "force-dynamic";
 
+/**
+ * The caller's delivery appointments, newest first — the appointments page
+ * has always fetched this, but the route only ever implemented POST, so
+ * the page silently rendered "No upcoming deliveries" forever.
+ */
+export async function GET(request: Request) {
+  try {
+    const customer = await requireStoreCustomer(request);
+    const db = await getStoreDb();
+    const result = await db.execute({
+      sql: `SELECT a.id, a.order_id, a.scheduled_at, a.status, a.delivery_evidence,
+                   a.customer_confirmed, o.product_name
+              FROM vanta_appointments a
+              JOIN vanta_orders o ON o.id = a.order_id
+             WHERE o.customer_id = ?
+             ORDER BY a.scheduled_at DESC`,
+      args: [customer.customer.id],
+    });
+    const appointments = result.rows.map((row) => ({
+      id: String(row.id),
+      orderId: String(row.order_id),
+      productName: String(row.product_name ?? ""),
+      scheduledAt: String(row.scheduled_at ?? ""),
+      status: String(row.status ?? "scheduled"),
+      deliveryEvidence: row.delivery_evidence === null ? null : String(row.delivery_evidence),
+      customerConfirmed: Number(row.customer_confirmed ?? 0) === 1,
+    }));
+    return ok({ appointments });
+  } catch (err) {
+    return fail(err);
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const customer = await requireStoreCustomer(request);
@@ -36,19 +69,19 @@ export async function POST(request: Request) {
       return fail({ status: 403, body: { error: { code: "forbidden", message: "Not your order." } } });
     }
 
-    const result = await db.execute({
+    // vanta_appointments.id is a TEXT primary key with no autoincrement —
+    // inserting without one left a NULL id that the confirm route could
+    // never match, so the appointment existed but could never complete.
+    const appointmentId = `APT_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    await db.execute({
       sql: `
-        INSERT INTO vanta_appointments (order_id, scheduled_at, admin_platform, admin_user_id, status, created_at)
-        VALUES (?, ?, 'telegram', ?, 'scheduled', ?)
+        INSERT INTO vanta_appointments (id, order_id, scheduled_at, admin_platform, admin_user_id, status, created_at, updated_at)
+        VALUES (?, ?, ?, 'telegram', ?, 'scheduled', ?, ?)
       `,
-      args: [body.orderId, body.scheduledAt, "telegram", String(customer.customer.id), now],
+      args: [appointmentId, body.orderId, body.scheduledAt, String(customer.customer.id), now, now],
     });
 
-    if (result.lastInsertRowid === null) {
-      return fail({ status: 500, body: { error: { code: "insert_failed", message: "Could not create appointment." } } });
-    }
-
-    return ok({ id: String(result.lastInsertRowid), status: "scheduled" }, 201);
+    return ok({ id: appointmentId, status: "scheduled" }, 201);
   } catch (err) {
     return fail(err);
   }

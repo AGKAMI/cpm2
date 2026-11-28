@@ -140,8 +140,8 @@ export function ProductPageClient({
         folio="01"
         title={product.name}
         meta={`${formatPrice(product.basePriceCents, product.currency)}${
-          approxStarsForCents(product.basePriceCents)
-            ? ` (${approxStarsForCents(product.basePriceCents)} stars)`
+          (product.promoStarsPrice ?? product.starsPrice ?? approxStarsForCents(product.basePriceCents))
+            ? ` (${product.promoStarsPrice ?? product.starsPrice ?? approxStarsForCents(product.basePriceCents)} stars)`
             : ""
         }`}
         backHref="/store"
@@ -149,8 +149,8 @@ export function ProductPageClient({
 
       {/* Hero image carousel */}
       <section className="mb-6 px-4">
-        // object-contain in a 16:9 frame shows the product's art in FULL —
-        // the old fixed tall frame + object-cover cropped the poster's sides.
+        {/* object-contain in a 16:9 frame shows the product's art in FULL —
+            the old fixed tall frame + object-cover cropped the poster's sides. */}
         <div
           ref={carouselRef}
           className="relative aspect-video rounded-[28px] overflow-hidden border border-border bg-secondary"
@@ -203,7 +203,7 @@ export function ProductPageClient({
                 className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-ink/60 flex items-center justify-center text-ink hover:bg-ink/80 transition-colors"
                 aria-label="Previous image"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="m15 18-6-6 6-6" />
                 </svg>
               </button>
@@ -212,7 +212,7 @@ export function ProductPageClient({
                 className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/60 flex items-center justify-center text-foreground hover:bg-background/80 transition-colors"
                 aria-label="Next image"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="m9 18 6-6-6-6" />
                 </svg>
               </button>
@@ -261,13 +261,23 @@ export function ProductPageClient({
       <div className="grid gap-6 px-4">
         {/* Left column: details */}
         <div className="flex flex-col gap-6">
-          <section className="panel rounded-xl border border-border p-6">
+          <section
+            className={`panel rounded-xl border border-border p-6 ${product.promo ? "promo-card" : ""}`}
+            style={
+              product.promo
+                ? {
+                    background: `linear-gradient(160deg, ${product.promo.backgroundColor}, ${product.promo.accentColor}22)`,
+                    borderColor: product.promo.accentColor,
+                  }
+                : undefined
+            }
+          >
             <div className="flex items-baseline justify-between gap-2 mb-5">
               <span className="flex items-center gap-2 flex-wrap">
                 <span className="text-2xl font-bold text-primary">
                   {formatPrice(displayPriceCents, product.currency)}
                 </span>
-                <span className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-sm font-bold text-foreground tabular-nums" title="Telegram Stars"><StarIcon className="w-4 h-4" />{approxStarsForCents(displayPriceCents)}</span>
+                <span className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-sm font-bold text-foreground tabular-nums" title="Telegram Stars"><StarIcon className="w-4 h-4" />{product.promoStarsPrice ?? product.starsPrice ?? approxStarsForCents(displayPriceCents)}</span>
                 {product.promo && (
                   <span className="promo-pill" style={{ ["--pill-hue" as string]: product.promo.pillColor }}>
                     Promoted
@@ -334,16 +344,27 @@ export function ProductPageClient({
                 inline and collapses to line-height (21px), so the 48px Button
                 overflows its own clickable box and the hit area misses the
                 visible button. */}
-            <Link href={`/store/checkout/${product.id}`} className="block w-full">
+            {product.stockQuantity === 0 ? (
               <Button
                 variant="primary"
                 className="w-full h-12 text-lg font-bold"
                 style={{ backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }}
-                disabled={product.stockQuantity === 0 || checkoutBusy}
+                disabled
               >
-                {checkoutBusy ? "Processing…" : product.stockQuantity === 0 ? "Sold out" : "Buy now"}
+                Sold out
               </Button>
-            </Link>
+            ) : (
+              <Link href={`/store/checkout/${product.id}`} className="block w-full">
+                <Button
+                  variant="primary"
+                  className="w-full h-12 text-lg font-bold"
+                  style={{ backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }}
+                  disabled={checkoutBusy}
+                >
+                  {checkoutBusy ? "Processing…" : "Buy now"}
+                </Button>
+              </Link>
+            )}
             <button
               type="button"
               onClick={(e) => {

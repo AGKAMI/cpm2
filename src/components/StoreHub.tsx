@@ -273,7 +273,7 @@ function SupportOptions({
   );
 }
 
-export function StoreHub({ products }: StoreHubData) {
+export function StoreHub({ products, categories }: StoreHubData) {
   // Derived shelves, not a second product grid: these are the "new additions"
   // and "promotions" strips, capped so they never read as a shop window.
   const arrivals = products.filter((p) => p.isNew).slice(0, 4);
@@ -306,6 +306,42 @@ export function StoreHub({ products }: StoreHubData) {
           <IconHeadset />
         </GameTile>
       </nav>
+
+      {/* ---------- admin-created category shelves, scoped by game ----------
+          Only categories whose `game` matches reach this shelf (the server
+          passes both lists), so a CPM1 category can never appear as CPM2. */}
+      {(["cpm2", "cpm1"] as const).map((game) => {
+        const gameCategories = categories
+          .filter((c) => (c.game ?? "cpm2") === game)
+          .sort((a, b) => a.sortOrder - b.sortOrder)
+          .slice(0, 6);
+        if (gameCategories.length === 0) return null;
+        return (
+          <Shelf
+            key={game}
+            title={`${game === "cpm1" ? "CPM 1" : "CPM 2"} categories`}
+            actionHref={`/store/${game}`}
+            actionLabel="Browse"
+          >
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {gameCategories.map((cat) => (
+                <li key={cat.id}>
+                  <Link
+                    href={`/store/${game}/cars?category=${encodeURIComponent(cat.slug)}`}
+                    className="flex items-center gap-2 rounded-xl border border-border bg-secondary px-3 py-2 text-xs font-bold text-foreground hover:border-primary/60"
+                  >
+                    {cat.imageUrl ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={cat.imageUrl} alt="" className="h-7 w-7 rounded-md object-cover" />
+                    ) : null}
+                    <span className="truncate">{cat.name}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </Shelf>
+        );
+      })}
 
       {/* ---------- Promoted: FULL product cards, promo styling ---------- */}
       {promoted.length > 0 && (

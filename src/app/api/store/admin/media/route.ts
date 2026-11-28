@@ -64,6 +64,10 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    // This handler was the one method here missing the gate: an anonymous
+    // DELETE could remove any product's media by id. Same admin rule as
+    // the POST/GET above it.
+    await requireStoreAdmin(request);
     const body = (await readJson(request)) as Record<string, unknown>;
     const productId = Number(body.productId as string);
     const providerId = String(body.providerId ?? "");

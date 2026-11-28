@@ -22,11 +22,17 @@ const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 /** ── Product form ──────────────────────────────────────────────────── */
 
 export const productFormSchema = z.object({
+  // A product's game identity is mandatory: the admin catalogue separates the
+  // two games and storefront listings only show products in their own game.
+  game: z.enum(["cpm1", "cpm2"], { error: "Pick a game." }).default("cpm2"),
+  // Optional: accounts, services, mods and CPM1 products legitimately have
+  // no CPM2 car code. Requiring one here made every such product impossible
+  // to edit — the form could never pass validation on save.
   cpm2CarCode: z
-    .string({ error: "Car code is required." })
+    .string()
     .trim()
-    .min(1, { error: "Pick a car from the CPM2 catalog." })
-    .refine((v) => /^\d+$/.test(v), { error: "Car code must be a number." }),
+    .optional()
+    .refine((v) => !v || /^\d+$/.test(v), { error: "Car code must be a number." }),
   name: z
     .string({ error: "Name is required." })
     .trim()
@@ -35,7 +41,9 @@ export const productFormSchema = z.object({
   description: z
     .string()
     .trim()
-    .max(500, { error: "Description must be 500 characters or fewer." })
+    // Existing catalogue copy runs longer than 500 chars; a tight cap here
+    // made those products fail validation the moment they were edited.
+    .max(2000, { error: "Description must be 2000 characters or fewer." })
     .optional(),
   basePriceCents: z
     .string({ error: "Price is required." })
@@ -45,7 +53,9 @@ export const productFormSchema = z.object({
       error: "Enter a valid price (e.g. 60.00).",
     })
     .refine((v) => parseFloat(v) > 0, { error: "Price must be greater than 0." })
-    .refine((v) => parseFloat(v) <= 200, { error: "Price cannot exceed R200." }),
+    // Mirrors the API cap (10_000_000 cents). The old R200 cap rejected
+    // every legitimately-priced car/account when editing.
+    .refine((v) => parseFloat(v) <= 100000, { error: "Price cannot exceed R100 000." }),
   currency: z
     .string({ error: "Currency is required." })
     .trim()
@@ -121,6 +131,15 @@ export const promotionFormSchema = z.object({
     .max(80, { error: "Title must be 80 characters or fewer." }),
   subtitle: z.string().trim().max(100, { error: "Max 100 characters." }).optional(),
   description: z.string().trim().max(300, { error: "Max 300 characters." }).optional(),
+  // Every promotion is scoped to one catalogue and overrides one existing
+  // product. It can no longer be created as a free-floating banner from the
+  // admin form: the brief requires a game + product attached at creation.
+  game: z.enum(["cpm1", "cpm2"], { error: "Pick a game." }).default("cpm2"),
+  productId: z
+    .string({ error: "Pick an existing product." })
+    .trim()
+    .min(1, { error: "Pick an existing product for this promotion." })
+    .refine((v) => /^\d+$/.test(v), { error: "Product must be a valid ID." }),
   discountPercent: z
     .string({ error: "Discount is required." })
     .trim()
@@ -162,6 +181,15 @@ export const promotionFormSchema = z.object({
     .refine((v) => HEX_COLOR_PATTERN.test(v), {
       error: "Enter a valid hex color (e.g. #d4af4f).",
     }),
+  // Only the hue is operator-controlled: the metallic gradient and shine are
+  // fixed in globals.css and never stored per promotion.
+  pillColor: z
+    .string({ error: "Pill colour is required." })
+    .trim()
+    .refine((v) => HEX_COLOR_PATTERN.test(v), {
+      error: "Enter a valid hex color for the pill.",
+    })
+    .default("#d4af4f"),
   imageUrl: z
     .string()
     .trim()
